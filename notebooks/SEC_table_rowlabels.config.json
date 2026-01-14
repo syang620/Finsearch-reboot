@@ -1,0 +1,660 @@
+[
+    {
+      "table_id": "purchases_of_equity_securities_by_the_issuer_and_affiliated",
+      "row_labels": [
+        "June 30, 2024 to August 3, 2024",
+        "August 4, 2024 to August 31, 2024",
+        "September 1, 2024 to September 28, 2024",
+        "Total"
+      ]
+    },
+    {
+      "table_id": "company_stock_performance",
+      "row_labels": [
+        "Apple Inc.$",
+        "S&P 500 Index$",
+        "Dow Jones U.S. Technology Supersector Index$"
+      ]
+    },
+    {
+      "table_id": "segment_operating_performance",
+      "row_labels": [
+        "Americas",
+        "Europe",
+        "Greater China",
+        "Japan",
+        "Rest of Asia Pacific",
+        "Total net sales"
+      ]
+    },
+    {
+      "table_id": "products_and_services_performance",
+      "row_labels": [
+        "iPhone",
+        "Mac",
+        "iPad",
+        "Wearables, Home and Accessories",
+        "Services (1)",
+        "Total net sales"
+      ]
+    },
+    {
+      "table_id": "gross_margin",
+      "row_labels": [
+        "Gross margin",
+        "Gross margin",
+        "Gross margin"
+      ]
+    },
+    {
+      "table_id": "gross_margin_5",
+      "row_labels": [
+        "Products",
+        "Services",
+        "Total gross margin percentage"
+      ]
+    },
+    {
+      "table_id": "operating_expenses",
+      "row_labels": [
+        "Research and development",
+        "Research and development",
+        "Selling, general and administrative",
+        "Selling, general and administrative",
+        "Total operating expenses",
+        "Total operating expenses"
+      ]
+    },
+    {
+      "table_id": "provision_for_income_taxes",
+      "row_labels": [
+        "Provision for income taxes",
+        "Effective tax rate",
+        "Statutory federal income tax rate"
+      ]
+    },
+    {
+      "table_id": "interest_rate_risk",
+      "row_labels": [
+        "Investment portfolio",
+        "Term debt"
+      ]
+    },
+    {
+      "table_id": "part_ii",
+      "row_labels": [
+        "Index to Consolidated Financial Statements",
+        "Consolidated Statements of Operations",
+        "Consolidated Statements of Comprehensive Income",
+        "Consolidated Balance Sheets",
+        "Consolidated Statements of Shareholders’ Equity",
+        "Consolidated Statements of Cash Flows",
+        "Notes to Consolidated Financial Statements",
+        "Reports of Independent Registered Public Accounting Firm"
+      ]
+    },
+    {
+      "table_id": "consolidated_statements_of_operations",
+      "row_labels": [
+        "Net sales: Products",
+        "Net sales: Services",
+        "Total net sales",
+        "Cost of sales: Products",
+        "Cost of sales: Services",
+        "Total cost of sales",
+        "Gross margin",
+        "Operating expenses: Research and development",
+        "Operating expenses: Selling, general and administrative",
+        "Total operating expenses",
+        "Operating income",
+        "Other income/(expense), net",
+        "Income before provision for income taxes",
+        "Provision for income taxes",
+        "Net income",
+        "Earnings per share: Basic",
+        "Earnings per share: Diluted",
+        "Shares used in computing earnings per share: Basic",
+        "Shares used in computing earnings per share: Diluted"
+      ]
+    },
+    {
+      "table_id": "consolidated_statements_of_comprehensive_income",
+      "row_labels": [
+        "Net income",
+        "Other comprehensive income/(loss): Change in foreign currency translation, net of tax",
+        "Other comprehensive income/(loss): Change in unrealized gains/losses on derivative instruments, net of tax: Change in fair value of derivative instruments",
+        "Other comprehensive income/(loss): Adjustment for net (gains)/losses realized and included in net income",
+        "Other comprehensive income/(loss): Total change in unrealized gains/losses on derivative instruments",
+        "Other comprehensive income/(loss): Change in unrealized gains/losses on marketable debt securities, net of tax: Change in fair value of marketable debt securities",
+        "Other comprehensive income/(loss): Total change in unrealized gains/losses on marketable debt securities",
+        "Other comprehensive income/(loss): Total other comprehensive income/(loss)",
+        "Total comprehensive income"
+      ]
+    },
+    {
+      "table_id": "consolidated_balance_sheets",
+      "row_labels": [
+        "ASSETS: Current assets",
+        "Cash and cash equivalents",
+        "Marketable securities",
+        "Accounts receivable, net",
+        "Vendor non-trade receivables",
+        "Inventories",
+        "Other current assets",
+        "Total current assets",
+        "Non-current assets",
+        "Marketable securities",
+        "Property, plant and equipment, net",
+        "Other non-current assets",
+        "Total non-current assets",
+        "Total assets",
+        "LIABILITIES AND SHAREHOLDERS’ EQUITY: Current liabilities",
+        "Accounts payable",
+        "Other current liabilities",
+        "Deferred revenue",
+        "Commercial paper",
+        "Term debt",
+        "Total current liabilities",
+        "Non-current liabilities",
+        "Term debt",
+        "Other non-current liabilities",
+        "Total non-current liabilities",
+        "Total liabilities",
+        "Commitments and contingencies",
+        "Shareholders’ equity",
+        "Common stock and additional paid-in capital, $0.00001 par value: 50,400,000 shares authorized; 15,116,786 and 15,550,061 shares issued and outstanding, respectively",
+        "Accumulated deficit",
+        "Accumulated other comprehensive loss",
+        "Total shareholders’ equity",
+        "Total liabilities and shareholders’ equity"
+      ]
+    },
+    {
+      "table_id": "consolidated_statements_of_shareholders_equity",
+      "row_labels": [
+        "Total shareholders’ equity, beginning balances",
+        "Common stock and additional paid-in capital: Beginning balances",
+        "Common stock issued",
+        "Common stock withheld related to net share settlement of equity awards",
+        "Share-based compensation",
+        "Ending balances of common stock and additional paid-in capital",
+        "Retained earnings/(Accumulated deficit): Beginning balances",
+        "Net income",
+        "Dividends and dividend equivalents declared",
+        "Common stock repurchased",
+        "Ending balances of retained earnings/(Accumulated deficit)",
+        "Accumulated other comprehensive income/(loss): Beginning balances",
+        "Other comprehensive income/(loss)",
+        "Ending balances of accumulated other comprehensive income/(loss)",
+        "Total shareholders’ equity, ending balances",
+        "Dividends and dividend equivalents declared per share or RSU"
+      ]
+    },
+    {
+      "table_id": "consolidated_statements_of_cash_flows",
+      "row_labels": [
+        "Cash, cash equivalents, and restricted cash and cash equivalents, beginning balances",
+        "Net income",
+        "Adjustments to reconcile net income to cash generated by operating activities: Depreciation and amortization",
+        "Adjustments to reconcile net income to cash generated by operating activities: Share-based compensation expense",
+        "Adjustments to reconcile net income to cash generated by operating activities: Other",
+        "Changes in operating assets and liabilities: Accounts receivable, net",
+        "Changes in operating assets and liabilities: Vendor non-trade receivables",
+        "Changes in operating assets and liabilities: Inventories",
+        "Changes in operating assets and liabilities: Other current and non-current assets",
+        "Changes in operating assets and liabilities: Accounts payable",
+        "Changes in operating assets and liabilities: Other current and non-current liabilities",
+        "Cash generated by/(used in) operating activities",
+        "Purchases of marketable securities",
+        "Proceeds from maturities of marketable securities",
+        "Proceeds from sales of marketable securities",
+        "Payments for acquisition of property, plant and equipment",
+        "Other",
+        "Cash generated by/(used in) investing activities",
+        "Payments for taxes related to net share settlement of equity awards",
+        "Payments for dividends and dividend equivalents",
+        "Repurchases of common stock",
+        "Proceeds from issuance of term debt, net",
+        "Repayments of term debt",
+        "Proceeds from/(Repayments of) commercial paper, net",
+        "Other",
+        "Cash used in financing activities",
+        "Increase/(Decrease) in cash, cash equivalents, and restricted cash and cash equivalents",
+        "Cash, cash equivalents, and restricted cash and cash equivalents, ending balances",
+        "Supplemental cash flow disclosure: Cash paid for income taxes, net"
+      ]
+    },
+    {
+      "table_id": "note_2_revenue",
+      "row_labels": [
+        "iPhone",
+        "Mac",
+        "iPad",
+        "Wearables, Home and Accessories",
+        "Services (1)",
+        "Total net sales"
+      ]
+    },
+    {
+      "table_id": "note_3_earnings_per_share",
+      "row_labels": [
+        "Net income",
+        "Weighted-average basic shares outstanding",
+        "Effect of dilutive share-based awards",
+        "Weighted-average diluted shares",
+        "Basic earnings per share",
+        "Diluted earnings per share"
+      ]
+    },
+    {
+      "table_id": "cash_cash_equivalents_and_marketable_securities",
+      "row_labels": [
+        "Cash",
+        "Level 1",
+        "Money market funds",
+        "Mutual funds",
+        "Subtotal (Level 1)",
+        "Level 2 (1)",
+        "U.S. Treasury securities",
+        "U.S. agency securities",
+        "Non-U.S. government securities",
+        "Certificates of deposit and time deposits",
+        "Commercial paper",
+        "Corporate debt securities",
+        "Municipal securities",
+        "Mortgage- and asset-backed securities",
+        "Subtotal (Level 2)",
+        "Total (2)(3)"
+      ]
+    },
+    {
+      "table_id": "cash_cash_equivalents_and_marketable_securities_18",
+      "row_labels": [
+        "Cash",
+        "Level 1",
+        "Money market funds",
+        "Mutual funds and equity securities",
+        "Subtotal (Level 1)",
+        "Level 2 (1)",
+        "U.S. Treasury securities",
+        "U.S. agency securities",
+        "Non-U.S. government securities",
+        "Certificates of deposit and time deposits",
+        "Commercial paper",
+        "Corporate debt securities",
+        "Municipal securities",
+        "Mortgage- and asset-backed securities",
+        "Subtotal (Level 2)",
+        "Total (3)"
+      ]
+    },
+    {
+      "table_id": "interest_rate_risk_19",
+      "row_labels": [
+        "Foreign exchange contracts$",
+        "Interest rate contracts$",
+        "Foreign exchange contracts$"
+      ]
+    },
+    {
+      "table_id": "interest_rate_risk_20",
+      "row_labels": [
+        "Hedged assets/(liabilities)",
+        "Hedged assets/(liabilities)"
+      ]
+    },
+    {
+      "table_id": "note_5_property_plant_and_equipment",
+      "row_labels": [
+        "Land and buildings",
+        "Machinery, equipment and internal-use software",
+        "Leasehold improvements",
+        "Gross property, plant and equipment",
+        "Accumulated depreciation",
+        "Total property, plant and equipment, net"
+      ]
+    },
+    {
+      "table_id": "other_non_current_assets",
+      "row_labels": [
+        "Deferred tax assets",
+        "Other non-current assets",
+        "Total other non-current assets"
+      ]
+    },
+    {
+      "table_id": "other_current_liabilities",
+      "row_labels": [
+        "Income taxes payable",
+        "Other current liabilities",
+        "Total other current liabilities"
+      ]
+    },
+    {
+      "table_id": "other_non_current_liabilities",
+      "row_labels": [
+        "Income taxes payable",
+        "Other non-current liabilities",
+        "Total other non-current liabilities"
+      ]
+    },
+    {
+      "table_id": "provision_for_income_taxes_and_effective_tax_rate",
+      "row_labels": [
+        "Federal",
+        "Federal",
+        "Federal",
+        "State",
+        "State",
+        "State",
+        "Foreign",
+        "Foreign",
+        "Foreign",
+        "Provision for income taxes"
+      ]
+    },
+    {
+      "table_id": "provision_for_income_taxes_and_effective_tax_rate_26",
+      "row_labels": [
+        "Computed expected tax",
+        "State taxes, net of federal effect",
+        "Impact of the State Aid Decision",
+        "Earnings of foreign subsidiaries",
+        "Research and development credit, net",
+        "Excess tax benefits from equity awards",
+        "Other",
+        "Provision for income taxes",
+        "Effective tax rate"
+      ]
+    },
+    {
+      "table_id": "deferred_tax_assets_and_liabilities",
+      "row_labels": [
+        "Deferred tax assets: Capitalized research and development",
+        "Deferred tax assets: Tax credit carryforwards",
+        "Deferred tax assets: Accrued liabilities and other reserves",
+        "Deferred tax assets: Deferred revenue",
+        "Deferred tax assets: Lease liabilities",
+        "Deferred tax assets: Unrealized losses",
+        "Deferred tax assets: Other",
+        "Total deferred tax assets",
+        "Less: Valuation allowance",
+        "Total deferred tax assets, net",
+        "Deferred tax liabilities: Depreciation",
+        "Deferred tax liabilities: Right-of-use assets",
+        "Deferred tax liabilities: Minimum tax on foreign earnings",
+        "Deferred tax liabilities: Unrealized gains",
+        "Deferred tax liabilities: Other",
+        "Total deferred tax liabilities",
+        "Net deferred tax assets"
+      ]
+    },
+    {
+      "table_id": "uncertain_tax_positions",
+      "row_labels": [
+        "Beginning balances",
+        "Increases related to tax positions taken during a prior year",
+        "Decreases related to tax positions taken during a prior year",
+        "Increases related to tax positions taken during the current year",
+        "Decreases related to settlements with taxing authorities",
+        "Decreases related to expiration of the statute of limitations",
+        "Ending balances"
+      ]
+    },
+    {
+      "table_id": "note_8_leases",
+      "row_labels": [
+        "Lease-Related Assets and Liabilities",
+        "Lease-Related Assets and Liabilities",
+        "Lease-Related Assets and Liabilities",
+        "Lease-Related Assets and Liabilities",
+        "Lease-Related Assets and Liabilities",
+        "Lease-Related Assets and Liabilities"
+      ]
+    },
+    {
+      "table_id": "note_8_leases_30",
+      "row_labels": [
+        "Operating Leases",
+        "Finance Leases",
+        "Operating Leases",
+        "Finance Leases",
+        "Operating Leases",
+        "Finance Leases",
+        "Operating Leases",
+        "Finance Leases",
+        "Operating Leases",
+        "Finance Leases",
+        "Operating Leases",
+        "Finance Leases",
+        "Total undiscounted liabilities",
+        "Less: Imputed interest",
+        "Total lease liabilities"
+      ]
+    },
+    {
+      "table_id": "commercial_paper",
+      "row_labels": [
+        "Maturities 90 days or less: Proceeds from/(Repayments of) commercial paper, net",
+        "Maturities greater than 90 days: Proceeds from commercial paper",
+        "Maturities greater than 90 days: Repayments of commercial paper",
+        "Maturities greater than 90 days: Proceeds from/(Repayments of) commercial paper, net",
+        "Total proceeds from/(repayments of) commercial paper, net"
+      ]
+    },
+    {
+      "table_id": "term_debt",
+      "row_labels": [
+        "2013",
+        "Total term debt principal",
+        "Unamortized premium/(discount) and issuance costs, net",
+        "Hedge accounting fair value adjustments",
+        "Total term debt",
+        "Less: Current portion of term debt",
+        "Total non-current portion of term debt"
+      ]
+    },
+    {
+      "table_id": "term_debt_33",
+      "row_labels": [
+        "2025",
+        "2026",
+        "2027",
+        "2028",
+        "2029",
+        "Thereafter",
+        "Total term debt principal"
+      ]
+    },
+    {
+      "table_id": "shares_of_common_stock",
+      "row_labels": [
+        "Common stock outstanding, beginning balances",
+        "Common stock repurchased",
+        "Common stock issued, net of shares withheld for employee taxes",
+        "Common stock outstanding, ending balances"
+      ]
+    },
+    {
+      "table_id": "restricted_stock_units",
+      "row_labels": [
+        "Balance as of September 25, 2021",
+        "Balance as of September 25, 2021",
+        "Balance as of September 24, 2022",
+        "Balance as of September 24, 2022",
+        "Balance as of September 30, 2023",
+        "Balance as of September 30, 2023",
+        "Balance as of September 28, 2024",
+        "Balance as of September 28, 2024",
+        "Balance as of September 28, 2024"
+      ]
+    },
+    {
+      "table_id": "share_based_compensation",
+      "row_labels": [
+        "Share-based compensation expense$",
+        "Income tax benefit related to share-based compensation expense$"
+      ]
+    },
+    {
+      "table_id": "unconditional_purchase_obligations",
+      "row_labels": [
+        "2025",
+        "2026",
+        "2027",
+        "2028",
+        "2029",
+        "Thereafter",
+        "Total"
+      ]
+    },
+    {
+      "table_id": "note_13_segment_information_and_geographic_data",
+      "row_labels": [
+        "Americas",
+        "Americas",
+        "Europe",
+        "Europe",
+        "Greater China",
+        "Greater China",
+        "Japan",
+        "Japan",
+        "Rest of Asia Pacific",
+        "Rest of Asia Pacific"
+      ]
+    },
+    {
+      "table_id": "note_13_segment_information_and_geographic_data_39",
+      "row_labels": [
+        "Segment operating income",
+        "Research and development expense",
+        "Other corporate expenses, net (1)",
+        "Total operating income"
+      ]
+    },
+    {
+      "table_id": "note_13_segment_information_and_geographic_data_40",
+      "row_labels": [
+        "Net sales",
+        "Net sales",
+        "Net sales",
+        "Net sales"
+      ]
+    },
+    {
+      "table_id": "note_13_segment_information_and_geographic_data_41",
+      "row_labels": [
+        "Long-lived assets",
+        "Long-lived assets",
+        "Long-lived assets",
+        "Long-lived assets"
+      ]
+    },
+    {
+      "table_id": "1_all_financial_statements",
+      "row_labels": [
+        "Index to Consolidated Financial Statements",
+        "Consolidated Statements of Operations",
+        "Consolidated Statements of Comprehensive Income",
+        "Consolidated Balance Sheets",
+        "Consolidated Statements of Shareholders’ Equity",
+        "Consolidated Statements of Cash Flows",
+        "Notes to Consolidated Financial Statements",
+        "Reports of Independent Registered Public Accounting Firm*"
+      ]
+    },
+    {
+      "table_id": "2_financial_statement_schedules",
+      "row_labels": [
+        "Exhibit Number",
+        "3.1",
+        "3.2",
+        "4.1**",
+        "4.2",
+        "4.3",
+        "4.4",
+        "4.5",
+        "4.6",
+        "4.7",
+        "4.8",
+        "4.9"
+      ]
+    },
+    {
+      "table_id": "2_financial_statement_schedules_44",
+      "row_labels": [
+        "Exhibit Number",
+        "4.10",
+        "4.11",
+        "4.12",
+        "4.13",
+        "4.14",
+        "4.15",
+        "4.16",
+        "4.17",
+        "4.18",
+        "4.19",
+        "4.20",
+        "4.21",
+        "4.22",
+        "4.23",
+        "4.24",
+        "4.25",
+        "4.26",
+        "4.27"
+      ]
+    },
+    {
+      "table_id": "2_financial_statement_schedules_45",
+      "row_labels": [
+        "Exhibit Number",
+        "4.28",
+        "4.29*",
+        "10.1*",
+        "10.2*",
+        "10.3*",
+        "10.4*",
+        "10.5*",
+        "10.6*",
+        "10.7*",
+        "10.8*",
+        "10.9*",
+        "10.10*",
+        "10.11*",
+        "10.12*",
+        "10.13*",
+        "10.14*",
+        "10.15*",
+        "10.16*",
+        "10.17*",
+        "10.18*",
+        "10.19*, **",
+        "10.20*, **",
+        "10.21*, **",
+        "10.22*, **",
+        "19.1**",
+        "21.1**",
+        "23.1**",
+        "24.1**",
+        "31.1**",
+        "31.2**",
+        "32.1***",
+        "97.1*, **"
+      ]
+    },
+    {
+      "table_id": "2_financial_statement_schedules_46",
+      "row_labels": [
+        "Exhibit Number",
+        "101**",
+        "104**"
+      ]
+    },
+    {
+      "table_id": "power_of_attorney",
+      "row_labels": [
+        "Name",
+        "Name"
+      ]
+    }
+]
