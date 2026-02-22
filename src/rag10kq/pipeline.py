@@ -136,7 +136,72 @@ class FinanceRAGPipeline:
             max_expansions=self.config.expansion.max_expansions,
             options=self.config.expansion.options,
         )
+        rerank_query, fused_candidates, reranked = self.run_hybrid_search_pipeline(
+            queries,
+            ticker=ticker,
+            fiscal_year=fiscal_year,
+            form_type=form_type,
+            doc_types=doc_types,
+        )
 
+        if not rerank_query:
+            rerank_query = user_query
+
+        selected_tables = score_and_select_tables(
+            candidate_tables=reranked,
+            expanded_query_terms=queries,
+            target_year=str(fiscal_year),
+            tables_dir=self.config.lexical_scoring.tables_dir,
+        )
+
+        if not selected_tables:
+            return PipelineResult(
+                answer="No relevant financial tables found.",
+                selected_tables=[],
+                queries=queries,
+                rerank_query=rerank_query,
+                fused_candidates=fused_candidates,
+                reranked_candidates=reranked,
+            )
+
+        table_texts = tables_to_llm_texts(
+            selected_tables,
+            tables_dir=self.config.lexical_scoring.tables_dir,
+        )
+        retrieved_table = "\n\n".join(table_texts)
+        generator_prompt = build_generator_prompt(user_query, retrieved_table)
+
+        options: Dict[str, Any] = {}
+        if self.config.generation.options:
+            options.update(self.config.generation.options)
+        options.setdefault("num_predct", self.config.generation.num_predct)
+        options.setdefault("temperature", self.config.generation.temperature)
+
+        answer = chat_with_ollama(
+            generator_prompt,
+            model=self.config.generation.model,
+            as_list=False,
+            options=options,
+        )
+
+        return PipelineResult(
+            answer=answer,
+            selected_tables=selected_tables,
+            queries=queries,
+            rerank_query=rerank_query,
+            fused_candidates=fused_candidates,
+            reranked_candidates=reranked,
+        )
+
+    def run_hybrid_search_pipeline(
+        self,
+        queries: Sequence[str],
+        *,
+        ticker: str,
+        fiscal_year: int,
+        form_type: Optional[str] = None,
+        doc_types: Optional[List[str]] = None,
+    ) -> Tuple[str, List[models.ScoredPoint], List[models.ScoredPoint]]:
         retrieval_doc_types = doc_types if doc_types is not None else self.config.retrieval.doc_types
         retrieval_result = multi_query_hybrid_search_bge_m3(
             queries,
@@ -185,9 +250,9 @@ class FinanceRAGPipeline:
             if len(queries) > 1:
                 rerank_query = f"{queries[0]} ({', '.join(queries[1:])})"
             else:
-                rerank_query = queries[0]
+                rerank_query = str(queries[0])
         else:
-            rerank_query = user_query
+            rerank_query = ""
 
         reranked = rerank_with_bge_reranker_large(
             rerank_query,
@@ -197,48 +262,4 @@ class FinanceRAGPipeline:
             model=self.reranker_model,
         )
 
-        selected_tables = score_and_select_tables(
-            candidate_tables=reranked,
-            expanded_query_terms=queries,
-            target_year=str(fiscal_year),
-            tables_dir=self.config.lexical_scoring.tables_dir,
-        )
-
-        if not selected_tables:
-            return PipelineResult(
-                answer="No relevant financial tables found.",
-                selected_tables=[],
-                queries=queries,
-                rerank_query=rerank_query,
-                fused_candidates=fused_candidates,
-                reranked_candidates=reranked,
-            )
-
-        table_texts = tables_to_llm_texts(
-            selected_tables,
-            tables_dir=self.config.lexical_scoring.tables_dir,
-        )
-        retrieved_table = "\n\n".join(table_texts)
-        generator_prompt = build_generator_prompt(user_query, retrieved_table)
-
-        options: Dict[str, Any] = {}
-        if self.config.generation.options:
-            options.update(self.config.generation.options)
-        options.setdefault("num_predct", self.config.generation.num_predct)
-        options.setdefault("temperature", self.config.generation.temperature)
-
-        answer = chat_with_ollama(
-            generator_prompt,
-            model=self.config.generation.model,
-            as_list=False,
-            options=options,
-        )
-
-        return PipelineResult(
-            answer=answer,
-            selected_tables=selected_tables,
-            queries=queries,
-            rerank_query=rerank_query,
-            fused_candidates=fused_candidates,
-            reranked_candidates=reranked,
-        )
+        return rerank_query, fused_candidates, reranked

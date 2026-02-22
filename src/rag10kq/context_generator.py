@@ -114,3 +114,47 @@ def generate_table_response(
         options={"num_predct": 1024, "temperature": 0.1},
     )
     return response
+
+def synthesize_answer(
+    user_query: str, 
+    agent_data: Dict[str, Any], 
+    table_name: str, 
+    meta: Dict,
+    model_name = 'deepseek-r1:14b'
+) -> str:
+    """
+    Synthesizes the final answer using the structured evidence from the agent.
+    agent_data contains: 'answer', 'variables', 'reasoning'
+    """
+    result = agent_data.get("answer")
+    variables = agent_data.get("variables", {})
+    reasoning = agent_data.get("reasoning", "")
+    
+    # 1. Format the Evidence for the LLM
+    # We create a readable list of what data was used.
+    # e.g., "- Net Sales: 14,000\n- Cost: 8,000"
+    vars_str = "\n".join([f"- {k}: {v}" for k,v in variables.items()])
+    
+    unit_hint = "unknown"
+    if "millions" in str(meta).lower(): unit_hint = "Millions"
+    elif "thousands" in str(meta).lower(): unit_hint = "Thousands"
+
+    prompt = f"""
+    You are a Financial Assistant.
+    
+    User Query: "{user_query}"
+    Source Table: "{table_name}"
+    
+    **Analysis Result:**
+    - Calculated Value: {result} (Likely Unit: {unit_hint})
+    - Logic Used: {reasoning}
+    - Data Points Extracted:
+    {vars_str}
+    
+    **Task:**
+    Write a clear, concise response.
+    1. State the final answer clearly (add units if applicable).
+    2. Provide a "Calculation Breakdown" sentence explaining how it was derived using the Data Points above.
+    """
+    
+    return chat_with_ollama(prompt, model=model_name, as_list=False)
