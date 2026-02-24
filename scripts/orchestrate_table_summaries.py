@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 """
-Orchestrate table summarization using rag10kq.tables_summarizer.
+Orchestrate table summarization using ingestion.tables_summarizer.
 
 This script scans table chunk files in data/chunked (or a custom directory),
 derives filing prefixes from *.tables.jsonl filenames, and invokes
-`python -m rag10kq.tables_summarizer` for each prefix.
+`python -m ingestion.tables_summarizer` for each prefix.
 
 Summaries are written to a separate directory (default: data/chunked/table_summaries)
 with filenames that preserve the original prefix, e.g.:
@@ -27,12 +27,14 @@ import sys
 from pathlib import Path
 from typing import Iterable, List, Sequence, Set
 
+from _common import load_tickers_set_optional
+
 
 def _parse_args(argv: Iterable[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description=(
             "Locate *.tables.jsonl files under a chunks directory and "
-            "summarize them via rag10kq.tables_summarizer."
+            "summarize them via ingestion.tables_summarizer."
         ),
     )
     parser.add_argument(
@@ -78,27 +80,9 @@ def _parse_args(argv: Iterable[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--python",
         default=sys.executable,
-        help="Python executable to use when invoking rag10kq.tables_summarizer.",
+        help="Python executable to use when invoking ingestion.tables_summarizer.",
     )
     return parser.parse_args(argv)
-
-
-def _load_tickers(args: argparse.Namespace) -> Set[str] | None:
-    tickers: List[str] = []
-    if args.tickers:
-        tickers.extend(args.tickers)
-
-    if args.from_file:
-        with open(args.from_file, "r", encoding="utf-8") as handle:
-            for line in handle:
-                ticker = line.strip()
-                if ticker:
-                    tickers.append(ticker)
-
-    if not tickers:
-        return None
-
-    return {t.upper() for t in tickers}
 
 
 def _find_prefixes(chunks_dir: Path, tickers: Set[str] | None) -> List[str]:
@@ -145,7 +129,7 @@ def _run_tables_summarizer_for_prefix(
     cmd = [
         python_exe,
         "-m",
-        "rag10kq.tables_summarizer",
+        "ingestion.tables_summarizer",
         "--prefixes",
         prefix,
         "--chunks-dir",
@@ -172,7 +156,10 @@ def main(argv: Sequence[str] | None = None) -> int:
     chunks_dir = Path(args.chunks_dir)
     out_dir = Path(args.out_dir)
 
-    tickers = _load_tickers(args)
+    tickers = load_tickers_set_optional(
+        tickers=args.tickers,
+        from_file=args.from_file,
+    )
     prefixes = _find_prefixes(chunks_dir, tickers)
 
     if not prefixes:
@@ -196,4 +183,3 @@ def main(argv: Sequence[str] | None = None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

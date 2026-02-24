@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 """
-Orchestrate chunking of 10-K and 10-Q HTML filings using rag10kq.sec_chunker.
+Orchestrate chunking of 10-K and 10-Q HTML filings using ingestion.sec_chunker.
 
 This script expects HTML filings to already exist under data/html_filings,
 typically created by scripts/orchestrate_html_downloads.py.
 
 For each requested ticker / form / year or quarter, it:
   1) Locates the corresponding HTML file in data/html_filings.
-  2) Invokes `python -m rag10kq.sec_chunker` to produce text + table chunks.
+  2) Invokes `python -m ingestion.sec_chunker` to produce text + table chunks.
 
 Example:
     PYTHONPATH=src python scripts/orchestrate_chunk_html_filings.py \\
@@ -26,12 +26,14 @@ import sys
 from pathlib import Path
 from typing import Iterable, List, Sequence, Tuple
 
+from _common import load_tickers
+
 
 def _parse_args(argv: Iterable[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description=(
             "Locate 10-K/10-Q HTML filings under data/html_filings and "
-            "chunk them via rag10kq.sec_chunker."
+            "chunk them via ingestion.sec_chunker."
         ),
     )
     parser.add_argument(
@@ -76,14 +78,14 @@ def _parse_args(argv: Iterable[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--python",
         default=sys.executable,
-        help="Python executable to use when invoking rag10kq.sec_chunker.",
+        help="Python executable to use when invoking ingestion.sec_chunker.",
     )
     parser.add_argument(
         "--run-splitter",
         action="store_true",
         default=True,
         help=(
-            "If set, run rag10kq.chunk_splitter on each generated text chunk file "
+            "If set, run ingestion.chunk_splitter on each generated text chunk file "
             "to produce *.text.split.jsonl."
         ),
     )
@@ -109,24 +111,6 @@ def _parse_args(argv: Iterable[str] | None = None) -> argparse.Namespace:
         ),
     )
     return parser.parse_args(argv)
-
-
-def _load_tickers(args: argparse.Namespace) -> List[str]:
-    tickers: List[str] = []
-    if args.tickers:
-        tickers.extend(args.tickers)
-
-    if args.from_file:
-        with open(args.from_file, "r", encoding="utf-8") as handle:
-            for line in handle:
-                ticker = line.strip()
-                if ticker:
-                    tickers.append(ticker)
-
-    if not tickers:
-        raise SystemExit("Provide --tickers or --from-file with at least one ticker.")
-
-    return sorted({t.upper() for t in tickers})
 
 
 def _iter_k_jobs(
@@ -196,7 +180,7 @@ def _run_chunker(
     cmd = [
         python_exe,
         "-m",
-        "rag10kq.sec_chunker",
+        "ingestion.sec_chunker",
         "--html-file",
         str(html_path),
         "--ticker",
@@ -232,7 +216,7 @@ def _run_splitter(
     cmd = [
         python_exe,
         "-m",
-        "rag10kq.chunk_splitter",
+        "ingestion.chunk_splitter",
         "--in-file",
         str(text_path),
         "--out-file",
@@ -250,7 +234,11 @@ def _run_splitter(
 
 def main(argv: Sequence[str] | None = None) -> int:
     args = _parse_args(argv)
-    tickers = _load_tickers(args)
+    tickers = load_tickers(
+        tickers=args.tickers,
+        from_file=args.from_file,
+        required=True,
+    )
     html_root = Path(args.html_root)
     out_dir = Path(args.out_dir)
 

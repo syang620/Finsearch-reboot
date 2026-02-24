@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 """
-Orchestrate embedding of SEC 10-K / 10-Q chunks using rag10kq.sec_embedder.
+Orchestrate embedding of SEC 10-K / 10-Q chunks using ingestion.sec_embedder.
 
 This script:
   - Locates text chunk files (prefer *.text.split.jsonl, fallback to *.text.jsonl)
     and table summary files (*.tables.summaries.jsonl) for given filings.
-  - Builds text / table / row docs via rag10kq.sec_embedder.
+  - Builds text / table / row docs via ingestion.sec_embedder.
   - Calls an embedding endpoint (default: Ollama-style /api/embed with
     model=qwen3-embedding:8b) to add embeddings.
   - Writes embedded JSONL files under a per-prefix directory in data/embedding:
@@ -36,11 +36,12 @@ import json
 from pathlib import Path
 from typing import Dict, Iterable, List, Sequence, Tuple
 
-from rag10kq.sec_embedder import (
+from ingestion.sec_embedder import (
     build_table_and_row_docs,
     build_text_docs,
     embed_docs,
 )
+from _common import load_tickers
 
 
 def _parse_args(argv: Iterable[str] | None = None) -> argparse.Namespace:
@@ -128,24 +129,6 @@ def _parse_args(argv: Iterable[str] | None = None) -> argparse.Namespace:
         help="Optional company name to include in metadata for all filings.",
     )
     return parser.parse_args(argv)
-
-
-def _load_tickers(args: argparse.Namespace) -> List[str]:
-    tickers: List[str] = []
-    if args.tickers:
-        tickers.extend(args.tickers)
-
-    if args.from_file:
-        with open(args.from_file, "r", encoding="utf-8") as handle:
-            for line in handle:
-                ticker = line.strip()
-                if ticker:
-                    tickers.append(ticker)
-
-    if not tickers:
-        raise SystemExit("Provide --tickers or --from-file with at least one ticker.")
-
-    return sorted({t.upper() for t in tickers})
 
 
 def _parse_quarter(spec: str) -> Tuple[int, str]:
@@ -290,7 +273,11 @@ def _embed_for_prefix(
 
 def main(argv: Sequence[str] | None = None) -> int:
     args = _parse_args(argv)
-    tickers = _load_tickers(args)
+    tickers = load_tickers(
+        tickers=args.tickers,
+        from_file=args.from_file,
+        required=True,
+    )
     chunks_dir = Path(args.chunks_dir)
     table_summaries_dir = Path(args.table_summaries_dir)
     out_root = Path(args.out_root)
@@ -373,4 +360,3 @@ def main(argv: Sequence[str] | None = None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

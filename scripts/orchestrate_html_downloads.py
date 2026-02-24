@@ -2,7 +2,7 @@
 """
 Orchestrate downloading 10-K and 10-Q HTML filings for multiple tickers.
 
-This is a light wrapper around rag10kq.sec_html_fetcher.download_company_filings_html.
+This is a light wrapper around ingestion.sec_html_fetcher.download_company_filings_html.
 
 Example:
     python scripts/orchestrate_html_downloads.py --tickers AAPL MSFT AMZN
@@ -11,9 +11,10 @@ Example:
 from __future__ import annotations
 
 import argparse
-from typing import Iterable, List, Sequence
+from typing import Iterable, Sequence
 
-from rag10kq.sec_html_fetcher import download_company_filings_html
+from ingestion.sec_html_fetcher import download_company_filings_html
+from _common import load_tickers
 
 
 def _parse_args(argv: Iterable[str] | None = None) -> argparse.Namespace:
@@ -55,28 +56,13 @@ def _parse_args(argv: Iterable[str] | None = None) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
-def _load_tickers(args: argparse.Namespace) -> List[str]:
-    tickers: List[str] = []
-    if args.tickers:
-        tickers.extend(args.tickers)
-
-    if args.from_file:
-        with open(args.from_file, "r", encoding="utf-8") as handle:
-            for line in handle:
-                ticker = line.strip()
-                if ticker:
-                    tickers.append(ticker)
-
-    if not tickers:
-        raise SystemExit("Provide --tickers or --from-file with at least one ticker.")
-
-    unique_tickers = sorted({ticker.upper() for ticker in tickers})
-    return unique_tickers
-
-
 def main(argv: Sequence[str] | None = None) -> int:
     args = _parse_args(argv)
-    tickers = _load_tickers(args)
+    tickers = load_tickers(
+        tickers=args.tickers,
+        from_file=args.from_file,
+        required=True,
+    )
 
     for ticker in tickers:
         print(f"\n=== Downloading filings for {ticker} ===")

@@ -35,13 +35,15 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
-from typing import Dict, Iterable, List, Mapping, MutableMapping, Sequence
+from typing import Any, Dict, Iterable, List, Mapping, MutableMapping, Sequence
 
-from rag10kq.qdrant_ingester import (
+from qdrant_client import models
+
+from ingestion.qdrant_ingester import (
     count_points,
+    docs_to_points,
     ensure_collection,
     get_qdrant_client,
-    upsert_docs,
 )
 
 
@@ -117,6 +119,43 @@ def _parse_args(argv: Iterable[str] | None = None) -> argparse.Namespace:
         "--api-key",
         help="Optional Qdrant API key.",
     )
+    parser.add_argument(
+        "--collection-name",
+        default="sec_docs_hybrid",
+        help="Qdrant collection name to ingest into (default: sec_docs_hybrid).",
+    )
+    parser.add_argument(
+        "--recreate-collection",
+        action="store_true",
+        help=(
+            "Delete and recreate the target collection if it exists. "
+            "This is required when migrating from a single-vector schema "
+            "to named multi-vectors."
+        ),
+    )
+    parser.add_argument(
+        "--bge-m3-model-name",
+        default="BAAI/bge-m3",
+        help="HuggingFace model id/path for BGE-M3 (default: BAAI/bge-m3).",
+    )
+    parser.add_argument(
+        "--bge-m3-cache-dir",
+        help="Optional cache dir for BGE-M3 model files.",
+    )
+    parser.add_argument(
+        "--bge-m3-dense-dim",
+        type=int,
+        default=1024,
+        help="Expected BGE-M3 dense dimension (default: 1024).",
+    )
+    parser.add_argument(
+        "--bge-m3-allow-download",
+        action="store_true",
+        help=(
+            "Allow downloading BGE-M3 model files if not cached. "
+            "By default, the script runs in local-files-only mode."
+        ),
+    )
     return parser.parse_args(argv)
 
 
@@ -129,6 +168,7 @@ def load_jsonl(path: Path) -> List[Dict]:
                 continue
             docs.append(json.loads(line))
     return docs
+
 
 def write_jsonl(path: Path, docs: Iterable[Dict[str, Any]]) -> None:
     """Write docs as JSON lines to a file."""
@@ -176,7 +216,6 @@ def combine_for_prefix(
     if not all_docs:
         raise RuntimeError(f"No docs found for prefix={prefix} in {embeddings_dir}")
 
-    # (Optional) sort by id for stability
     all_docs.sort(key=lambda d: d.get("id", ""))
 
     out_path = output_dir / f"{prefix}.all.embedded.jsonl"
@@ -213,48 +252,37 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     prefix = _build_prefix(args.ticker, args.form, args.year, args.quarter)
     embeddings_root = Path(args.embeddings_root)
-    paths = _embedding_paths_for_prefix(embeddings_root, prefix)
+    base_dir = embeddings_root / prefix
 
-    # 1. Load requested embedding docs
-    docs_by_type: MutableMapping[str, List[Dict]] = {}
-    dim: int | None = None
+    # 1. Combine text, tables, and table-row embeddings into a single JSONL
+    try:
+        combined_path = combine_for_prefix(prefix, base_dir)
+    except RuntimeError as exc:
+        print(f"[ERROR] {exc}")
+        return 1
 
-    for ftype in args.file_types:
-        path = paths[ftype]
-        if not path.is_file():
-            print(f"[WARN] Skipping {ftype}: file not found at {path}")
-            continue
+    docs = load_jsonl(combined_path)
+    if not docs:
+        print(f"[ERROR] No documents loaded from combined file {combined_path}")
+        return 1
 
-        docs = load_jsonl(path)
-        if not docs:
-            print(f"[WARN] Skipping {ftype}: no documents in {path}")
-            continue
-
-        this_dim = len(docs[0].get("embedding", []))
-        if this_dim == 0:
-            print(f"[WARN] Skipping {ftype}: first doc has empty embedding in {path}")
-            continue
-
-        if dim is None:
-            dim = this_dim
-        elif this_dim != dim:
-            print(
-                f"[WARN] Skipping {ftype}: embedding dim {this_dim} != expected {dim}",
-            )
-            continue
-
-        docs_by_type[ftype] = docs
-
-    if not docs_by_type:
+    dim = len(docs[0].get("embedding", []))
+    if dim == 0:
         print(
-            f"[ERROR] No valid embedding documents loaded for prefix {prefix}. "
-            "Nothing to ingest.",
+            f"[ERROR] First document in combined file {combined_path} "
+            "has an empty embedding.",
         )
         return 1
 
-    assert dim is not None
+    # Compute average doc length once for BM25 (used by Qdrant BM25 inference).
+    lengths = []
+    for d in docs:
+        content = d.get("content")
+        if isinstance(content, str) and content.strip():
+            lengths.append(len(content.split()))
+    bm25_avg_len = (sum(lengths) / len(lengths)) if lengths else 0.0
 
-    # 2. Create client & collections
+    # 2. Create client & single collection
     client = get_qdrant_client(
         host=args.host,
         port=args.port,
@@ -262,42 +290,88 @@ def main(argv: Sequence[str] | None = None) -> int:
         api_key=args.api_key,
     )
 
-    collection_names: Dict[str, str] = {
-        "text": "sec_10k_text_chunks",
-        "tables": "sec_10k_tables",
-        "rows": "sec_10k_table_rows",
+    collection_name = args.collection_name
+    vectors_config = {
+        "dense": models.VectorParams(size=dim, distance=models.Distance.COSINE),
+        "bge_m3_dense": models.VectorParams(
+            size=args.bge_m3_dense_dim,
+            distance=models.Distance.COSINE,
+        ),
+    }
+    sparse_vectors_config = {
+        "bm25": models.SparseVectorParams(modifier=models.Modifier.IDF),
+        "bge_m3_sparse": models.SparseVectorParams(),
     }
 
-    for ftype, docs in docs_by_type.items():
-        collection_name = collection_names[ftype]
+    if client.collection_exists(collection_name=collection_name):
+        if args.recreate_collection:
+            print(f"[WARN] Recreating collection '{collection_name}' (will delete existing points).")
+            client.delete_collection(collection_name=collection_name)
+            ensure_collection(
+                client=client,
+                collection_name=collection_name,
+                vectors_config=vectors_config,
+                sparse_vectors_config=sparse_vectors_config,
+            )
+        else:
+            info = client.get_collection(collection_name=collection_name)
+            existing_vectors = info.config.params.vectors
+            if not isinstance(existing_vectors, dict):
+                print(
+                    f"[ERROR] Collection '{collection_name}' exists but is not configured "
+                    "for named multi-vectors. Re-run with --recreate-collection, "
+                    "or ingest into a new --collection-name.",
+                )
+                return 1
+    else:
         print(
-            f"[INFO] Ensuring collection '{collection_name}' (dim={dim}) "
-            f"for {ftype} embeddings.",
+            f"[INFO] Creating collection '{collection_name}' with dense+BM25+BGE-M3 vectors "
+            f"(dense_dim={dim}, bge_m3_dense_dim={args.bge_m3_dense_dim}).",
         )
         ensure_collection(
-            client,
-            collection_name,
-            vector_size=dim,
-            distance="COSINE",
-            recreate=False,
+            client=client,
+            collection_name=collection_name,
+            vectors_config=vectors_config,
+            sparse_vectors_config=sparse_vectors_config,
         )
 
-        # 3. Upsert
+    # 2b. Initialize BGE-M3 encoder once (required by docs_to_points defaults).
+    try:
+        from FlagEmbedding import BGEM3FlagModel
+    except Exception as exc:
         print(
-            f"[INFO] Upserting {len(docs)} {ftype} docs from prefix {prefix} "
-            f"into collection '{collection_name}' (batch_size={args.batch_size}).",
+            "[ERROR] Missing dependency `FlagEmbedding`. Install it (pip install FlagEmbedding) "
+            "or adjust ingestion to pass precomputed BGE-M3 vectors per-doc.",
         )
-        upsert_docs(
-            client,
-            collection_name,
-            docs,
-            batch_size=args.batch_size,
+        raise
+
+    bge_m3_model = BGEM3FlagModel(
+        args.bge_m3_model_name,
+        use_fp16=True,
+        cache_dir=args.bge_m3_cache_dir,
+        local_files_only=not args.bge_m3_allow_download,
+    )
+
+    # 3. Upsert combined docs
+    print(
+        f"[INFO] Upserting {len(docs)} combined docs from prefix {prefix} "
+        f"into collection '{collection_name}' (batch_size={args.batch_size}).",
+    )
+    for start in range(0, len(docs), args.batch_size):
+        batch = docs[start : start + args.batch_size]
+        points = docs_to_points(
+            batch,
+            bm25_avg_len=bm25_avg_len,
+            bge_m3_model=bge_m3_model,
         )
+        client.upsert(
+            collection_name=collection_name,
+            points=points,
+        )
+        print(f"[INFO]   upserted docs {start}–{start + len(batch) - 1}")
 
     # 4. Optional sanity check
-    for ftype in docs_by_type.keys():
-        collection_name = collection_names[ftype]
-        count_points(client, collection_name)
+    count_points(client, collection_name)
 
     return 0
 

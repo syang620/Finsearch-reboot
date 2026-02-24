@@ -1,0 +1,30 @@
+---
+config:
+  flowchart:
+    curve: linear
+---
+graph TD;
+	__start__([<p>__start__</p>]):::first
+	init(init)
+	planner(planner)
+	check_retrieval_metadata(check_retrieval_metadata)
+	retrieval(retrieval)
+	build_packet_from_retrieval(build_packet_from_retrieval)
+	build_packet_without_retrieval(build_packet_without_retrieval)
+	analyst(analyst)
+	finalize(finalize)
+	__end__([<p>__end__</p>]):::last
+	__start__ --> init;
+	analyst --> finalize;
+	build_packet_from_retrieval --> analyst;
+	build_packet_without_retrieval --> analyst;
+	check_retrieval_metadata -.-> build_packet_without_retrieval;
+	check_retrieval_metadata -.-> retrieval;
+	init --> planner;
+	planner -.-> build_packet_without_retrieval;
+	planner -.-> check_retrieval_metadata;
+	retrieval --> build_packet_from_retrieval;
+	finalize --> __end__;
+	classDef default fill:#f2f0ff,line-height:1.2
+	classDef first fill-opacity:0
+	classDef last fill:#bfb6fc

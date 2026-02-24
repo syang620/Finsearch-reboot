@@ -19,8 +19,8 @@ from typing import Any, Dict, List, Optional, Tuple, TypedDict
 from langchain_ollama import ChatOllama
 from langgraph.graph import END, StateGraph
 
-from rag10kq.query_expansion_helper import expand_query_with_ollama
-from rag10kq.utils import accounting_terms_file_to_llm_digest
+from retrieval.accounting_terms import accounting_terms_file_to_llm_digest
+from retrieval.query_expansion import expand_query_with_ollama
 
 from agents.contracts import (
     AnalysisTask,

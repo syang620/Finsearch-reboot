@@ -39,7 +39,7 @@ from typing import Any, Dict, Iterable, List, Mapping, MutableMapping, Sequence
 
 from qdrant_client import models
 
-from rag10kq.qdrant_ingester import (
+from ingestion.qdrant_ingester import (
     count_points,
     docs_to_points,
     ensure_collection,
@@ -121,8 +121,8 @@ def _parse_args(argv: Iterable[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument(
         "--collection-name",
-        default="sec_docs",
-        help="Qdrant collection name to ingest into (default: sec_docs).",
+        default="sec_docs_hybrid",
+        help="Qdrant collection name to ingest into (default: sec_docs_hybrid).",
     )
     parser.add_argument(
         "--recreate-collection",

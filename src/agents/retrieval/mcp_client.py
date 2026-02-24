@@ -23,11 +23,14 @@ class SecRetrievalMCPClient:
 
     async def __aenter__(self):
         if self.server_args is None:
-            # If cwd is repo root, use src/tools/server.py.
-            # If cwd is notebooks/, use ../src/tools/server.py.
-            p1 = Path("src/tools/server.py")
-            p2 = Path("../src/tools/server.py")
-            server_path = p1 if p1.exists() else p2
+            # Prefer new MCP backend path; fallback to compatibility shim.
+            candidates = [
+                Path("src/mcp_server/server.py"),
+                Path("../src/mcp_server/server.py"),
+                Path("src/tools/server.py"),
+                Path("../src/tools/server.py"),
+            ]
+            server_path = next((p for p in candidates if p.exists()), candidates[0])
             self.server_args = [str(server_path)]
 
         server_params = StdioServerParameters(
@@ -116,4 +119,3 @@ class SecRetrievalMCPClient:
                 ),
                 "args": args,
             }
-

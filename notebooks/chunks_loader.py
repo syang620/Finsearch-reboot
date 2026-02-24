@@ -1,7 +1,7 @@
 """
 chunks_loader.py
 
-Helpers for loading text and table chunks produced by rag10kq.sec_chunker / chunk_splitter.py.
+Helpers for loading text and table chunks produced by ingestion.sec_chunker / chunk_splitter.py.
 
 Typical usage in a notebook:
 
@@ -152,7 +152,7 @@ def load_filing_chunks(
     """
     Load text + table chunks for a single filing, given a file prefix.
 
-    The prefix should match how rag10kq.sec_chunker saves files, e.g.:
+    The prefix should match how ingestion.sec_chunker saves files, e.g.:
 
         prefix = "AAPL_10-K_2025"
 

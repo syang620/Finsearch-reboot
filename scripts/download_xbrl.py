@@ -10,9 +10,18 @@ import requests
 from typing import Optional, Dict, Any, List
 from datetime import datetime
 
-API_KEY = "b002a6feff8a952beb85391bf76e267ac605832b"
 QUERY_API_URL = "https://api.sec-api.io"
 XBRL_API_URL = "https://api.sec-api.io/xbrl-to-json"
+
+
+def _require_api_key() -> str:
+    api_key = os.getenv("SEC_API_KEY", "").strip()
+    if not api_key:
+        raise RuntimeError(
+            "Missing SEC_API_KEY environment variable. "
+            "Set SEC_API_KEY before running scripts/download_xbrl.py."
+        )
+    return api_key
 
 
 def search_filings(ticker: str, form_type: str, year: int, quarter: Optional[int] = None) -> List[Dict[str, Any]]:
@@ -47,7 +56,8 @@ def search_filings(ticker: str, form_type: str, year: int, quarter: Optional[int
     }
 
     # Add API key as query parameter
-    url = f"{QUERY_API_URL}?token={API_KEY}"
+    api_key = _require_api_key()
+    url = f"{QUERY_API_URL}?token={api_key}"
 
     print(f"Searching for {ticker} {form_type} filings in {year}...")
     response = requests.post(url, json=payload, headers=headers)
@@ -83,7 +93,8 @@ def download_xbrl(accession_no: str, output_path: str) -> Dict[str, Any]:
     Returns:
         XBRL data as dictionary
     """
-    url = f"{XBRL_API_URL}?accession-no={accession_no}&token={API_KEY}"
+    api_key = _require_api_key()
+    url = f"{XBRL_API_URL}?accession-no={accession_no}&token={api_key}"
 
     print(f"  Downloading XBRL for accession {accession_no}...")
     response = requests.get(url)
@@ -167,14 +178,18 @@ def main():
     if args.form == "10-K" and args.quarter:
         parser.error("--quarter should not be specified for 10-K filings")
 
-    # Download filing
-    output_path = download_filing(
-        ticker=args.ticker,
-        form_type=args.form,
-        year=args.year,
-        quarter=args.quarter,
-        output_dir=args.output_dir
-    )
+    try:
+        # Download filing
+        output_path = download_filing(
+            ticker=args.ticker,
+            form_type=args.form,
+            year=args.year,
+            quarter=args.quarter,
+            output_dir=args.output_dir
+        )
+    except RuntimeError as exc:
+        print(f"\n❌ {exc}")
+        return 1
 
     if output_path:
         print(f"\n✅ Successfully downloaded XBRL data to: {output_path}")

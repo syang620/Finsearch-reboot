@@ -24,7 +24,7 @@ from langchain_core.messages import HumanMessage, ToolMessage
 from langchain_mcp_adapters.client import MultiServerMCPClient
 from langgraph.prebuilt import create_react_agent
 
-from rag10kq.run_analysis import load_table_data
+from .table_loader import load_table_data
 
 from agents.contracts import (
     AnalystPacket,
@@ -78,9 +78,19 @@ class AnalystRunResult(BaseModel):
 
 def _default_financial_tool_script() -> str:
     # Prefer src-relative path from this module, fallback to cwd patterns.
-    p_from_module = Path(__file__).resolve().parents[2] / "tools" / "financial_evaluator_mcp.py"
+    p_from_module = (
+        Path(__file__).resolve().parents[2] / "mcp_server" / "tools" / "financial_evaluator.py"
+    )
     if p_from_module.exists():
         return str(p_from_module)
+
+    p_shim = Path(__file__).resolve().parents[2] / "tools" / "financial_evaluator_mcp.py"
+    if p_shim.exists():
+        return str(p_shim)
+
+    p0 = Path("src/mcp_server/tools/financial_evaluator.py")
+    if p0.exists():
+        return str(p0)
 
     p1 = Path("src/tools/financial_evaluator_mcp.py")
     if p1.exists():
@@ -281,7 +291,7 @@ def build_packet_from_retrieval_output(
     *,
     user_query: str,
     retrieval_output: Any,
-    tables_dir: str = "../data/chunked",
+    tables_dir: str = "data/chunked",
     plan_id: str = "demo-plan",
     intent: PlannerIntent = PlannerIntent.FILING_CALC,
     metric: str = "financial metric",
@@ -325,10 +335,29 @@ def build_packet_from_retrieval_output(
         table_markdown = _table_dict_to_markdown(table_dict)
 
         if table_dict is None:
+            doc_id = payload.get("doc_id")
+            prefix = payload.get("prefix")
+            table_index = payload.get("table_index")
+            if prefix is None and isinstance(doc_id, str) and "::" in doc_id:
+                prefix = doc_id.split("::", 1)[0]
+            if table_index is None and isinstance(doc_id, str):
+                m = re.search(r"::table::(\d+)$", doc_id)
+                if m:
+                    table_index = int(m.group(1))
+            attempted_file = (
+                str((Path(tables_dir) / f"{prefix}.tables.jsonl").resolve())
+                if prefix is not None
+                else None
+            )
             open_issues.append(
                 OpenIssue(
                     code="TABLE_HYDRATION_FAILED",
-                    message=f"Could not load table_dict for doc_id={payload.get('doc_id')}.",
+                    message=(
+                        "Could not load table_dict for "
+                        f"doc_id={doc_id}, "
+                        f"table_index={table_index}, "
+                        f"attempted_file={attempted_file}."
+                    ),
                     severity="warning",
                 )
             )
@@ -557,4 +586,3 @@ class AnalystAgent:
             ),
             error=None,
         )
-
