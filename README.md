@@ -65,6 +65,34 @@ PYTHONPATH=src python scripts/ingestion_cli.py run-all --help
 
 See `scripts/README.md` for ingestion details.
 
+## Retrieval Evaluation (v0)
+
+Run retrieval-only evaluation (deterministic metrics + optional RAGAS context metrics):
+
+```bash
+PYTHONPATH=src python scripts/evals/eval_retrieval_v0.py \
+  --eval-mode table \
+  --eval-path data/evals/retrieval/table/table_eval_v1.jsonl \
+  --top-k 10 \
+  --k-values 1,3,5,10 \
+  --out-dir artifacts/evals/retrieval/v0
+```
+
+Detailed guide: `docs/EVALUATION_RETRIEVAL.md`
+
+## Agent Evaluation (v0)
+
+Run end-to-end multi-agent evaluation (planner -> retrieval -> analyst):
+
+```bash
+PYTHONPATH=src python scripts/evals/eval_agents_v0.py \
+  --eval-path data/evals/agents/v0/agent_eval_v0.jsonl \
+  --out-dir artifacts/evals/agents/v0 \
+  --analyst-model qwen3:14b
+```
+
+Detailed guide: `docs/EVALUATION_AGENTS.md`
+
 ## Repository Map
 
 - `src/agents` - planner/retrieval/analyst/orchestrator

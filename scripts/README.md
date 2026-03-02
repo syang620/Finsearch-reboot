@@ -1,6 +1,6 @@
 # Scripts
 
-This directory contains operator/developer scripts for data ingestion and prep.
+This directory contains operator/developer scripts for ingestion and evaluation.
 
 ## Scope
 - These scripts are not part of the agent serving runtime.
@@ -34,3 +34,8 @@ PYTHONPATH=src python scripts/ingestion_cli.py run-all --help
 - Default Qdrant collection for ingestion is `sec_docs_hybrid`.
 - Use environment variables for secrets (for example `SEC_API_KEY`).
 - Runtime usage audit and rationale are captured in `artifacts/scripts_runtime_usage_audit.md`.
+
+## Evaluation Scripts
+- `scripts/evals/eval_retrieval_v0.py`: retrieval-only evaluation CLI (deterministic + optional RAGAS metrics).
+- `scripts/evals/eval_agents_v0.py`: end-to-end planner/retrieval/analyst evaluation CLI.
+- Backward-compatible wrapper: `scripts/eval_retrieval_v0.py`.
