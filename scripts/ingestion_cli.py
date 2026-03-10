@@ -240,7 +240,7 @@ def _build_parser() -> argparse.ArgumentParser:
 
     run_all.add_argument("--html-root", default="data/html_filings")
     run_all.add_argument("--chunks-dir", default="data/chunked")
-    run_all.add_argument("--table-summaries-dir", default="data/chunked/table_summaries")
+    run_all.add_argument("--table-summaries-dir", default="data/table_summaries")
     run_all.add_argument("--embeddings-root", default="data/embedding")
     run_all.add_argument("--python", default=sys.executable)
 

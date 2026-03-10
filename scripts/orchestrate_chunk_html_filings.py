@@ -92,8 +92,8 @@ def _parse_args(argv: Iterable[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--split-max-tokens",
         type=int,
-        default=1200,
-        help="Maximum tokens per chunk when running the splitter (default: 1200).",
+        default=800,
+        help="Maximum tokens per chunk when running the splitter (default: 800).",
     )
     parser.add_argument(
         "--split-overlap-paragraphs",
@@ -108,6 +108,24 @@ def _parse_args(argv: Iterable[str] | None = None) -> argparse.Namespace:
         help=(
             "Model name passed to tiktoken when running the splitter "
             "(default: text-embedding-3-large)."
+        ),
+    )
+    parser.add_argument(
+        "--split-filter-levels",
+        nargs="+",
+        default=["subsection"],
+        help=(
+            "Chunk levels to keep before splitting (default: subsection). "
+            "This makes the ingestion pipeline use subsection-only parent-child chunks."
+        ),
+    )
+    parser.add_argument(
+        "--split-parent-expand",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help=(
+            "Prepend parent item text onto subsection chunks before splitting "
+            "(default: enabled)."
         ),
     )
     return parser.parse_args(argv)
@@ -205,6 +223,8 @@ def _run_splitter(
     max_tokens: int,
     overlap_paragraphs: int,
     encoding_model: str,
+    filter_levels: Sequence[str],
+    parent_expand: bool,
 ) -> None:
     if not text_path.is_file():
         print(f"    Splitter input not found (skipping): {text_path}")
@@ -228,8 +248,15 @@ def _run_splitter(
         "--encoding-model",
         encoding_model,
     ]
+    if filter_levels:
+        cmd.extend(["--filter-levels", *[str(level) for level in filter_levels]])
+    cmd.append("--parent-expand" if parent_expand else "--no-parent-expand")
     print(f"    Running splitter: {' '.join(cmd)}")
     subprocess.run(cmd, check=True)
+
+
+def _filing_out_dir(out_root: Path, ticker: str, form: str) -> Path:
+    return out_root / ticker.upper() / form
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -264,12 +291,13 @@ def main(argv: Sequence[str] | None = None) -> int:
                         ticker=ticker,
                         form_type="10-K",
                         year=year,
-                        out_dir=out_dir,
+                        out_dir=_filing_out_dir(out_dir, ticker, "10-K"),
                     )
                     if args.run_splitter:
-                        prefix = f"{ticker}_10-K_{year}"
-                        text_path = out_dir / f"{prefix}.text.jsonl"
-                        split_path = out_dir / f"{prefix}.text.split.jsonl"
+                        prefix = f"10-K_{year}"
+                        filing_out_dir = _filing_out_dir(out_dir, ticker, "10-K")
+                        text_path = filing_out_dir / f"{prefix}.text.jsonl"
+                        split_path = filing_out_dir / f"{prefix}.text.split.jsonl"
                         _run_splitter(
                             python_exe=args.python,
                             text_path=text_path,
@@ -277,6 +305,8 @@ def main(argv: Sequence[str] | None = None) -> int:
                             max_tokens=args.split_max_tokens,
                             overlap_paragraphs=args.split_overlap_paragraphs,
                             encoding_model=args.split_encoding_model,
+                            filter_levels=args.split_filter_levels,
+                            parent_expand=args.split_parent_expand,
                         )
 
             elif form_type_norm.startswith("10-Q"):
@@ -291,13 +321,14 @@ def main(argv: Sequence[str] | None = None) -> int:
                         ticker=ticker,
                         form_type="10-Q",
                         year=year,
-                        out_dir=out_dir,
+                        out_dir=_filing_out_dir(out_dir, ticker, "10-Q"),
                         quarter=q_label,
                     )
                     if args.run_splitter:
-                        prefix = f"{ticker}_10-Q_{year}{q_label}"
-                        text_path = out_dir / f"{prefix}.text.jsonl"
-                        split_path = out_dir / f"{prefix}.text.split.jsonl"
+                        prefix = f"10-Q_{year}{q_label}"
+                        filing_out_dir = _filing_out_dir(out_dir, ticker, "10-Q")
+                        text_path = filing_out_dir / f"{prefix}.text.jsonl"
+                        split_path = filing_out_dir / f"{prefix}.text.split.jsonl"
                         _run_splitter(
                             python_exe=args.python,
                             text_path=text_path,
@@ -305,6 +336,8 @@ def main(argv: Sequence[str] | None = None) -> int:
                             max_tokens=args.split_max_tokens,
                             overlap_paragraphs=args.split_overlap_paragraphs,
                             encoding_model=args.split_encoding_model,
+                            filter_levels=args.split_filter_levels,
+                            parent_expand=args.split_parent_expand,
                         )
 
             else:

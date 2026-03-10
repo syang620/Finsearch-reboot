@@ -12,7 +12,7 @@ scripts/orchestrate_table_summaries.py) and parameterizes:
 
 It expects embeddings to be laid out under an embeddings root directory as:
 
-  data/embedding/{PREFIX}/
+  data/embedding/{TICKER}/{FORM}/
     {PREFIX}.text.embedded.jsonl
     {PREFIX}.tables.embedded.jsonl
     {PREFIX}.tables.rows.embedded.jsonl
@@ -35,10 +35,11 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Mapping, MutableMapping, Sequence
+from typing import Any, Dict, Iterable, List, Sequence
 
 from qdrant_client import models
 
+from ingestion.chunk_paths import parse_filing_prefix
 from ingestion.qdrant_ingester import (
     count_points,
     docs_to_points,
@@ -125,6 +126,14 @@ def _parse_args(argv: Iterable[str] | None = None) -> argparse.Namespace:
         help="Qdrant collection name to ingest into (default: sec_docs_hybrid).",
     )
     parser.add_argument(
+        "--dense-bm25-only",
+        action="store_true",
+        help=(
+            "Ingest only the uploaded dense embeddings plus Qdrant BM25 sparse vectors. "
+            "Skips BGE-M3 model loading and BGE dense/sparse vectors."
+        ),
+    )
+    parser.add_argument(
         "--recreate-collection",
         action="store_true",
         help=(
@@ -170,58 +179,46 @@ def load_jsonl(path: Path) -> List[Dict]:
     return docs
 
 
-def write_jsonl(path: Path, docs: Iterable[Dict[str, Any]]) -> None:
-    """Write docs as JSON lines to a file."""
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("w", encoding="utf-8") as f:
-        for d in docs:
-            f.write(json.dumps(d, ensure_ascii=False) + "\n")
-
-
-def combine_for_prefix(
+def load_prefix_docs(
+    embeddings_root: Path,
     prefix: str,
-    embeddings_dir: Path,
-    output_dir: Path | None = None,
-) -> Path:
-    """
-    Combine embedded text, table, and table_row docs for a single filing prefix
-    into one JSONL file.
+    file_types: Sequence[str],
+) -> List[Dict[str, Any]]:
+    """Load and combine selected embedded JSONL files for one prefix."""
+    if not embeddings_root.is_dir():
+        raise RuntimeError(f"Prefix directory not found: {embeddings_root}")
 
-    Assumes filenames like:
-      {prefix}.text.embedded.jsonl
-      {prefix}.tables.embedded.jsonl
-      {prefix}.tables.rows.embedded.jsonl   # adjust if your name is different
+    files = {
+        "text": f"{prefix}.text.embedded.jsonl",
+        "tables": f"{prefix}.tables.embedded.jsonl",
+        "rows": f"{prefix}.tables.rows.embedded.jsonl",
+    }
 
-    Returns the path to the combined output file.
-    """
-    if output_dir is None:
-        output_dir = embeddings_dir
+    docs: List[Dict[str, Any]] = []
+    seen: set[str] = set()
 
-    patterns = [
-        "{prefix}.text.embedded.jsonl",
-        "{prefix}.tables.embedded.jsonl",
-        "{prefix}.tables.rows.embedded.jsonl",  # <- adjust if needed
-    ]
-
-    all_docs: List[Dict[str, Any]] = []
-    for pattern in patterns:
-        path = embeddings_dir / pattern.format(prefix=prefix)
+    for file_type in file_types:
+        if file_type not in files:
+            continue
+        path = embeddings_root / files[file_type]
         if not path.exists():
             print(f"[WARN] File not found for prefix={prefix}: {path}")
             continue
-        docs = load_jsonl(path)
-        print(f"[INFO] Loaded {len(docs)} docs from {path.name}")
-        all_docs.extend(docs)
+        batch = load_jsonl(path)
+        print(f"[INFO] Loaded {len(batch)} docs from {path.name}")
+        for d in batch:
+            doc_id = d.get("id")
+            if isinstance(doc_id, str) and doc_id in seen:
+                continue
+            if isinstance(doc_id, str):
+                seen.add(doc_id)
+            docs.append(d)
 
-    if not all_docs:
-        raise RuntimeError(f"No docs found for prefix={prefix} in {embeddings_dir}")
+    if not docs:
+        raise RuntimeError(f"No docs found for prefix={prefix} in {embeddings_root}")
 
-    all_docs.sort(key=lambda d: d.get("id", ""))
-
-    out_path = output_dir / f"{prefix}.all.embedded.jsonl"
-    write_jsonl(out_path, all_docs)
-    print(f"[INFO] Wrote {len(all_docs)} combined docs to {out_path}")
-    return out_path
+    docs.sort(key=lambda d: d.get("id", ""))
+    return docs
 
 def _build_prefix(ticker: str, form: str, year: int, quarter: str | None) -> str:
     ticker = ticker.upper()
@@ -235,16 +232,12 @@ def _build_prefix(ticker: str, form: str, year: int, quarter: str | None) -> str
     raise ValueError(f"Unsupported form: {form}")
 
 
-def _embedding_paths_for_prefix(
-    embeddings_root: Path,
-    prefix: str,
-) -> Mapping[str, Path]:
-    base_dir = embeddings_root / prefix
-    return {
-        "text": base_dir / f"{prefix}.text.embedded.jsonl",
-        "tables": base_dir / f"{prefix}.tables.embedded.jsonl",
-        "rows": base_dir / f"{prefix}.tables.rows.embedded.jsonl",
-    }
+def _embedding_dir(embeddings_root: Path, prefix: str) -> Path:
+    parsed = parse_filing_prefix(prefix)
+    if parsed is None:
+        return embeddings_root / prefix
+    ticker, form, _rest = parsed
+    return embeddings_root / ticker / form
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -252,25 +245,27 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     prefix = _build_prefix(args.ticker, args.form, args.year, args.quarter)
     embeddings_root = Path(args.embeddings_root)
-    base_dir = embeddings_root / prefix
+    base_dir = _embedding_dir(embeddings_root, prefix)
 
-    # 1. Combine text, tables, and table-row embeddings into a single JSONL
+    # 1. Load selected embedded files for this prefix
     try:
-        combined_path = combine_for_prefix(prefix, base_dir)
+        docs = load_prefix_docs(
+            embeddings_root=base_dir,
+            prefix=prefix,
+            file_types=[ft for ft in args.file_types if ft in ("text", "tables", "rows")],
+        )
     except RuntimeError as exc:
         print(f"[ERROR] {exc}")
         return 1
 
-    docs = load_jsonl(combined_path)
     if not docs:
-        print(f"[ERROR] No documents loaded from combined file {combined_path}")
+        print("[ERROR] No documents loaded for requested prefix and file types.")
         return 1
 
     dim = len(docs[0].get("embedding", []))
     if dim == 0:
         print(
-            f"[ERROR] First document in combined file {combined_path} "
-            "has an empty embedding.",
+            "[ERROR] First document has an empty embedding.",
         )
         return 1
 
@@ -291,17 +286,25 @@ def main(argv: Sequence[str] | None = None) -> int:
     )
 
     collection_name = args.collection_name
-    vectors_config = {
-        "dense": models.VectorParams(size=dim, distance=models.Distance.COSINE),
-        "bge_m3_dense": models.VectorParams(
-            size=args.bge_m3_dense_dim,
-            distance=models.Distance.COSINE,
-        ),
-    }
-    sparse_vectors_config = {
-        "bm25": models.SparseVectorParams(modifier=models.Modifier.IDF),
-        "bge_m3_sparse": models.SparseVectorParams(),
-    }
+    if args.dense_bm25_only:
+        vectors_config = {
+            "dense": models.VectorParams(size=dim, distance=models.Distance.COSINE),
+        }
+        sparse_vectors_config = {
+            "bm25": models.SparseVectorParams(modifier=models.Modifier.IDF),
+        }
+    else:
+        vectors_config = {
+            "dense": models.VectorParams(size=dim, distance=models.Distance.COSINE),
+            "bge_m3_dense": models.VectorParams(
+                size=args.bge_m3_dense_dim,
+                distance=models.Distance.COSINE,
+            ),
+        }
+        sparse_vectors_config = {
+            "bm25": models.SparseVectorParams(modifier=models.Modifier.IDF),
+            "bge_m3_sparse": models.SparseVectorParams(),
+        }
 
     if client.collection_exists(collection_name=collection_name):
         if args.recreate_collection:
@@ -323,11 +326,38 @@ def main(argv: Sequence[str] | None = None) -> int:
                     "or ingest into a new --collection-name.",
                 )
                 return 1
+            expected_dense_names = set(vectors_config.keys())
+            existing_dense_names = set(existing_vectors.keys())
+            if existing_dense_names != expected_dense_names:
+                print(
+                    f"[ERROR] Collection '{collection_name}' dense vector names "
+                    f"{sorted(existing_dense_names)} do not match requested schema "
+                    f"{sorted(expected_dense_names)}. Re-run with --recreate-collection, "
+                    "or ingest into a new --collection-name.",
+                )
+                return 1
+            existing_sparse = getattr(info.config.params, "sparse_vectors", None) or {}
+            expected_sparse_names = set(sparse_vectors_config.keys())
+            existing_sparse_names = set(existing_sparse.keys())
+            if existing_sparse_names != expected_sparse_names:
+                print(
+                    f"[ERROR] Collection '{collection_name}' sparse vector names "
+                    f"{sorted(existing_sparse_names)} do not match requested schema "
+                    f"{sorted(expected_sparse_names)}. Re-run with --recreate-collection, "
+                    "or ingest into a new --collection-name.",
+                )
+                return 1
     else:
-        print(
-            f"[INFO] Creating collection '{collection_name}' with dense+BM25+BGE-M3 vectors "
-            f"(dense_dim={dim}, bge_m3_dense_dim={args.bge_m3_dense_dim}).",
-        )
+        if args.dense_bm25_only:
+            print(
+                f"[INFO] Creating collection '{collection_name}' with dense+BM25 vectors "
+                f"(dense_dim={dim}).",
+            )
+        else:
+            print(
+                f"[INFO] Creating collection '{collection_name}' with dense+BM25+BGE-M3 vectors "
+                f"(dense_dim={dim}, bge_m3_dense_dim={args.bge_m3_dense_dim}).",
+            )
         ensure_collection(
             client=client,
             collection_name=collection_name,
@@ -335,22 +365,26 @@ def main(argv: Sequence[str] | None = None) -> int:
             sparse_vectors_config=sparse_vectors_config,
         )
 
-    # 2b. Initialize BGE-M3 encoder once (required by docs_to_points defaults).
-    try:
-        from FlagEmbedding import BGEM3FlagModel
-    except Exception as exc:
-        print(
-            "[ERROR] Missing dependency `FlagEmbedding`. Install it (pip install FlagEmbedding) "
-            "or adjust ingestion to pass precomputed BGE-M3 vectors per-doc.",
-        )
-        raise
+    # 2b. Initialize BGE-M3 encoder only when requested by the collection schema.
+    bge_m3_model = None
+    if args.dense_bm25_only:
+        print("[INFO] Dense+BM25 mode enabled; skipping BGE-M3 model initialization.")
+    else:
+        try:
+            from FlagEmbedding import BGEM3FlagModel
+        except Exception as exc:
+            print(
+                "[ERROR] Missing dependency `FlagEmbedding`. Install it (pip install FlagEmbedding) "
+                "or adjust ingestion to pass precomputed BGE-M3 vectors per-doc.",
+            )
+            raise
 
-    bge_m3_model = BGEM3FlagModel(
-        args.bge_m3_model_name,
-        use_fp16=True,
-        cache_dir=args.bge_m3_cache_dir,
-        local_files_only=not args.bge_m3_allow_download,
-    )
+        bge_m3_model = BGEM3FlagModel(
+            args.bge_m3_model_name,
+            use_fp16=True,
+            cache_dir=args.bge_m3_cache_dir,
+            local_files_only=not args.bge_m3_allow_download,
+        )
 
     # 3. Upsert combined docs
     print(
@@ -361,7 +395,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         batch = docs[start : start + args.batch_size]
         points = docs_to_points(
             batch,
+            include_bm25=True,
             bm25_avg_len=bm25_avg_len,
+            bge_m3_encode=not args.dense_bm25_only,
             bge_m3_model=bge_m3_model,
         )
         client.upsert(

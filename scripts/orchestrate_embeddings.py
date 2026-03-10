@@ -8,9 +8,9 @@ This script:
   - Builds text / table / row docs via ingestion.sec_embedder.
   - Calls an embedding endpoint (default: Ollama-style /api/embed with
     model=qwen3-embedding:8b) to add embeddings.
-  - Writes embedded JSONL files under a per-prefix directory in data/embedding:
+  - Writes embedded JSONL files under a nested directory in data/embedding:
 
-      data/embedding/{PREFIX}/
+      data/embedding/{TICKER}/{FORM}/
         {PREFIX}.text.embedded.jsonl
         {PREFIX}.tables.embedded.jsonl
         {PREFIX}.tables.rows.embedded.jsonl
@@ -34,8 +34,9 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
-from typing import Dict, Iterable, List, Sequence, Tuple
+from typing import Any, Dict, Iterable, List, Sequence, Tuple
 
+from ingestion.chunk_paths import parse_filing_prefix, resolve_chunk_file
 from ingestion.sec_embedder import (
     build_table_and_row_docs,
     build_text_docs,
@@ -87,10 +88,10 @@ def _parse_args(argv: Iterable[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument(
         "--table-summaries-dir",
-        default="data/chunked/table_summaries",
+        default="data/table_summaries",
         help=(
             "Directory containing table summary JSONL files "
-            "(default: data/chunked/table_summaries)."
+            "(default: data/table_summaries)."
         ),
     )
     parser.add_argument(
@@ -163,13 +164,21 @@ def _write_jsonl(path: Path, records: List[Dict]) -> None:
 
 
 def _find_text_chunk_path(chunks_dir: Path, prefix: str) -> Path | None:
-    split_path = chunks_dir / f"{prefix}.text.split.jsonl"
-    if split_path.is_file():
-        return split_path
-    plain_path = chunks_dir / f"{prefix}.text.jsonl"
-    if plain_path.is_file():
-        return plain_path
-    return None
+    split_name = f"{prefix}.text.split.jsonl"
+    path = resolve_chunk_file(chunks_dir, prefix, split_name)
+    if path is not None:
+        return path
+
+    plain_name = f"{prefix}.text.jsonl"
+    return resolve_chunk_file(chunks_dir, prefix, plain_name)
+
+
+def _embed_out_dir(base: Path, prefix: str) -> Path:
+    parsed = parse_filing_prefix(prefix)
+    if parsed is None:
+        return base / prefix
+    ticker, form, _rest = parsed
+    return base / ticker / form
 
 
 def _embed_for_prefix(
@@ -201,7 +210,7 @@ def _embed_for_prefix(
     if quarter_label:
         common_meta["quarter"] = quarter_label
 
-    out_dir = out_root / prefix
+    out_dir = _embed_out_dir(out_root, prefix)
 
     # --- Text chunks ---
     if "text" in file_types:
@@ -228,9 +237,12 @@ def _embed_for_prefix(
     tables_needed = "tables" in file_types
     rows_needed = "rows" in file_types
     if tables_needed or rows_needed:
-        ts_path = table_summaries_dir / f"{prefix}.tables.summaries.jsonl"
-        if not ts_path.is_file():
-            print(f"[WARN] No table summaries file found for {prefix} at {ts_path}")
+        ts_name = f"{prefix}.tables.summaries.jsonl"
+        ts_path = resolve_chunk_file(table_summaries_dir, prefix, ts_name)
+        if ts_path is None or not ts_path.is_file():
+            print(f"[WARN] No table summaries file found for {prefix} at {table_summaries_dir}")
+            return
+
         else:
             print(f"[INFO] Building table/row docs from {ts_path}")
             docs_dict = build_table_and_row_docs(
