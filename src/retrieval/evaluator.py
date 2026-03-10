@@ -33,15 +33,16 @@ Typical usage from a notebook (after setting PYTHONPATH=src):
 """
 
 import json
+import hashlib
+import os
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tuple
-from sentence_transformers import CrossEncoder
-
 import requests
 from qdrant_client import QdrantClient, models
+from ingestion.chunk_paths import resolve_chunk_file
 
 
 # ---------------------------------------------------------------------------
@@ -168,10 +169,48 @@ def embed_query_qwen3(
     api_url: str = "http://localhost:11434/api/embed",
     model: str = "qwen3-embedding:8b",
     timeout: int = 60,
+    cache_stats: Optional[Dict[str, Any]] = None,
 ) -> List[float]:
     """
     Embed a query string using qwen3-embedding:8b via an Ollama-style endpoint.
     """
+    cache_enabled = os.getenv("SEC_QUERY_EMBED_CACHE", "1").strip().lower() not in {
+        "0",
+        "false",
+        "no",
+        "off",
+    }
+    cache_dir = Path(
+        os.getenv(
+            "SEC_QUERY_EMBED_CACHE_DIR",
+            str((Path(__file__).resolve().parents[2] / ".cache" / "query_embeddings").resolve()),
+        )
+    )
+    cache_path = None
+    if cache_enabled:
+        cache_key = json.dumps(
+            {
+                "api_url": api_url,
+                "model": model,
+                "query": query,
+            },
+            sort_keys=True,
+            ensure_ascii=True,
+        )
+        cache_digest = hashlib.sha256(cache_key.encode("utf-8")).hexdigest()
+        cache_path = cache_dir / f"{cache_digest}.json"
+        if cache_path.exists():
+            try:
+                cached_payload = json.loads(cache_path.read_text(encoding="utf-8"))
+                cached_embedding = cached_payload.get("embedding")
+                if isinstance(cached_embedding, list) and cached_embedding:
+                    if cache_stats is not None:
+                        cache_stats["cache_hit"] = True
+                        cache_stats["cache_path"] = str(cache_path)
+                    return [float(x) for x in cached_embedding]
+            except Exception:
+                pass
+
     payload = {
         "model": model,
         "input": [query],
@@ -179,7 +218,34 @@ def embed_query_qwen3(
     resp = requests.post(api_url, json=payload, timeout=timeout)
     resp.raise_for_status()
     data = resp.json()
-    return data["embeddings"][0]
+    embedding = [float(x) for x in data["embeddings"][0]]
+
+    if cache_stats is not None:
+        cache_stats["cache_hit"] = False
+        if cache_path is not None:
+            cache_stats["cache_path"] = str(cache_path)
+
+    if cache_path is not None:
+        try:
+            cache_path.parent.mkdir(parents=True, exist_ok=True)
+            tmp_path = cache_path.with_suffix(".tmp")
+            tmp_path.write_text(
+                json.dumps(
+                    {
+                        "api_url": api_url,
+                        "model": model,
+                        "query": query,
+                        "embedding": embedding,
+                    },
+                    ensure_ascii=True,
+                ),
+                encoding="utf-8",
+            )
+            os.replace(tmp_path, cache_path)
+        except Exception:
+            pass
+
+    return embedding
 
 
 # ---------------------------------------------------------------------------
@@ -547,7 +613,13 @@ def score_and_select_tables(
     def _load_table_from_doc(doc_prefix: str, table_id: int) -> Optional[Dict[str, Any]]:
         if not doc_prefix or table_id is None:
             return None
-        path = Path(tables_dir) / f"{doc_prefix}.tables.jsonl"
+        path = resolve_chunk_file(
+            Path(tables_dir),
+            doc_prefix,
+            f"{doc_prefix}.tables.jsonl",
+        )
+        if path is None:
+            path = Path(tables_dir) / f"{doc_prefix}.tables.jsonl"
         if not path.exists():
             return None
         for idx, line in enumerate(path.open()):
@@ -799,6 +871,143 @@ def rerank_with_jina_v3(
         data = p.model_dump() if hasattr(p, "model_dump") else p.dict()
         data["score"] = float(score)
         rescored.append(models.ScoredPoint(**data))
+
+    rescored.sort(key=lambda x: float(x.score), reverse=True)
+    return rescored[:top_k]
+
+
+def rerank_with_jina_v3_api(
+    query: str,
+    candidates: List[models.ScoredPoint],
+    *,
+    api_key: str,
+    api_url: str = "https://api.jina.ai/v1/rerank",
+    model_name: str = "jina-reranker-v3",
+    top_k: int = 20,
+    max_passage_chars: int = 2000,
+    timeout: int = 60,
+) -> List[models.ScoredPoint]:
+    """
+    Re-rank candidates with the hosted Jina reranker API.
+
+    Replaces each ScoredPoint.score with the returned relevance score.
+    """
+    if not candidates:
+        return []
+
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {api_key}",
+    }
+    documents = [
+        format_passage_for_rerank(p, max_chars=max_passage_chars) for p in candidates
+    ]
+    api_model_name = model_name.split("/")[-1]
+    payload = {
+        "model": api_model_name,
+        "query": query,
+        "top_n": min(top_k, len(documents)),
+        "documents": documents,
+    }
+    response = requests.post(api_url, headers=headers, json=payload, timeout=timeout)
+    response.raise_for_status()
+    data = response.json()
+    results = data.get("results")
+    if not isinstance(results, list):
+        raise TypeError(f"Unexpected Jina API rerank output: {type(results)}")
+
+    rescored: List[models.ScoredPoint] = []
+    for item in results:
+        if not isinstance(item, dict):
+            continue
+        idx = item.get("index")
+        score = (
+            item.get("relevance_score")
+            if item.get("relevance_score") is not None
+            else item.get("score")
+        )
+        if idx is None or score is None:
+            continue
+        idx_int = int(idx)
+        if idx_int < 0 or idx_int >= len(candidates):
+            continue
+        point = candidates[idx_int]
+        point_data = point.model_dump() if hasattr(point, "model_dump") else point.dict()
+        point_data["score"] = float(score)
+        rescored.append(models.ScoredPoint(**point_data))
+
+    rescored.sort(key=lambda x: float(x.score), reverse=True)
+    return rescored[:top_k]
+
+
+def rerank_with_qwen3_reranker_api(
+    query: str,
+    candidates: List[models.ScoredPoint],
+    *,
+    api_key: str,
+    api_url: str,
+    model_name: str = "qwen3-rerank",
+    top_k: int = 20,
+    max_passage_chars: int = 2000,
+    timeout: int = 180,
+) -> List[models.ScoredPoint]:
+    """
+    Re-rank candidates with DashScope's text-rerank API for Qwen3 rerankers.
+
+    Replaces each ScoredPoint.score with the returned relevance score.
+    """
+    if not candidates:
+        return []
+
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {api_key}",
+    }
+    documents = [
+        format_passage_for_rerank(p, max_chars=max_passage_chars) for p in candidates
+    ]
+    normalized_model_name = str(model_name or "").strip()
+    lower_model_name = normalized_model_name.lower()
+    if ("qwen3-reranker" in lower_model_name) or lower_model_name.startswith("qwen/"):
+        normalized_model_name = "qwen3-rerank"
+    payload = {
+        "model": normalized_model_name,
+        "input": {
+            "query": query,
+            "documents": documents,
+        },
+        "parameters": {
+            "return_documents": True,
+            "top_n": min(top_k, len(documents)),
+        },
+    }
+    response = requests.post(api_url.rstrip("/"), headers=headers, json=payload, timeout=timeout)
+    response.raise_for_status()
+    data = response.json()
+    output = data.get("output") or {}
+    results = output.get("results")
+    if not isinstance(results, list):
+        raise TypeError(f"Unexpected Qwen API rerank output: {type(results)}")
+
+    rescored: List[models.ScoredPoint] = []
+    for item in results:
+        if not isinstance(item, dict):
+            continue
+        idx = item.get("index")
+        score = (
+            item.get("relevance_score")
+            if item.get("relevance_score") is not None
+            else item.get("score")
+        )
+        if idx is None or score is None:
+            continue
+        idx_int = int(idx)
+        if idx_int < 0 or idx_int >= len(candidates):
+            continue
+        point = candidates[idx_int]
+        point_data = point.model_dump() if hasattr(point, "model_dump") else point.dict()
+        point_data["score"] = float(score)
+        rescored.append(models.ScoredPoint(**point_data))
 
     rescored.sort(key=lambda x: float(x.score), reverse=True)
     return rescored[:top_k]
@@ -1063,10 +1272,15 @@ def get_qwen3_reranker_model(
         raise ImportError("get_qwen3_reranker_model requires `torch` and `transformers`.") from exc
 
     if device is None:
-        device = "cuda" if torch.cuda.is_available() else "cpu"
+        if torch.cuda.is_available():
+            device = "cuda"
+        elif getattr(torch.backends, "mps", None) is not None and torch.backends.mps.is_available():
+            device = "mps"
+        else:
+            device = "cpu"
 
     if torch_dtype is None:
-        torch_dtype = torch.float16 if device == "cuda" else torch.float32
+        torch_dtype = torch.float16 if device in {"cuda", "mps"} else torch.float32
 
     tokenizer = AutoTokenizer.from_pretrained(model_name, padding_side="left")
     model_kwargs: Dict[str, Any] = {"torch_dtype": torch_dtype}
@@ -1780,6 +1994,7 @@ __all__ = [
     "hybrid_search_sec_docs_rrf",
     "get_jina_reranker_v3_model",
     "rerank_with_jina_v3",
+    "rerank_with_jina_v3_api",
     "get_bge_reranker_large_model",
     "rerank_with_bge_reranker_large",
     "get_gte_multilingual_reranker_base",
@@ -1787,6 +2002,7 @@ __all__ = [
     "get_granite_reranker_english_r2_model",
     "rerank_with_granite_english_r2",
     "get_qwen3_reranker_model",
+    "rerank_with_qwen3_reranker_api",
     "rerank_with_qwen3_reranker",
     "build_sec_filter",
     "dense_search_sec_docs",

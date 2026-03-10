@@ -17,8 +17,10 @@ from evals.retrieval_metrics import hit_at_k, mrr_at_k, ndcg_at_k, recall_at_k
 from mcp_server.tools.sec_retrieval import sec_retrieve_tables
 from qdrant_client import QdrantClient, models
 from retrieval.pipeline import FinanceRAGPipeline, PipelineConfig, RerankConfig, RetrievalConfig
+from retrieval.evaluator import dense_search_sec_docs, embed_query_qwen3
 
 _TABLE_INDEX_RE = re.compile(r"::table::(\d+)")
+_TEXT_DOC_ID_RE = re.compile(r"(?P<base>.+?::text::.+?)(?::+split::\d+)?$")
 
 
 def _parse_table_index_from_doc_id(doc_id: str) -> Optional[int]:
@@ -102,11 +104,42 @@ def _build_text_pipeline(*, max_k: int) -> FinanceRAGPipeline:
     return FinanceRAGPipeline(client, config)
 
 
+def _build_text_dense_client() -> QdrantClient:
+    host = os.getenv("QDRANT_HOST", "localhost")
+    port = int(os.getenv("QDRANT_PORT", "6333"))
+    return QdrantClient(host=host, port=port)
+
+
 def _extract_payload_from_scored_point(point: models.ScoredPoint) -> Dict[str, Any]:
     payload = getattr(point, "payload", None)
     if isinstance(payload, dict):
         return payload
     return {}
+
+
+def _normalize_text_doc_id(doc_id: str) -> str:
+    doc_id = str(doc_id or "").strip()
+    if not doc_id:
+        return ""
+
+    # Strategy-specific variants are expected in benchmark experiments:
+    #   <prefix>::<strategy>::text::<rest>
+    # Normalize to the canonical:
+    #   <prefix>::text::<rest>
+    if "::text::" in doc_id:
+        left, right = doc_id.split("::text::", 1)
+        if "::" in left:
+            doc_id = f"{left.split('::', 1)[0]}::text::{right}"
+
+    m = _TEXT_DOC_ID_RE.match(doc_id)
+    if m:
+        return m.group("base")
+
+    split_token = "::split::"
+    if split_token in doc_id:
+        return doc_id.split(split_token, 1)[0]
+
+    return doc_id
 
 
 def _write_jsonl(path: Path, rows: Sequence[Dict[str, Any]]) -> None:
@@ -128,12 +161,17 @@ def run_retrieval_eval(
     default_doc_types: Optional[List[str]] = None,
     min_total_score: int = 0,
     enable_ragas: bool = True,
+    text_dense_only: bool = False,
+    text_embed_api_url: str = "http://localhost:11434/api/embed",
+    text_embed_model: str = "qwen3-embedding:8b",
     ragas_config: Optional[RagasRetrievalConfig] = None,
+    allow_empty_labels: bool = False,
     fail_fast: bool = False,
 ) -> Tuple[RetrievalEvalSummary, List[RetrievalEvalRow], List[Dict[str, Any]]]:
     examples = load_retrieval_eval_examples(eval_path)
     out_path = Path(out_dir)
     out_path.mkdir(parents=True, exist_ok=True)
+    collection = os.getenv("QDRANT_COLLECTION_NAME", "sec_docs_hybrid")
 
     eval_mode = str(eval_mode or "auto").strip().lower()
     if eval_mode not in {"auto", "table", "text"}:
@@ -153,13 +191,15 @@ def run_retrieval_eval(
 
     total_start = time.perf_counter()
     text_pipeline: Optional[FinanceRAGPipeline] = None
+    text_client: Optional[QdrantClient] = None
 
     for ex in examples:
         ex_id = ex.example_id
 
-        ticker = ex.ticker or default_ticker
-        fiscal_year = ex.fiscal_year if ex.fiscal_year is not None else int(default_fiscal_year)
-        form_type = ex.form_type or default_form_type
+        # Prefer explicit overrides; then fallback to row-level fields.
+        ticker = ex.infer_ticker(default_ticker=default_ticker)
+        fiscal_year = ex.infer_fiscal_year(default_fiscal_year=default_fiscal_year)
+        form_type = ex.infer_form_type(default_form_type=default_form_type)
 
         if eval_mode == "table":
             mode = "table"
@@ -284,22 +324,21 @@ def run_retrieval_eval(
             }
         else:
             if not relevant_text_doc_ids:
-                row.retrieval_ok = False
+                if not allow_empty_labels:
+                    row.retrieval_ok = False
+                    row.retrieval_error = "NO_GOLD_TEXT_LABELS"
+                    rows.append(row)
+                    errors.append(
+                        {
+                            "id": ex_id,
+                            "stage": "dataset",
+                            "error": "No relevant_doc_ids labels found; skipping deterministic scoring.",
+                        }
+                    )
+                    if fail_fast:
+                        break
+                    continue
                 row.retrieval_error = "NO_GOLD_TEXT_LABELS"
-                rows.append(row)
-                errors.append(
-                    {
-                        "id": ex_id,
-                        "stage": "dataset",
-                        "error": "No relevant_doc_ids labels found; skipping deterministic scoring.",
-                    }
-                )
-                if fail_fast:
-                    break
-                continue
-
-            if text_pipeline is None:
-                text_pipeline = _build_text_pipeline(max_k=max_k)
 
             t0 = time.perf_counter()
             rerank_query = ""
@@ -307,13 +346,36 @@ def run_retrieval_eval(
             reranked: List[models.ScoredPoint] = []
             retrieval_error: Optional[str] = None
             try:
-                rerank_query, fused, reranked = text_pipeline.run_hybrid_search_pipeline(
-                    queries=[ex.query],
-                    ticker=ticker,
-                    fiscal_year=fiscal_year,
-                    form_type=form_type,
-                    doc_types=per_row_doc_types,
-                )
+                if text_dense_only:
+                    if text_client is None:
+                        text_client = _build_text_dense_client()
+                    reranked = dense_search_sec_docs(
+                        ex.query,
+                        client=text_client,
+                        embed_fn=lambda query: embed_query_qwen3(
+                            query,
+                            api_url=text_embed_api_url,
+                            model=text_embed_model,
+                        ),
+                        collection_name=collection,
+                        using_dense="dense",
+                        top_k=max_k,
+                        doc_types=per_row_doc_types,
+                        ticker=ticker,
+                        fiscal_year=fiscal_year,
+                        form_type=form_type,
+                    )
+                    rerank_query = str(ex.query)
+                else:
+                    if text_pipeline is None:
+                        text_pipeline = _build_text_pipeline(max_k=max_k)
+                    rerank_query, fused, reranked = text_pipeline.run_hybrid_search_pipeline(
+                        queries=[ex.query],
+                        ticker=ticker,
+                        fiscal_year=fiscal_year,
+                        form_type=form_type,
+                        doc_types=per_row_doc_types,
+                    )
             except Exception as exc:
                 retrieval_error = str(exc)
             elapsed_ms = int((time.perf_counter() - t0) * 1000)
@@ -323,7 +385,7 @@ def run_retrieval_eval(
 
             for point in reranked[:max_k]:
                 payload = _extract_payload_from_scored_point(point)
-                doc_id = str(payload.get("doc_id") or "")
+                doc_id = _normalize_text_doc_id(str(payload.get("doc_id") or ""))
                 retrieved_doc_ids.append(doc_id)
                 context = _extract_context(payload)
                 if context:
@@ -332,15 +394,15 @@ def run_retrieval_eval(
             row.retrieved_doc_ids = retrieved_doc_ids
             row.retrieved_table_indices = []
 
-            relevant_set = {str(x).strip() for x in relevant_text_doc_ids if str(x).strip()}
-            relevant_flags = [str(doc_id).strip() in relevant_set for doc_id in retrieved_doc_ids]
-
             metrics = {}
-            for k in ks:
-                metrics[f"hit@{k}"] = hit_at_k(relevant_flags, k)
-                metrics[f"recall@{k}"] = _recall_at_k_doc_ids(retrieved_doc_ids, relevant_text_doc_ids, k)
-                metrics[f"mrr@{k}"] = mrr_at_k(relevant_flags, k)
-                metrics[f"ndcg@{k}"] = ndcg_at_k(relevant_flags, k)
+            if relevant_text_doc_ids:
+                relevant_set = {str(x).strip() for x in relevant_text_doc_ids if str(x).strip()}
+                relevant_flags = [str(doc_id).strip() in relevant_set for doc_id in retrieved_doc_ids]
+                for k in ks:
+                    metrics[f"hit@{k}"] = hit_at_k(relevant_flags, k)
+                    metrics[f"recall@{k}"] = _recall_at_k_doc_ids(retrieved_doc_ids, relevant_text_doc_ids, k)
+                    metrics[f"mrr@{k}"] = mrr_at_k(relevant_flags, k)
+                    metrics[f"ndcg@{k}"] = ndcg_at_k(relevant_flags, k)
             row.metrics = metrics
 
             row.trace = {
@@ -348,7 +410,7 @@ def run_retrieval_eval(
                     "retrieve": elapsed_ms,
                 },
                 "counts": {
-                    "fused_candidates": len(fused),
+                    "fused_candidates": len(fused) if not text_dense_only else 0,
                     "reranked": len(reranked),
                     "scored": len(reranked[:max_k]),
                 },
@@ -415,6 +477,9 @@ def run_retrieval_eval(
             "default_doc_types_text": text_doc_types,
             "min_total_score": int(min_total_score),
             "enable_ragas": bool(enable_ragas),
+            "text_dense_only": bool(text_dense_only),
+            "text_embed_api_url": text_embed_api_url,
+            "text_embed_model": text_embed_model,
             "timing_ms": {"total": total_ms},
         },
     )

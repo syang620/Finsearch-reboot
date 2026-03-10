@@ -5,6 +5,7 @@ import re
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from ingestion.chunk_paths import resolve_chunk_file
 from retrieval.ollama_client import chat_with_ollama
 
 
@@ -19,7 +20,9 @@ def load_table_jsonl(
     If table_id is None, returns all tables as a list.
     If table_id is set, returns the matching table dict or None.
     """
-    path = Path(tables_dir) / f"{doc_prefix}.tables.jsonl"
+    path = resolve_chunk_file(tables_dir, doc_prefix, f"{doc_prefix}.tables.jsonl")
+    if path is None:
+        path = Path(tables_dir) / f"{doc_prefix}.tables.jsonl"
     tables: List[dict] = []
     with path.open(encoding="utf-8") as f:
         for idx, line in enumerate(f):

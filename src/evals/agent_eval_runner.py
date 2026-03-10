@@ -11,7 +11,7 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple
 from agents.analyst.agent import AnalystRunResult
 from agents.contracts import PlannerOutput, RetrieveTablesResponse
 from agents.orchestrator.agent_orchestrator import run_multi_agent_orchestration
-from agents.planner.agent import PlannerAgent
+from agents.planner import InteractivePlannerAgent
 from evals.agent_eval_contracts import (
     AgentDeterministicChecks,
     AgentEvalExample,
@@ -221,9 +221,9 @@ async def _run_examples_async(
     fail_fast: bool,
 ) -> Tuple[List[AgentEvalRow], List[Dict[str, Any]], List[Dict[str, Any]]]:
     planner = (
-        PlannerAgent(model=planner_model, log_timing=False)
+        InteractivePlannerAgent(model=planner_model, log_timing=False)
         if planner_model
-        else PlannerAgent(log_timing=False)
+        else InteractivePlannerAgent(log_timing=False)
     )
 
     rows: List[AgentEvalRow] = []
@@ -241,6 +241,8 @@ async def _run_examples_async(
                 analyst_model=analyst_model,
                 debug=False,
             )
+            if str(run_output.get("status") or "").strip().lower() == "interrupted":
+                raise RuntimeError(f"ORCHESTRATOR_INTERRUPTED: {run_output.get('interrupt')}")
             row.orchestrator_ok = True
         except Exception as exc:
             row.orchestrator_ok = False

@@ -70,6 +70,26 @@ def build_text_content(rec: Dict[str, Any]) -> Optional[str]:
         return text.strip()
 
 
+def _safe_int(value: Any, fallback: int) -> int:
+    try:
+        return int(value)
+    except Exception:
+        return fallback
+
+
+def _text_chunk_parts(rec: Dict[str, Any], prefix: str, fallback: int) -> tuple[int, int, str]:
+    chunk_index = _safe_int(rec.get("chunk_index"), fallback)
+    split_count = _safe_int(rec.get("split_count"), 1)
+    split_index = _safe_int(rec.get("split_index"), 0)
+
+    if split_count > 1:
+        text_id = f"{chunk_index}::split::{split_index}"
+    else:
+        text_id = str(chunk_index)
+
+    return chunk_index, split_count, f"{prefix}::text::{text_id}"
+
+
 def build_table_content_from_annotation(
     ann: Dict[str, Any],
     max_row_descriptions: int = 4,
@@ -123,7 +143,13 @@ def build_text_docs(
             continue
 
         prefix = rec.get("prefix", common_meta.get("prefix"))
-        chunk_index = rec.get("chunk_index", len(docs))
+        fallback_chunk_index = len(docs)
+        chunk_index, split_count, doc_id = _text_chunk_parts(
+            rec=rec,
+            prefix=str(prefix),
+            fallback=fallback_chunk_index,
+        )
+        split_index = _safe_int(rec.get("split_index"), 0)
 
         heading_path = rec.get("heading_path")
         section_path = rec.get("section_path")
@@ -140,13 +166,15 @@ def build_text_docs(
             "doc_type": "text_chunk",
             "prefix": prefix,
             "chunk_index": chunk_index,
+            "split_count": split_count,
+            "split_index": split_index,
             "section_title": section_title,
             "section_path": section_path_value,
             "source": "text",
         }
 
         doc = {
-            "id": f"{prefix}::text::{chunk_index}",
+            "id": doc_id,
             "content": content,
             "metadata": metadata,
         }

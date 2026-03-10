@@ -16,11 +16,11 @@ import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, TypedDict
 
-from langchain_ollama import ChatOllama
 from langgraph.graph import END, StateGraph
 
 from retrieval.accounting_terms import accounting_terms_file_to_llm_digest
 from retrieval.query_expansion import expand_query_with_ollama
+from llm_client import build_chat_model
 
 from agents.contracts import (
     AnalysisTask,
@@ -29,8 +29,6 @@ from agents.contracts import (
     OpenIssue,
     PlannerIntent,
     PlannerOutput,
-    QueryBundle,
-    QualityRequirements,
     Severity,
 )
 
@@ -42,7 +40,7 @@ from agents.contracts import (
 _TICKER_STOPWORDS = {
     "SEC", "GAAP", "IFRS", "FY", "FQ", "USD", "EPS", "FCF", "EBITDA", "EBIT", "COGS",
     "YOY", "Q1", "Q2", "Q3", "Q4", "ITEM", "NOTE", "MDA", "CAPEX", "IPO",
-    "AI", "ML", "API", "PDF",
+    "AI", "ML", "API", "PDF", "AWS",
 }
 
 _TICKER_RE = re.compile(r"""
@@ -55,13 +53,18 @@ _TICKER_RE = re.compile(r"""
 
 _YEAR_RE = re.compile(r"\b(19\d{2}|20\d{2})\b")
 _FY_RE = re.compile(r"\bFY\s*(19\d{2}|20\d{2})\b", re.IGNORECASE)
+_FY_SHORT_RE = re.compile(r"\bFY\s*'?(\d{2})\b", re.IGNORECASE)
 _10K_RE = re.compile(r"\b10[-\s]?K\b", re.IGNORECASE)
 _10Q_RE = re.compile(r"\b10[-\s]?Q\b", re.IGNORECASE)
 _QUARTER_RE = re.compile(r"\b(Q[1-4])\b", re.IGNORECASE)
-
-_MILLION_RE = re.compile(r"\b(in\s+)?millions?\b", re.IGNORECASE)
-_BILLION_RE = re.compile(r"\b(in\s+)?billions?\b", re.IGNORECASE)
-_THOUSAND_RE = re.compile(r"\b(in\s+)?thousands?\b", re.IGNORECASE)
+_QUARTER_WORD_RE = re.compile(r"\b(first|1st|second|2nd|third|3rd|fourth|4th)[-\s]?quarter\b", re.IGNORECASE)
+_ANNUAL_REPORT_RE = re.compile(r"\bannual report\b", re.IGNORECASE)
+_QUARTERLY_REPORT_RE = re.compile(r"\bquarterly report\b", re.IGNORECASE)
+_MULTI_YEAR_RE = re.compile(
+    r"\b(?:FY\s*)?(19\d{2}|20\d{2}|\d{2})\s*(?:/|-|to|or|and)\s*(?:FY\s*)?(\d{2}|19\d{2}|20\d{2})\b",
+    re.IGNORECASE,
+)
+_MULTI_COMPANY_CUE_RE = re.compile(r"\b(compare|versus|vs\.?|and)\b", re.IGNORECASE)
 
 _POSSESSIVE_NAME_RE = re.compile(
     r"\b([A-Z][A-Za-z0-9&\.\-]*(?:\s+[A-Z][A-Za-z0-9&\.\-]*){0,4})\s*[']s\b"
@@ -69,12 +72,14 @@ _POSSESSIVE_NAME_RE = re.compile(
 _OF_FOR_NAME_RE = re.compile(
     r"\b(?:of|for)\s+([A-Z][A-Za-z0-9&\.\-]*(?:\s+[A-Z][A-Za-z0-9&\.\-]*){0,4})\b"
 )
+_LEADING_NAME_RE = re.compile(
+    r"\b(?:how does|how did|what did|what does|using|from|for|per|in)\s+"
+    r"([A-Z][A-Za-z0-9&\.\-]*(?:\s+(?:of|[A-Z][A-Za-z0-9&\.\-]*)){0,4})\b"
+)
 
 _DEFAULT_COMPANY_TICKER_MAP: Dict[str, str] = {
     "apple": "AAPL",
     "apple inc": "AAPL",
-    "alphabet": "GOOGL",
-    "google": "GOOGL",
     "microsoft": "MSFT",
     "amazon": "AMZN",
     "meta": "META",
@@ -87,26 +92,6 @@ _DEFAULT_COMPANY_TICKER_MAP: Dict[str, str] = {
     "jpmorgan chase": "JPM",
 }
 
-_SECTION_HINTS_BY_KEYWORD: List[Tuple[re.Pattern, List[str]]] = [
-    (
-        re.compile(r"\bdebt|borrow(ing|ings)|notes payable|credit facility|term loan\b", re.IGNORECASE),
-        ["Liquidity and Capital Resources", "Debt", "Notes to Consolidated Financial Statements"],
-    ),
-    (
-        re.compile(r"\bcash flow|operating cash|capex|capital expenditures|free cash flow\b", re.IGNORECASE),
-        ["Consolidated Statements of Cash Flows", "Liquidity and Capital Resources"],
-    ),
-    (
-        re.compile(r"\bshare(s)?|diluted|basic|eps\b", re.IGNORECASE),
-        ["Earnings Per Share", "Equity", "Notes to Consolidated Financial Statements"],
-    ),
-    (
-        re.compile(r"\brevenue|net sales\b", re.IGNORECASE),
-        ["Consolidated Statements of Operations", "Revenue Recognition"],
-    ),
-]
-
-
 def _normalize_company_key(name: str) -> str:
     s = (name or "").strip().lower()
     s = re.sub(r"[^\w\s&\.]", " ", s)
@@ -116,17 +101,178 @@ def _normalize_company_key(name: str) -> str:
     return s
 
 
+_KNOWN_COMPANY_ALIASES: Dict[str, Optional[str]] = {
+    "3M": "MMM",
+    "AT&T": "T",
+    "Alphabet": None,
+    "Alphabet Class A": "GOOGL",
+    "Alphabet Class C": "GOOG",
+    "AmEx": "AXP",
+    "Amazon": "AMZN",
+    "American Express": "AXP",
+    "Apple": "AAPL",
+    "BNY Mellon": "BK",
+    "Bank of America": "BAC",
+    "Bank of New York Mellon": "BK",
+    "Berkshire Hathaway (Class B)": "BRK.B",
+    "Berkshire Hathaway B": "BRK.B",
+    "Big Blue": "IBM",
+    "BlackRock": "BLK",
+    "Chevron": "CVX",
+    "Cisco": "CSCO",
+    "Coca-Cola": "KO",
+    "Coke": "KO",
+    "Comcast": "CMCSA",
+    "Costco": "COST",
+    "Disney": "DIS",
+    "ExxonMobil": "XOM",
+    "FedEx": "FDX",
+    "GE Aerospace": "GE",
+    "Google": None,
+    "Home Depot": "HD",
+    "IBM": "IBM",
+    "Intuit": "INTU",
+    "J&J": "JNJ",
+    "JPMorgan": "JPM",
+    "JPMorgan Chase": "JPM",
+    "Lowe's": "LOW",
+    "Mastercard": "MA",
+    "McDonalds": "MCD",
+    "Meta": "META",
+    "Microsoft": "MSFT",
+    "Mondelez": "MDLZ",
+    "Netflix": "NFLX",
+    "Nvidia": "NVDA",
+    "PepsiCo": "PEP",
+    "Qualcomm": "QCOM",
+    "Salesforce": "CRM",
+    "T-Mobile": "TMUS",
+    "Texas Instruments": "TXN",
+    "U.S. Bancorp": "USB",
+    "US Bancorp": "USB",
+    "UnitedHealth Group": "UNH",
+    "Visa": "V",
+    "Walmart": "WMT",
+    "Walt Disney": "DIS",
+}
+
+_AMBIGUOUS_COMPANY_KEYS = {
+    _normalize_company_key("Alphabet"),
+    _normalize_company_key("Google"),
+}
+
+_DEFAULT_COMPANY_TICKER_MAP = {
+    key: value
+    for key, value in _DEFAULT_COMPANY_TICKER_MAP.items()
+    if key not in _AMBIGUOUS_COMPANY_KEYS
+}
+_DEFAULT_COMPANY_TICKER_MAP.update(
+    {
+        _normalize_company_key(name): ticker
+        for name, ticker in _KNOWN_COMPANY_ALIASES.items()
+        if ticker is not None
+    }
+)
+
+
+def _strip_company_prefix(candidate: Optional[str]) -> Optional[str]:
+    if not candidate:
+        return None
+    out = str(candidate).strip()
+    parts = out.split()
+    while len(parts) > 1 and parts[0].lower() in {"in", "using", "from", "for", "per"}:
+        parts = parts[1:]
+    cleaned = " ".join(parts).strip()
+    return cleaned or None
+
+
+def _looks_like_ticker_token(text: Optional[str]) -> bool:
+    if not text:
+        return False
+    return bool(re.fullmatch(r"[A-Z]{1,5}(?:\.[A-Z])?", str(text).strip()))
+
+
+def _looks_like_non_company_candidate(text: Optional[str]) -> bool:
+    if not text:
+        return False
+    candidate = str(text).strip()
+    if _looks_like_ticker_token(candidate):
+        return True
+    if re.fullmatch(r"FY\d{2,4}", candidate, re.IGNORECASE):
+        return True
+    if re.fullmatch(r"Q[1-4]", candidate, re.IGNORECASE):
+        return True
+    if _10K_RE.fullmatch(candidate) or _10Q_RE.fullmatch(candidate):
+        return True
+    return False
+
+
+def _find_company_alias_spans(query: str) -> List[Tuple[int, int]]:
+    q = (query or "").replace("’", "'")
+    spans: List[Tuple[int, int]] = []
+    for alias in sorted(_KNOWN_COMPANY_ALIASES, key=len, reverse=True):
+        for match in re.finditer(re.escape(alias), q, flags=re.IGNORECASE):
+            spans.append((match.start(), match.end()))
+    spans.sort()
+    return spans
+
+
+def _find_company_mentions(query: str) -> List[str]:
+    normalized_query = _normalize_company_key((query or "").replace("’", "'"))
+    if not normalized_query:
+        return []
+
+    matches: List[Tuple[int, int, str]] = []
+    for alias in _KNOWN_COMPANY_ALIASES:
+        alias_key = _normalize_company_key(alias)
+        if not alias_key:
+            continue
+        pattern = re.compile(rf"(?<!\w){re.escape(alias_key)}(?!\w)")
+        for match in pattern.finditer(normalized_query):
+            matches.append((match.start(), match.end(), alias))
+
+    matches.sort(key=lambda item: (-(item[1] - item[0]), item[0], item[2]))
+    kept: List[Tuple[int, int, str]] = []
+    for start, end, alias in matches:
+        overlaps = any(not (end <= kept_start or start >= kept_end) for kept_start, kept_end, _ in kept)
+        if overlaps:
+            continue
+        kept.append((start, end, alias))
+
+    kept.sort(key=lambda item: item[0])
+    mentions: List[str] = []
+    seen = set()
+    for _, _, alias in kept:
+        key = _normalize_company_key(alias)
+        if key in seen:
+            continue
+        seen.add(key)
+        mentions.append(alias)
+    return mentions
+
+
 def _extract_company_name(query: str) -> Optional[str]:
     # Normalize curly apostrophes so possessive patterns like "Apple’s" are recognized.
     q = (query or "").replace("’", "'").strip()
     if not q:
         return None
+    mentions = _find_company_mentions(q)
+    if len(mentions) == 1:
+        return mentions[0]
+    if len(mentions) > 1:
+        return None
     m = _POSSESSIVE_NAME_RE.search(q)
     if m:
-        return m.group(1).strip()
+        candidate = _strip_company_prefix(m.group(1))
+        return None if _looks_like_non_company_candidate(candidate) else candidate
     m2 = _OF_FOR_NAME_RE.search(q)
     if m2:
-        return m2.group(1).strip()
+        candidate = _strip_company_prefix(m2.group(1))
+        return None if _looks_like_non_company_candidate(candidate) else candidate
+    m3 = _LEADING_NAME_RE.search(q)
+    if m3:
+        candidate = _strip_company_prefix(m3.group(1))
+        return None if _looks_like_non_company_candidate(candidate) else candidate
     return None
 
 
@@ -136,6 +282,8 @@ def _resolve_ticker_from_company_name(company_name: Optional[str], mapping: Dict
     key = _normalize_company_key(company_name)
     if not key:
         return None
+    if key in _AMBIGUOUS_COMPANY_KEYS:
+        return None
     if key in mapping:
         return mapping[key]
     for k, v in mapping.items():
@@ -144,42 +292,78 @@ def _resolve_ticker_from_company_name(company_name: Optional[str], mapping: Dict
     return None
 
 
-def _pick_ticker(query: str) -> Optional[str]:
+def _extract_ticker_candidates(query: str) -> List[str]:
     candidates: List[str] = []
+    alias_spans = _find_company_alias_spans(query)
     for m in _TICKER_RE.finditer(query):
         tok = (m.group(1) or m.group(2) or "").strip()
         if not tok:
             continue
+        span = (m.start(), m.end())
+        if any(not (span[1] <= alias_start or span[0] >= alias_end) for alias_start, alias_end in alias_spans):
+            continue
+        if m.group(2):
+            group_start = m.start(2)
+            group_end = m.end(2)
+            window = query[max(0, group_start - 3) : min(len(query), group_end + 2)]
+            if re.search(r"10[-\s]?[KQ]s?", window, re.IGNORECASE):
+                continue
         t = tok.upper()
         if t in _TICKER_STOPWORDS:
             continue
         if _YEAR_RE.fullmatch(t):
             continue
-        candidates.append(t)
+        if t not in candidates:
+            candidates.append(t)
+    return candidates
 
-    if "$" in query:
-        m = re.search(r"\$([A-Za-z]{1,5})\b", query)
-        if m:
-            t = m.group(1).upper()
-            if t not in _TICKER_STOPWORDS:
-                return t
 
+def _pick_ticker(query: str) -> Optional[str]:
+    candidates = _extract_ticker_candidates(query)
     return candidates[0] if candidates else None
 
 
+def _expand_short_year(year_text: str) -> int:
+    year = int(year_text)
+    if year >= 100:
+        return year
+    return 2000 + year
+
+
+def _has_ambiguous_fiscal_year(query: str) -> bool:
+    q = (query or "").replace("–", "-").replace("—", "-")
+    if _MULTI_YEAR_RE.search(q):
+        return True
+    explicit_years = {int(y) for y in _YEAR_RE.findall(q)}
+    if len(explicit_years) > 1:
+        return True
+    short_fy_years = {_expand_short_year(y) for y in _FY_SHORT_RE.findall(q)}
+    if len(short_fy_years) > 1:
+        return True
+    return False
+
+
 def _pick_fiscal_year(query: str) -> Optional[int]:
+    if _has_ambiguous_fiscal_year(query):
+        return None
     m = _FY_RE.search(query)
     if m:
         return int(m.group(1))
+    m_short = _FY_SHORT_RE.search(query)
+    if m_short:
+        return _expand_short_year(m_short.group(1))
     years = [int(y) for y in _YEAR_RE.findall(query)]
-    return max(years) if years else None
+    return years[0] if years else None
 
 
 def _pick_form_type(query: str) -> FormType:
-    if _10Q_RE.search(query) or _QUARTER_RE.search(query):
-        return FormType.TEN_Q
-    if _10K_RE.search(query):
+    if _10K_RE.search(query) or _ANNUAL_REPORT_RE.search(query):
         return FormType.TEN_K
+    if _10Q_RE.search(query) or _QUARTERLY_REPORT_RE.search(query):
+        return FormType.TEN_Q
+    quarter = _pick_fiscal_quarter(query)
+    if quarter and quarter in {"Q1", "Q2", "Q3"}:
+        return FormType.TEN_Q
     if re.search(r"\byear[-\s]?end\b|\byear[-\s]?ended\b|\bat year[-\s]?end\b", query, re.IGNORECASE):
         return FormType.TEN_K
     return FormType.TEN_K
@@ -187,32 +371,23 @@ def _pick_form_type(query: str) -> FormType:
 
 def _pick_fiscal_quarter(query: str) -> Optional[str]:
     m = _QUARTER_RE.search(query)
-    return m.group(1).upper() if m else None
-
-
-def _extract_units_hint(query: str) -> List[str]:
-    hints: List[str] = []
-    if _MILLION_RE.search(query):
-        hints.append("$ in millions")
-    if _BILLION_RE.search(query):
-        hints.append("$ in billions")
-    if _THOUSAND_RE.search(query):
-        hints.append("in thousands")
-    return hints
-
-
-def _extract_section_hints(query: str) -> List[str]:
-    out: List[str] = []
-    for pat, hints in _SECTION_HINTS_BY_KEYWORD:
-        if pat.search(query):
-            out.extend(hints)
-    seen = set()
-    deduped: List[str] = []
-    for h in out:
-        if h not in seen:
-            seen.add(h)
-            deduped.append(h)
-    return deduped
+    if m:
+        return m.group(1).upper()
+    m_word = _QUARTER_WORD_RE.search(query)
+    if not m_word:
+        return None
+    token = m_word.group(1).lower()
+    mapping = {
+        "first": "Q1",
+        "1st": "Q1",
+        "second": "Q2",
+        "2nd": "Q2",
+        "third": "Q3",
+        "3rd": "Q3",
+        "fourth": "Q4",
+        "4th": "Q4",
+    }
+    return mapping.get(token)
 
 
 def _guess_metric(query: str) -> str:
@@ -316,17 +491,6 @@ def _extract_first_json_object(text: str) -> Optional[Dict[str, Any]]:
     return None
 
 
-def _merge_unique(a: List[str], b: List[str]) -> List[str]:
-    out: List[str] = []
-    seen = set()
-    for x in (a or []) + (b or []):
-        v = str(x).strip()
-        if v and v not in seen:
-            seen.add(v)
-            out.append(v)
-    return out
-
-
 def _is_table_focused_compute(plan: PlannerOutput) -> bool:
     if plan.intent != PlannerIntent.FILING_CALC:
         return False
@@ -336,6 +500,134 @@ def _is_table_focused_compute(plan: PlannerOutput) -> bool:
     expected_artifacts = [str(x).strip().lower() for x in (plan.analysis_task.expected_artifacts or [])]
     doc_types = [str(x).strip().lower() for x in (plan.metadata.doc_types or [])]
     return ("table" in expected_artifacts) or ("table" in doc_types)
+
+
+def _extract_metadata_hints_and_issues(
+    query: str,
+    *,
+    company_ticker_map: Dict[str, str],
+    default_doc_types: Optional[List[str]] = None,
+) -> Tuple[FilingMetadata, List[OpenIssue]]:
+    q = (query or "").replace("’", "'").strip()
+    explicit_tickers = _extract_ticker_candidates(q)
+    company_mentions = _find_company_mentions(q)
+    company_name = company_mentions[0] if len(company_mentions) == 1 else None
+    if company_name is None and not company_mentions:
+        company_name = _extract_company_name(q)
+
+    fy = _pick_fiscal_year(q)
+    form = _pick_form_type(q)
+    fq = _pick_fiscal_quarter(q)
+    has_multi_company_cue = bool(_MULTI_COMPANY_CUE_RE.search(q))
+    multi_company = (
+        len(company_mentions) > 1
+        or len(set(explicit_tickers)) > 1
+        or (has_multi_company_cue and (len(company_mentions) + len(explicit_tickers) > 1))
+    )
+
+    normalized_company = _normalize_company_key(company_name or "")
+    resolved_company_ticker = _resolve_ticker_from_company_name(company_name, company_ticker_map)
+    company_ticker_conflict = (
+        not multi_company
+        and company_name is not None
+        and resolved_company_ticker is not None
+        and any(ticker != resolved_company_ticker for ticker in explicit_tickers)
+    )
+
+    final_company_name = company_name
+    ticker: Optional[str] = None
+    if multi_company or company_ticker_conflict:
+        final_company_name = None
+    else:
+        if explicit_tickers:
+            ticker = explicit_tickers[0]
+        elif resolved_company_ticker:
+            ticker = resolved_company_ticker
+
+    share_class_ambiguous = (
+        final_company_name is not None
+        and normalized_company in _AMBIGUOUS_COMPANY_KEYS
+        and ticker is None
+    )
+
+    issues: List[OpenIssue] = []
+    if multi_company:
+        issues.append(
+            OpenIssue(
+                code="MULTI_COMPANY_QUERY",
+                message="Multiple company entities detected; current crawl mode expects one primary company.",
+                severity=Severity.WARNING,
+            )
+        )
+    elif company_ticker_conflict:
+        issues.append(
+            OpenIssue(
+                code="COMPANY_TICKER_CONFLICT",
+                message="Company name and explicit ticker disagree, so metadata extraction abstained.",
+                severity=Severity.WARNING,
+            )
+        )
+    elif share_class_ambiguous:
+        issues.append(
+            OpenIssue(
+                code="SHARE_CLASS_AMBIGUOUS",
+                message="Detected Alphabet/Google without a disambiguating share class or ticker.",
+                severity=Severity.WARNING,
+            )
+        )
+
+    if ticker is None:
+        issues.append(
+            OpenIssue(
+                code="TICKER_MISSING",
+                message="No unambiguous ticker could be determined from the query.",
+                severity=Severity.WARNING,
+            )
+        )
+
+    if fy is None:
+        if _has_ambiguous_fiscal_year(q):
+            issues.append(
+                OpenIssue(
+                    code="MULTI_YEAR_QUERY",
+                    message="Multiple fiscal years were referenced in the query.",
+                    severity=Severity.WARNING,
+                )
+            )
+            issues.append(
+                OpenIssue(
+                    code="FISCAL_YEAR_AMBIGUOUS",
+                    message="Fiscal year extraction abstained because the query references multiple years.",
+                    severity=Severity.WARNING,
+                )
+            )
+        else:
+            issues.append(
+                OpenIssue(
+                    code="FISCAL_YEAR_MISSING",
+                    message="No fiscal year detected in the query.",
+                    severity=Severity.WARNING,
+                )
+            )
+
+    if form == FormType.TEN_Q:
+        issues.append(
+            OpenIssue(
+                code="FORM_NOT_10K_DATASET",
+                message="Detected a 10-Q/quarterly-report query while the current hard-mode eval set is 10-K scoped.",
+                severity=Severity.WARNING,
+            )
+        )
+
+    hints = FilingMetadata(
+        ticker=ticker,
+        company_name=final_company_name,
+        fiscal_year=fy,
+        form_type=form,
+        doc_types=list(default_doc_types) if default_doc_types is not None else None,
+        fiscal_quarter=fq,
+    )
+    return hints, issues
 
 
 class PlannerState(TypedDict, total=False):
@@ -375,8 +667,8 @@ class PlannerAgent:
         max_queries: int = 5,
         log_timing: bool = True,
     ) -> None:
-        self.llm = llm or ChatOllama(model=model, temperature=temperature)
-        self.default_doc_types = default_doc_types or ["table"]
+        self.llm = llm or build_chat_model(model=model, temperature=temperature)
+        self.default_doc_types = list(default_doc_types) if default_doc_types is not None else None
         self.company_ticker_map = {**_DEFAULT_COMPANY_TICKER_MAP, **(company_ticker_map or {})}
         self.enable_query_expansion = enable_query_expansion
         self.expansion_model = expansion_model
@@ -431,63 +723,10 @@ class PlannerAgent:
         def preextract_node(state: PlannerState) -> Dict[str, Any]:
             t0 = time.perf_counter()
             q = state["user_query"]
-
-            ticker = _pick_ticker(q)
-            company_name = _extract_company_name(q)
-            fy = _pick_fiscal_year(q)
-            form = _pick_form_type(q)
-            fq = _pick_fiscal_quarter(q)
-            units = _extract_units_hint(q)
-            sections = _extract_section_hints(q)
-
-            issues: List[OpenIssue] = []
-            if company_name:
-                issues.append(
-                    OpenIssue(
-                        code="COMPANY_NAME_DETECTED",
-                        message=f"Detected company name '{company_name}'.",
-                        severity=Severity.INFO,
-                    )
-                )
-
-            if ticker is None and company_name:
-                resolved = _resolve_ticker_from_company_name(company_name, self.company_ticker_map)
-                if resolved:
-                    ticker = resolved
-                    issues.append(
-                        OpenIssue(
-                            code="TICKER_INFERRED_FROM_COMPANY_NAME",
-                            message=f"Inferred ticker '{ticker}' from company name '{company_name}'. Verify if needed.",
-                            severity=Severity.WARNING,
-                        )
-                    )
-
-            if ticker is None:
-                issues.append(
-                    OpenIssue(
-                        code="TICKER_MISSING",
-                        message="No ticker detected (and company name did not resolve to a ticker).",
-                        severity=Severity.WARNING,
-                    )
-                )
-            if fy is None:
-                issues.append(
-                    OpenIssue(
-                        code="FISCAL_YEAR_MISSING",
-                        message="No fiscal year detected in the query.",
-                        severity=Severity.WARNING,
-                    )
-                )
-
-            hints = FilingMetadata(
-                ticker=ticker,
-                company_name=company_name,
-                fiscal_year=fy,
-                form_type=form,
-                doc_types=self.default_doc_types,
-                fiscal_quarter=fq,
-                section_hints=sections,
-                units_hint=units,
+            hints, issues = _extract_metadata_hints_and_issues(
+                q,
+                company_ticker_map=self.company_ticker_map,
+                default_doc_types=self.default_doc_types,
             )
 
             return {
@@ -573,7 +812,7 @@ class PlannerAgent:
                 "rules": [
                     "Output JSON only.",
                     "Do not invent fiscal_year.",
-                    "Return 1-5 retrieval queries under query_bundle.queries.",
+                    "Capture the concrete retrieval target in analysis_task.metric.",
                     "If deterministic_intent_hint is filing_calc and query is not definition, set intent to filing_calc.",
                     "Use planner schema fields exactly.",
                 ],
@@ -587,15 +826,6 @@ class PlannerAgent:
                         "form_type": ["10-K", "10-Q"],
                         "doc_types": "list[str]|null",
                         "fiscal_quarter": ["Q1", "Q2", "Q3", "Q4", None],
-                        "section_hints": "list[str]",
-                        "units_hint": "list[str]",
-                    },
-                    "query_bundle": {
-                        "base_query": "string",
-                        "queries": "list[str] (1-5)",
-                        "must_include": "list[str]",
-                        "nice_to_include": "list[str]",
-                        "exclusions": "list[str]",
                     },
                     "analysis_task": {
                         "task_type": ["extract", "compute", "compare", "trend"],
@@ -603,13 +833,6 @@ class PlannerAgent:
                         "definition_notes": "list[str]",
                         "expected_artifacts": ["table", "row", "text"],
                         "output_format": ["short_answer", "step_by_step", "table"],
-                    },
-                    "quality_requirements": {
-                        "min_results": "int",
-                        "min_total_score": "float",
-                        "must_have_provenance": "boolean",
-                        "max_context_items": "int",
-                        "accept_if_contains_any": "list[str]",
                     },
                     "open_issues": "list[{code,message,severity}]",
                 },
@@ -623,7 +846,7 @@ class PlannerAgent:
                 "You MUST NOT invent fiscal_year. If not present, set null and add open_issues code='FISCAL_YEAR_MISSING'."
                 "Decide intent using the rubric: 1.definition -> conceptual explanation, no filing retrieval needed 2.filing_fact -> ask for factual value from filings 3.filing_calc -> requires computation using filing values 4.other -> anything else"
                 "retrieval_needed must be consistent with intent: 1.definition\/other -> usually false 2.filing_fact\/filing_calc -> true (unless missing essential metadata; still can be true but add open_issues)"
-                "Quality: 1.query_bundle.queries must contain 1-5 short retrieval queries. 2.Include must_include anchors when the user asks for numeric/financial values."
+                "Quality: 1.analysis_task.metric should be the concrete target value. 2.Set output_format to match expected response style."
                 + json.dumps(payload, ensure_ascii=False)
             )
 
@@ -764,27 +987,9 @@ class PlannerAgent:
                 )
             plan.metadata.fiscal_year = replacement
 
-        if plan.metadata.doc_types is None:
-            plan.metadata.doc_types = self.default_doc_types
-
-        plan.metadata.section_hints = _merge_unique(plan.metadata.section_hints, hints.section_hints)
-        plan.metadata.units_hint = _merge_unique(plan.metadata.units_hint, hints.units_hint)
-
-        llm_queries = [str(q).strip() for q in (plan.query_bundle.queries or []) if str(q).strip()]
-        taxonomy_queries = [str(q).strip() for q in (expanded_queries or []) if str(q).strip()]
-        queries = [user_query] + taxonomy_queries + llm_queries
-
-        deduped_queries: List[str] = []
-        seen = set()
-        for q in queries:
-            key = q.lower()
-            if key in seen:
-                continue
-            seen.add(key)
-            deduped_queries.append(q)
-
-        plan.query_bundle.queries = deduped_queries[: self.max_queries]
-        plan.query_bundle.base_query = (plan.query_bundle.base_query or "").strip() or user_query
+        plan.metadata.doc_types = (
+            list(self.default_doc_types) if self.default_doc_types is not None else None
+        )
 
         metric = (plan.analysis_task.metric or "").strip() or _guess_metric(user_query)
         intent_hint, task_type_hint, retrieval_hint, calc_cues = _intent_hint_from_query(user_query, metric)
@@ -797,14 +1002,12 @@ class PlannerAgent:
             plan.retrieval_needed = False
             plan.analysis_task.task_type = task_type_hint
 
-        if not plan.query_bundle.must_include:
-            plan.query_bundle.must_include = _default_must_include(metric)
-
-        if not plan.quality_requirements.accept_if_contains_any and plan.query_bundle.must_include:
-            plan.quality_requirements.accept_if_contains_any = plan.query_bundle.must_include[:8]
-
-        if _is_table_focused_compute(plan):
-            plan.quality_requirements.min_results = 1
+        if not plan.analysis_task.metric:
+            plan.analysis_task.metric = metric
+        if not plan.analysis_task.expected_artifacts:
+            plan.analysis_task.expected_artifacts = ["table"]
+        if _is_table_focused_compute(plan) and "table" not in plan.analysis_task.expected_artifacts:
+            plan.analysis_task.expected_artifacts = ["table", *plan.analysis_task.expected_artifacts]
 
         if _is_reasonable_fiscal_year(plan.metadata.fiscal_year):
             plan.open_issues = [i for i in (plan.open_issues or []) if i.code != "FISCAL_YEAR_MISSING"]
@@ -855,8 +1058,6 @@ class PlannerAgent:
             queries.extend(str(q).strip() for q in expanded_queries if str(q).strip())
         if metric and metric != "filing facts":
             queries.append(f"{metric} balance sheet table")
-        if hints.section_hints:
-            queries.append(f"{metric} {hints.section_hints[0]}")
         if must:
             queries.append(" ".join(must[:3]) + " table")
 
@@ -880,45 +1081,18 @@ class PlannerAgent:
                 )
             )
 
-        qb = QueryBundle(
-            base_query=user_query,
-            queries=[user_query],
-            must_include=must,
-            nice_to_include=[],
-            exclusions=[],
-        )
-        qb.queries = deduped[: self.max_queries] or [user_query]
-
         expected_artifacts = ["table"]
-        fallback_min_results = (
-            1
-            if (
-                intent == PlannerIntent.FILING_CALC
-                and (task_type or "").strip().lower() == "compute"
-                and ("table" in [str(x).strip().lower() for x in expected_artifacts]
-                     or "table" in [str(x).strip().lower() for x in (hints.doc_types or [])])
-            )
-            else 3
-        )
 
         return PlannerOutput(
             retrieval_needed=retrieval_needed,
             intent=intent,
             metadata=hints,
-            query_bundle=qb,
             analysis_task=AnalysisTask(
                 task_type=task_type,
                 metric=metric,
                 definition_notes=[],
                 expected_artifacts=expected_artifacts,
                 output_format="step_by_step",
-            ),
-            quality_requirements=QualityRequirements(
-                min_results=fallback_min_results,
-                min_total_score=0.0,
-                must_have_provenance=True,
-                max_context_items=10,
-                accept_if_contains_any=must[:8],
             ),
             open_issues=fallback_issues,
         )

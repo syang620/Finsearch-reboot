@@ -5,15 +5,30 @@ Summarize SEC table chunks with an LLM for later embedding.
 This script:
   1) Loads table chunks produced by sec_chunker/chunk_splitter (no notebook deps).
   2) Builds a strict JSON summarization prompt (from table_summarization_eval).
-  3) Calls an LLM (default model: minimax-m2:cloud) via an HTTP API
-     compatible with the Ollama /generate pattern.
+  3) Calls an LLM over HTTP. Qwen chat models use DashScope's OpenAI-compatible
+     chat-completions API; other models continue to use an Ollama-style /generate
+     endpoint.
   4) Writes one JSONL file with annotations per filing prefix.
 
 Example:
     PYTHONPATH=src python -m ingestion.tables_summarizer \\
         --prefixes AAPL_10-K_2024 AAPL_10-Q_2025Q1 \\
         --chunks-dir data/chunked \\
-        --api-url http://localhost:11434/api/generate
+        --api-url https://dashscope.aliyuncs.com/compatible-mode/v1
+
+Prompt export mode:
+    PYTHONPATH=src python -m ingestion.tables_summarizer \\
+        --prefixes AAPL_10-K_2024 \\
+        --chunks-dir data/chunked \\
+        --export-prompts-jsonl /tmp/aapl_10k_table_prompts.jsonl \\
+        --skip-invoke
+
+Remote result merge mode:
+    PYTHONPATH=src python -m ingestion.tables_summarizer \\
+        --prefixes AAPL_10-K_2024 \\
+        --chunks-dir data/chunked \\
+        --import-results-jsonl /tmp/aapl_10k_table_results.jsonl \\
+        --output-jsonl data/table_summaries/AAPL/10-K/AAPL_10-K_2024.tables.summaries.jsonl
 """
 
 from __future__ import annotations
@@ -28,6 +43,8 @@ from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Union
 import pandas as pd
 import requests
 
+from ingestion.chunk_paths import resolve_chunk_file
+from llm_client import dashscope_chat_completion, is_qwen_chat_model
 
 DEFAULT_MODEL = "qwen2.5:7b"
 
@@ -103,9 +120,13 @@ def load_filing_chunks(
             <out_dir>/<prefix>.tables.jsonl
     """
     out_dir = Path(out_dir)
-
-    text_path_split = out_dir / f"{prefix}.text.split.jsonl"
-    text_path_plain = out_dir / f"{prefix}.text.jsonl"
+    split_name = f"{prefix}.text.split.jsonl"
+    text_path_split = resolve_chunk_file(out_dir, prefix, split_name)
+    if text_path_split is None:
+        text_path_split = out_dir / split_name
+    text_path_plain = resolve_chunk_file(out_dir, prefix, f"{prefix}.text.jsonl")
+    if text_path_plain is None:
+        text_path_plain = out_dir / f"{prefix}.text.jsonl"
 
     if use_split_text and text_path_split.exists():
         text_path = text_path_split
@@ -117,7 +138,7 @@ def load_filing_chunks(
             f"(looked for {text_path_split} and {text_path_plain})"
         )
 
-    table_path = out_dir / f"{prefix}.tables.jsonl"
+    table_path = resolve_chunk_file(out_dir, prefix, f"{prefix}.tables.jsonl") or out_dir / f"{prefix}.tables.jsonl"
     if not table_path.exists():
         raise FileNotFoundError(
             f"Could not find table chunk file for prefix '{prefix}' in {out_dir} "
@@ -281,17 +302,51 @@ def build_user_prompt(table_chunk: Dict[str, Any]) -> str:
 Table (first row is header):
 {table_md}
 
-Remember:
-- Use only info in the table + metadata.
-- Do not compute new metrics or trends.
-- Do not repeat numeric values from the table.
-- Years like 2023/2024/2025 are allowed.
-- Respond with JSON only.
-"""
+    Remember:
+    - Use only info in the table + metadata.
+    - Do not compute new metrics or trends.
+    - Do not repeat numeric values from the table.
+    - Years like 2023/2024/2025 are allowed.
+    - Respond with JSON only.
+    """
+
+
+def build_full_prompt(table_chunk: Dict[str, Any]) -> str:
+    """
+    Build the full prompt passed to the model.
+    """
+    return SYSTEM_PROMPT.strip() + "\n\n---\n\n" + build_user_prompt(table_chunk).strip()
+
+
+def parse_annotation_from_payload(payload: Any) -> Tuple[Optional[Dict[str, Any]], Optional[str]]:
+    """
+    Parse model output payload into annotation dict.
+
+    Accepted payloads:
+      - a dict
+      - JSON string representing a dict
+    """
+    if payload is None:
+        return None, "empty annotation payload"
+    if isinstance(payload, dict):
+        return payload, None
+    if not isinstance(payload, str):
+        return None, f"unsupported annotation payload type: {type(payload).__name__}"
+
+    text = payload.strip()
+    if not text:
+        return None, "empty annotation payload"
+    try:
+        obj = json.loads(text)
+    except Exception as exc:
+        return None, f"invalid JSON payload: {exc}"
+    if not isinstance(obj, dict):
+        return None, "annotation payload must be a JSON object"
+    return obj, None
 
 
 # ---------------------------------------------------------------------
-#  LLM summarization call (Ollama-style HTTP API)
+#  LLM summarization call
 # ---------------------------------------------------------------------
 
 def summarize_table_with_llm(
@@ -303,22 +358,25 @@ def summarize_table_with_llm(
 ) -> Dict[str, Any]:
     """
     Call an LLM to summarize a table with strict JSON output.
-
-    The API is expected to be compatible with Ollama's /generate endpoint:
-      POST api_url with JSON:
-        {
-          "model": model,
-          "prompt": full_prompt,
-          "stream": false,
-          "format": "json",
-          "options": {"temperature": temperature, "num_predict": 4096}
-        }
-
-    The response JSON should contain a 'response' field that is a JSON string
-    matching the schema described in SYSTEM_PROMPT.
     """
-    user_prompt = build_user_prompt(table_chunk)
-    full_prompt = SYSTEM_PROMPT.strip() + "\n\n---\n\n" + user_prompt.strip()
+    full_prompt = build_full_prompt(table_chunk)
+    if is_qwen_chat_model(model):
+        obj = dashscope_chat_completion(
+            [{"role": "user", "content": full_prompt}],
+            model=model,
+            options={
+                "temperature": temperature,
+                "num_predict": 4096,
+                "response_format": {"type": "json_object"},
+            },
+            timeout=timeout,
+        )
+        choices = obj.get("choices") or []
+        message = choices[0].get("message") if choices else {}
+        text = (message or {}).get("content") or ""
+        if not isinstance(text, str):
+            text = json.dumps(text, ensure_ascii=False)
+        return json.loads(text)
 
     payload = {
         "model": model,
@@ -330,12 +388,8 @@ def summarize_table_with_llm(
 
     resp = requests.post(api_url, json=payload, timeout=timeout)
     resp.raise_for_status()
-
     obj = resp.json()
     text = (obj.get("response") or "").strip()
-    # print(obj)
-    
-    # Parse the JSON string returned by the model
     return json.loads(text)
 
 
@@ -367,8 +421,11 @@ def _parse_args(argv: Iterable[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument(
         "--api-url",
-        required=True,
-        help="HTTP endpoint for the LLM (e.g., http://localhost:11434/api/generate).",
+        default=None,
+        help=(
+            "HTTP endpoint for non-Qwen models, e.g. http://localhost:11434/api/generate. "
+            "Qwen chat models use DASHSCOPE_BASE_URL / DASHSCOPE_API_KEY."
+        ),
     )
     parser.add_argument(
         "--model",
@@ -386,24 +443,98 @@ def _parse_args(argv: Iterable[str] | None = None) -> argparse.Namespace:
         type=int,
         help="Optional cap on number of tables per prefix to summarize.",
     )
+    parser.add_argument(
+        "--export-prompts-jsonl",
+        help=(
+            "Write prompts to JSONL for remote execution. Each line includes "
+            "id/text plus provenance fields (prefix/table_index/heading metadata)."
+        ),
+    )
+    parser.add_argument(
+        "--import-results-jsonl",
+        help="Import completed prompt results from JSONL and build table summary output.",
+    )
+    parser.add_argument(
+        "--skip-invoke",
+        action="store_true",
+        help="Skip local LLM calls. Use with --export-prompts-jsonl or --import-results-jsonl.",
+    )
+    parser.add_argument(
+        "--prompt-id-start",
+        type=int,
+        default=1,
+        help="Starting prompt id for exported prompts.",
+    )
     return parser.parse_args(argv)
+
+
+def _load_prompt_results(path: Path) -> Dict[int, Any]:
+    if not path.exists():
+        raise FileNotFoundError(f"Import results file not found: {path}")
+
+    results: Dict[int, Any] = {}
+    with path.open("r", encoding="utf-8") as f:
+        for line_no, line in enumerate(f, start=1):
+            line = line.strip()
+            if not line:
+                continue
+            record = json.loads(line)
+            if not isinstance(record, dict):
+                raise ValueError(f"Invalid JSONL record at line {line_no}: not an object")
+
+            raw_id = record.get("id")
+            if raw_id is None:
+                raise ValueError(f"Invalid JSONL record at line {line_no}: missing id")
+
+            try:
+                prompt_id = int(raw_id)
+            except Exception as exc:
+                raise ValueError(f"Invalid JSONL id at line {line_no}: {raw_id}") from exc
+
+            payload = record.get("annotation")
+            if payload is None:
+                payload = record.get("response")
+            if payload is None:
+                payload = record.get("result")
+            if payload is None:
+                payload = record.get("text")
+            if payload is None:
+                payload = record.get("output")
+            if payload is None:
+                payload = record.get("response_text")
+            if prompt_id in results:
+                raise ValueError(
+                    f"Duplicate id detected at line {line_no} for prompt_id={prompt_id}"
+                )
+
+            results[prompt_id] = payload
+    return results
 
 
 def summarize_prefix(
     prefix: str,
     chunks_dir: Path,
-    api_url: str,
     model: str,
     temperature: float,
     max_tables: int | None,
+    api_url: Optional[str] = None,
     output_path: Optional[Path] = None,
-) -> List[Dict[str, Any]]:
+    prompt_id_start: int = 1,
+    export_prompts_writer: Optional[Any] = None,
+    imported_results: Optional[Dict[int, Any]] = None,
+) -> Tuple[List[Dict[str, Any]], int]:
     """
     Summarize all (or up to max_tables) tables for a single filing prefix.
+
+    Returns a tuple of:
+      - records list
+      - next prompt id for the next call
     """
     start_all = time.time()
     table_chunks = load_table_chunks_for_prefix(prefix, chunks_dir)
     records: List[Dict[str, Any]] = []
+    prompt_id = prompt_id_start
+
     # Open output file once if incremental saving is requested
     f = None
     if output_path is not None:
@@ -411,7 +542,9 @@ def summarize_prefix(
         output_path.parent.mkdir(parents=True, exist_ok=True)
         # "a" = append, so you can resume runs if you want
         f = output_path.open("a", encoding="utf-8")
-        
+
+    do_local_invoke = (api_url is not None) and (imported_results is None)
+
     try:
         for idx, table_chunk in enumerate(table_chunks):
             if max_tables is not None and idx >= max_tables:
@@ -427,20 +560,35 @@ def summarize_prefix(
             )
 
             meta: Dict[str, Any] = table_chunk.get("meta") or {}
+            full_prompt = build_full_prompt(table_chunk)
 
-            try:
-                annotation = summarize_table_with_llm(
-                    table_chunk=table_chunk,
-                    model=model,
-                    api_url=api_url,
-                    temperature=temperature,
-                )
-            except Exception as exc:
-                error = str(exc)
-                print(
-                    f"[ERROR] prefix={prefix} table_index={idx} "
-                    f"section_title={table_chunk.get('section_title')!r}: {error}"
-                )
+            if imported_results is not None:
+                if prompt_id not in imported_results:
+                    error = f"Missing remote result for prompt_id={prompt_id}"
+                else:
+                    parsed_annotation, parse_error = parse_annotation_from_payload(
+                        imported_results[prompt_id]
+                    )
+                    if parse_error is not None:
+                        error = parse_error
+                    else:
+                        annotation = parsed_annotation
+            elif do_local_invoke:
+                try:
+                    annotation = summarize_table_with_llm(
+                        table_chunk=table_chunk,
+                        model=model,
+                        api_url=api_url,
+                        temperature=temperature,
+                    )
+                except Exception as exc:
+                    error = str(exc)
+                    print(
+                        f"[ERROR] prefix={prefix} table_index={idx} "
+                        f"section_title={table_chunk.get('section_title')!r}: {error}"
+                    )
+            else:
+                error = "No invocation path configured (missing api-url and remote result)"
 
             elapsed = time.time() - start
 
@@ -452,6 +600,28 @@ def summarize_prefix(
                 table_chunk.get("heading_path"),
             )
 
+            export_record = {
+                "id": prompt_id,
+                "prefix": prefix,
+                "table_index": idx,
+                "section_title": table_chunk.get("section_title"),
+                "item_id": item_id,
+                "item_title": item_title,
+                "heading_path": heading_path,
+                "ticker": meta.get("ticker"),
+                "cik": meta.get("cik"),
+                "form_type": meta.get("form_type"),
+                "fiscal_year": meta.get("fiscal_year"),
+                "filing_date": meta.get("filing_date"),
+                "text": full_prompt,
+            }
+
+            if export_prompts_writer is not None:
+                export_prompts_writer.write(
+                    json.dumps(export_record, ensure_ascii=False) + "\n"
+                )
+                export_prompts_writer.flush()
+
             rec: Dict[str, Any] = {
                 "prefix": prefix,
                 "table_index": idx,
@@ -461,27 +631,29 @@ def summarize_prefix(
                 "heading_path": heading_path,
                 "meta": meta,
                 "model": model,
+                "prompt_id": prompt_id,
                 "elapsed_sec": elapsed,
                 "error": error,
                 "annotation": annotation,
             }
             records.append(rec)
-            # --- incremental save ---
             if f is not None:
                 f.write(json.dumps(rec, ensure_ascii=False) + "\n")
                 f.flush()  # make sure it's on disk after each table
                 # optional: os.fsync(f.fileno()) if you want extra safety
+
+            prompt_id += 1
     finally:
         if f is not None:
             f.close()
-            
+
     total_elapsed = time.time() - start_all
     print(
         f"[SUMMARY] prefix={prefix} "
-        f"tables={len(table_chunks)} "
+        f"tables={len(records)} "
         f"total_elapsed={total_elapsed:.2f}s (sequential)"
     )
-    return records
+    return records, prompt_id
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -489,32 +661,68 @@ def main(argv: Sequence[str] | None = None) -> int:
     chunks_dir = Path(args.chunks_dir)
     chunks_dir.mkdir(parents=True, exist_ok=True)
 
+    if args.skip_invoke and args.export_prompts_jsonl is None and args.import_results_jsonl is None:
+        raise ValueError(
+            "--skip-invoke requires --export-prompts-jsonl or --import-results-jsonl."
+        )
+    if (
+        not args.skip_invoke
+        and args.import_results_jsonl is None
+        and args.api_url is None
+        and not is_qwen_chat_model(args.model)
+    ):
+        raise ValueError(
+            "Either --api-url, --import-results-jsonl, or --skip-invoke must be set."
+        )
+    if args.import_results_jsonl is not None and args.api_url is not None:
+        print("[WARN] --api-url is ignored when --import-results-jsonl is set.")
+
+    imported_results = None
+    if args.import_results_jsonl is not None:
+        imported_results = _load_prompt_results(Path(args.import_results_jsonl))
+
+    prompt_writer = None
+    if args.export_prompts_jsonl is not None:
+        prompt_writer = Path(args.export_prompts_jsonl).open("a", encoding="utf-8")
+
     output_path = (
         Path(args.output_jsonl)
         if args.output_jsonl
         else chunks_dir / "table_summaries.jsonl"
     )
 
-    # If re-running, start from a clean file so summarize_prefix can append safely.
-    if output_path.exists():
-        output_path.unlink()
+    should_emit_output = args.import_results_jsonl is not None or not args.skip_invoke
+    if should_emit_output:
+        # If re-running, start from a clean file so summarize_prefix can append safely.
+        if output_path.exists():
+            output_path.unlink()
 
     total_records = 0
+    next_prompt_id = args.prompt_id_start
 
     for prefix in args.prefixes:
         print(f"\n=== Summarizing tables for prefix: {prefix} ===")
-        records = summarize_prefix(
+        records, next_prompt_id = summarize_prefix(
             prefix=prefix,
             chunks_dir=chunks_dir,
-            api_url=args.api_url,
             model=args.model,
             temperature=args.temperature,
             max_tables=args.max_tables,
-            output_path=output_path,
+            api_url=None if args.skip_invoke else args.api_url,
+            output_path=output_path if should_emit_output else None,
+            prompt_id_start=next_prompt_id,
+            export_prompts_writer=prompt_writer,
+            imported_results=imported_results,
         )
         total_records += len(records)
 
-    print(f"\nWrote {total_records} table summaries to {output_path}")
+    if prompt_writer is not None:
+        prompt_writer.close()
+
+    if should_emit_output:
+        print(f"\nWrote {total_records} table summaries to {output_path}")
+    else:
+        print(f"\nExported {total_records} prompts to {args.export_prompts_jsonl}")
     return 0
 
 

@@ -14,16 +14,26 @@ import re
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, TypedDict
 
-import pandas as pd
 from pydantic import BaseModel, Field
 
-from langchain_ollama import ChatOllama
 from langchain_core.messages import HumanMessage, ToolMessage
-from langchain_mcp_adapters.client import MultiServerMCPClient
 from langgraph.prebuilt import create_react_agent
+from langgraph.graph import END, START, StateGraph
 
+try:
+    import pandas as pd
+except Exception:  # pragma: no cover - optional dependency
+    pd = None
+
+try:
+    from langchain_mcp_adapters.client import MultiServerMCPClient
+except Exception:  # pragma: no cover - optional dependency
+    MultiServerMCPClient = None
+
+from ingestion.chunk_paths import resolve_chunk_file
+from llm_client import build_chat_model
 from .table_loader import load_table_data
 
 from agents.contracts import (
@@ -209,7 +219,6 @@ def build_demo_packet(
             ticker=ticker,
             fiscal_year=fiscal_year,
             form_type=form_type,
-            doc_types=["table"],
         ),
         analysis_task=AnalysisTask(task_type="compute", metric=metric),
         context_quality=ContextQuality.MEDIUM,
@@ -233,9 +242,40 @@ def _extract_payload_from_retrieval_entry(entry: Dict[str, Any]) -> Dict[str, An
     return payload if isinstance(payload, dict) else {}
 
 
+def _is_table_like_retrieval_entry(*, entry: Dict[str, Any], payload: Dict[str, Any]) -> bool:
+    doc_type = payload.get("doc_type")
+    if isinstance(doc_type, str):
+        normalized = doc_type.strip().lower()
+        if normalized in {"table", "table_row", "text", "text_chunk"}:
+            return normalized in {"table", "table_row"}
+
+    payload_doc_id = payload.get("doc_id")
+    if isinstance(payload_doc_id, str):
+        if "::table::" in payload_doc_id or "::table_row::" in payload_doc_id or "::row::" in payload_doc_id:
+            return True
+
+    entry_doc_type = entry.get("doc_type")
+    if isinstance(entry_doc_type, str):
+        normalized = entry_doc_type.strip().lower()
+        return normalized in {"table", "table_row"}
+
+    entry_doc_id = entry.get("doc_id")
+    if isinstance(entry_doc_id, str):
+        if "::table::" in entry_doc_id or "::table_row::" in entry_doc_id or "::row::" in entry_doc_id:
+            return True
+
+    return False
+
+
 def _table_dict_to_markdown(table_dict: Optional[Dict[str, Any]], max_rows: int = 40) -> str:
     if not isinstance(table_dict, dict):
         return ""
+    if pd is None:
+        try:
+            # Best-effort fallback for environments without pandas.
+            return str(table_dict)
+        except Exception:
+            return ""
     try:
         df = pd.DataFrame(**table_dict)
     except Exception:
@@ -287,6 +327,26 @@ def _parse_agent_messages(messages: List[Any]) -> Dict[str, Any]:
     }
 
 
+class _AnalystWorkflowState(TypedDict, total=False):
+    packet: AnalystPacket
+    prompt: str
+    retry_prompt: str
+    attempt: int
+    max_attempts: int
+    messages: List[Any]
+    parsed: Dict[str, Any]
+    error: Optional[str]
+    timing_ms: Dict[str, int]
+
+
+def _compute_retry_prompt(base_prompt: str) -> str:
+    return (
+        base_prompt
+        + "\n\nIMPORTANT: This is a compute task. You MUST call financial_evaluator before final answer."
+        + " Use numbers from context and show the computed result."
+    )
+
+
 def build_packet_from_retrieval_output(
     *,
     user_query: str,
@@ -294,6 +354,7 @@ def build_packet_from_retrieval_output(
     tables_dir: str = "data/chunked",
     plan_id: str = "demo-plan",
     intent: PlannerIntent = PlannerIntent.FILING_CALC,
+    analysis_task: Any = None,
     metric: str = "financial metric",
     max_tables: int = 3,
 ) -> AnalystPacket:
@@ -328,9 +389,13 @@ def build_packet_from_retrieval_output(
         )
 
     top_tables = retrieval.top_tables or []
-    for cand in top_tables[:max_tables]:
+    table_like_count = 0
+    for cand in top_tables:
         entry = cand.model_dump(mode="python")
         payload = _extract_payload_from_retrieval_entry(entry)
+        if not _is_table_like_retrieval_entry(entry=entry, payload=payload):
+            continue
+
         table_dict = load_table_data(entry, data_dir=tables_dir, verbose=False)
         table_markdown = _table_dict_to_markdown(table_dict)
 
@@ -344,8 +409,21 @@ def build_packet_from_retrieval_output(
                 m = re.search(r"::table::(\d+)$", doc_id)
                 if m:
                     table_index = int(m.group(1))
+            attempted_file = None
+            if prefix is not None:
+                resolved = resolve_chunk_file(
+                    tables_dir,
+                    prefix,
+                    f"{prefix}.tables.jsonl",
+                )
+                attempted_file_path = (
+                    resolved
+                    if resolved is not None
+                    else Path(tables_dir) / f"{prefix}.tables.jsonl"
+                )
+                attempted_file = str(attempted_file_path.resolve())
             attempted_file = (
-                str((Path(tables_dir) / f"{prefix}.tables.jsonl").resolve())
+                attempted_file
                 if prefix is not None
                 else None
             )
@@ -387,6 +465,9 @@ def build_packet_from_retrieval_output(
                 total_score=entry.get("total_score"),
             )
         )
+        table_like_count += 1
+        if table_like_count >= max_tables:
+            break
 
     if not context_items:
         open_issues.append(
@@ -405,6 +486,12 @@ def build_packet_from_retrieval_output(
         elif max_score < 10:
             context_quality = ContextQuality.LOW
 
+    resolved_analysis_task = (
+        analysis_task
+        if isinstance(analysis_task, AnalysisTask)
+        else AnalysisTask.model_validate(analysis_task or {"task_type": "compute", "metric": metric})
+    )
+
     return AnalystPacket(
         plan_id=plan_id,
         user_query=user_query,
@@ -413,9 +500,8 @@ def build_packet_from_retrieval_output(
             ticker=ticker,
             fiscal_year=fiscal_year,
             form_type=form_type,
-            doc_types=["table"],
         ),
-        analysis_task=AnalysisTask(task_type="compute", metric=metric),
+        analysis_task=resolved_analysis_task,
         context_items=context_items,
         context_quality=context_quality,
         open_issues=open_issues,
@@ -429,25 +515,136 @@ class AnalystAgent:
     num_predict: int = 1024
     financial_tool_script: Optional[str] = None
     max_context_items: int = 5
+    max_attempts: int = 2
 
     _client: Any = None
     _agent: Any = None
+    _graph: Any = None
+
+    def _build_workflow(self) -> Any:
+        def _route_after_assess(state: _AnalystWorkflowState) -> str:
+            packet = state.get("packet")
+            parsed = state.get("parsed") or {}
+            if state.get("error"):
+                return "finalize"
+            return (
+                "retry"
+                if packet is not None
+                and packet.analysis_task.task_type == "compute"
+                and not parsed.get("used_financial_evaluator")
+                and int(state.get("attempt", 0)) < int(state.get("max_attempts", 1))
+                else "finalize"
+            )
+
+        def _timing_update(state: Dict[str, Any], key: str, value: int) -> Dict[str, int]:
+            timing = dict(state.get("timing_ms") or {})
+            timing[key] = int(value)
+            return timing
+
+        async def build_prompt_node(state: _AnalystWorkflowState) -> Dict[str, Any]:
+            packet = state["packet"]
+            t0 = time.perf_counter()
+            prompt = build_analyst_prompt(packet, max_context_items=self.max_context_items)
+            return {
+                "prompt": prompt,
+                "attempt": 0,
+                "max_attempts": max(1, int(self.max_attempts)),
+                "timing_ms": _timing_update({"timing_ms": {}}, "build_prompt_ms", int((time.perf_counter() - t0) * 1000)),
+            }
+
+        async def call_model_node(state: _AnalystWorkflowState) -> Dict[str, Any]:
+            attempt = int(state.get("attempt", 0)) + 1
+            prompt = state.get("retry_prompt") if attempt > 1 else state.get("prompt")
+            if not isinstance(prompt, str):
+                prompt = ""
+
+            t0 = time.perf_counter()
+            try:
+                result = await self._agent.ainvoke({"messages": [HumanMessage(content=prompt)]})
+                messages = list(result.get("messages", []) or [])
+                parsed = _parse_agent_messages(messages)
+                err = None
+            except Exception as e:
+                messages = []
+                parsed = {}
+                err = str(e)
+
+            elapsed = int((time.perf_counter() - t0) * 1000)
+            update = {
+                "attempt": attempt,
+                "messages": messages,
+                "parsed": parsed,
+                "error": err,
+            }
+            if attempt <= 1:
+                update["timing_ms"] = _timing_update(
+                    state,
+                    "agent_invoke_ms",
+                    elapsed,
+                )
+            else:
+                update["timing_ms"] = _timing_update(
+                    state,
+                    "agent_retry_ms",
+                    elapsed,
+                )
+            return update
+
+        async def assess_node(state: _AnalystWorkflowState) -> Dict[str, Any]:
+            if state.get("error"):
+                return {}
+            parsed = state.get("parsed") or {}
+            packet = state.get("packet")
+            if (
+                packet is not None
+                and packet.analysis_task.task_type == "compute"
+                and not parsed.get("used_financial_evaluator")
+                and int(state.get("attempt", 0)) < int(state.get("max_attempts", 1))
+            ):
+                return {"retry_prompt": _compute_retry_prompt(state.get("prompt", ""))}
+            return {}
+
+        builder = StateGraph(_AnalystWorkflowState)
+        builder.add_node("build_prompt", build_prompt_node)
+        builder.add_node("call_model", call_model_node)
+        builder.add_node("assess", assess_node)
+        builder.add_node("finalize", lambda state: {})
+        builder.add_edge(START, "build_prompt")
+        builder.add_edge("build_prompt", "call_model")
+        builder.add_edge("call_model", "assess")
+        builder.add_conditional_edges(
+            "assess",
+            _route_after_assess,
+            {
+                "retry": "call_model",
+                "finalize": "finalize",
+            },
+        )
+        builder.add_edge("finalize", END)
+        return builder.compile()
 
     async def abuild(self) -> "AnalystAgent":
         tool_script = self.financial_tool_script or _default_financial_tool_script()
-
-        self._client = MultiServerMCPClient(
-            {
-                "fin_math": {
-                    "transport": "stdio",
-                    "command": "python",
-                    "args": [tool_script],
+        tools = []
+        if MultiServerMCPClient is not None:
+            self._client = MultiServerMCPClient(
+                {
+                    "fin_math": {
+                        "transport": "stdio",
+                        "command": "python",
+                        "args": [tool_script],
+                    }
                 }
-            }
-        )
-        tools = await self._client.get_tools()
+            )
+            try:
+                tools = await self._client.get_tools()
+            except Exception:
+                # If MCP client setup fails, continue without tools so the analyst
+                # can still produce an explainable (non-computed) answer path.
+                self._client = None
+                tools = []
 
-        llm = ChatOllama(
+        llm = build_chat_model(
             model=self.model,
             temperature=self.temperature,
             num_predict=self.num_predict,
@@ -458,6 +655,7 @@ class AnalystAgent:
             tools=tools,
             prompt=SYSTEM_PROMPT,
         )
+        self._graph = self._build_workflow()
         return self
 
     async def aclose(self) -> None:
@@ -473,16 +671,27 @@ class AnalystAgent:
     async def arun(self, packet: AnalystPacket, *, debug: bool = False) -> AnalystRunResult:
         if self._agent is None:
             await self.abuild()
+        if self._graph is None:
+            await self.abuild()
 
         t0 = time.perf_counter()
-        prompt = build_analyst_prompt(packet, max_context_items=self.max_context_items)
-        t_prompt_ms = int((time.perf_counter() - t0) * 1000)
+        final_state = await self._graph.ainvoke({"packet": packet})
+        timing_ms = final_state.get("timing_ms") or {}
+        t_prompt_ms = int(timing_ms.get("build_prompt_ms", 0))
+        t_invoke_ms = int(timing_ms.get("agent_invoke_ms", 0))
+        retry_ms = int(timing_ms.get("agent_retry_ms", 0))
+        parsed = final_state.get("parsed") or {}
+        messages = final_state.get("messages") or []
+        error = final_state.get("error")
+        final_answer = parsed.get("final_answer", "")
+        tool_calls = parsed.get("tool_calls") or []
+        used_financial_evaluator = bool(parsed.get("used_financial_evaluator"))
+        expression = parsed.get("expression")
+        variables = parsed.get("variables") or {}
+        numeric_result = parsed.get("numeric_result")
+        elapsed = int((time.perf_counter() - t0) * 1000)
 
-        t_llm0 = time.perf_counter()
-        try:
-            result = await self._agent.ainvoke({"messages": [HumanMessage(content=prompt)]})
-        except Exception as e:
-            elapsed = int((time.perf_counter() - t0) * 1000)
+        if error:
             return AnalystRunResult(
                 ok=False,
                 answer="Analyst agent failed to produce an answer.",
@@ -493,52 +702,16 @@ class AnalystAgent:
                 trace=AnalystTrace(
                     timing_ms={
                         "build_prompt_ms": t_prompt_ms,
-                        "agent_invoke_ms": int((time.perf_counter() - t_llm0) * 1000),
+                        "agent_invoke_ms": t_invoke_ms,
+                        "agent_retry_ms": retry_ms,
                         "total_ms": elapsed,
                     },
                     used_financial_evaluator=False,
                     tool_calls=[],
                     raw_message_count=0,
                 ),
-                error=str(e),
+                error=error,
             )
-
-        t_invoke_ms = int((time.perf_counter() - t_llm0) * 1000)
-        retry_ms = 0
-
-        messages = result.get("messages", []) or []
-        parsed = _parse_agent_messages(messages)
-        final_answer = parsed["final_answer"]
-        tool_calls = parsed["tool_calls"]
-        used_financial_evaluator = parsed["used_financial_evaluator"]
-        expression = parsed["expression"]
-        variables = parsed["variables"]
-        numeric_result = parsed["numeric_result"]
-
-        if packet.analysis_task.task_type == "compute" and not used_financial_evaluator:
-            retry_prompt = (
-                prompt
-                + "\n\nIMPORTANT: This is a compute task. You MUST call financial_evaluator before final answer."
-                + " Use numbers from context and show the computed result."
-            )
-            t_retry0 = time.perf_counter()
-            try:
-                retry_result = await self._agent.ainvoke({"messages": [HumanMessage(content=retry_prompt)]})
-                retry_ms = int((time.perf_counter() - t_retry0) * 1000)
-                retry_messages = retry_result.get("messages", []) or []
-                if retry_messages:
-                    messages = retry_messages
-                    parsed = _parse_agent_messages(messages)
-                    final_answer = parsed["final_answer"]
-                    tool_calls = parsed["tool_calls"]
-                    used_financial_evaluator = parsed["used_financial_evaluator"]
-                    expression = parsed["expression"]
-                    variables = parsed["variables"]
-                    numeric_result = parsed["numeric_result"]
-            except Exception:
-                retry_ms = int((time.perf_counter() - t_retry0) * 1000)
-
-        elapsed = int((time.perf_counter() - t0) * 1000)
 
         result_open_issues = list(packet.open_issues)
         if packet.analysis_task.task_type == "compute" and not used_financial_evaluator:

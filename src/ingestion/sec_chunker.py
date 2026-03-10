@@ -4,13 +4,17 @@ sec_chunker.py
 
 Given a 10-K/10-Q HTML filing,
 1) parse it with sec-parser into a semantic tree
-3) produce:
+2) produce:
    - two-level text chunks (item + subsection)
    - table chunks (with HTML + structured data + text)
 
 Outputs two JSONL files in the given output directory:
-   <TICKER>_<FORM>_<YEAR>.text.jsonl
-   <TICKER>_<FORM>_<YEAR>.tables.jsonl
+   <FORM>_<YEAR>.text.jsonl
+   <FORM>_<YEAR>.tables.jsonl
+
+For example:
+   - 10-K_2024.text.jsonl
+   - 10-K_2024.tables.jsonl
 """
 
 from __future__ import annotations
@@ -47,6 +51,33 @@ def normalize_ws(text: str | None) -> str:
 
 
 ITEM_RE = re.compile(r"Item\s+(\d+[A-Z]?)\.\s*(.*)", re.IGNORECASE)
+_NOISY_TITLE_RE = (
+    re.compile(r"^UNITE|^WASHINGTON,|^FORM\s+10-K$", re.IGNORECASE),
+    re.compile(r"^FORM\s+10-K\s*CROSS", re.IGNORECASE),
+    re.compile(r"^☒|^☐|^\(MARK ONE\)|^\(EXACT NAME OF REGISTRANT", re.IGNORECASE),
+    re.compile(r"^COMMISSION FILE NUMBER|^NUMBER OF SHARES OF|^DOCUMENTS INCORPORATED BY REFERENCE", re.IGNORECASE),
+    re.compile(r"^INDICATE BY CHECK MARK|^IF AN EMERGING GROWTH COMPANY|^AVAILABLE ON THE WEB|^Securities? REGISTERED PURSUANT", re.IGNORECASE),
+    re.compile(r"^Registrant|^INDICATE BY CHECK MARK|^Large accelerated filer", re.IGNORECASE),
+)
+
+
+def _should_skip_title_heading(raw_title: str) -> bool:
+    """Filter likely boilerplate headings from SEC filing cover pages."""
+    title = normalize_ws(raw_title)
+    if not title:
+        return True
+
+    if len(title) < 4:
+        return True
+
+    if title.upper() in {"OR", "PART III", "PART I", "PART II"}:
+        return True
+
+    for pattern in _NOISY_TITLE_RE:
+        if pattern.search(title):
+            return True
+
+    return False
 
 
 def parse_item_id_and_title(raw_title: str) -> Tuple[Optional[str], str]:
@@ -205,6 +236,49 @@ def build_two_level_text_chunks(tree) -> List[TextChunk]:
                     text="\n\n".join(paragraphs),
                 )
             )
+
+    return chunks
+
+
+def build_fallback_text_chunks(tree) -> List[TextChunk]:
+    """
+    Fallback extractor for filings where TopSectionTitle is missing.
+
+    We chunk around top-level `TitleElement`s and collect paragraph text under
+    each heading node.
+    """
+    chunks: List[TextChunk] = []
+
+    for node in tree.nodes:
+        el = node.semantic_element
+        if not isinstance(el, TitleElement):
+            continue
+
+        heading = normalize_ws(el.text or "")
+        if _should_skip_title_heading(heading):
+            continue
+
+        item_id, item_title = parse_item_id_and_title(heading)
+        if not item_id:
+            # fallback for non-Item headings to avoid discarding large filings
+            item_id = heading
+            item_title = heading
+            level = "subsection"
+        else:
+            level = "item"
+
+        paragraphs = collect_node_paragraphs(node)
+        if not paragraphs:
+            continue
+
+        chunks.append(
+            TextChunk(
+                level=level,
+                item_id=item_id,
+                heading_path=[item_title],
+                text="\n\n".join(paragraphs),
+            )
+        )
 
     return chunks
 
@@ -402,6 +476,11 @@ def main():
 
     print("Building text chunks...")
     text_chunks = build_two_level_text_chunks(tree)
+    if not text_chunks:
+        print(
+            "No item-based text chunks found; falling back to title-based text extraction..."
+        )
+        text_chunks = build_fallback_text_chunks(tree)
 
     print("Building table chunks...")
     table_chunks = build_table_chunks(tree, base_meta=filing_meta)
@@ -415,13 +494,11 @@ def main():
         and form_type.upper().startswith("10-Q")
         and "quarter" in filing_meta
     ):
-        # Example: AAPL_10-Q_2025Q1
-        doc_prefix = (
-            f"{filing_meta['ticker']}_{filing_meta['form_type']}_"
-            f"{filing_meta['fiscal_year']}{filing_meta['quarter']}"
-        )
+        # Example: 10-Q_2025Q1
+        doc_prefix = f"{filing_meta['form_type']}_{filing_meta['fiscal_year']}{filing_meta['quarter']}"
     elif has_basic_meta:
-        doc_prefix = f"{filing_meta['ticker']}_{filing_meta['form_type']}_{filing_meta['fiscal_year']}"
+        # Example: 10-K_2024
+        doc_prefix = f"{filing_meta['form_type']}_{filing_meta['fiscal_year']}"
     elif "ticker" in filing_meta and "form_type" in filing_meta:
         doc_prefix = f"{filing_meta['ticker']}_{filing_meta['form_type']}"
     else:

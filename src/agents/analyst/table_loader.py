@@ -7,6 +7,8 @@ import re
 from pathlib import Path
 from typing import Any, Dict, Optional
 
+from ingestion.chunk_paths import resolve_chunk_file
+
 _TABLE_DOC_ID_RE = re.compile(r"::table::(\d+)$")
 
 
@@ -80,7 +82,9 @@ def load_table_data(
             print(f"Error: Missing metadata in payload for {entry_id}")
         return None
 
-    file_path = Path(data_dir) / f"{prefix}.tables.jsonl"
+    file_path = resolve_chunk_file(data_dir, prefix, f"{prefix}.tables.jsonl")
+    if file_path is None:
+        file_path = Path(data_dir) / f"{prefix}.tables.jsonl"
 
     if not file_path.exists():
         if verbose:
@@ -101,4 +105,3 @@ def load_table_data(
     if verbose:
         print(f"Error: Table index {table_index} out of bounds.")
     return None
-

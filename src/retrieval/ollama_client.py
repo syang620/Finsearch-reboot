@@ -5,6 +5,8 @@ import json
 import re
 from typing import Any
 
+from llm_client import chat_with_dashscope, is_qwen_chat_model
+
 
 def _strip_code_fences(text: str) -> str:
     t = text.strip()
@@ -62,13 +64,27 @@ def chat_with_ollama(
     options: dict[str, Any] | None = None,
 ):
     """
-    Call a local Ollama server via the `ollama` Python package.
+    Call a Qwen chat model via DashScope's OpenAI-compatible API, or fallback to
+    a local Ollama server for non-Qwen models.
     """
+    if is_qwen_chat_model(model):
+        try:
+            out = chat_with_dashscope(
+                prompt,
+                model=model,
+                as_list=as_list,
+                options=options,
+            )
+            return parse_llm_list_output(out) if as_list else out
+        except Exception as e:
+            return [] if as_list else f"Error: {e}"
+
     try:
         import ollama
     except Exception as exc:
         raise ImportError(
-            "chat_with_ollama requires the `ollama` Python package and a running Ollama server."
+            "chat_with_ollama requires either DASHSCOPE_API_KEY for Qwen models or the "
+            "`ollama` Python package and a running Ollama server for non-Qwen models."
         ) from exc
 
     if options is None:

@@ -9,7 +9,7 @@ from __future__ import annotations
 from enum import Enum
 from typing import Any, Dict, List, Literal, Optional, Union
 
-from pydantic import BaseModel, Field, ConfigDict, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
 # -----------------------------
@@ -85,14 +85,6 @@ class FilingMetadata(BaseModel):
         default=None,
         description="Optional quarter constraint (primarily for 10-Q).",
     )
-    section_hints: List[str] = Field(
-        default_factory=list,
-        description="Optional section/path hints, e.g. 'Liquidity and Capital Resources', 'Note 9'.",
-    )
-    units_hint: List[str] = Field(
-        default_factory=list,
-        description="Optional units hints, e.g. '$ in millions', 'shares in thousands'.",
-    )
 
     @field_validator("ticker")
     @classmethod
@@ -132,48 +124,6 @@ class FilingMetadata(BaseModel):
         cleaned = [str(x).strip().lower() for x in v if str(x).strip()]
         return cleaned or None
 
-    @field_validator("section_hints", "units_hint")
-    @classmethod
-    def _normalize_str_list(cls, v: List[str]) -> List[str]:
-        return [str(x).strip() for x in v if str(x).strip()]
-
-
-class QueryBundle(BaseModel):
-    """
-    Crawl-mode retrieval queries + lexical anchors.
-    Matches the MCP retrieval tool constraint (max 4 queries).
-    """
-    base_query: str = Field(..., description="Original (or normalized) user query.")
-    queries: List[str] = Field(..., description="1-4 short retrieval queries (multiquery).")
-    must_include: List[str] = Field(
-        default_factory=list,
-        description="Hard lexical anchors to check retrieval quality.",
-    )
-    nice_to_include: List[str] = Field(default_factory=list)
-    exclusions: List[str] = Field(default_factory=list)
-
-    @field_validator("base_query")
-    @classmethod
-    def _base_query_non_empty(cls, v: str) -> str:
-        v = str(v).strip()
-        if not v:
-            raise ValueError("base_query must be non-empty")
-        return v
-
-    @field_validator("queries")
-    @classmethod
-    def _validate_queries(cls, v: List[str]) -> List[str]:
-        cleaned = [str(x).strip() for x in (v or []) if str(x).strip()]
-        if not cleaned:
-            raise ValueError("queries must be non-empty")
-        return cleaned[:4]
-
-    @field_validator("must_include", "nice_to_include", "exclusions")
-    @classmethod
-    def _normalize_terms(cls, v: List[str]) -> List[str]:
-        return [str(x).strip() for x in v if str(x).strip()]
-
-
 class AnalysisTask(BaseModel):
     """
     High-level analysis instruction for the analyst agent.
@@ -205,22 +155,6 @@ class AnalysisTask(BaseModel):
         return [str(x).strip() for x in v if str(x).strip()]
 
 
-class QualityRequirements(BaseModel):
-    """
-    Planner-set thresholds to decide whether retrieval is 'good enough'.
-    """
-    min_results: int = Field(default=3, ge=1)
-    min_total_score: float = Field(default=0.0, ge=0.0)
-    must_have_provenance: bool = True
-    max_context_items: int = Field(default=10, ge=1, le=50)
-    accept_if_contains_any: List[str] = Field(default_factory=list)
-
-    @field_validator("accept_if_contains_any")
-    @classmethod
-    def _normalize_anchors(cls, v: List[str]) -> List[str]:
-        return [str(x).strip() for x in v if str(x).strip()]
-
-
 class PlannerOutput(BaseModel):
     """
     What the planner LLM must output (crawl mode).
@@ -229,14 +163,12 @@ class PlannerOutput(BaseModel):
     retrieval_needed: bool = Field(default=True)
     intent: PlannerIntent = Field(default=PlannerIntent.FILING_FACT)
     metadata: FilingMetadata
-    query_bundle: QueryBundle
     analysis_task: AnalysisTask
-    quality_requirements: QualityRequirements = Field(default_factory=QualityRequirements)
     open_issues: List[OpenIssue] = Field(default_factory=list)
 
     @model_validator(mode="after")
     def _sanity_checks(self) -> "PlannerOutput":
-        # If planner says retrieval not needed, still allow metadata/query_bundle for traceability,
+        # If planner says retrieval not needed, keep the issue list as a traceable signal.
         # but flag missing context expectation.
         if not self.retrieval_needed and self.intent in (PlannerIntent.FILING_FACT, PlannerIntent.FILING_CALC):
             self.open_issues.append(

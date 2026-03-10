@@ -3,6 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
+from llm_client import build_chat_model, is_qwen_chat_model
+
 
 @dataclass(frozen=True)
 class RagasRetrievalConfig:
@@ -262,32 +264,33 @@ def evaluate_ragas_retrieval(
     errors: List[Dict[str, Any]] = []
 
     try:
-        from langchain_ollama import ChatOllama, OllamaEmbeddings
+        from langchain_ollama import OllamaEmbeddings
         from ragas import evaluate
     except Exception as exc:
         errors.append({"stage": "ragas_init", "error": f"Failed to import ragas stack: {exc}"})
         return {}, {}, errors
 
     if config.preflight_check_models:
-        has_judge, available, judge_err = _ollama_has_model(
-            base_url=config.ollama_base_url,
-            model_name=config.judge_model,
-        )
-        if judge_err:
-            errors.append({"stage": "ragas_init", "error": judge_err})
-            return {}, {}, errors
-        if not has_judge:
-            avail = ", ".join(available[:20]) if available else "<none>"
-            errors.append(
-                {
-                    "stage": "ragas_init",
-                    "error": (
-                        f"Ollama judge model '{config.judge_model}' not found. "
-                        f"Available models: {avail}"
-                    ),
-                }
+        if not is_qwen_chat_model(config.judge_model):
+            has_judge, available, judge_err = _ollama_has_model(
+                base_url=config.ollama_base_url,
+                model_name=config.judge_model,
             )
-            return {}, {}, errors
+            if judge_err:
+                errors.append({"stage": "ragas_init", "error": judge_err})
+                return {}, {}, errors
+            if not has_judge:
+                avail = ", ".join(available[:20]) if available else "<none>"
+                errors.append(
+                    {
+                        "stage": "ragas_init",
+                        "error": (
+                            f"Ollama judge model '{config.judge_model}' not found. "
+                            f"Available models: {avail}"
+                        ),
+                    }
+                )
+                return {}, {}, errors
 
         has_embed, available2, embed_err = _ollama_has_model(
             base_url=config.ollama_base_url,
@@ -322,7 +325,7 @@ def evaluate_ragas_retrieval(
         )
         return {}, {}, errors
 
-    llm = ChatOllama(
+    llm = build_chat_model(
         model=config.judge_model,
         base_url=config.ollama_base_url,
         temperature=0,
