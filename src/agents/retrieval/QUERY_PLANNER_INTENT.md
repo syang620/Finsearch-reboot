@@ -96,7 +96,7 @@ For each applicable **job x target** pair:
      - `queries`
      - `doc_types` (if relevant)
      - fixed target metadata
-     - retrieval parameters like `top_k` and `min_total_score`
+     - retrieval parameters like `top_k`
 
 4. **Capture retrieval output and compact it**
    - Save the exact request used

@@ -18,6 +18,8 @@ dependencies = [
     "faiss-cpu==1.8.0.post1",
     "rank-bm25==0.2.2",
     "sentence-transformers==3.1.1",
+    "langgraph-checkpoint-sqlite",
+    "aiosqlite",
 ]
 
 [tool.setuptools.packages.find]

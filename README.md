@@ -109,16 +109,31 @@ Common environment variables:
 
 - `QDRANT_HOST` (default `localhost`)
 - `QDRANT_PORT` (default `6333`)
-- `QDRANT_COLLECTION_NAME` (default `sec_docs_hybrid`)
+- `QDRANT_COLLECTION_NAME` (default `sec_docs_dense_bm25`)
+- `sec_docs_dense_bm25` is the default retrieval and ingestion target in this repo.
 - `TABLES_DIR` (default resolves to `data/chunked`)
 - `SEC_API_KEY` (required only for `scripts/download_xbrl.py`)
+- `OPENAI_API_KEY`
+- `ANTHROPIC_API_KEY`
+- `GOOGLE_API_KEY` or `GEMINI_API_KEY`
+
+Optional LLM model aliases for easy provider switching:
+
+- `LITELLM_GPT_MODEL` (e.g. `openai/gpt-4o-mini`)
+- `LITELLM_CLAUDE_MODEL` (e.g. `anthropic/claude-3-5-sonnet-latest`)
+- `LITELLM_GEMINI_MODEL` (e.g. `gemini/gemini-2.5-flash`)
+
+Optional fallback chain for chat model construction:
+
+- `LLM_FALLBACK_MODELS` (comma-separated or JSON list)
+  - Example: `gpt,openai/gpt-4o-mini`
+  - Use when one provider is unavailable; the system will try configured backups in order.
+
+Pass full model names with provider prefixes (`openai/...`, `anthropic/...`, `gemini/...`) or
+short aliases (`gpt`, `claude`, `gemini`) to `analyst_model` / `planner_model`.
 
 ## Documentation
 
 - Detailed architecture and runbook: `docs/ARCHITECTURE.md`
 - Ingestion script guide: `scripts/README.md`
 - Change history: `docs/CHANGELOG.md`
-
-## Compatibility Note
-
-`src/tools` is a compatibility shim layer forwarding to `src/mcp_server`. Prefer `mcp_server` paths in new code.

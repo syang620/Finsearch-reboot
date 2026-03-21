@@ -310,7 +310,11 @@ async def _run_examples_async(
             row.planner_retrieval_needed = planner_obj.retrieval_needed
             row.planner_ticker = planner_obj.metadata.ticker
             row.planner_fiscal_year = planner_obj.metadata.fiscal_year
-            row.planner_form_type = planner_obj.metadata.form_type.value
+            row.planner_form_type = (
+                planner_obj.metadata.form_type.value
+                if planner_obj.metadata.form_type is not None
+                else None
+            )
 
         if analyst_obj is not None:
             row.analyst_metric = analyst_obj.metric

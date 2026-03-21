@@ -6,7 +6,7 @@ This document is the detailed engineering map for the current agentic SEC-filing
 
 Primary runtime flow:
 
-1. `PlannerAgent` generates `PlannerOutput`.
+1. `InteractivePlannerAgent` generates `PlannerOutput`.
 2. If retrieval is needed and metadata is sufficient, orchestrator calls retrieval MCP tool.
 3. Retrieval output is transformed into `AnalystPacket` with hydrated context.
 4. `AnalystAgent` answers (and calls `financial_evaluator` for compute tasks).
@@ -27,19 +27,17 @@ Implementation:
 - `src/agents/contracts.py`
   - Shared Pydantic schemas for planner/retrieval/analyst handoffs.
 
-- `src/agents/planner/agent.py`
-  - Deterministic pre-extraction (ticker/year/form hints).
-  - Intent classification and compute cue overrides.
-  - Query expansion via `retrieval.query_expansion`.
-  - LLM plan generation + schema validation.
-  - Fallback plan path and timing trace output.
+- `src/agents/planner/interactive_target_resolution.py`
+  - Interactive planner (`InteractivePlannerAgent`) with deterministic metadata prefill.
+  - Clarification loop and target-resolution output schema.
+  - Fallback target-resolution path and timing trace output.
 
 - `src/agents/retrieval/mcp_client.py`
   - Async stdio MCP client wrapper.
   - Invokes `sec_retrieve_tables` on MCP server.
 
-- `src/agents/retrieval/agent.py`
-  - Thin retrieval node wrapper used by orchestrator.
+- `src/agents/retrieval/query_planner_v2.py`
+  - Canonical retrieval runtime.
 
 - `src/agents/analyst/agent.py`
   - Builds analyst prompts from `AnalystPacket` context.
@@ -50,10 +48,6 @@ Implementation:
   - Hydrates retrieved table references into full table dictionaries from chunk files.
 
 ### 2.2 Retrieval (`src/retrieval`)
-
-- `src/retrieval/pipeline.py`
-  - Hybrid retrieval orchestration.
-  - Dedupe + enrichment + reranking pipeline.
 
 - `src/retrieval/evaluator.py`
   - Retrieval utilities and scoring helpers.
@@ -84,7 +78,7 @@ Implementation:
 
 - `src/mcp_server/tools/sec_retrieval.py`
   - Retrieval MCP tool (`sec_retrieve_tables`).
-  - Uses `retrieval.pipeline` + lexical scoring.
+  - Uses `retrieval.evaluator` + `retrieval.rerank_enricher`.
 
 - `src/mcp_server/tools/financial_evaluator.py`
   - Safe arithmetic tool used by analyst compute tasks.
@@ -144,8 +138,10 @@ Common environment variables:
 
 - `QDRANT_HOST` (default `localhost`)
 - `QDRANT_PORT` (default `6333`)
-- `QDRANT_COLLECTION_NAME` (default `sec_docs_hybrid`)
+- `QDRANT_COLLECTION_NAME` (default `sec_docs_dense_bm25`)
+- `sec_docs_dense_bm25` is the default retrieval and ingestion target in this repo.
 - `TABLES_DIR` (default resolves to `data/chunked`)
+- Default ingestion profile for `sec_docs_dense_bm25` is dense + BM25 only.
 
 For XBRL helper script only:
 
@@ -195,7 +191,7 @@ Reference:
 ### 8.1 Retrieval returns empty/low quality
 
 - Verify planner extracted `ticker` and `fiscal_year`.
-- Confirm `sec_docs_hybrid` exists and is populated.
+- Confirm `sec_docs_dense_bm25` exists and is populated.
 - Confirm `TABLES_DIR` matches chunk files used for lexical scoring.
 
 ### 8.2 Analyst does not call `financial_evaluator`
@@ -217,13 +213,6 @@ Key path migrations:
 - `rag10kq.query_expansion_helper` -> `retrieval.query_expansion`
 - `rag10kq.retrieval_evaluator` -> `retrieval.evaluator`
 - `rag10kq.rerank_context_enricher` -> `retrieval.rerank_enricher`
-- `rag10kq.pipeline` -> `retrieval.pipeline`
 - `rag10kq.sec_*` + `rag10kq.qdrant_ingester` + `rag10kq.tables_summarizer` -> `ingestion.*`
 - `rag10kq.context_generator` helpers -> `analysis.answer_synthesis`
 - `mcp_backend` -> `mcp_server`
-
-## 10. Compatibility Layer
-
-`src/tools` remains as a compatibility shim forwarding to `src/mcp_server` modules.
-
-Prefer direct `mcp_server` imports for all new code.

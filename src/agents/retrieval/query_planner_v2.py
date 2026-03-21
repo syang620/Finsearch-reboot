@@ -22,10 +22,9 @@ Expected input state shape:
     "retrieval_plan": {
         "jobs": [
             {
-                "job_type": "metric_extract" | "narrative_extract" | "component_extract" | "fact_lookup",
+                "job_type": "metric_extract" | "narrative_extract",
                 "goal": str,
-                "target_id": int | None,
-                "target_ids": list[int] | None,
+                "applies_to_target_ids": list[int],
             },
             ...
         ]
@@ -50,28 +49,29 @@ Expected retrieval client interface:
         form_type="10-K",
         doc_types=["text_chunk", "table", "table_row"] | None,
         top_k=3,
-        min_total_score=0.0,
         timeout_s=30,
     )
 """
 
 import json
-from typing import Annotated, Any, Dict, List, Literal, Optional, Sequence, TypedDict
+import os
+import asyncio
+from typing import Any, Dict, List, Literal, Optional, Sequence, TypedDict
 
 from pydantic import BaseModel, Field
+from agents.text_utils import normalize_text
+from llm_client import build_chat_model
 
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langchain_core.tools import tool
 from langgraph.graph import END, START, StateGraph
-from langgraph.graph.message import add_messages
-from langgraph.prebuilt import ToolNode
-
 
 _DEFAULT_FORM_TYPE = "10-K"
+_DEFAULT_MODEL = "qwen2.5-14b-instruct-1m"
 _MAX_QUERIES = 4
 _ALLOWED_DOC_TYPES = {"text_chunk", "table", "table_row"}
-_JOB_TYPES = {"fact_lookup", "metric_extract", "component_extract", "narrative_extract"}
+_JOB_TYPES = {"metric_extract", "narrative_extract"}
 
 
 def _extract_first_json_object(text: str) -> Optional[Dict[str, Any]]:
@@ -162,7 +162,7 @@ Core rules:
 5. Prefer filing-native terminology, note titles, line-item wording, section phrases, and close synonyms when helpful.
 6. Do not include ticker, company name, fiscal year, or form type in the queries unless essential to the financial concept.
 7. Apply required_doc_types as `doc_types` when provided.
-8. Use `top_k=3` and `min_total_score=0`.
+8. Use `top_k=3`.
 9. Pass the retrieval strings directly in the tool argument field `queries`.
 
 How to behave by phase:
@@ -173,8 +173,6 @@ When phase == "initial":
 - Bias query wording by job_type:
   - metric_extract: prefer exact metric, line-item, statement, note, or accounting wording.
   - narrative_extract: prefer short topical phrases that surface explanatory text.
-  - component_extract: prefer component or breakdown terminology.
-  - fact_lookup: prefer one concise exact phrase for the target fact.
 
 When phase == "review":
 - First inspect review_feedback.
@@ -285,11 +283,7 @@ How to judge by job type:
   ACCEPT if at least one item looks like a plausible source of the metric or ingredients needed to derive it, such as a relevant table, statement row, note disclosure, or accounting discussion.
   Do not require the exact value to be visible in the compact summary.
 - narrative_extract:
-  ACCEPT if at least one item appears to discuss the relevant topic, risk, policy, operation, or section.
-- component_extract:
-  ACCEPT if at least one item appears likely to contain the relevant breakdown, supporting components, or sub-items, even if the full decomposition is not obvious from the summary.
-- fact_lookup:
-  ACCEPT if at least one item appears likely to contain the fact or direct supporting evidence.
+  ACCEPT if at least one item appears likely to contain the relevant disclosure or discussion needed for the explanatory evidence.
 
 Important review rules:
 - Do not change ticker, fiscal_year, or form_type.
@@ -325,14 +319,62 @@ class RetrievalReview(BaseModel):
 
 
 class _RunGraphState(TypedDict, total=False):
-    messages: Annotated[List[BaseMessage], add_messages]
+    messages: List[BaseMessage]
     review_feedback: Dict[str, Any] | None
+    tool_called: bool
+
+    attempts: List[Dict[str, Any]]
+    model_turns: List[Dict[str, Any]]
+    reviewer_turns: List[Dict[str, Any]]
+
+    client: Any
+    state: Dict[str, Any]
+    job_plan: Dict[str, Any]
+    target: Dict[str, Any]
+    required_doc_types: Optional[List[str]]
+    seed_queries: List[str]
+    first_pass_input: Dict[str, Any]
+    tool_args: Dict[str, Any] | None
 
 
-def _normalize_text(value: Any) -> str:
-    if value is None:
-        return ""
-    return " ".join(str(value).strip().split())
+@tool("sec_retrieve_tables")
+def _sec_retrieve_tables_placeholder_tool(
+    queries: List[str],
+    doc_types: Optional[List[str]] = None,
+    reason: str = "",
+) -> str:
+    """Structured retrieval-tool signature for model-guided retrieval attempts."""
+    del queries, doc_types, reason
+    return "{}"
+
+
+def _extract_tool_args_from_message(message: Any) -> Optional[Dict[str, Any]]:
+    tool_calls = getattr(message, "tool_calls", None) or []
+    if not tool_calls:
+        return None
+
+    raw_call = tool_calls[0]
+    if isinstance(raw_call, dict):
+        args = raw_call.get("args")
+    else:
+        args = getattr(raw_call, "args", None)
+
+    if isinstance(args, BaseModel):
+        try:
+            args = args.dict()
+        except Exception:
+            args = None
+
+    if isinstance(args, str):
+        args = _extract_first_json_object(args)
+
+    if not isinstance(args, dict):
+        return None
+    return args
+
+
+def _normalize_text(value: Any) -> Optional[str]:
+    return normalize_text(value)
 
 
 def _normalize_int(value: Any) -> Optional[int]:
@@ -360,15 +402,11 @@ def _dedupe_keep_order(values: Sequence[str]) -> List[str]:
 
 
 def deterministic_doc_types_for_job(job_type: str) -> Optional[List[str]]:
-    normalized = _normalize_text(job_type).lower()
+    normalized = (_normalize_text(job_type) or "").lower()
     if normalized == "metric_extract":
-        return ["table", "table_row", "text_chunk"]
-    if normalized == "component_extract":
         return ["table", "table_row", "text_chunk"]
     if normalized == "narrative_extract":
         return ["text_chunk"]
-    if normalized == "fact_lookup":
-        return None
     return None
 
 
@@ -382,11 +420,12 @@ def _coerce_doc_types(raw: Any, fallback: Optional[List[str]] = None) -> Optiona
     else:
         items = []
 
-    cleaned = [
-        _normalize_text(item).lower().replace(" ", "_")
-        for item in items
-        if _normalize_text(item)
-    ]
+    cleaned: List[str] = []
+    for item in items:
+        normalized_item = _normalize_text(item)
+        if not normalized_item:
+            continue
+        cleaned.append(normalized_item.lower().replace(" ", "_"))
     valid = [item for item in cleaned if item in _ALLOWED_DOC_TYPES]
     valid = _dedupe_keep_order(valid)
     if valid:
@@ -434,6 +473,46 @@ def _compact_retrieval_result(result: Dict[str, Any], *, top_n: int = 3) -> Dict
     }
 
 
+def _coerce_table_score(value: Any) -> float:
+    try:
+        if value is None:
+            return 0.0
+        return float(value)
+    except Exception:
+        return 0.0
+
+
+def _dedupe_and_rank_top_tables(*, tables: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    deduped: List[Dict[str, Any]] = []
+    seen: set[tuple] = set()
+    for row in tables:
+        if not isinstance(row, dict):
+            continue
+
+        doc_id = _normalize_text(row.get("doc_id")) or ""
+        section = _normalize_text(
+            row.get("section_path") or row.get("section") or row.get("path")
+        ) or ""
+        table_name = _normalize_text(row.get("table_name")) or ""
+        key = (
+            doc_id,
+            section,
+            table_name,
+        )
+        if key in seen:
+            continue
+        seen.add(key)
+        deduped.append(row)
+
+    deduped.sort(
+        key=lambda row: _coerce_table_score(
+            row.get("total_score") if row.get("total_score") is not None else row.get("score")
+        ),
+        reverse=True,
+    )
+    return deduped
+
+
 def _build_attempt_log(*, attempt_index: int, request: Dict[str, Any], retrieval: Dict[str, Any]) -> Dict[str, Any]:
     return {
         "attempt_index": int(attempt_index),
@@ -446,17 +525,18 @@ def _build_attempt_log(*, attempt_index: int, request: Dict[str, Any], retrieval
 def _seed_queries_for_job(
     *,
     goal: str,
-    original_user_query: str,
+    original_user_query: Optional[str],
     job_type: str,
     target: Dict[str, Any],
 ) -> List[str]:
-    text = f"{goal} {original_user_query}".lower()
+    fallback_query = original_user_query or ""
+    text = f"{goal} {fallback_query}".lower()
     seeds: List[str] = []
 
     if goal:
         seeds.append(goal)
-    if original_user_query and original_user_query != goal:
-        seeds.append(original_user_query)
+    if fallback_query and fallback_query != goal:
+        seeds.append(fallback_query)
 
     if "revenue" in text or "sales" in text:
         seeds.extend(["revenue", "net sales", "total net sales"])
@@ -464,6 +544,30 @@ def _seed_queries_for_job(
         seeds.extend(["debt", "long-term debt", "current portion of long-term debt"])
     if "cash flow" in text:
         seeds.extend(["cash flow", "operating activities", "cash and cash equivalents"])
+    if "eps" in text or "earnings per share" in text:
+        seeds.extend(
+            [
+                "earnings per share",
+                "basic earnings per share",
+                "diluted earnings per share",
+            ]
+        )
+    if "capex" in text or "capital expenditure" in text:
+        seeds.extend(
+            [
+                "capital expenditures",
+                "capital expenditure",
+                "property, plant and equipment",
+            ]
+        )
+    if "free cash flow" in text or "fcf" in text:
+        seeds.extend(
+            [
+                "free cash flow",
+                "cash flow from operations",
+                "capital expenditure",
+            ]
+        )
     if "supply chain" in text:
         seeds.extend(["supply chain", "component shortages", "manufacturing partners"])
     if "risk" in text and job_type == "narrative_extract":
@@ -471,10 +575,11 @@ def _seed_queries_for_job(
 
     # remove target metadata from raw fallback seeds because retrieval filters are deterministic
     target_tokens = {
-        _normalize_text(target.get("ticker")).lower(),
-        _normalize_text(target.get("form_type")).lower(),
+        _normalize_text(target.get("ticker")) or "",
+        _normalize_text(target.get("form_type")) or "",
         str(target.get("fiscal_year")),
     }
+    target_tokens = {token.lower() for token in target_tokens}
     normalized = []
     for seed in _dedupe_keep_order(seeds):
         words = [w for w in seed.split() if w.lower() not in target_tokens]
@@ -503,31 +608,60 @@ def _render_prompt(system_prompt: str, prompt_input: Dict[str, Any]) -> str:
 
 
 def _select_targets_for_job(job: Dict[str, Any], targets: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-    by_id = {target.get("target_id"): target for target in targets if target.get("target_id") is not None}
+    by_id = {
+        _normalize_int(target.get("target_id")): target
+        for target in targets
+        if _normalize_int(target.get("target_id")) is not None
+    }
     raw_ids = []
-    if job.get("target_id") is not None:
-        raw_ids.append(job.get("target_id"))
-    if isinstance(job.get("target_ids"), Sequence):
-        raw_ids.extend(job.get("target_ids") or [])
     if isinstance(job.get("applies_to_target_ids"), Sequence):
         raw_ids.extend(job.get("applies_to_target_ids") or [])
 
-    selected: List[Dict[str, Any]] = []
+    normalized = []
+    seen = set()
     for raw_id in raw_ids:
+        normalized_id = _normalize_int(raw_id)
+        if normalized_id is None or normalized_id in seen:
+            continue
+        seen.add(normalized_id)
+        normalized.append(normalized_id)
+
+    selected: List[Dict[str, Any]] = []
+    for raw_id in normalized:
         if raw_id in by_id:
             selected.append(by_id[raw_id])
     return selected or list(targets)
 
 
-def _normalize_job(job: Dict[str, Any], *, original_user_query: str) -> Dict[str, Any]:
-    job_type = _normalize_text(job.get("job_type")).lower() or "fact_lookup"
+def _normalize_job(job: Dict[str, Any], *, original_user_query: Optional[str]) -> Dict[str, Any]:
+    job_type = (_normalize_text(job.get("job_type")) or "").lower() or "metric_extract"
+    if job_type == "fact_lookup":
+        job_type = "metric_extract"
+    elif job_type == "component_extract":
+        job_type = "narrative_extract"
     if job_type not in _JOB_TYPES:
-        job_type = "fact_lookup"
-    goal = _normalize_text(job.get("goal")) or original_user_query
+        job_type = "metric_extract"
+    fallback_query = original_user_query or ""
+    goal = _normalize_text(job.get("goal")) or fallback_query
+    if isinstance(job.get("applies_to_target_ids"), Sequence):
+        raw_target_ids = list(job.get("applies_to_target_ids") or [])
+    else:
+        raw_target_ids = []
+
+    seen = set()
+    target_ids: List[int] = []
+    for raw_target_id in raw_target_ids:
+        normalized_id = _normalize_int(raw_target_id)
+        if normalized_id is None or normalized_id in seen:
+            continue
+        seen.add(normalized_id)
+        target_ids.append(normalized_id)
+
     return {
         **job,
         "job_type": job_type,
         "goal": goal,
+        "applies_to_target_ids": target_ids,
     }
 
 
@@ -535,13 +669,51 @@ def _build_retrieval_output(*, state: Dict[str, Any], runs_payload: List[Dict[st
     all_tables: List[Dict[str, Any]] = []
     all_queries: List[str] = []
     errors: List[str] = []
+    partial_failures: List[Dict[str, Any]] = []
+    failed_runs = 0
     max_total_score = None
 
     for run in runs_payload:
-        final_retrieval = dict(run.get("final_retrieval") or {})
-        all_tables.extend(list(final_retrieval.get("top_tables") or final_retrieval.get("results") or []))
+        if not isinstance(run, dict):
+            failed_runs += 1
+            partial_failures.append(
+                {
+                    "job": {},
+                    "target": {},
+                    "error": "Invalid retrieval run payload.",
+                    "job_type": None,
+                    "goal": None,
+                    "num_results": 0,
+                }
+            )
+            errors.append("Invalid retrieval run payload.")
+            continue
+
+        final_retrieval = run.get("final_retrieval")
+        if final_retrieval is None:
+            final_retrieval = run.get("retrieval")
+        final_retrieval = dict(final_retrieval or {})
+        run_tables = list(
+            final_retrieval.get("top_tables")
+            or final_retrieval.get("results")
+            or []
+        )
+        all_tables.extend(run_tables)
         all_queries.extend(list(final_retrieval.get("queries_used") or []))
         error_text = _normalize_text(final_retrieval.get("error"))
+        run_ok = bool(final_retrieval.get("ok")) if "ok" in final_retrieval else bool(run_tables)
+        if not run_ok:
+            failed_runs += 1
+            partial_failures.append(
+                {
+                    "job": dict(run.get("job") or {}),
+                    "target": dict(run.get("target") or {}),
+                    "error": error_text or "No results returned for this retrieval run.",
+                    "job_type": _normalize_text((run.get("job") or {}).get("job_type")),
+                    "goal": _normalize_text((run.get("job") or {}).get("goal")),
+                    "num_results": 0,
+                }
+            )
         if error_text:
             errors.append(error_text)
         current_score = final_retrieval.get("max_total_score")
@@ -549,6 +721,12 @@ def _build_retrieval_output(*, state: Dict[str, Any], runs_payload: List[Dict[st
             score_value = float(current_score)
             if max_total_score is None or score_value > max_total_score:
                 max_total_score = score_value
+
+    all_tables = _dedupe_and_rank_top_tables(tables=all_tables)
+
+    retrieval_ok = bool(runs_payload) and failed_runs == 0 and bool(all_tables)
+    if failed_runs:
+        errors.append(f"{failed_runs} retrieval run(s) failed.")
 
     targets = [dict(target) for target in (state.get("targets") or []) if isinstance(target, dict)]
     primary_target = next(
@@ -564,7 +742,7 @@ def _build_retrieval_output(*, state: Dict[str, Any], runs_payload: List[Dict[st
 
     return {
         "type": "retrieval",
-        "ok": bool(all_tables) or not errors,
+        "ok": retrieval_ok,
         "rerank_query": _normalize_text(state.get("original_user_query")) or (deduped_queries[0] if deduped_queries else ""),
         "original_user_query": _normalize_text(state.get("original_user_query")),
         "targets": deduped_targets,
@@ -583,19 +761,19 @@ def _build_retrieval_output(*, state: Dict[str, Any], runs_payload: List[Dict[st
             "planner_hints": dict(state.get("planner_hints") or {}),
             "job_runs": runs_payload,
             "retrieval_agent_model": model_name,
+            "retrieval_agent_flow": "query_planner_v2",
             "max_attempts": 2,
             "top_k": 3,
-            "min_total_score": 0.0,
         },
         "retrieval_plan": dict(state.get("retrieval_plan") or {}),
         "retrieval_agent_model": model_name,
         "max_attempts": 2,
         "top_k": 3,
-        "min_total_score": 0.0,
         "max_total_score": max_total_score,
         "queries_used": deduped_queries,
         "top_tables": all_tables,
         "job_runs": runs_payload,
+        "partial_failures": partial_failures,
         "error": "; ".join(_dedupe_keep_order(errors)) if errors else None,
         "trace": {"runs": runs_payload},
     }
@@ -612,7 +790,6 @@ class RetrievalWorkflowAgent:
         retrieval_agent_prompt: str = DEFAULT_RETRIEVAL_AGENT_PROMPT_TEMPLATE,
         reviewer_prompt: str = DEFAULT_REVIEWER_PROMPT_TEMPLATE,
         top_k: int = 3,
-        min_total_score: float = 0.0,
         max_attempts: int = 2,
         timeout_s: int = 30,
     ) -> None:
@@ -621,9 +798,461 @@ class RetrievalWorkflowAgent:
         self.retrieval_agent_prompt = retrieval_agent_prompt
         self.reviewer_prompt = reviewer_prompt
         self.top_k = top_k
-        self.min_total_score = min_total_score
         self.max_attempts = max_attempts
         self.timeout_s = timeout_s
+        self._run_graph = self._build_run_graph()
+
+    def _build_run_graph(self) -> Any:
+        def _tool_request_from_message(
+            message_or_args: Any,
+            *,
+            seed_queries: List[str],
+            required_doc_types: Optional[List[str]],
+        ) -> Dict[str, Any]:
+            if isinstance(message_or_args, dict):
+                raw_request = message_or_args
+            else:
+                raw_request = _extract_tool_args_from_message(message_or_args)
+            if not isinstance(raw_request, dict):
+                return {
+                    "queries": list(seed_queries),
+                    "doc_types": list(required_doc_types) if isinstance(required_doc_types, list) else None,
+                    "reason": "retrieval tool call was not parseable",
+                }
+            request = {
+                "queries": _coerce_queries(
+                    raw_request.get("queries"),
+                    fallback=seed_queries,
+                ),
+                "doc_types": _coerce_doc_types(
+                    raw_request.get("doc_types"),
+                    fallback=required_doc_types,
+                ),
+                "reason": _normalize_text(raw_request.get("reason")) or "tool call parsed",
+            }
+            return request
+
+        def _request_to_attempt_log(
+            *,
+            attempt_index: int,
+            request: Dict[str, Any],
+            target: Dict[str, Any],
+            message: str,
+        ) -> Dict[str, Any]:
+            retrieval = {
+                "ok": False,
+                "error": message,
+                "queries_used": list(request.get("queries") or []),
+                "top_tables": [],
+                "metadata_used": {
+                    "ticker": target.get("ticker"),
+                    "fiscal_year": target.get("fiscal_year"),
+                    "form_type": target.get("form_type"),
+                    "doc_types": request.get("doc_types"),
+                },
+                "max_total_score": None,
+            }
+            return _build_attempt_log(
+                attempt_index=attempt_index,
+                request=request,
+                retrieval=retrieval,
+            )
+
+        def _last_attempt_failed(graph_state: _RunGraphState) -> bool:
+            attempts = list(graph_state.get("attempts") or [])
+            if not attempts:
+                return False
+            last_attempt = dict(attempts[-1] or {})
+            retrieval = dict(last_attempt.get("retrieval") or {})
+            return retrieval.get("ok") is False or bool(_normalize_text(retrieval.get("error")))
+
+        def _skipped_review_feedback(graph_state: _RunGraphState) -> Dict[str, Any]:
+            attempts = list(graph_state.get("attempts") or [])
+            last_attempt = dict(attempts[-1] or {}) if attempts else {}
+            retrieval = dict(last_attempt.get("retrieval") or {})
+            reason = _normalize_text(retrieval.get("error")) or "retrieval failed; reviewer skipped"
+            return {
+                "action": "accept",
+                "reason": reason,
+                "rewrite_notes": "",
+                "revised_doc_types": None,
+            }
+
+        async def call_retrieval_agent(graph_state: _RunGraphState) -> Dict[str, Any]:
+            attempts = list(graph_state.get("attempts") or [])
+            model_turns = list(graph_state.get("model_turns") or [])
+            state = dict(graph_state.get("state") or {})
+            job_plan = dict(graph_state.get("job_plan") or {})
+            target = dict(graph_state.get("target") or {})
+            seed_queries = list(graph_state.get("seed_queries") or [])
+            first_pass_input = dict(graph_state.get("first_pass_input") or {})
+            review_feedback = dict(graph_state.get("review_feedback") or {})
+            required_doc_types = _coerce_doc_types(
+                review_feedback.get("revised_doc_types"),
+                fallback=graph_state.get("required_doc_types"),
+            )
+
+            attempt_index = len(attempts)
+            if attempt_index == 0:
+                prompt_input = first_pass_input
+            else:
+                last_attempt = attempts[-1]
+                prompt_input = self._build_retry_prompt_input(
+                    state=state,
+                    job_plan=job_plan,
+                    target=target,
+                    request=last_attempt["request"],
+                    result=last_attempt["retrieval"],
+                    review_feedback=review_feedback,
+                    required_doc_types=required_doc_types,
+                    attempt_index=attempt_index,
+                )
+
+            prompt = _render_prompt(self.retrieval_agent_prompt, prompt_input)
+            prompt_msg = HumanMessage(content=prompt)
+
+            tool_called = False
+            response: Any
+            try:
+                response = await self.retrieval_llm.bind_tools(
+                    [_sec_retrieve_tables_placeholder_tool],
+                    tool_choice="auto",
+                ).ainvoke([prompt_msg])
+            except Exception as exc:
+                error_msg = f"RETRIEVAL_LLM_CALL_FAILED: {type(exc).__name__}: {exc}"
+                request = {
+                    "queries": list(_coerce_queries(seed_queries, fallback=seed_queries)),
+                    "doc_types": list(required_doc_types) if isinstance(required_doc_types, list) else None,
+                    "reason": "retrieval workflow model call failed",
+                }
+                attempts = attempts + [
+                    _request_to_attempt_log(
+                        attempt_index=attempt_index + 1,
+                        request=request,
+                        target=target,
+                        message=error_msg,
+                    )
+                ]
+                model_turns = model_turns + [
+                    {
+                        "attempt_index": attempt_index,
+                        "phase": prompt_input.get("phase"),
+                        "prompt_input": prompt_input,
+                        "prompt": prompt,
+                        "message": None,
+                        "raw_output": None,
+                        "tool_calls": None,
+                        "extracted_tool_args": None,
+                        "error": error_msg,
+                    }
+                ]
+                return {
+                    "messages": [AIMessage(content=error_msg)],
+                    "tool_called": False,
+                    "attempts": attempts,
+                    "model_turns": model_turns,
+                    "required_doc_types": required_doc_types,
+                }
+
+            tool_args = _extract_tool_args_from_message(response)
+            raw_tool_calls = getattr(response, "tool_calls", None) or []
+            model_turns = model_turns + [
+                {
+                    "attempt_index": attempt_index,
+                    "phase": prompt_input.get("phase"),
+                    "prompt_input": prompt_input,
+                    "prompt": prompt,
+                    "message": response,
+                    "raw_output": getattr(response, "content", None),
+                    "tool_calls": raw_tool_calls,
+                    "extracted_tool_args": tool_args,
+                }
+            ]
+
+            if tool_args is not None:
+                tool_called = True
+            elif attempts:
+                last_request = attempts[-1].get("request", {})
+                no_tool_call_request = {
+                    "queries": _coerce_queries(
+                        last_request.get("queries"),
+                        fallback=seed_queries,
+                    ),
+                    "doc_types": list(
+                        last_request.get("doc_types")
+                        if isinstance(last_request.get("doc_types"), list)
+                        else (required_doc_types or [])
+                    ),
+                    "reason": "retrieval agent produced no tool_calls",
+                }
+                attempts = attempts + [
+                    _build_attempt_log(
+                        attempt_index=len(attempts) + 1,
+                        request=no_tool_call_request,
+                        retrieval={
+                            "ok": False,
+                            "error": "RETRIEVAL_TOOL_CALL_MISSING: model response had no tool_calls",
+                            "queries_used": list(no_tool_call_request.get("queries") or seed_queries),
+                            "top_tables": [],
+                            "metadata_used": {
+                                "ticker": target.get("ticker"),
+                                "fiscal_year": target.get("fiscal_year"),
+                                "form_type": target.get("form_type"),
+                                "doc_types": list(last_request.get("doc_types") or required_doc_types or []),
+                            },
+                            "max_total_score": None,
+                        },
+                    )
+                ]
+
+            return {
+                "messages": [prompt_msg, response],
+                "tool_called": tool_called,
+                "attempts": attempts,
+                "model_turns": model_turns,
+                "tool_args": tool_args,
+                "required_doc_types": required_doc_types,
+            }
+
+        async def fallback_seed_retrieve(graph_state: _RunGraphState) -> Dict[str, Any]:
+            attempts = list(graph_state.get("attempts") or [])
+            state = dict(graph_state.get("state") or {})
+            job_plan = dict(graph_state.get("job_plan") or {})
+            target = dict(graph_state.get("target") or {})
+            seed_queries = list(graph_state.get("seed_queries") or [])
+            required_doc_types = graph_state.get("required_doc_types")
+            client = graph_state.get("client")
+
+            request = {
+                "queries": list(seed_queries),
+                "doc_types": list(required_doc_types) if isinstance(required_doc_types, list) else None,
+                "reason": "deterministic fallback because the retrieval agent produced no tool call",
+            }
+            retrieval = await self._retrieve_with_client(
+                client=client,
+                request=request,
+                target=target,
+            )
+            attempts = attempts + [
+                _build_attempt_log(
+                    attempt_index=len(attempts) + 1,
+                    request=request,
+                    retrieval=retrieval,
+                )
+            ]
+            prompt = f"Fallback retrieval executed for {job_plan.get('job_type')} because no retrieval tool call was emitted."
+            return {
+                "attempts": attempts,
+                "review_feedback": (
+                    _skipped_review_feedback({"attempts": attempts})
+                    if retrieval.get("ok") is False or bool(_normalize_text(retrieval.get("error")))
+                    else None
+                ),
+                "model_turns": list((graph_state.get("model_turns") or []))
+                + [
+                    {
+                        "attempt_index": len(attempts),
+                        "phase": "initial",
+                        "prompt_input": {
+                            "reason": "fallback_seed_retrieve",
+                        },
+                        "prompt": prompt,
+                        "message": None,
+                        "raw_output": prompt,
+                    }
+                ],
+            }
+
+        async def review_last_attempt(graph_state: _RunGraphState) -> Dict[str, Any]:
+            attempts = list(graph_state.get("attempts") or [])
+            model_turns = list(graph_state.get("model_turns") or [])
+            reviewer_turns = list(graph_state.get("reviewer_turns") or [])
+            state = dict(graph_state.get("state") or {})
+            job_plan = dict(graph_state.get("job_plan") or {})
+            target = dict(graph_state.get("target") or {})
+            required_doc_types = _coerce_doc_types(
+                graph_state.get("required_doc_types"),
+                fallback=deterministic_doc_types_for_job(job_plan["job_type"]),
+            )
+
+            last_attempt = attempts[-1]
+            review_input = self._build_review_input(
+                state=state,
+                job_plan=job_plan,
+                target=target,
+                request=last_attempt["request"],
+                result=last_attempt["retrieval"],
+                attempt_index=len(attempts),
+            )
+            prompt = _render_prompt(self.reviewer_prompt, review_input)
+            review_raw_output = None
+            review_dict: Optional[Dict[str, Any]] = None
+
+            try:
+                structured_reviewer = self.reviewer_llm.with_structured_output(RetrievalReview)
+                review_dict = _coerce_reviewer_feedback(await structured_reviewer.ainvoke(prompt))
+            except Exception as structured_exc:
+                try:
+                    raw_review = await self.reviewer_llm.ainvoke(prompt)
+                    review_raw_output = getattr(raw_review, "content", raw_review)
+                    review_dict = _coerce_reviewer_feedback(raw_review)
+                except Exception as fallback_exc:
+                    review_raw_output = f"{review_raw_output or ''} [fallback_parse_error: {fallback_exc}]"
+                    compact = _compact_retrieval_result(last_attempt["retrieval"])
+                    hard_failure = bool(compact.get("error")) or int(compact.get("num_results") or 0) == 0
+                    review_dict = RetrievalReview(
+                        action="retry" if hard_failure and len(attempts) < self.max_attempts else "accept",
+                        reason=f"reviewer_failed: {structured_exc}",
+                        rewrite_notes=(
+                            "Focus more tightly on the core evidence need and use filing-native terminology."
+                            if hard_failure and len(attempts) < self.max_attempts
+                            else ""
+                        ),
+                        revised_doc_types=None,
+                    ).model_dump()
+
+            if review_dict is None:
+                compact = _compact_retrieval_result(last_attempt["retrieval"])
+                hard_failure = bool(compact.get("error")) or int(compact.get("num_results") or 0) == 0
+                review_dict = RetrievalReview(
+                    action="retry" if hard_failure and len(attempts) < self.max_attempts else "accept",
+                    reason="reviewer_failed: unable to parse reviewer output",
+                    rewrite_notes=(
+                        "Focus more tightly on the core evidence need and use filing-native terminology."
+                        if hard_failure and len(attempts) < self.max_attempts
+                        else ""
+                    ),
+                    revised_doc_types=None,
+                ).model_dump()
+
+            if review_dict is not None and review_dict.get("reason", "") == "":
+                review_dict["reason"] = "ok"
+
+            if review_dict is not None and review_dict.get("reason", "").startswith("reviewer_failed:"):
+                if review_raw_output is not None:
+                    review_dict["reason"] = f"{review_dict['reason']} | raw={str(review_raw_output)[:1800]}"
+
+            reviewer_turns = reviewer_turns + [
+                {
+                    "attempt_index": len(attempts),
+                    "prompt_input": review_input,
+                    "prompt": prompt,
+                    "raw_output": review_raw_output,
+                    "review": review_dict,
+                }
+            ]
+            effective_doc_types = _coerce_doc_types(
+                review_dict.get("revised_doc_types") if isinstance(review_dict, dict) else None,
+                fallback=required_doc_types,
+            )
+            return {
+                "review_feedback": review_dict,
+                "reviewer_turns": reviewer_turns,
+                "required_doc_types": effective_doc_types,
+            }
+
+        def route_after_retrieval_agent(graph_state: _RunGraphState) -> str:
+            if graph_state.get("tool_called"):
+                return "execute_tool"
+            if not graph_state.get("attempts"):
+                return "fallback_seed_retrieve"
+            return "review_last_attempt"
+
+        def route_after_attempt(graph_state: _RunGraphState) -> str:
+            if _last_attempt_failed(graph_state):
+                return END
+            return "review_last_attempt"
+
+        def route_after_review(graph_state: _RunGraphState) -> str:
+            feedback = dict(graph_state.get("review_feedback") or {})
+            if feedback.get("action") == "retry" and len(graph_state.get("attempts") or []) < self.max_attempts:
+                return "call_retrieval_agent"
+            return END
+
+        async def execute_tool(graph_state: _RunGraphState) -> Dict[str, Any]:
+            attempts = list(graph_state.get("attempts") or [])
+            model_turns = list(graph_state.get("model_turns") or [])
+            target = dict(graph_state.get("target") or {})
+            client = graph_state.get("client")
+            seed_queries = list(graph_state.get("seed_queries") or [])
+            required_doc_types = graph_state.get("required_doc_types")
+            tool_args = graph_state.get("tool_args")
+            if tool_args is None:
+                return {
+                    "attempts": attempts,
+                    "tool_called": False,
+                    "tool_args": None,
+                    "review_feedback": graph_state.get("review_feedback"),
+                    "model_turns": model_turns,
+                }
+
+            request = _tool_request_from_message(
+                message_or_args=tool_args,
+                seed_queries=seed_queries,
+                required_doc_types=required_doc_types if isinstance(required_doc_types, list) else None,
+            )
+            retrieval = await self._retrieve_with_client(client=client, request=request, target=target)
+            attempt_log = _build_attempt_log(
+                attempt_index=len(attempts) + 1,
+                request=request,
+                retrieval=retrieval,
+            )
+
+            attempts = attempts + [attempt_log]
+            return {
+                "attempts": attempts,
+                "tool_called": False,
+                "tool_args": None,
+                "review_feedback": (
+                    _skipped_review_feedback({"attempts": attempts})
+                    if retrieval.get("ok") is False or bool(_normalize_text(retrieval.get("error")))
+                    else graph_state.get("review_feedback")
+                ),
+                "model_turns": model_turns,
+            }
+
+        builder = StateGraph(_RunGraphState)
+        builder.add_node("call_retrieval_agent", call_retrieval_agent)
+        builder.add_node("execute_tool", execute_tool)
+        builder.add_node("fallback_seed_retrieve", fallback_seed_retrieve)
+        builder.add_node("review_last_attempt", review_last_attempt)
+
+        builder.add_edge(START, "call_retrieval_agent")
+        builder.add_conditional_edges(
+            "call_retrieval_agent",
+            route_after_retrieval_agent,
+            {
+                "execute_tool": "execute_tool",
+                "fallback_seed_retrieve": "fallback_seed_retrieve",
+                "review_last_attempt": "review_last_attempt",
+                END: END,
+            },
+        )
+        builder.add_conditional_edges(
+            "execute_tool",
+            route_after_attempt,
+            {
+                "review_last_attempt": "review_last_attempt",
+                END: END,
+            },
+        )
+        builder.add_conditional_edges(
+            "fallback_seed_retrieve",
+            route_after_attempt,
+            {
+                "review_last_attempt": "review_last_attempt",
+                END: END,
+            },
+        )
+        builder.add_conditional_edges(
+            "review_last_attempt",
+            route_after_review,
+            {
+                "call_retrieval_agent": "call_retrieval_agent",
+                END: END,
+            },
+        )
+        return builder.compile()
 
     async def _retrieve_with_client(
         self,
@@ -640,7 +1269,6 @@ class RetrievalWorkflowAgent:
                 form_type=target["form_type"],
                 doc_types=request.get("doc_types"),
                 top_k=self.top_k,
-                min_total_score=self.min_total_score,
                 timeout_s=self.timeout_s,
             )
             if "queries_used" not in result:
@@ -708,8 +1336,23 @@ class RetrievalWorkflowAgent:
         request: Dict[str, Any],
         result: Dict[str, Any],
         review_feedback: Dict[str, Any],
+        required_doc_types: Optional[List[str]],
         attempt_index: int,
     ) -> Dict[str, Any]:
+        resolved_doc_types = _coerce_doc_types(
+            review_feedback.get("revised_doc_types"),
+            fallback=_coerce_doc_types(
+                request.get("doc_types"),
+                fallback=required_doc_types,
+            ),
+        )
+        if (
+            job_plan.get("job_type") == "metric_extract"
+            and isinstance(resolved_doc_types, list)
+            and "text_chunk" not in resolved_doc_types
+        ):
+            resolved_doc_types = resolved_doc_types + ["text_chunk"]
+
         return {
             "phase": "review",
             "original_user_query": _normalize_text(state.get("original_user_query")),
@@ -724,14 +1367,13 @@ class RetrievalWorkflowAgent:
             },
             "target": target,
             "suggested_query_cues": [],
-            "required_doc_types": deterministic_doc_types_for_job(job_plan["job_type"]),
+            "required_doc_types": resolved_doc_types,
             "attempt_index": int(attempt_index),
             "attempts_remaining": max(self.max_attempts - int(attempt_index), 0),
             "request_used": {
                 "queries": list(request.get("queries") or []),
                 "doc_types": request.get("doc_types"),
                 "top_k": self.top_k,
-                "min_total_score": self.min_total_score,
             },
             "retrieval_result": _compact_retrieval_result(result),
             "review_feedback": review_feedback,
@@ -760,7 +1402,6 @@ class RetrievalWorkflowAgent:
                 "queries": list(request.get("queries") or []),
                 "doc_types": request.get("doc_types"),
                 "top_k": self.top_k,
-                "min_total_score": self.min_total_score,
             },
             "retrieval_result": _compact_retrieval_result(result),
         }
@@ -773,9 +1414,6 @@ class RetrievalWorkflowAgent:
         job_plan: Dict[str, Any],
         target: Dict[str, Any],
     ) -> Dict[str, Any]:
-        attempts: List[Dict[str, Any]] = []
-        model_turns: List[Dict[str, Any]] = []
-        reviewer_turns: List[Dict[str, Any]] = []
         required_doc_types = deterministic_doc_types_for_job(job_plan["job_type"])
         seed_queries = _seed_queries_for_job(
             goal=job_plan["goal"],
@@ -784,311 +1422,56 @@ class RetrievalWorkflowAgent:
             target=target,
         )
         first_pass_input = self._build_first_prompt_input(state=state, job_plan=job_plan, target=target)
+        workflow_input: Dict[str, Any] = {
+            "review_feedback": None,
+            "tool_called": False,
+            "attempts": [],
+            "model_turns": [],
+            "reviewer_turns": [],
+            "client": client,
+            "state": state,
+            "job_plan": job_plan,
+            "target": target,
+            "required_doc_types": required_doc_types,
+            "seed_queries": seed_queries,
+            "first_pass_input": first_pass_input,
+        }
 
-        @tool
-        async def sec_retrieve_tables(
-            queries: List[str],
-            doc_types: Optional[List[str]] = None,
-            top_k: int = 3,
-            min_total_score: float = 0.0,
-            ticker: Optional[str] = None,
-            fiscal_year: Optional[int] = None,
-            form_type: Optional[str] = None,
-            reason: str = "",
-        ) -> str:
-            """Retrieve SEC filing evidence for the fixed job and target."""
-            del top_k, min_total_score, ticker, fiscal_year, form_type
-            attempt_index = len(attempts) + 1
-            request = {
-                "queries": _coerce_queries(queries, fallback=seed_queries),
-                "doc_types": _coerce_doc_types(doc_types, fallback=required_doc_types),
-                "reason": _normalize_text(reason),
-            }
-            retrieval = await self._retrieve_with_client(client=client, request=request, target=target)
-            attempt_log = _build_attempt_log(
-                attempt_index=attempt_index,
-                request=request,
-                retrieval=retrieval,
-            )
-            attempts.append(attempt_log)
-            return json.dumps(
-                {
-                    **attempt_log["retrieval_compact"],
-                    "attempt_index": attempt_index,
-                    "attempts_remaining": max(self.max_attempts - attempt_index, 0),
-                    "request_used": {
-                        "queries": list(request.get("queries") or []),
-                        "doc_types": request.get("doc_types"),
-                        "top_k": self.top_k,
-                        "min_total_score": self.min_total_score,
-                    },
-                    "reason": request.get("reason") or None,
-                    "metadata_fixed": {
-                        "ticker": target["ticker"],
-                        "fiscal_year": target["fiscal_year"],
-                        "form_type": target["form_type"],
-                    },
-                },
-                ensure_ascii=False,
-            )
-
-        async def call_retrieval_agent(graph_state: _RunGraphState) -> Dict[str, Any]:
-            attempt_index = len(attempts)
-            if attempt_index == 0:
-                prompt_input = first_pass_input
-            else:
-                last_attempt = attempts[-1]
-                prompt_input = self._build_retry_prompt_input(
-                    state=state,
-                    job_plan=job_plan,
-                    target=target,
-                    request=last_attempt["request"],
-                    result=last_attempt["retrieval"],
-                    review_feedback=dict(graph_state.get("review_feedback") or {}),
-                    attempt_index=attempt_index,
-                )
-
-            prompt = _render_prompt(self.retrieval_agent_prompt, prompt_input)
-            messages_for_model = list(graph_state.get("messages") or [])
-            prompt_msg = HumanMessage(content=prompt)
-            messages_for_model.append(prompt_msg)
-            try:
-                response = await self.retrieval_llm.bind_tools(
-                    [sec_retrieve_tables],
-                    tool_choice="any",
-                ).ainvoke(messages_for_model)
-            except Exception as exc:
-                error_msg = f"RETRIEVAL_LLM_CALL_FAILED: {type(exc).__name__}: {exc}"
-                attempts.append(
-                    _build_attempt_log(
-                        attempt_index=attempt_index + 1,
-                        request={
-                            "queries": list(_coerce_queries(seed_queries, fallback=seed_queries)),
-                            "doc_types": list(required_doc_types) if required_doc_types else None,
-                            "reason": "retrieval workflow model call failed",
-                        },
-                        retrieval={
-                            "ok": False,
-                            "error": error_msg,
-                            "queries_used": list(seed_queries),
-                            "top_tables": [],
-                            "metadata_used": {
-                                "ticker": target.get("ticker"),
-                                "fiscal_year": target.get("fiscal_year"),
-                                "form_type": target.get("form_type"),
-                                "doc_types": list(required_doc_types) if required_doc_types else None,
-                            },
-                            "max_total_score": None,
-                        },
-                    )
-                )
-                model_turns.append(
-                    {
-                        "attempt_index": attempt_index,
-                        "phase": prompt_input.get("phase"),
-                        "prompt_input": prompt_input,
-                        "prompt": prompt,
-                        "message": None,
-                        "error": error_msg,
-                    }
-                )
-                return {
-                    "messages": [AIMessage(content=error_msg)]
-                }
-            model_turns.append(
-                {
-                    "attempt_index": attempt_index,
-                    "phase": prompt_input.get("phase"),
-                    "prompt_input": prompt_input,
-                    "prompt": prompt,
-                    "message": response,
-                    "raw_output": getattr(response, "content", None),
-                }
-            )
-            return {"messages": [prompt_msg, response]}
-
-        async def fallback_seed_retrieve(_: _RunGraphState) -> Dict[str, Any]:
-            request = {
-                "queries": list(seed_queries),
-                "doc_types": list(required_doc_types) if required_doc_types else None,
-                "reason": "deterministic fallback because the retrieval agent produced no tool call",
-            }
-            retrieval = await self._retrieve_with_client(client=client, request=request, target=target)
-            attempts.append(
-                _build_attempt_log(
-                    attempt_index=1,
-                    request=request,
-                    retrieval=retrieval,
-                )
-            )
-            return {
-                "messages": [
-                    HumanMessage(content="Fallback retrieval executed because no retrieval tool call was emitted.")
-                ]
-            }
-
-        async def review_last_attempt(_: _RunGraphState) -> Dict[str, Any]:
-            last_attempt = attempts[-1]
-            review_input = self._build_review_input(
-                state=state,
-                job_plan=job_plan,
-                target=target,
-                request=last_attempt["request"],
-                result=last_attempt["retrieval"],
-                attempt_index=len(attempts),
-            )
-            prompt = _render_prompt(self.reviewer_prompt, review_input)
-            review_raw_output = None
-            review_dict: Optional[Dict[str, Any]] = None
-
-            try:
-                structured_reviewer = self.reviewer_llm.with_structured_output(RetrievalReview)
-                review_dict = _coerce_reviewer_feedback(await structured_reviewer.ainvoke(prompt))
-            except Exception as structured_exc:
-                try:
-                    raw_review = await self.reviewer_llm.ainvoke(prompt)
-                    review_raw_output = getattr(raw_review, "content", raw_review)
-                    review_dict = _coerce_reviewer_feedback(raw_review)
-                except Exception as fallback_exc:
-                    review_raw_output = f"{review_raw_output or ''} [fallback_parse_error: {fallback_exc}]"
-                    compact = _compact_retrieval_result(last_attempt["retrieval"])
-                    hard_failure = bool(compact.get("error")) or int(compact.get("num_results") or 0) == 0
-                    review_dict = RetrievalReview(
-                        action="retry" if hard_failure and len(attempts) < self.max_attempts else "accept",
-                        reason=f"reviewer_failed: {structured_exc}",
-                        rewrite_notes=(
-                            "Focus more tightly on the core evidence need and use filing-native terminology."
-                            if hard_failure and len(attempts) < self.max_attempts
-                            else ""
-                        ),
-                        revised_doc_types=None,
-                    ).model_dump()
-
-            if review_dict is None:
-                compact = _compact_retrieval_result(last_attempt["retrieval"])
-                hard_failure = bool(compact.get("error")) or int(compact.get("num_results") or 0) == 0
-                review_dict = RetrievalReview(
-                    action="retry" if hard_failure and len(attempts) < self.max_attempts else "accept",
-                    reason="reviewer_failed: unable to parse reviewer output",
-                    rewrite_notes=(
-                        "Focus more tightly on the core evidence need and use filing-native terminology."
-                        if hard_failure and len(attempts) < self.max_attempts
-                        else ""
-                    ),
-                    revised_doc_types=None,
-                ).model_dump()
-
-            if review_dict is not None and "reason" in review_dict and review_dict["reason"] == "":
-                review_dict["reason"] = "ok"
-
-            if review_dict is None:
-                review_dict = {
-                    "action": "accept",
-                    "reason": "reviewer_failed: no_review_output",
-                    "rewrite_notes": "",
-                    "revised_doc_types": None,
-                }
-
-            if isinstance(review_dict, dict) and review_dict.get("reason", "").startswith("reviewer_failed:"):
-                if review_raw_output is not None:
-                    review_dict["reason"] = f"{review_dict['reason']} | raw={str(review_raw_output)[:1800]}"
-
-            reviewer_turns.append(
-                {
-                    "attempt_index": len(attempts),
-                    "prompt_input": review_input,
-                    "prompt": prompt,
-                    "raw_output": review_raw_output,
-                    "review": review_dict,
-                }
-            )
-            return {"review_feedback": review_dict}
-
-        def route_after_retrieval_agent(graph_state: _RunGraphState) -> str:
-            messages = list(graph_state.get("messages") or [])
-            last_message = messages[-1] if messages else None
-            if isinstance(last_message, AIMessage) and getattr(last_message, "tool_calls", None):
-                return "tools"
-            if not attempts:
-                return "fallback_seed_retrieve"
-            return "review_last_attempt"
-
-        def route_after_review(graph_state: _RunGraphState) -> str:
-            feedback = dict(graph_state.get("review_feedback") or {})
-            if (
-                feedback.get("action") == "retry"
-                and len(attempts) < self.max_attempts
-            ):
-                return "call_retrieval_agent"
-            return END
-
-        graph = StateGraph(_RunGraphState)
-        graph.add_node("call_retrieval_agent", call_retrieval_agent)
-        graph.add_node("tools", ToolNode([sec_retrieve_tables]))
-        graph.add_node("fallback_seed_retrieve", fallback_seed_retrieve)
-        graph.add_node("review_last_attempt", review_last_attempt)
-
-        graph.add_edge(START, "call_retrieval_agent")
-        graph.add_conditional_edges(
-            "call_retrieval_agent",
-            route_after_retrieval_agent,
-            {
-                "tools": "tools",
-                "fallback_seed_retrieve": "fallback_seed_retrieve",
-                "review_last_attempt": "review_last_attempt",
-                END: END,
-            },
-        )
-        graph.add_edge("tools", "review_last_attempt")
-        graph.add_edge("fallback_seed_retrieve", "review_last_attempt")
-        graph.add_conditional_edges(
-            "review_last_attempt",
-            route_after_review,
-            {
-                "call_retrieval_agent": "call_retrieval_agent",
-                END: END,
-            },
-        )
-
-        compiled = graph.compile()
         try:
-            final_state = await compiled.ainvoke({"messages": [], "review_feedback": None})
+            final_state = await self._run_graph.ainvoke(workflow_input)
         except Exception as exc:
             workflow_error = f"RETRIEVER_GRAPH_FAILED: {type(exc).__name__}: {exc}"
             failure_request = {
                 "queries": list(seed_queries),
-                "doc_types": list(required_doc_types) if required_doc_types else None,
+                "doc_types": list(required_doc_types) if isinstance(required_doc_types, list) else None,
                 "reason": "retrieval workflow execution failed",
             }
-            attempts.append(
-                _build_attempt_log(
-                    attempt_index=1,
-                    request=failure_request,
-                    retrieval={
-                        "ok": False,
-                        "error": workflow_error,
-                        "queries_used": list(failure_request["queries"]),
-                        "top_tables": [],
-                        "metadata_used": {
-                            "ticker": target.get("ticker"),
-                            "fiscal_year": target.get("fiscal_year"),
-                            "form_type": target.get("form_type"),
-                            "doc_types": failure_request.get("doc_types"),
-                        },
-                        "max_total_score": None,
+            failure_attempt = _build_attempt_log(
+                attempt_index=1,
+                request=failure_request,
+                retrieval={
+                    "ok": False,
+                    "error": workflow_error,
+                    "queries_used": list(failure_request["queries"]),
+                    "top_tables": [],
+                    "metadata_used": {
+                        "ticker": target.get("ticker"),
+                        "fiscal_year": target.get("fiscal_year"),
+                        "form_type": target.get("form_type"),
+                        "doc_types": failure_request.get("doc_types"),
                     },
-                )
+                    "max_total_score": None,
+                },
             )
             return {
                 "job": job_plan,
                 "target": target,
-                "attempts": attempts,
+                "attempts": [failure_attempt],
                 "model_turns": [
                     {
-                        **turn,
-                        "message": None,
-                        "error": turn.get("error") or str(exc),
-                    } for turn in model_turns
+                        "attempt_index": 1,
+                        "error": workflow_error,
+                    }
                 ],
                 "reviewer_turns": [
                     {
@@ -1112,14 +1495,25 @@ class RetrievalWorkflowAgent:
                     "rewrite_notes": "",
                     "revised_doc_types": None,
                 },
-                "final_retrieval": {
-                    "ok": False,
-                    "error": workflow_error,
-                    "queries_used": list(failure_request["queries"]),
-                    "top_tables": [],
-                    "max_total_score": None,
-                },
+                "final_retrieval": failure_attempt["retrieval"],
             }
+
+        attempts = list(final_state.get("attempts") or [])
+        model_turns = list(final_state.get("model_turns") or [])
+        clean_model_turns = []
+        for turn in model_turns:
+            if not isinstance(turn, dict):
+                continue
+            clean_turn = dict(turn)
+            clean_turn["message"] = None
+            clean_turn["raw_output"] = clean_turn.get("raw_output")
+            clean_model_turns.append(clean_turn)
+
+        reviewer_turns = [
+            dict(turn)
+            for turn in list(final_state.get("reviewer_turns") or [])
+            if isinstance(turn, dict)
+        ]
 
         final_retrieval = dict(attempts[-1]["retrieval"]) if attempts else {
             "ok": False,
@@ -1132,13 +1526,7 @@ class RetrievalWorkflowAgent:
             "job": job_plan,
             "target": target,
             "attempts": attempts,
-            "model_turns": [
-                {
-                    **turn,
-                    "message": None,  # avoid returning raw model objects in final payload
-                }
-                for turn in model_turns
-            ],
+            "model_turns": clean_model_turns,
             "reviewer_turns": reviewer_turns,
             "review_feedback": dict(final_state.get("review_feedback") or {}),
             "final_retrieval": final_retrieval,
@@ -1148,7 +1536,7 @@ class RetrievalWorkflowAgent:
         targets = [
             {
                 **dict(target),
-                "form_type": _normalize_text(target.get("form_type")) or _DEFAULT_FORM_TYPE,
+                "form_type": _normalize_text(target.get("form_type")) or None,
             }
             for target in (state.get("targets") or [])
             if isinstance(target, dict) and _normalize_text(target.get("ticker"))
@@ -1160,23 +1548,63 @@ class RetrievalWorkflowAgent:
         jobs = list(retrieval_plan.get("jobs") or [])
         if not jobs:
             jobs = [{
-                "job_type": "fact_lookup",
+                "job_type": "metric_extract",
                 "goal": _normalize_text(state.get("original_user_query")),
             }]
 
-        runs: List[Dict[str, Any]] = []
+        max_parallel = max(1, int(os.getenv("FINSEARCH_RETRIEVAL_PARALLELISM", "4").strip() or 4))
+        semaphore = asyncio.Semaphore(max_parallel)
+
+        async def _run_one(job_plan: Dict[str, Any], target: Dict[str, Any]) -> Dict[str, Any]:
+            async with semaphore:
+                return await self._run_single_target(
+                    state=state,
+                    client=client,
+                    job_plan=job_plan,
+                    target=target,
+                )
+
+        tasks: List[Any] = []
+        task_meta: List[tuple[Dict[str, Any], Dict[str, Any]]] = []
         for raw_job in jobs:
             if not isinstance(raw_job, dict):
                 continue
             job = _normalize_job(raw_job, original_user_query=_normalize_text(state.get("original_user_query")))
             for target in _select_targets_for_job(job, targets):
-                run_payload = await self._run_single_target(
-                    state=state,
-                    client=client,
-                    job_plan=job,
-                    target=target,
-                )
-                runs.append(run_payload)
+                tasks.append(_run_one(job, target))
+                task_meta.append((job, target))
+
+        runs = []
+        if tasks:
+            results = await asyncio.gather(*tasks, return_exceptions=True)
+            for (job, target), result in zip(task_meta, results):
+                if isinstance(result, dict):
+                    runs.append(result)
+                else:
+                    workflow_error = f"RETRIEVAL_WORKFLOW_FAILED: {result}"
+                    runs.append(
+                        {
+                            "job": job,
+                            "target": target,
+                            "attempts": [],
+                            "model_turns": [],
+                            "reviewer_turns": [],
+                            "review_feedback": {
+                                "action": "accept",
+                                "reason": workflow_error,
+                                "rewrite_notes": "",
+                                "revised_doc_types": None,
+                            },
+                            "final_retrieval": {
+                                "ok": False,
+                                "error": workflow_error,
+                                "queries_used": [],
+                                "top_tables": [],
+                                "metadata_used": {},
+                                "max_total_score": None,
+                            },
+                        }
+                    )
         return runs
 
 
@@ -1194,7 +1622,6 @@ async def retrieval_agent_v2(
         retrieval_llm=retrieval_llm,
         reviewer_llm=reviewer_llm,
         top_k=3,
-        min_total_score=0.0,
         max_attempts=2,
     )
     runs_payload = await workflow.run(state, client)
@@ -1206,9 +1633,78 @@ async def retrieval_agent_v2(
     return {**state, "retrieval": retrieval_output}
 
 
+async def retrieval_agent(
+    state: Dict[str, Any],
+    client: Any | None = None,
+    agent: RetrievalWorkflowAgent | None = None,
+) -> Dict[str, Any]:
+    """Primary retrieval entrypoint for runtime.
+
+    This wraps retrieval_agent_v2 with backwards-compatible call semantics from the previous module.
+    """
+
+    retrieval_model = (
+        _normalize_text(state.get("retrieval_query_planner_model"))
+        or _normalize_text(state.get("retrieval_agent_model"))
+        or _DEFAULT_MODEL
+    )
+    reviewer_model = _normalize_text(state.get("retrieval_reviewer_model")) or retrieval_model
+    same_model_for_reviewer = (
+        _normalize_text(state.get("retrieval_query_planner_use_same_model_for_reviewer"))
+        or ""
+    ).lower() in {"1", "true", "yes", "on"}
+
+    tool_model = retrieval_model
+    review_model = tool_model if same_model_for_reviewer else reviewer_model
+
+    retrieval_llm = build_chat_model(model=tool_model, temperature=0.0)
+    reviewer_llm = build_chat_model(model=review_model, temperature=0.0)
+
+    if agent is not None:
+        async def _run_custom_agent(active_client: Any) -> Dict[str, Any]:
+            runs_payload = await agent.run(state, active_client)
+            if isinstance(runs_payload, dict):
+                candidate = runs_payload.get("runs")
+                if isinstance(candidate, list):
+                    runs_payload = candidate
+            retrieval_output = _build_retrieval_output(
+                state=state,
+                runs_payload=runs_payload,
+                model_name=getattr(retrieval_llm, "model_name", tool_model),
+            )
+            return {**state, "retrieval": retrieval_output}
+
+        if client is not None:
+            return await _run_custom_agent(client)
+
+        from agents.retrieval.mcp_client import SecRetrievalMCPClient
+
+        async with SecRetrievalMCPClient() as created_client:
+            return await _run_custom_agent(created_client)
+
+    if client is None:
+        from agents.retrieval.mcp_client import SecRetrievalMCPClient
+
+        async with SecRetrievalMCPClient() as created_client:
+            return await retrieval_agent_v2(
+                state=state,
+                client=created_client,
+                retrieval_llm=retrieval_llm,
+                reviewer_llm=reviewer_llm,
+            )
+
+    return await retrieval_agent_v2(
+        state=state,
+        client=client,
+        retrieval_llm=retrieval_llm,
+        reviewer_llm=reviewer_llm,
+    )
+
+
 __all__ = [
     "DEFAULT_RETRIEVAL_AGENT_PROMPT_TEMPLATE",
     "DEFAULT_REVIEWER_PROMPT_TEMPLATE",
+    "retrieval_agent",
     "RetrievalReview",
     "RetrievalWorkflowAgent",
     "deterministic_doc_types_for_job",

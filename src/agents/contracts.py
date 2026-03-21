@@ -55,6 +55,7 @@ class OpenIssue(BaseModel):
     code: str = Field(..., description="Short machine-readable code, e.g. TICKER_MISSING")
     message: str = Field(..., description="Human-readable description")
     severity: Severity = Field(default=Severity.WARNING)
+    metadata: Optional[Dict[str, Any]] = None
 
 
 class FilingMetadata(BaseModel):
@@ -76,7 +77,7 @@ class FilingMetadata(BaseModel):
         default=None,
         description="Fiscal year (e.g., 2024). None if unknown/ambiguous.",
     )
-    form_type: FormType = Field(default=FormType.TEN_K)
+    form_type: Optional[FormType] = Field(default=None)
     doc_types: Optional[List[str]] = Field(
         default=None,
         description="Retriever doc types (e.g., ['table']). If None, server defaults apply.",
@@ -134,6 +135,10 @@ class AnalysisTask(BaseModel):
     definition_notes: List[str] = Field(
         default_factory=list,
         description="Notes to disambiguate metric definition / formula expectations.",
+    )
+    requires_calculation: bool = Field(
+        default=False,
+        description="Whether the analyst must use grounded calculation tooling before returning a final answer.",
     )
     expected_artifacts: List[Literal["table", "row", "text"]] = Field(
         default_factory=lambda: ["table"],
@@ -193,10 +198,9 @@ class RetrievalRequest(BaseModel):
     queries: List[str] = Field(..., description="1-4 short retrieval queries.")
     ticker: str = Field(..., description="Ticker symbol, required by retrieval tool.")
     fiscal_year: int = Field(..., description="Fiscal year, required by retrieval tool.")
-    form_type: FormType = Field(default=FormType.TEN_K)
+    form_type: Optional[FormType] = Field(default=None)
     doc_types: Optional[List[str]] = None
     top_k: int = Field(default=3, ge=1, le=50)
-    min_total_score: float = Field(default=0.0, ge=0.0)
 
     @field_validator("queries")
     @classmethod
@@ -319,6 +323,8 @@ class ContextItem(BaseModel):
     Single context unit for the analyst agent.
     We store the raw candidate (dict) plus normalized provenance fields when available.
     """
+    context_id: str = Field(..., description="Stable analyst-visible context identifier, e.g. ctx_1.")
+    target_id: Optional[str] = Field(default=None, description="Stable target identifier for compare/multi-target analysis.")
     kind: ContextItemKind = ContextItemKind.TABLE
     source: SourceRef = Field(default_factory=SourceRef)
 
@@ -333,10 +339,14 @@ class ContextItem(BaseModel):
         cls,
         cand: Union[TableCandidate, Dict[str, Any]],
         *,
+        context_id: str,
         ticker: Optional[str] = None,
         fiscal_year: Optional[int] = None,
         form_type: Optional[FormType] = None,
     ) -> "ContextItem":
+        normalized_context_id = str(context_id or "").strip()
+        if not normalized_context_id:
+            raise ValueError("ContextItem.from_table_candidate requires a non-empty context_id.")
         c = cand if isinstance(cand, TableCandidate) else TableCandidate.model_validate(cand)
         payload = dict(c.model_dump(exclude_none=True))
         # Keep extras too
@@ -352,6 +362,7 @@ class ContextItem(BaseModel):
             table_id=getattr(c, "table_id", None) or payload.get("table_id"),
         )
         return cls(
+            context_id=normalized_context_id,
             kind=ContextItemKind.TABLE,
             source=source,
             payload=payload,
@@ -368,6 +379,7 @@ class AnalystPacket(BaseModel):
     intent: PlannerIntent
     metadata: FilingMetadata
     analysis_task: AnalysisTask
+    targets: List[Dict[str, Any]] = Field(default_factory=list)
     context_items: List[ContextItem] = Field(default_factory=list)
     context_quality: ContextQuality = ContextQuality.MEDIUM
     open_issues: List[OpenIssue] = Field(default_factory=list)

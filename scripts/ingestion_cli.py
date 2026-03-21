@@ -198,6 +198,10 @@ def _run_all(args: argparse.Namespace) -> int:
                 "--collection-name",
                 args.collection_name,
             ]
+            if args.dense_bm25_only:
+                argv.append("--dense-bm25-only")
+            else:
+                argv.append("--no-dense-bm25-only")
             if quarter:
                 argv.extend(["--quarter", quarter])
             if args.qdrant_https:
@@ -269,7 +273,12 @@ def _build_parser() -> argparse.ArgumentParser:
     run_all.add_argument("--qdrant-port", type=int, default=6333)
     run_all.add_argument("--qdrant-https", action="store_true")
     run_all.add_argument("--qdrant-api-key")
-    run_all.add_argument("--collection-name", default="sec_docs_hybrid")
+    run_all.add_argument("--collection-name", default="sec_docs_dense_bm25")
+    run_all.add_argument(
+        "--dense-bm25-only",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+    )
     run_all.add_argument("--ingest-batch-size", type=int, default=128)
     run_all.add_argument("--recreate-collection", action="store_true")
     run_all.add_argument("--bge-m3-model-name", default="BAAI/bge-m3")

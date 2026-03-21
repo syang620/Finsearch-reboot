@@ -2,8 +2,11 @@
 
 from .agent import (
     AnalystAgent,
+    AnalystCitation,
     AnalystComputation,
+    AnalystCompareRow,
     AnalystRunResult,
+    AnalystStructuredAnswer,
     AnalystTrace,
     build_analyst_prompt,
     build_demo_packet,
@@ -13,8 +16,11 @@ from .table_loader import load_table_data
 
 __all__ = [
     "AnalystAgent",
+    "AnalystCitation",
     "AnalystComputation",
+    "AnalystCompareRow",
     "AnalystRunResult",
+    "AnalystStructuredAnswer",
     "AnalystTrace",
     "build_analyst_prompt",
     "build_demo_packet",

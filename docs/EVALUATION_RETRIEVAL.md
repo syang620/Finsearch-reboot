@@ -82,7 +82,7 @@ Retrieval backend:
 
 - `QDRANT_HOST` (default `localhost`)
 - `QDRANT_PORT` (default `6333`)
-- `QDRANT_COLLECTION_NAME` (default `sec_docs_hybrid`)
+- `QDRANT_COLLECTION_NAME` (default `sec_docs_dense_bm25`)
 - `TABLES_DIR` (default from retrieval tool)
 
 RAGAS/Ollama backend:

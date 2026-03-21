@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from functools import lru_cache
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -19,17 +20,14 @@ if str(SRC_ROOT) not in sys.path:
 from retrieval.evaluator import (  # noqa: E402
     dedupe_scored_points,
     embed_query_qwen3,
-    get_bge_reranker_large_model,
     hybrid_search_sec_docs_rrf,
     normalize_doc_id_to_table,
-    rerank_with_bge_reranker_large,
-    rerank_with_jina_v3,
-    rerank_with_jina_v3_api,
     rerank_with_qwen3_reranker_api,
-    rerank_with_qwen3_reranker,
     rrf_fuse,
 )
 from retrieval.rerank_enricher import enrich_candidates_with_table_summaries  # noqa: E402
+
+logger = logging.getLogger(__name__)
 
 DEFAULT_DOC_TYPES = ["text_chunk", "table", "table_row"]
 COLLECTION_NAME = os.getenv("QDRANT_COLLECTION_NAME", "sec_docs_dense_bm25")
@@ -41,16 +39,8 @@ QWEN3_DASHSCOPE_RERANK_API_URL = (
     "https://dashscope.aliyuncs.com/api/v1/services/rerank/text-rerank/text-rerank"
 )
 RERANK_MODEL = os.getenv("SEC_RERANK_MODEL") or os.getenv(
-    "QWEN3_RERANK_MODEL", "Qwen/Qwen3-Reranker-0.6B"
+    "QWEN3_RERANK_MODEL", "Qwen/Qwen3-Reranker-8B"
 )
-BGE_RERANK_USE_FP16 = os.getenv("SEC_BGE_RERANK_USE_FP16", "false").strip().lower() in {
-    "1",
-    "true",
-    "yes",
-    "on",
-}
-JINA_API_KEY = os.getenv("JINA_API_KEY", "").strip()
-JINA_RERANK_API_URL = os.getenv("JINA_RERANK_API_URL", "https://api.jina.ai/v1/rerank")
 QWEN3_RERANK_API_KEY = (
     os.getenv("QWEN3_RERANK_API_KEY", "").strip()
     or os.getenv("DASHSCOPE_API_KEY", "").strip()
@@ -112,76 +102,80 @@ def _serialize_point(point: models.ScoredPoint) -> Dict[str, Any]:
     }
 
 
+def _current_rerank_model() -> str:
+    return (
+        os.getenv("SEC_RERANK_MODEL", "").strip()
+        or os.getenv("QWEN3_RERANK_MODEL", "").strip()
+        or RERANK_MODEL
+    )
+
+def _current_qwen3_rerank_api_key() -> str:
+    return (
+        os.getenv("QWEN3_RERANK_API_KEY", "").strip()
+        or os.getenv("DASHSCOPE_API_KEY", "").strip()
+        or QWEN3_RERANK_API_KEY
+    )
+
+
+def _current_qwen3_rerank_api_url() -> str:
+    env_url = os.getenv("QWEN3_RERANK_API_URL", "").strip()
+    if env_url:
+        return env_url
+    if _current_qwen3_rerank_api_key():
+        return QWEN3_DASHSCOPE_RERANK_API_URL
+    return QWEN3_RERANK_API_URL
+
+
 def _rerank_candidates(
     query: str,
     candidates: List[models.ScoredPoint],
-) -> List[models.ScoredPoint]:
+) -> tuple[List[models.ScoredPoint], Dict[str, Any]]:
     if not candidates:
-        return []
+        return [], {
+            "selected_backend": None,
+            "applied_backend": None,
+            "fallback_used": False,
+            "fallback_reason": None,
+        }
 
-    model_name = RERANK_MODEL.strip()
+    model_name = _current_rerank_model().strip()
+    qwen3_rerank_api_key = _current_qwen3_rerank_api_key()
+    qwen3_rerank_api_url = _current_qwen3_rerank_api_url()
     rerank_top_k = max(top_k for top_k in (RERANK_TOP_K, len(candidates)) if top_k is not None)
     lower_model_name = model_name.lower()
     wants_qwen3_rerank = ("qwen3-reranker" in lower_model_name) or ("qwen3-rerank" in lower_model_name)
+    selected_backend = "qwen3_api"
+
+    if not wants_qwen3_rerank:
+        raise RuntimeError(
+            f"Unsupported reranker configuration: {model_name}. Only Qwen3 API reranking is allowed."
+        )
+    if not qwen3_rerank_api_key:
+        raise RuntimeError(
+            "Qwen3 API reranking requires QWEN3_RERANK_API_KEY or DASHSCOPE_API_KEY."
+        )
+    if not qwen3_rerank_api_url.strip():
+        raise RuntimeError(
+            "Qwen3 API reranking requires QWEN3_RERANK_API_URL."
+        )
 
     try:
-        if "bge-reranker" in model_name.lower():
-            model = get_bge_reranker_large_model(
-                model_name=model_name,
-                use_fp16=BGE_RERANK_USE_FP16,
-            )
-            return rerank_with_bge_reranker_large(
-                query,
-                candidates,
-                top_k=rerank_top_k,
-                model=model,
-            )
-
-        if "jina-reranker" in lower_model_name:
-            if JINA_API_KEY:
-                return rerank_with_jina_v3_api(
-                    query,
-                    candidates,
-                    api_key=JINA_API_KEY,
-                    api_url=JINA_RERANK_API_URL,
-                    model_name=model_name,
-                    top_k=rerank_top_k,
-                )
-            return rerank_with_jina_v3(
-                query,
-                candidates,
-                top_k=rerank_top_k,
-            )
-
-        if wants_qwen3_rerank and QWEN3_RERANK_API_KEY.strip():
-            if not QWEN3_RERANK_API_URL.strip():
-                raise RuntimeError(
-                    "Qwen3 reranker API key is configured, but QWEN3_RERANK_API_URL is not set."
-                )
-            return rerank_with_qwen3_reranker_api(
-                query,
-                candidates,
-                api_key=QWEN3_RERANK_API_KEY,
-                api_url=QWEN3_RERANK_API_URL,
-                model_name=model_name,
-                top_k=rerank_top_k,
-            )
-
-        return rerank_with_qwen3_reranker(
+        return rerank_with_qwen3_reranker_api(
             query,
             candidates,
-            top_k=rerank_top_k,
+            api_key=qwen3_rerank_api_key,
+            api_url=qwen3_rerank_api_url,
             model_name=model_name,
-        )
-    except Exception:
-        # Make reranking optional: if the configured model path is unavailable,
-        # fall back to the fused scores to keep the pipeline alive.
-        sorted_candidates = sorted(
-            candidates,
-            key=lambda p: float(getattr(p, "score", 0.0)),
-            reverse=True,
-        )
-        return sorted_candidates[:rerank_top_k]
+            top_k=rerank_top_k,
+        ), {
+            "selected_backend": selected_backend,
+            "applied_backend": selected_backend,
+            "fallback_used": False,
+            "fallback_reason": None,
+        }
+    except Exception as exc:
+        logger.exception("Qwen3 API reranker failed.")
+        raise RuntimeError(f"Qwen3 API reranker failed: {type(exc).__name__}: {exc}") from exc
 
 
 def _run_dense_bm25_retrieval(
@@ -190,7 +184,7 @@ def _run_dense_bm25_retrieval(
     queries: List[str],
     ticker: str,
     fiscal_year: int,
-    form_type: str,
+    form_type: Optional[str],
     doc_types: List[str],
 ) -> tuple[str, List[models.ScoredPoint], List[models.ScoredPoint], Dict[str, Any]]:
     hits_by_query: Dict[str, List[models.ScoredPoint]] = {}
@@ -289,7 +283,7 @@ def _run_dense_bm25_retrieval(
 
     rerank_query = _build_rerank_query(queries)
     rerank_t0 = time.perf_counter()
-    reranked = _rerank_candidates(rerank_query, enriched)
+    reranked, rerank_info = _rerank_candidates(rerank_query, enriched)
     rerank_ms = (time.perf_counter() - rerank_t0) * 1000.0
 
     stage_timings = {
@@ -303,6 +297,10 @@ def _run_dense_bm25_retrieval(
         "enrichment_ms": int(enrichment_ms),
         "rerank_ms": int(rerank_ms),
         "per_query": per_query_timings,
+        "rerank": {
+            "model_name": _current_rerank_model().strip(),
+            **rerank_info,
+        },
     }
 
     return rerank_query, fused_candidates, reranked, stage_timings
@@ -330,44 +328,81 @@ class RetrievalQueries(BaseModel):
         return v[:4]
 
 
+def retrieve_scored_points(
+    *,
+    queries: List[str],
+    ticker: str,
+    fiscal_year: int,
+    form_type: Optional[str] = None,
+    doc_types: Optional[List[str]] = None,
+) -> tuple[str, List[models.ScoredPoint], List[models.ScoredPoint], Dict[str, Any]]:
+    client = _get_client()
+    resolved_doc_types = doc_types or DEFAULT_DOC_TYPES
+    resolved_form_type = (form_type or "").strip() or None
+    validated_queries = RetrievalQueries(queries=queries).queries
+    return _run_dense_bm25_retrieval(
+        client=client,
+        queries=validated_queries,
+        ticker=ticker,
+        fiscal_year=fiscal_year,
+        form_type=resolved_form_type,
+        doc_types=resolved_doc_types,
+    )
+
+
 def sec_retrieve_tables(
     *,
     queries: List[str],
     ticker: str,
     fiscal_year: int,
-    form_type: str = "10-K",
+    form_type: Optional[str] = None,
     doc_types: Optional[List[str]] = None,
     top_k: int = 3,
-    min_total_score: int = 0,
+    min_total_score: float = 0.0,
 ) -> RetrieveTablesResponse:
     """
     Deterministic SEC retrieval:
     dense+BM25 retrieval + rerank, returning one ranked list of hits.
     """
     try:
-        client = _get_client()
-        doc_types = doc_types or DEFAULT_DOC_TYPES
+        resolved_doc_types = doc_types or DEFAULT_DOC_TYPES
+        resolved_form_type = (form_type or "").strip() or None
         validated_queries = RetrievalQueries(queries=queries).queries
 
         t0 = time.time()
-        rerank_query, fused, reranked, retrieval_timing = _run_dense_bm25_retrieval(
-            client=client,
+        rerank_query, fused, reranked, retrieval_timing = retrieve_scored_points(
             queries=validated_queries,
             ticker=ticker,
             fiscal_year=fiscal_year,
-            form_type=form_type,
-            doc_types=doc_types,
+            form_type=resolved_form_type,
+            doc_types=resolved_doc_types,
         )
         t1 = time.time()
-        results = [_serialize_point(point) for point in reranked[:top_k]]
+        raw_results = [_serialize_point(point) for point in reranked[:top_k]]
         t2 = time.time()
+        min_score = float(min_total_score or 0.0)
+        if min_score > 0.0:
+            results = [
+                item
+                for item in raw_results
+                if item.get("score") is not None and float(item.get("score")) >= min_score
+            ]
+        else:
+            results = raw_results
 
         return RetrieveTablesResponse(
             ok=True,
             queries_used=validated_queries,
             rerank_query=rerank_query,
             results=results,
-            metadata_used={"ticker": ticker, "fiscal_year": fiscal_year, "form_type": form_type},
+            error=(
+                (
+                    f"No retrieval results met min_total_score={min_score}"
+                    if min_score > 0.0 and not results
+                    else None
+                )
+            ),
+            metadata_used={"ticker": ticker, "fiscal_year": fiscal_year, "form_type": resolved_form_type},
             trace={
                 "timing_ms": {
                     "hybrid_plus_rerank": int((t1 - t0) * 1000),
@@ -384,14 +419,14 @@ def sec_retrieve_tables(
                 "counts": {
                     "fused_candidates": len(fused) if fused is not None else None,
                     "reranked": len(reranked) if reranked is not None else None,
+                    "results_before_min_score_filter": len(raw_results),
+                    "results_after_min_score_filter": len(results),
                     "results": len(results),
                     "query_embedding_cache_hits": retrieval_timing["query_embedding_cache_hits"],
                     "query_embedding_cache_misses": retrieval_timing["query_embedding_cache_misses"],
                 },
                 "per_query_timing_ms": retrieval_timing["per_query"],
-                "deprecated": {
-                    "min_total_score_ignored": min_total_score,
-                },
+                "rerank": dict(retrieval_timing.get("rerank") or {}),
             },
         )
     except Exception as e:
@@ -401,7 +436,7 @@ def sec_retrieve_tables(
             queries_used=safe_queries,
             rerank_query="",
             results=[],
-            metadata_used={"ticker": ticker, "fiscal_year": fiscal_year, "form_type": form_type},
+            metadata_used={"ticker": ticker, "fiscal_year": fiscal_year, "form_type": resolved_form_type},
             error=str(e),
         )
 

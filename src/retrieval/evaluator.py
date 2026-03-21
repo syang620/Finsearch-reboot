@@ -1244,7 +1244,7 @@ _QWEN3_RERANKER_CACHE: Dict[str, Dict[str, Any]] = {}
 
 
 def get_qwen3_reranker_model(
-    model_name: str = "Qwen/Qwen3-Reranker-0.6B",
+    model_name: str = "Qwen/Qwen3-Reranker-8B",
     *,
     device: str | None = None,
     torch_dtype: Any | None = None,
@@ -1330,7 +1330,7 @@ def rerank_with_qwen3_reranker(
     top_k: int = 20,
     max_passage_chars: int = 2000,
     batch_size: int = 8,
-    model_name: str = "Qwen/Qwen3-Reranker-0.6B",
+    model_name: str = "Qwen/Qwen3-Reranker-8B",
     instruction: str | None = None,
     device: str | None = None,
     torch_dtype: Any | None = None,

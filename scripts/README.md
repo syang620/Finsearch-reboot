@@ -31,7 +31,8 @@ PYTHONPATH=src python scripts/ingestion_cli.py run-all --help
 - `scripts/download_xbrl.py`: XBRL download helper (requires `SEC_API_KEY`)
 
 ## Notes
-- Default Qdrant collection for ingestion is `sec_docs_hybrid`.
+- Default Qdrant collection for ingestion is `sec_docs_dense_bm25`.
+- Default ingest schema for that collection is dense + BM25 only.
 - Use environment variables for secrets (for example `SEC_API_KEY`).
 - Runtime usage audit and rationale are captured in `artifacts/scripts_runtime_usage_audit.md`.
 

@@ -16,7 +16,7 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--model",
-        default="qwen2.5-7b-instruct-1m",
+        default="qwen2.5-14b-instruct-1m",
         help="Planner model to use for target resolution and downstream planning.",
     )
     parser.add_argument(

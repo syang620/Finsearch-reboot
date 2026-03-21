@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import os
 from dataclasses import dataclass
 from pathlib import Path
 import sys
@@ -88,8 +89,10 @@ def _normalize_retrieval_payload(payload: Any, *, args: Dict[str, Any]) -> Any:
 
     normalized = dict(payload)
     raw_results = normalized.get("top_tables")
+    raw_from_results_only = False
     if raw_results is None:
         raw_results = normalized.get("results")
+        raw_from_results_only = True
 
     if isinstance(raw_results, list):
         normalized_results = [
@@ -98,7 +101,8 @@ def _normalize_retrieval_payload(payload: Any, *, args: Dict[str, Any]) -> Any:
             if isinstance(item, dict)
         ]
         normalized["top_tables"] = normalized_results
-        normalized.setdefault("results", normalized_results)
+        if raw_from_results_only:
+            normalized["results"] = normalized_results
 
         if normalized.get("max_total_score") is None:
             scores = [
@@ -124,43 +128,66 @@ def _normalize_retrieval_payload(payload: Any, *, args: Dict[str, Any]) -> Any:
 class SecRetrievalMCPClient:
     server_command: str = sys.executable
     server_args: Optional[List[str]] = None
+    server_env: Optional[Dict[str, str]] = None
 
     _session: Optional[ClientSession] = None
-    _read = None
-    _write = None
-    _stdio_cm = None
-    _session_cm = None
+    _read: Any = None
+    _write: Any = None
+    _stdio_cm: Any = None
+    _session_cm: Any = None
+    _call_lock: Any = None
 
     async def __aenter__(self):
         if self.server_args is None:
-            # Prefer new MCP backend path; fallback to compatibility shim.
+            # Prefer package-relative MCP server path; fallback to likely repo layouts.
+            repo_root = Path(__file__).resolve().parents[2]
             candidates = [
-                Path("src/mcp_server/server.py"),
-                Path("../src/mcp_server/server.py"),
-                Path("src/tools/server.py"),
-                Path("../src/tools/server.py"),
+                repo_root / "mcp_server" / "server.py",
+                repo_root.parent / "src" / "mcp_server" / "server.py",
+                Path.cwd() / "src" / "mcp_server" / "server.py",
+                Path.cwd() / "mcp_server" / "server.py",
             ]
             server_path = next((p for p in candidates if p.exists()), candidates[0])
             self.server_args = [str(server_path)]
 
+        server_env = dict(self.server_env or os.environ)
+        if not str(server_env.get("QWEN3_RERANK_API_KEY", "")).strip():
+            dashscope_key = str(server_env.get("DASHSCOPE_API_KEY", "")).strip()
+            if dashscope_key:
+                server_env["QWEN3_RERANK_API_KEY"] = dashscope_key
+
         server_params = StdioServerParameters(
             command=self.server_command,
             args=self.server_args,
+            env=server_env,
         )
 
         self._stdio_cm = stdio_client(server_params)
         self._read, self._write = await self._stdio_cm.__aenter__()
 
-        self._session_cm = ClientSession(self._read, self._write)
-        self._session = await self._session_cm.__aenter__()
-        await self._session.initialize()
+        try:
+            self._session_cm = ClientSession(self._read, self._write)
+            self._session = await self._session_cm.__aenter__()
+            await self._session.initialize()
+        except Exception:
+            try:
+                await self._stdio_cm.__aexit__(None, None, None)
+            finally:
+                self._session_cm = None
+                self._session = None
+                self._stdio_cm = None
+                self._read = None
+                self._write = None
+            raise
         return self
 
     async def __aexit__(self, exc_type, exc, tb):
-        if self._session_cm:
-            await self._session_cm.__aexit__(exc_type, exc, tb)
-        if self._stdio_cm:
-            await self._stdio_cm.__aexit__(exc_type, exc, tb)
+        try:
+            if self._session_cm:
+                await self._session_cm.__aexit__(exc_type, exc, tb)
+        finally:
+            if self._stdio_cm:
+                await self._stdio_cm.__aexit__(exc_type, exc, tb)
 
     async def retrieve_tables(
         self,
@@ -171,7 +198,6 @@ class SecRetrievalMCPClient:
         form_type: str = "10-K",
         doc_types: Optional[List[str]] = None,
         top_k: int = 3,
-        min_total_score: int = 0,
         timeout_s: float = 120.0,
     ) -> Dict[str, Any]:
         assert self._session is not None, "Client not initialized. Use 'async with'."
@@ -192,7 +218,6 @@ class SecRetrievalMCPClient:
                             "form_type": form_type,
                             "doc_types": list(doc_types or []),
                             "top_k": top_k,
-                            "min_total_score": min_total_score,
                         },
                     },
                     ensure_ascii=False,
@@ -207,11 +232,14 @@ class SecRetrievalMCPClient:
             "form_type": form_type,
             "doc_types": doc_types,
             "top_k": top_k,
-            "min_total_score": min_total_score,
         }
 
+        if self._call_lock is None:
+            self._call_lock = asyncio.Lock()
+
         async def _call():
-            result = await self._session.call_tool("sec_retrieve_tables", arguments=args)
+            async with self._call_lock:
+                result = await self._session.call_tool("sec_retrieve_tables", arguments=args)
 
             # MCP SDK compatibility: some versions expose camelCase fields.
             structured = getattr(result, "structured_content", None)

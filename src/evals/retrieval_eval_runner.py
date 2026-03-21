@@ -14,9 +14,8 @@ from evals.retrieval_eval_contracts import (
     load_retrieval_eval_examples,
 )
 from evals.retrieval_metrics import hit_at_k, mrr_at_k, ndcg_at_k, recall_at_k
-from mcp_server.tools.sec_retrieval import sec_retrieve_tables
+from mcp_server.tools.sec_retrieval import retrieve_scored_points, sec_retrieve_tables
 from qdrant_client import QdrantClient, models
-from retrieval.pipeline import FinanceRAGPipeline, PipelineConfig, RerankConfig, RetrievalConfig
 from retrieval.evaluator import dense_search_sec_docs, embed_query_qwen3
 
 _TABLE_INDEX_RE = re.compile(r"::table::(\d+)")
@@ -36,6 +35,9 @@ def _parse_table_index_from_doc_id(doc_id: str) -> Optional[int]:
 
 
 def _extract_payload(top_table: Dict[str, Any]) -> Dict[str, Any]:
+    if any(key in top_table for key in ("doc_id", "content", "match_text", "section_path", "table_index")):
+        return top_table
+
     table_obj = top_table.get("table")
     if isinstance(table_obj, dict):
         payload = table_obj.get("payload")
@@ -86,22 +88,6 @@ def _recall_at_k_doc_ids(retrieved_doc_ids: Sequence[str], relevant_doc_ids: Seq
         return 0.0
     hits = {str(x).strip() for x in retrieved_doc_ids[:k] if str(x).strip() in relevant}
     return float(len(hits)) / float(len(relevant))
-
-
-def _build_text_pipeline(*, max_k: int) -> FinanceRAGPipeline:
-    host = os.getenv("QDRANT_HOST", "localhost")
-    port = int(os.getenv("QDRANT_PORT", "6333"))
-    collection = os.getenv("QDRANT_COLLECTION_NAME", "sec_docs_hybrid")
-    client = QdrantClient(host=host, port=port)
-    config = PipelineConfig(
-        retrieval=RetrievalConfig(
-            collection_name=collection,
-            top_k=max_k,
-            doc_types=["text_chunk"],
-        ),
-        rerank=RerankConfig(top_k=max_k),
-    )
-    return FinanceRAGPipeline(client, config)
 
 
 def _build_text_dense_client() -> QdrantClient:
@@ -171,7 +157,7 @@ def run_retrieval_eval(
     examples = load_retrieval_eval_examples(eval_path)
     out_path = Path(out_dir)
     out_path.mkdir(parents=True, exist_ok=True)
-    collection = os.getenv("QDRANT_COLLECTION_NAME", "sec_docs_hybrid")
+    collection = os.getenv("QDRANT_COLLECTION_NAME", "sec_docs_dense_bm25")
 
     eval_mode = str(eval_mode or "auto").strip().lower()
     if eval_mode not in {"auto", "table", "text"}:
@@ -190,7 +176,6 @@ def run_retrieval_eval(
     ragas_samples: List[Dict[str, Any]] = []
 
     total_start = time.perf_counter()
-    text_pipeline: Optional[FinanceRAGPipeline] = None
     text_client: Optional[QdrantClient] = None
 
     for ex in examples:
@@ -281,7 +266,7 @@ def run_retrieval_eval(
             row.retrieval_ok = bool(retrieval.ok)
             row.retrieval_error = retrieval.error
 
-            top_tables = retrieval.top_tables or []
+            top_tables = getattr(retrieval, "top_tables", None) or getattr(retrieval, "results", None) or []
             for item in top_tables[:max_k]:
                 payload = _extract_payload(item)
                 doc_id = str(payload.get("doc_id") or "")
@@ -366,10 +351,9 @@ def run_retrieval_eval(
                         form_type=form_type,
                     )
                     rerank_query = str(ex.query)
+                    fused = []
                 else:
-                    if text_pipeline is None:
-                        text_pipeline = _build_text_pipeline(max_k=max_k)
-                    rerank_query, fused, reranked = text_pipeline.run_hybrid_search_pipeline(
+                    rerank_query, fused, reranked, _retrieval_timing = retrieve_scored_points(
                         queries=[ex.query],
                         ticker=ticker,
                         fiscal_year=fiscal_year,

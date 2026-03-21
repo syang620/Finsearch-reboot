@@ -19,6 +19,7 @@ DEFAULT_DASHSCOPE_TIMEOUT_S = 120.0
 DEFAULT_DASHSCOPE_TEMPERATURE = 0.0
 DEFAULT_DASHSCOPE_ENABLE_THINKING = False
 DEFAULT_LITELLM_TIMEOUT_S = 120.0
+DEFAULT_LLM_FALLBACK_MODELS_ENV = "LLM_FALLBACK_MODELS"
 
 _LITELLM_SHORTCUT_MODELS = {
     "gpt": ("LITELLM_GPT_MODEL", "OPENAI_MODEL", "OPENAI_CHAT_MODEL"),
@@ -122,6 +123,99 @@ def _normalize_litellm_model_alias(model_name: str) -> str:
 
     key = raw.lower()
     return _normalize_model_name(raw)
+
+
+def _parse_model_list(raw: str) -> list[str]:
+    text = str(raw or "").strip()
+    if not text:
+        return []
+
+    if text.startswith("[") and text.endswith("]"):
+        try:
+            parsed = json.loads(text)
+            if isinstance(parsed, list):
+                return [
+                    _normalize_model_name(item)
+                    for item in parsed
+                    if isinstance(item, str)
+                    and _normalize_model_name(item)
+                ]
+        except Exception:
+            pass
+
+    out: list[str] = []
+    for chunk in text.replace(";", ",").replace("\n", ",").split(","):
+        value = _normalize_model_name(chunk)
+        if value:
+            out.append(value)
+    return out
+
+
+def _default_fallback_models() -> list[str]:
+    return _parse_model_list(os.getenv(DEFAULT_LLM_FALLBACK_MODELS_ENV, ""))
+
+
+def _coerce_model_candidates(model: str, fallback_models: Optional[Sequence[str]] = None) -> list[str]:
+    candidates: list[str] = []
+    if model is not None:
+        normalized_primary = _normalize_model_name(model)
+        if normalized_primary:
+            candidates.append(normalized_primary)
+
+    fallback_source: list[str] = []
+    if fallback_models is None:
+        fallback_source = _default_fallback_models()
+    else:
+        for item in fallback_models:
+            normalized = _normalize_model_name(item)
+            if normalized:
+                fallback_source.append(normalized)
+
+    candidates.extend(fallback_source)
+
+    deduped: list[str] = []
+    seen: set[str] = set()
+    for candidate in candidates:
+        if candidate not in seen:
+            seen.add(candidate)
+            deduped.append(candidate)
+    return deduped
+
+
+def _build_single_chat_model(
+    *,
+    model: str,
+    temperature: Optional[float],
+    num_predict: Optional[int],
+    timeout: float = DEFAULT_DASHSCOPE_TIMEOUT_S,
+    base_url: Optional[str] = None,
+) -> Any:
+    backend, resolved_model = resolve_chat_model_backend(model)
+
+    if backend == "dashscope":
+        return DashScopeChatModel(
+            model_name=resolved_model,
+            temperature=DEFAULT_DASHSCOPE_TEMPERATURE,
+            num_predict=num_predict,
+            timeout=timeout,
+        )
+
+    if backend == "google_genai":
+        _normalize_gemini_api_key()
+        return GoogleGenAIChatModel(
+            model_name=resolved_model,
+            temperature=0.0 if temperature is None else temperature,
+            num_predict=num_predict,
+            timeout=timeout,
+        )
+
+    return LiteLLMChatModel(
+        model_name=resolved_model,
+        temperature=temperature,
+        num_predict=num_predict,
+        timeout=timeout,
+        base_url=base_url,
+    )
 
 
 def _normalize_gemini_api_key() -> None:
@@ -548,6 +642,7 @@ class GoogleGenAIChatModel(BaseChatModel):
         **kwargs: Any,
     ) -> ChatResult:
         from google import genai
+        from google.genai import types
 
         openai_messages = convert_to_openai_messages(messages)
         prompt_parts: list[str] = []
@@ -568,23 +663,17 @@ class GoogleGenAIChatModel(BaseChatModel):
             prompt += f"\n\nStop sequence(s): {', '.join(stop)}"
 
         client = genai.Client()
-        config: Dict[str, Any] = {}
-        if self.temperature is not None:
-            config["temperature"] = float(self.temperature)
+        config_kwargs: Dict[str, Any] = {
+            "temperature": float(0.0 if self.temperature is None else self.temperature)
+        }
         if self.num_predict is not None:
-            config["max_output_tokens"] = int(self.num_predict)
+            config_kwargs["max_output_tokens"] = int(self.num_predict)
 
-        if config:
-            response = client.models.generate_content(
-                model=self.model_name,
-                contents=prompt,
-                config=config,
-            )
-        else:
-            response = client.models.generate_content(
-                model=self.model_name,
-                contents=prompt,
-            )
+        response = client.models.generate_content(
+            model=self.model_name,
+            contents=prompt,
+            config=types.GenerateContentConfig(**config_kwargs),
+        )
 
         response_text = ""
         if hasattr(response, "text"):
@@ -607,6 +696,87 @@ class GoogleGenAIChatModel(BaseChatModel):
         )
 
 
+class FallbackChatModel(BaseChatModel):
+    model_names: list[str]
+    temperature: Optional[float] = Field(default=None)
+    num_predict: Optional[int] = Field(default=None)
+    timeout: float = Field(default=DEFAULT_DASHSCOPE_TIMEOUT_S)
+    base_url: Optional[str] = Field(default=None, exclude=True)
+    bound_tools: list[dict[str, Any]] = Field(default_factory=list, exclude=True)
+    bound_tool_choice: Any = Field(default=None, exclude=True)
+    bound_tool_kwargs: dict[str, Any] = Field(default_factory=dict, exclude=True)
+
+    @property
+    def _llm_type(self) -> str:
+        return "fallback-chat"
+
+    @property
+    def _identifying_params(self) -> Dict[str, Any]:
+        return {
+            "candidates": list(self.model_names),
+            "temperature": self.temperature,
+            "num_predict": self.num_predict,
+        }
+
+    def bind_tools(
+        self,
+        tools: Sequence[dict[str, Any] | type | Callable[..., Any] | Any],
+        *,
+        tool_choice: str | None = None,
+        **kwargs: Any,
+    ) -> "FallbackChatModel":
+        openai_tools = [convert_to_openai_tool(tool) for tool in tools]
+        return self.model_copy(
+            update={
+                "bound_tools": openai_tools,
+                "bound_tool_choice": tool_choice,
+                "bound_tool_kwargs": dict(kwargs),
+            }
+        )
+
+    def _build_candidate(self, model_name: str) -> Any:
+        model = _build_single_chat_model(
+            model=model_name,
+            temperature=self.temperature,
+            num_predict=self.num_predict,
+            timeout=self.timeout,
+            base_url=self.base_url,
+        )
+        if self.bound_tools:
+            return model.bind_tools(
+                self.bound_tools,
+                tool_choice=self.bound_tool_choice,
+                **self.bound_tool_kwargs,
+            )
+        return model
+
+    def _generate(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: Any | None = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        last_error: Optional[Exception] = None
+        last_model: Optional[str] = None
+
+        candidates = [name for name in self.model_names if isinstance(name, str) and name.strip()]
+        if not candidates:
+            raise RuntimeError("No model candidates configured for fallback chat model.")
+
+        for model_name in candidates:
+            last_model = model_name
+            try:
+                model = self._build_candidate(model_name)
+                return model._generate(messages, stop=stop, run_manager=run_manager, **kwargs)
+            except Exception as exc:
+                last_error = exc
+
+        if last_error is not None:
+            raise RuntimeError(f"All candidate models failed; last attempt {last_model!r}: {last_error}") from last_error
+        raise RuntimeError("Fallback chat model could not run any candidate model")
+
+
 def build_chat_model(
     *,
     model: str,
@@ -614,28 +784,23 @@ def build_chat_model(
     num_predict: Optional[int] = None,
     timeout: float = DEFAULT_DASHSCOPE_TIMEOUT_S,
     base_url: Optional[str] = None,
+    fallback_models: Optional[Sequence[str]] = None,
 ) -> Any:
-    backend, resolved_model = resolve_chat_model_backend(model)
+    model_candidates = _coerce_model_candidates(model=model, fallback_models=fallback_models)
+    if not model_candidates:
+        raise ValueError("build_chat_model requires at least one non-empty model name.")
 
-    if backend == "dashscope":
-        return DashScopeChatModel(
-            model_name=resolved_model,
-            temperature=DEFAULT_DASHSCOPE_TEMPERATURE,
-            num_predict=num_predict,
-            timeout=timeout,
-        )
-
-    if backend == "google_genai":
-        _normalize_gemini_api_key()
-        return GoogleGenAIChatModel(
-            model_name=resolved_model,
+    if len(model_candidates) == 1:
+        return _build_single_chat_model(
+            model=model_candidates[0],
             temperature=temperature,
             num_predict=num_predict,
             timeout=timeout,
+            base_url=base_url,
         )
 
-    return LiteLLMChatModel(
-        model_name=resolved_model,
+    return FallbackChatModel(
+        model_names=model_candidates,
         temperature=temperature,
         num_predict=num_predict,
         timeout=timeout,
@@ -647,6 +812,7 @@ __all__ = [
     "LiteLLMChatModel",
     "chat_with_litellm",
     "DashScopeChatModel",
+    "FallbackChatModel",
     "build_chat_model",
     "chat_with_dashscope",
     "dashscope_api_key",

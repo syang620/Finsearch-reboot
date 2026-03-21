@@ -122,15 +122,17 @@ def _parse_args(argv: Iterable[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument(
         "--collection-name",
-        default="sec_docs_hybrid",
-        help="Qdrant collection name to ingest into (default: sec_docs_hybrid).",
+        default="sec_docs_dense_bm25",
+        help="Qdrant collection name to ingest into (default: sec_docs_dense_bm25).",
     )
     parser.add_argument(
         "--dense-bm25-only",
-        action="store_true",
+        action=argparse.BooleanOptionalAction,
+        default=True,
         help=(
             "Ingest only the uploaded dense embeddings plus Qdrant BM25 sparse vectors. "
-            "Skips BGE-M3 model loading and BGE dense/sparse vectors."
+            "Skips BGE-M3 model loading and BGE dense/sparse vectors. "
+            "Use --no-dense-bm25-only to build the fuller BGE-M3 schema."
         ),
     )
     parser.add_argument(
