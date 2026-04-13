@@ -1,0 +1,24 @@
+{
+  "cik": 320193,
+  "entityName": "Apple Inc.",
+  "facts": {
+    "us-gaap": {
+      "LongTermDebtCurrent": {
+        "label": "Long-term Debt, Current",
+        "units": {
+          "USD": [
+            {
+              "end": "2025-09-27",
+              "val": 12500000000,
+              "accn": "0000320193-25-000073",
+              "fy": 2025,
+              "fp": "FY",
+              "form": "10-K",
+              "filed": "2025-10-31"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

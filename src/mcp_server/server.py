@@ -11,12 +11,14 @@ if str(SRC_ROOT) not in sys.path:
     sys.path.insert(0, str(SRC_ROOT))
 
 from mcp_server.tools.financial_evaluator import register_tools as register_financial_math_tools  # noqa: E402
+from mcp_server.tools.sec_metric import register_tools as register_sec_metric_tools  # noqa: E402
 from mcp_server.tools.sec_retrieval import register_tools as register_sec_retrieval_tools  # noqa: E402
 
 
 def build_mcp_server() -> FastMCP:
     mcp = FastMCP("finsearch-tools")
     register_financial_math_tools(mcp)
+    register_sec_metric_tools(mcp)
     register_sec_retrieval_tools(mcp)
     return mcp
 
