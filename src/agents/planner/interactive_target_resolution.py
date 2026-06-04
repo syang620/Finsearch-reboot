@@ -666,6 +666,23 @@ How to use the deterministic input:
 - If unresolved_blockers is empty, do not perform gap filling for ticker or fiscal_year.
 - If clarification_history resolves a blocker, do not ask the same question again.
 - If unresolved_blockers contains "ticker" or "fiscal_year", you may use the user query plus alias maps to try to fill only those missing fields.
+- Choose `route="kb"` for narrative, descriptive, explanatory, qualitative, or filing-evidence questions.
+- Choose `route="structured_fact"` for direct supported numeric metric questions that can be answered by a structured SEC fact.
+- Choose `route="hybrid"` when the user wants both a direct numeric metric answer and filing-based explanation or context.
+- Supported structured-fact metrics include direct scalar items such as revenue, gross profit, operating income, net income, cash and cash equivalents, total assets, total liabilities, stockholders equity, operating cash flow, capex, and total debt.
+- Do not emit final SEC `metric_id`; that mapping happens downstream.
+- When `route` is `structured_fact` or `hybrid`, emit one or more `structured_fact_requests` using only:
+  - `subquestion`
+  - `metric_hint`
+  - `entity_hint`
+  - `fiscal_year`
+  - `fiscal_period`
+- Keep `metric_hint` human-readable, such as "revenue" or "cash and cash equivalents". Do not emit snake_case or registry-style IDs such as "cash_and_cash_equivalents", "total_debt", or "stockholders_equity".
+- Keep routing conservative. If the question is unsupported, comparative, ratio-based, margin-based, per-share, or otherwise likely to need filing interpretation, prefer `kb` over `structured_fact`.
+- Do not route gross margin, EPS, debt-to-equity ratio, or balance-sheet summary questions to `structured_fact`.
+- Do not decompose unsupported ratios or margins into multiple structured fact requests. Keep those questions on `kb`.
+- Do not route multi-company comparison questions such as "Compare Apple and Microsoft revenue in FY2024" to `structured_fact`. Keep them on `kb`.
+- Use `hybrid` only when the user clearly asks for both a supported scalar fact and narrative explanation or filing context.
 
 Deterministic extraction results:
 {{PLANNER_PAYLOAD_JSON}}
@@ -673,6 +690,16 @@ Deterministic extraction results:
 Return exactly one JSON object matching this schema:
 {
   "retrieval_needed": bool,
+  "route": "kb" | "structured_fact" | "hybrid",
+  "structured_fact_requests": [
+    {
+      "subquestion": string,
+      "metric_hint": string | null,
+      "entity_hint": string | null,
+      "fiscal_year": integer | null,
+      "fiscal_period": string | null
+    }
+  ],
   "task_class": "single_target_fact | multi_target_compare | multi_target_screen | other",
   "targets": [
     {
@@ -717,12 +744,20 @@ _ALLOWED_TASK_CLASSES = {
     "multi_target_screen",
     "other",
 }
+_ALLOWED_ROUTES = {"kb", "structured_fact", "hybrid"}
 _ALLOWED_SEVERITIES = {"info", "warning", "error"}
 _MULTI_TARGET_TASK_CLASSES = {"multi_target_compare", "multi_target_screen"}
 _ALLOWED_JOB_TYPES = {
     "metric_extract",
     "narrative_extract",
 }
+_UNSUPPORTED_STRUCTURED_FACT_HINT_PATTERNS = (
+    "gross margin",
+    "earnings per share",
+    "eps",
+    "debt-to-equity",
+    "debt to equity",
+)
 
 class _StructuredTargetResolutionTarget(BaseModel):
     target_id: int = Field(default=1)
@@ -744,6 +779,14 @@ class _StructuredTargetResolutionPlan(BaseModel):
     jobs: List[_StructuredTargetResolutionJob] = Field(default_factory=list)
 
 
+class _StructuredFactRequest(BaseModel):
+    subquestion: str
+    metric_hint: Optional[str] = None
+    entity_hint: Optional[str] = None
+    fiscal_year: Optional[int] = None
+    fiscal_period: Optional[str] = None
+
+
 class _StructuredPlannerIssue(BaseModel):
     code: str
     message: str
@@ -752,6 +795,8 @@ class _StructuredPlannerIssue(BaseModel):
 
 class _StructuredTargetResolutionOutput(BaseModel):
     retrieval_needed: bool = True
+    route: Literal["kb", "structured_fact", "hybrid"] = "kb"
+    structured_fact_requests: List[_StructuredFactRequest] = Field(default_factory=list)
     task_class: Literal[
         "single_target_fact",
         "multi_target_compare",
@@ -771,6 +816,13 @@ def _normalize_text(value: Any) -> Optional[str]:
         return None
     text = str(value).strip()
     return text or None
+
+
+def _normalize_metric_hint_text(value: Any) -> Optional[str]:
+    text = _normalize_text(value)
+    if text is None:
+        return None
+    return " ".join(text.replace("_", " ").split())
 
 
 def _normalize_bool(value: Any) -> bool:
@@ -951,6 +1003,63 @@ def _normalize_retrieval_plan(
         "fanout_mode": fanout_mode,
         "jobs": jobs,
     }
+
+
+def _normalize_structured_fact_request(value: Any) -> Optional[Dict[str, Any]]:
+    if not isinstance(value, dict):
+        return None
+    subquestion = _normalize_text(value.get("subquestion"))
+    if subquestion is None:
+        return None
+    return {
+        "subquestion": subquestion,
+        "metric_hint": _normalize_metric_hint_text(value.get("metric_hint")),
+        "entity_hint": _normalize_text(value.get("entity_hint")),
+        "fiscal_year": _normalize_int(value.get("fiscal_year")),
+        "fiscal_period": _normalize_text(value.get("fiscal_period")),
+    }
+
+
+def _normalize_structured_fact_requests(values: Any) -> List[Dict[str, Any]]:
+    normalized: List[Dict[str, Any]] = []
+    for value in values or []:
+        item = _normalize_structured_fact_request(value)
+        if item is not None:
+            normalized.append(item)
+    return normalized
+
+
+def _should_force_kb_route(
+    *,
+    route: str,
+    structured_fact_requests: Sequence[Dict[str, Any]],
+    open_issues: Sequence[Dict[str, Any]],
+) -> bool:
+    if route not in {"structured_fact", "hybrid"}:
+        return False
+
+    issue_codes = {
+        (_normalize_text(issue.get("code")) or "")
+        for issue in open_issues
+        if isinstance(issue, dict)
+    }
+    if "MULTI_COMPANY_QUERY" in issue_codes:
+        return True
+
+    for request in structured_fact_requests:
+        if not isinstance(request, dict):
+            continue
+        combined_text = " ".join(
+            part
+            for part in (
+                _normalize_metric_hint_text(request.get("metric_hint")),
+                _normalize_text(request.get("subquestion")),
+            )
+            if part
+        ).lower()
+        if any(pattern in combined_text for pattern in _UNSUPPORTED_STRUCTURED_FACT_HINT_PATTERNS):
+            return True
+    return False
 
 
 def _normalize_clarification_turns(
@@ -1182,9 +1291,15 @@ def _normalize_resolution_output(parsed_output: Any) -> Dict[str, Any]:
     if not isinstance(parsed_output, dict):
         raise ValueError("Parsed output must be a JSON object.")
 
+    route = (_normalize_text(parsed_output.get("route")) or "kb").lower()
+    if route not in _ALLOWED_ROUTES:
+        route = "kb"
+
     task_class = _normalize_text(parsed_output.get("task_class")) or "other"
     if task_class not in _ALLOWED_TASK_CLASSES:
         task_class = "other"
+
+    structured_fact_requests = _normalize_structured_fact_requests(parsed_output.get("structured_fact_requests"))
 
     targets: List[Dict[str, Any]] = []
     for index, target in enumerate(parsed_output.get("targets") or [], start=1):
@@ -1218,8 +1333,18 @@ def _normalize_resolution_output(parsed_output: Any) -> Dict[str, Any]:
         if issue is not None
     ]
 
+    if _should_force_kb_route(
+        route=route,
+        structured_fact_requests=structured_fact_requests,
+        open_issues=open_issues,
+    ):
+        route = "kb"
+        structured_fact_requests = []
+
     return {
         "retrieval_needed": _normalize_bool(parsed_output.get("retrieval_needed")),
+        "route": route,
+        "structured_fact_requests": structured_fact_requests,
         "task_class": task_class,
         "targets": targets,
         "retrieval_plan": retrieval_plan,
@@ -1268,6 +1393,8 @@ def _build_fallback_target_resolution(
             clarification_questions.append("Which fiscal year should be used?")
         return {
             "retrieval_needed": False,
+            "route": "kb",
+            "structured_fact_requests": [],
             "task_class": "other",
             "targets": [],
             "retrieval_plan": None,
@@ -1356,6 +1483,8 @@ def _build_fallback_target_resolution(
 
     return {
         "retrieval_needed": bool(retrieval_needed),
+        "route": "kb",
+        "structured_fact_requests": [],
         "task_class": "single_target_fact" if len(deterministic_targets) == 1 else "other",
         "targets": deterministic_targets,
         "retrieval_plan": retrieval_plan,
@@ -1490,6 +1619,12 @@ def _build_planner_output(
     metric_guess = _normalize_text(target_run.get("metric_guess")) or "filing evidence"
     task_class = _normalize_text((target_resolution or {}).get("task_class")) or "other"
     targets = list((target_resolution or {}).get("targets") or [])
+    route = (_normalize_text((target_resolution or {}).get("route")) or "kb").lower()
+    if route not in _ALLOWED_ROUTES:
+        route = "kb"
+    structured_fact_requests = _normalize_structured_fact_requests(
+        (target_resolution or {}).get("structured_fact_requests")
+    )
 
     retrieval_needed = bool((target_resolution or {}).get("retrieval_needed")) and status == "completed"
     retrieval_plan = (target_resolution or {}).get("retrieval_plan")
@@ -1522,6 +1657,8 @@ def _build_planner_output(
         "status": status,
         "retrieval_needed": retrieval_needed,
         "intent": intent,
+        "route": route,
+        "structured_fact_requests": structured_fact_requests,
         "metadata": metadata,
         "analysis_task": analysis_task,
         "open_issues": open_issues,

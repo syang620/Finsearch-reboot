@@ -124,6 +124,14 @@ def _normalize_retrieval_payload(payload: Any, *, args: Dict[str, Any]) -> Any:
     return normalized
 
 
+def _normalize_metric_payload(payload: Any) -> Dict[str, Any]:
+    if not isinstance(payload, dict):
+        return {}
+    if isinstance(payload.get("result"), dict):
+        return dict(payload["result"])
+    return dict(payload)
+
+
 @dataclass
 class SecRetrievalMCPClient:
     server_command: str = sys.executable
@@ -278,6 +286,69 @@ class SecRetrievalMCPClient:
                 "error": (
                     f"MCP tool call timed out after {timeout_s:.0f}s. "
                     "First run may need to load embedding/reranker models."
+                ),
+                "args": args,
+            }
+
+    async def get_metric(
+        self,
+        *,
+        ticker: str,
+        fiscal_year: int,
+        metric_id: str,
+        timeout_s: float = 120.0,
+    ) -> Dict[str, Any]:
+        assert self._session is not None, "Client not initialized. Use 'async with'."
+
+        args = {
+            "ticker": ticker,
+            "fiscal_year": fiscal_year,
+            "metric_id": metric_id,
+        }
+
+        if self._call_lock is None:
+            self._call_lock = asyncio.Lock()
+
+        async def _call():
+            async with self._call_lock:
+                result = await self._session.call_tool("sec_get_metric", arguments=args)
+
+            structured = getattr(result, "structured_content", None)
+            if structured is None:
+                structured = getattr(result, "structuredContent", None)
+            if structured is not None:
+                return _normalize_metric_payload(structured)
+
+            is_error = bool(
+                getattr(result, "is_error", False) or getattr(result, "isError", False)
+            )
+
+            for block in getattr(result, "content", []) or []:
+                if isinstance(block, types.TextContent):
+                    try:
+                        parsed = json.loads(block.text)
+                    except Exception:
+                        continue
+                    normalized = _normalize_metric_payload(parsed)
+                    if normalized:
+                        return normalized
+
+            return {
+                "ok": not is_error,
+                "status": "error" if is_error else "ok",
+                "error": None if not is_error else "SEC metric MCP tool returned an unstructured error.",
+                "args": args,
+            }
+
+        try:
+            return await asyncio.wait_for(_call(), timeout=timeout_s)
+        except asyncio.TimeoutError:
+            return {
+                "ok": False,
+                "status": "error",
+                "error": (
+                    f"MCP tool call timed out after {timeout_s:.0f}s. "
+                    "SEC metric retrieval did not complete in time."
                 ),
                 "args": args,
             }

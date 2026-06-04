@@ -22,11 +22,13 @@ from agents.orchestrator.agent_orchestrator import (
     _get_orchestrator_graph,
     _graph_config,
     _planner_error_node,
+    _resolve_metric_id_for_structured_fact_request,
     _route_after_planner_turn,
+    _structured_facts_node,
     _invoke_orchestrator,
     aclose_orchestrator_runtime,
 )
-from tests.snapshot_utils import assert_graph_snapshot_jsonable
+from snapshot_utils import assert_graph_snapshot_jsonable
 
 
 class _ConcurrentPlanner:
@@ -96,6 +98,78 @@ class _RetrievalPlanner:
         }
 
 
+class _KBRoutePlanner(_RetrievalPlanner):
+    async def aplan_turn(self, **_kwargs):
+        planner_turn = await super().aplan_turn(**_kwargs)
+        planner_turn["planner_output"]["route"] = "kb"
+        planner_turn["planner_output"]["structured_fact_requests"] = []
+        return planner_turn
+
+
+class _StructuredFactPlanner:
+    model = "planner-model"
+    enable_query_expansion = True
+    auto_run_full_planner = False
+    default_doc_types = []
+    company_ticker_map = None
+    full_planner_include_trace = False
+
+    def __init__(
+        self,
+        *,
+        metric_hint: str = "revenue",
+        subquestion: str = "What was Apple revenue in FY2025?",
+        entity_hint: str = "Apple",
+    ) -> None:
+        self.metric_hint = metric_hint
+        self.subquestion = subquestion
+        self.entity_hint = entity_hint
+
+    async def aplan_turn(self, **_kwargs):
+        return {
+            "planner_output": {
+                "status": "completed",
+                "retrieval_needed": False,
+                "intent": "filing_fact",
+                "route": "structured_fact",
+                "structured_fact_requests": [
+                    {
+                        "subquestion": self.subquestion,
+                        "metric_hint": self.metric_hint,
+                        "entity_hint": self.entity_hint,
+                        "fiscal_year": 2025,
+                        "fiscal_period": "FY",
+                    }
+                ],
+                "metadata": {"ticker": "AAPL", "fiscal_year": 2025, "form_type": "10-K"},
+                "analysis_task": {
+                    "task_type": "extract",
+                    "metric": "revenue",
+                    "requires_calculation": False,
+                    "expected_artifacts": ["text"],
+                    "output_format": "short_answer",
+                },
+                "open_issues": [],
+            }
+        }
+
+
+class _HybridPlanner(_RetrievalPlanner):
+    async def aplan_turn(self, **_kwargs):
+        planner_turn = await super().aplan_turn(**_kwargs)
+        planner_turn["planner_output"]["route"] = "hybrid"
+        planner_turn["planner_output"]["structured_fact_requests"] = [
+            {
+                "subquestion": "What was Apple revenue in FY2024?",
+                "metric_hint": "revenue",
+                "entity_hint": "Apple",
+                "fiscal_year": 2024,
+                "fiscal_period": "FY",
+            }
+        ]
+        return planner_turn
+
+
 class _ConcurrentRuntime:
     def __init__(self) -> None:
         self.closed = 0
@@ -138,6 +212,36 @@ class _ConcurrentFinalAnswerModel:
 class _ConcurrentModelFactory:
     def bind_tools(self, _tools):
         return _ConcurrentFinalAnswerModel()
+
+
+class _FakeStructuredFactClient:
+    def __init__(self, tool_result=None) -> None:
+        self.tool_result = tool_result or {
+            "ok": True,
+            "status": "ok",
+            "metric_id": "revenue",
+            "value": 410000000000.0,
+            "unit": "USD",
+            "ticker": "AAPL",
+            "cik": "0000320193",
+            "fiscal_year": 2025,
+            "form_type": "10-K",
+            "accession_number": "0000320193-25-000073",
+            "report_date": "2025-09-27",
+            "filed_date": "2025-10-31",
+            "source_url": "https://www.sec.gov/example",
+        }
+        self.calls = []
+
+    async def get_metric(self, *, ticker: str, fiscal_year: int, metric_id: str):
+        self.calls.append(
+            {
+                "ticker": ticker,
+                "fiscal_year": fiscal_year,
+                "metric_id": metric_id,
+            }
+        )
+        return dict(self.tool_result)
 
 
 class OrchestratorPlannerErrorTests(unittest.TestCase):
@@ -207,6 +311,51 @@ class OrchestratorPlannerErrorTests(unittest.TestCase):
         self.assertTrue(analyst_result.error.startswith("LLM error"))
         self.assertEqual(packet.context_items, [])
         self.assertTrue(any(issue.code == "PLANNER_RUNTIME_ERROR" for issue in analyst_result.open_issues))
+
+    def test_resolver_keeps_specific_total_debt_alias(self) -> None:
+        metric_id, status, _reason = _resolve_metric_id_for_structured_fact_request(
+            metric_hint="total debt",
+            subquestion="What was total debt?",
+        )
+
+        self.assertEqual(metric_id, "total_debt")
+        self.assertEqual(status, "resolved")
+
+    def test_resolver_no_longer_maps_profit_to_net_income(self) -> None:
+        metric_id, status, _reason = _resolve_metric_id_for_structured_fact_request(
+            metric_hint="profit",
+            subquestion="What was profit?",
+        )
+
+        self.assertIsNone(metric_id)
+        self.assertEqual(status, "unresolved")
+
+    def test_resolver_no_longer_maps_assets_to_total_assets(self) -> None:
+        metric_id, status, _reason = _resolve_metric_id_for_structured_fact_request(
+            metric_hint="assets",
+            subquestion="What were assets?",
+        )
+
+        self.assertIsNone(metric_id)
+        self.assertEqual(status, "unresolved")
+
+    def test_resolver_no_longer_maps_equity_to_stockholders_equity(self) -> None:
+        metric_id, status, _reason = _resolve_metric_id_for_structured_fact_request(
+            metric_hint="equity",
+            subquestion="What was equity?",
+        )
+
+        self.assertIsNone(metric_id)
+        self.assertEqual(status, "unresolved")
+
+    def test_resolver_keeps_cash_ambiguous(self) -> None:
+        metric_id, status, _reason = _resolve_metric_id_for_structured_fact_request(
+            metric_hint="cash",
+            subquestion="What was cash?",
+        )
+
+        self.assertIsNone(metric_id)
+        self.assertEqual(status, "ambiguous")
 
 
 class OrchestratorRuntimeTests(unittest.IsolatedAsyncioTestCase):
@@ -523,6 +672,478 @@ class OrchestratorRuntimeTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(values["packet"].context_items[0].payload["content"], "Revenue was $100.")
         self.assertIn("analyst_result", values)
         self.assertTrue(values["analyst_result"].ok)
+
+    async def test_invoke_orchestrator_kb_route_skips_structured_fact_execution(self) -> None:
+        client = _FakeStructuredFactClient()
+
+        async def _fake_retrieval_agent(state, client=None):
+            return {
+                "retrieval": {
+                    "ok": True,
+                    "top_tables": [],
+                    "partial_failures": [],
+                    "metadata_used": {"ticker": "AAPL", "fiscal_year": 2024, "form_type": "10-K"},
+                    "max_total_score": 12,
+                }
+            }
+
+        def _fake_packet_builder(**_kwargs):
+            from agents.orchestrator import agent_orchestrator as orchestrator
+
+            return orchestrator._build_packet_without_retrieval(
+                user_query="What was revenue?",
+                plan_obj={
+                    "intent": "filing_fact",
+                    "metadata": {"ticker": "AAPL", "fiscal_year": 2024, "form_type": "10-K"},
+                    "analysis_task": {
+                        "task_type": "extract",
+                        "metric": "revenue",
+                        "requires_calculation": False,
+                        "expected_artifacts": ["text"],
+                        "output_format": "short_answer",
+                    },
+                },
+                plan_id="kb-run",
+            )
+
+        class _FakeAnalyst:
+            async def arun(self, packet, debug=False):
+                return AnalystRunResult(
+                    ok=True,
+                    status="ok",
+                    answer="Revenue is in KB context.",
+                    intent=PlannerIntent.FILING_FACT,
+                    metric=packet.analysis_task.metric,
+                )
+
+        await aclose_orchestrator_runtime()
+        saver = InMemorySaver()
+        with (
+            mock.patch("agents.orchestrator.agent_orchestrator._get_orchestrator_checkpointer", new=mock.AsyncMock(return_value=saver)),
+            mock.patch("agents.orchestrator.agent_orchestrator._orchestrator_checkpoint_ttl_seconds", return_value=0),
+            mock.patch("agents.orchestrator.agent_orchestrator._get_orchestrator_mcp_client", new=mock.AsyncMock(return_value=client)),
+            mock.patch("agents.orchestrator.agent_orchestrator.retrieval_agent", new=_fake_retrieval_agent),
+            mock.patch("agents.orchestrator.agent_orchestrator.build_packet_from_retrieval_output", new=_fake_packet_builder),
+            mock.patch("agents.orchestrator.agent_orchestrator._get_pooled_analyst", new=mock.AsyncMock(return_value=_FakeAnalyst())),
+        ):
+            output = await _invoke_orchestrator(
+                {
+                    "user_query": "What was revenue?",
+                    "plan_id": "kb-run",
+                    "analyst_model": "shared-model",
+                    "tables_dir": "data/chunked",
+                    "debug": False,
+                },
+                run_id="kb-run",
+                planner=_KBRoutePlanner(),
+            )
+
+        self.assertEqual(output["route"], "kb")
+        self.assertEqual(output["structured_fact_results"], [])
+        self.assertEqual(client.calls, [])
+        self.assertTrue(output["retrieval"]["ok"])
+
+    async def test_orchestrator_graph_state_round_trips_with_structured_fact_route(self) -> None:
+        import agents.orchestrator.agent_orchestrator as orchestrator
+
+        await aclose_orchestrator_runtime()
+        saver = InMemorySaver()
+        orchestrator._ORCHESTRATOR_CHECKPOINTER = saver
+        orchestrator._get_orchestrator_graph.cache_clear()
+        client = _FakeStructuredFactClient()
+
+        class _FakeAnalyst:
+            async def arun(self, packet, debug=False):
+                return AnalystRunResult(
+                    ok=True,
+                    status="ok",
+                    answer="Revenue was $410B.",
+                    intent=PlannerIntent.FILING_FACT,
+                    metric=packet.analysis_task.metric,
+                )
+
+        graph = _get_orchestrator_graph(id(saver))
+        config = _graph_config(run_id="snapshot-structured-fact", planner=_StructuredFactPlanner())
+
+        with (
+            mock.patch("agents.orchestrator.agent_orchestrator._get_pooled_analyst", new=mock.AsyncMock(return_value=_FakeAnalyst())),
+            mock.patch("agents.orchestrator.agent_orchestrator._get_orchestrator_mcp_client", new=mock.AsyncMock(return_value=client)),
+        ):
+            await graph.ainvoke(
+                {
+                    "user_query": "What was Apple revenue in FY2025?",
+                    "plan_id": "snapshot-structured-fact",
+                    "analyst_model": "shared-model",
+                    "tables_dir": "data/chunked",
+                    "debug": False,
+                },
+                config=config,
+            )
+
+        snapshot = await graph.aget_state(config)
+        values = dict(snapshot.values or {})
+        assert_graph_snapshot_jsonable(snapshot)
+
+        self.assertEqual(values["structured_fact_results"][0]["resolved_metric_id"], "revenue")
+        self.assertFalse(values.get("retrieval_output"))
+        self.assertEqual(len(values["packet"].context_items), 1)
+        self.assertIn("Structured fact: revenue = 410000000000.0 USD", values["packet"].context_items[0].payload["content"])
+        self.assertEqual(client.calls[0]["metric_id"], "revenue")
+
+    async def test_invoke_orchestrator_hybrid_route_returns_retrieval_and_structured_fact_results(self) -> None:
+        client = _FakeStructuredFactClient(
+            tool_result={
+                "ok": True,
+                "status": "ok",
+                "metric_id": "revenue",
+                "value": 391000000000.0,
+                "unit": "USD",
+                "ticker": "AAPL",
+                "cik": "0000320193",
+                "fiscal_year": 2024,
+                "form_type": "10-K",
+                "accession_number": "0000320193-24-000123",
+                "report_date": "2024-09-28",
+                "filed_date": "2024-11-01",
+                "source_url": "https://www.sec.gov/example",
+            }
+        )
+
+        async def _fake_retrieval_agent(state, client=None):
+            return {
+                "retrieval": {
+                    "ok": True,
+                    "top_tables": [],
+                    "partial_failures": [],
+                    "metadata_used": {"ticker": "AAPL", "fiscal_year": 2024, "form_type": "10-K"},
+                    "max_total_score": 12,
+                }
+            }
+
+        def _fake_packet_builder(**_kwargs):
+            from agents.orchestrator import agent_orchestrator as orchestrator
+
+            return orchestrator._build_packet_without_retrieval(
+                user_query="What was revenue?",
+                plan_obj={
+                    "intent": "filing_fact",
+                    "metadata": {"ticker": "AAPL", "fiscal_year": 2024, "form_type": "10-K"},
+                    "analysis_task": {
+                        "task_type": "extract",
+                        "metric": "revenue",
+                        "requires_calculation": False,
+                        "expected_artifacts": ["text"],
+                        "output_format": "short_answer",
+                    },
+                },
+                plan_id="hybrid-run",
+            ).model_copy(
+                update={
+                    "context_quality": ContextQuality.MEDIUM,
+                    "context_items": [
+                        ContextItem(
+                            context_id="ctx_1",
+                            target_id="1",
+                            kind=ContextItemKind.TEXT,
+                            source=SourceRef(ticker="AAPL", fiscal_year=2024, form_type=FormType.TEN_K),
+                            payload={"content": "Revenue was supported by KB context."},
+                        )
+                    ],
+                }
+            )
+
+        class _FakeAnalyst:
+            async def arun(self, packet, debug=False):
+                return AnalystRunResult(
+                    ok=True,
+                    status="ok",
+                    answer="Revenue was supported by KB and structured facts.",
+                    intent=PlannerIntent.FILING_FACT,
+                    metric=packet.analysis_task.metric,
+                )
+
+        await aclose_orchestrator_runtime()
+        saver = InMemorySaver()
+        with (
+            mock.patch("agents.orchestrator.agent_orchestrator._get_orchestrator_checkpointer", new=mock.AsyncMock(return_value=saver)),
+            mock.patch("agents.orchestrator.agent_orchestrator._orchestrator_checkpoint_ttl_seconds", return_value=0),
+            mock.patch("agents.orchestrator.agent_orchestrator._get_orchestrator_mcp_client", new=mock.AsyncMock(return_value=client)),
+            mock.patch("agents.orchestrator.agent_orchestrator.retrieval_agent", new=_fake_retrieval_agent),
+            mock.patch("agents.orchestrator.agent_orchestrator.build_packet_from_retrieval_output", new=_fake_packet_builder),
+            mock.patch("agents.orchestrator.agent_orchestrator._get_pooled_analyst", new=mock.AsyncMock(return_value=_FakeAnalyst())),
+        ):
+            output = await _invoke_orchestrator(
+                {
+                    "user_query": "What was revenue?",
+                    "plan_id": "hybrid-run",
+                    "analyst_model": "shared-model",
+                    "tables_dir": "data/chunked",
+                    "debug": False,
+                },
+                run_id="hybrid-run",
+                planner=_HybridPlanner(),
+            )
+
+        self.assertEqual(output["route"], "hybrid")
+        self.assertTrue(output["retrieval"]["ok"])
+        self.assertEqual(len(output["structured_fact_results"]), 1)
+        self.assertEqual(output["structured_fact_results"][0]["resolved_metric_id"], "revenue")
+        self.assertEqual(client.calls[0]["metric_id"], "revenue")
+
+    async def test_invoke_orchestrator_hybrid_route_preserves_structured_fact_when_kb_retrieval_fails(self) -> None:
+        client = _FakeStructuredFactClient(
+            tool_result={
+                "ok": True,
+                "status": "ok",
+                "metric_id": "revenue",
+                "value": 391000000000.0,
+                "unit": "USD",
+                "ticker": "AAPL",
+                "cik": "0000320193",
+                "fiscal_year": 2024,
+                "form_type": "10-K",
+                "accession_number": "0000320193-24-000123",
+                "report_date": "2024-09-28",
+                "filed_date": "2024-11-01",
+                "source_url": "https://www.sec.gov/example",
+            }
+        )
+
+        async def _fake_retrieval_agent(state, client=None):
+            return {
+                "retrieval": {
+                    "ok": False,
+                    "top_tables": [],
+                    "partial_failures": [],
+                    "metadata_used": {"ticker": "AAPL", "fiscal_year": 2024, "form_type": "10-K"},
+                    "error": "KB retrieval failed for this hybrid run.",
+                    "max_total_score": None,
+                }
+            }
+
+        class _FakeAnalyst:
+            async def arun(self, packet, debug=False):
+                self.packet = packet
+                return AnalystRunResult(
+                    ok=True,
+                    status="ok",
+                    answer="Structured facts still answered the question.",
+                    intent=PlannerIntent.FILING_FACT,
+                    metric=packet.analysis_task.metric,
+                )
+
+        fake_analyst = _FakeAnalyst()
+
+        await aclose_orchestrator_runtime()
+        saver = InMemorySaver()
+        with (
+            mock.patch("agents.orchestrator.agent_orchestrator._get_orchestrator_checkpointer", new=mock.AsyncMock(return_value=saver)),
+            mock.patch("agents.orchestrator.agent_orchestrator._orchestrator_checkpoint_ttl_seconds", return_value=0),
+            mock.patch("agents.orchestrator.agent_orchestrator._get_orchestrator_mcp_client", new=mock.AsyncMock(return_value=client)),
+            mock.patch("agents.orchestrator.agent_orchestrator.retrieval_agent", new=_fake_retrieval_agent),
+            mock.patch("agents.orchestrator.agent_orchestrator._get_pooled_analyst", new=mock.AsyncMock(return_value=fake_analyst)),
+        ):
+            output = await _invoke_orchestrator(
+                {
+                    "user_query": "What was revenue?",
+                    "plan_id": "hybrid-kb-fail-run",
+                    "analyst_model": "shared-model",
+                    "tables_dir": "data/chunked",
+                    "debug": False,
+                },
+                run_id="hybrid-kb-fail-run",
+                planner=_HybridPlanner(),
+            )
+
+        self.assertEqual(output["route"], "hybrid")
+        self.assertEqual(output["status"], "completed")
+        self.assertFalse(output["retrieval"]["ok"])
+        self.assertEqual(len(output["structured_fact_results"]), 1)
+        self.assertTrue(output["structured_fact_results"][0]["tool_result"]["ok"])
+        self.assertEqual(output["structured_fact_results"][0]["tool_result"]["status"], "ok")
+        self.assertIn(
+            "Structured fact: revenue = 391000000000.0 USD",
+            fake_analyst.packet.context_items[-1].payload["content"],
+        )
+
+    async def test_invoke_orchestrator_hybrid_route_preserves_kb_when_structured_fact_degrades(self) -> None:
+        client = _FakeStructuredFactClient(
+            tool_result={
+                "ok": False,
+                "status": "partial",
+                "metric_id": "revenue",
+                "value": None,
+                "error": "Structured fact returned partial evidence only.",
+            }
+        )
+
+        async def _fake_retrieval_agent(state, client=None):
+            return {
+                "retrieval": {
+                    "ok": True,
+                    "top_tables": [],
+                    "partial_failures": [],
+                    "metadata_used": {"ticker": "AAPL", "fiscal_year": 2024, "form_type": "10-K"},
+                    "max_total_score": 12,
+                }
+            }
+
+        def _fake_packet_builder(**_kwargs):
+            from agents.orchestrator import agent_orchestrator as orchestrator
+
+            return orchestrator._build_packet_without_retrieval(
+                user_query="What was revenue?",
+                plan_obj={
+                    "intent": "filing_fact",
+                    "metadata": {"ticker": "AAPL", "fiscal_year": 2024, "form_type": "10-K"},
+                    "analysis_task": {
+                        "task_type": "extract",
+                        "metric": "revenue",
+                        "requires_calculation": False,
+                        "expected_artifacts": ["text"],
+                        "output_format": "short_answer",
+                    },
+                },
+                plan_id="hybrid-structured-fact-partial-run",
+            ).model_copy(
+                update={
+                    "context_quality": ContextQuality.MEDIUM,
+                    "context_items": [
+                        ContextItem(
+                            context_id="ctx_1",
+                            target_id="1",
+                            kind=ContextItemKind.TEXT,
+                            source=SourceRef(ticker="AAPL", fiscal_year=2024, form_type=FormType.TEN_K),
+                            payload={"content": "Revenue was supported by KB context."},
+                        )
+                    ],
+                }
+            )
+
+        class _FakeAnalyst:
+            async def arun(self, packet, debug=False):
+                self.packet = packet
+                return AnalystRunResult(
+                    ok=True,
+                    status="ok",
+                    answer="KB still carried the run.",
+                    intent=PlannerIntent.FILING_FACT,
+                    metric=packet.analysis_task.metric,
+                )
+
+        fake_analyst = _FakeAnalyst()
+
+        await aclose_orchestrator_runtime()
+        saver = InMemorySaver()
+        with (
+            mock.patch("agents.orchestrator.agent_orchestrator._get_orchestrator_checkpointer", new=mock.AsyncMock(return_value=saver)),
+            mock.patch("agents.orchestrator.agent_orchestrator._orchestrator_checkpoint_ttl_seconds", return_value=0),
+            mock.patch("agents.orchestrator.agent_orchestrator._get_orchestrator_mcp_client", new=mock.AsyncMock(return_value=client)),
+            mock.patch("agents.orchestrator.agent_orchestrator.retrieval_agent", new=_fake_retrieval_agent),
+            mock.patch("agents.orchestrator.agent_orchestrator.build_packet_from_retrieval_output", new=_fake_packet_builder),
+            mock.patch("agents.orchestrator.agent_orchestrator._get_pooled_analyst", new=mock.AsyncMock(return_value=fake_analyst)),
+        ):
+            output = await _invoke_orchestrator(
+                {
+                    "user_query": "What was revenue?",
+                    "plan_id": "hybrid-structured-fact-partial-run",
+                    "analyst_model": "shared-model",
+                    "tables_dir": "data/chunked",
+                    "debug": False,
+                },
+                run_id="hybrid-structured-fact-partial-run",
+                planner=_HybridPlanner(),
+            )
+
+        self.assertEqual(output["route"], "hybrid")
+        self.assertEqual(output["status"], "completed")
+        self.assertTrue(output["retrieval"]["ok"])
+        self.assertEqual(len(output["structured_fact_results"]), 1)
+        self.assertEqual(output["structured_fact_results"][0]["tool_result"]["status"], "partial")
+        self.assertIn("Revenue was supported by KB context.", fake_analyst.packet.context_items[0].payload["content"])
+        self.assertIn(
+            "Structured fact: revenue returned status partial.",
+            fake_analyst.packet.context_items[-1].payload["content"],
+        )
+
+    async def test_structured_facts_node_returns_unresolved_without_tool_call(self) -> None:
+        client = _FakeStructuredFactClient()
+        with mock.patch("agents.orchestrator.agent_orchestrator._get_orchestrator_mcp_client", new=mock.AsyncMock(return_value=client)):
+            result = await _structured_facts_node(
+                {
+                    "plan_obj": {
+                        "metadata": {"ticker": "AAPL", "fiscal_year": 2025, "form_type": "10-K"},
+                        "structured_fact_requests": [
+                            {
+                                "subquestion": "What was Apple mystery metric in FY2025?",
+                                "metric_hint": "mystery metric",
+                                "entity_hint": "Apple",
+                                "fiscal_year": 2025,
+                            }
+                        ],
+                    }
+                }
+            )
+
+        self.assertEqual(result["structured_fact_results"][0]["resolver_status"], "unresolved")
+        self.assertIsNone(result["structured_fact_results"][0]["resolved_metric_id"])
+        self.assertIsNone(result["structured_fact_results"][0]["tool_result"])
+        self.assertEqual(client.calls, [])
+
+    async def test_structured_facts_node_returns_ambiguous_without_tool_call(self) -> None:
+        client = _FakeStructuredFactClient()
+        with mock.patch("agents.orchestrator.agent_orchestrator._get_orchestrator_mcp_client", new=mock.AsyncMock(return_value=client)):
+            result = await _structured_facts_node(
+                {
+                    "plan_obj": {
+                        "metadata": {"ticker": "AAPL", "fiscal_year": 2025, "form_type": "10-K"},
+                        "structured_fact_requests": [
+                            {
+                                "subquestion": "What was Apple cash in FY2025?",
+                                "metric_hint": "cash",
+                                "entity_hint": "Apple",
+                                "fiscal_year": 2025,
+                            }
+                        ],
+                    }
+                }
+            )
+
+        self.assertEqual(result["structured_fact_results"][0]["resolver_status"], "ambiguous")
+        self.assertIsNone(result["structured_fact_results"][0]["resolved_metric_id"])
+        self.assertIsNone(result["structured_fact_results"][0]["tool_result"])
+        self.assertEqual(client.calls, [])
+
+    async def test_structured_facts_node_preserves_non_ok_tool_result(self) -> None:
+        client = _FakeStructuredFactClient(
+            tool_result={
+                "ok": False,
+                "status": "partial",
+                "metric_id": "total_debt",
+                "value": None,
+                "error": "Missing noncurrent debt component.",
+            }
+        )
+        with mock.patch("agents.orchestrator.agent_orchestrator._get_orchestrator_mcp_client", new=mock.AsyncMock(return_value=client)):
+            result = await _structured_facts_node(
+                {
+                    "plan_obj": {
+                        "metadata": {"ticker": "AAPL", "fiscal_year": 2025, "form_type": "10-K"},
+                        "structured_fact_requests": [
+                            {
+                                "subquestion": "What was Apple total debt in FY2025?",
+                                "metric_hint": "total debt",
+                                "entity_hint": "Apple",
+                                "fiscal_year": 2025,
+                            }
+                        ],
+                    }
+                }
+            )
+
+        self.assertEqual(result["structured_fact_results"][0]["resolver_status"], "resolved")
+        self.assertEqual(result["structured_fact_results"][0]["tool_result"]["status"], "partial")
+        self.assertEqual(client.calls[0]["metric_id"], "total_debt")
 
 
 if __name__ == "__main__":

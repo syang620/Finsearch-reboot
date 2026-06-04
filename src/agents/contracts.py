@@ -46,6 +46,9 @@ class Severity(str, Enum):
     ERROR = "error"
 
 
+PlannerRoute = Literal["kb", "structured_fact", "hybrid"]
+
+
 # -----------------------------
 # Planner output (LLM contract)
 # -----------------------------
@@ -160,6 +163,40 @@ class AnalysisTask(BaseModel):
         return [str(x).strip() for x in v if str(x).strip()]
 
 
+class StructuredFactRequest(BaseModel):
+    subquestion: str = Field(..., description="User-facing subquestion for a future structured fact lane.")
+    metric_hint: Optional[str] = Field(default=None)
+    entity_hint: Optional[str] = Field(default=None)
+    fiscal_year: Optional[int] = Field(default=None)
+    fiscal_period: Optional[str] = Field(default=None)
+
+    @field_validator("subquestion")
+    @classmethod
+    def _subquestion_non_empty(cls, v: str) -> str:
+        text = str(v).strip()
+        if not text:
+            raise ValueError("subquestion must be non-empty")
+        return text
+
+    @field_validator("metric_hint", "entity_hint", "fiscal_period")
+    @classmethod
+    def _normalize_optional_text(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return None
+        text = str(v).strip()
+        return text or None
+
+    @field_validator("fiscal_year")
+    @classmethod
+    def _validate_year(cls, v: Optional[int]) -> Optional[int]:
+        if v is None:
+            return None
+        year = int(v)
+        if not (1900 <= year <= 2100):
+            raise ValueError("fiscal_year out of reasonable range (1900-2100)")
+        return year
+
+
 class PlannerOutput(BaseModel):
     """
     What the planner LLM must output (crawl mode).
@@ -167,6 +204,8 @@ class PlannerOutput(BaseModel):
     """
     retrieval_needed: bool = Field(default=True)
     intent: PlannerIntent = Field(default=PlannerIntent.FILING_FACT)
+    route: PlannerRoute = Field(default="kb")
+    structured_fact_requests: List[StructuredFactRequest] = Field(default_factory=list)
     metadata: FilingMetadata
     analysis_task: AnalysisTask
     open_issues: List[OpenIssue] = Field(default_factory=list)

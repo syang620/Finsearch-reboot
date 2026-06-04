@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import json
 import os
+import re
 from functools import lru_cache
 from pathlib import Path
 import operator
@@ -17,11 +18,15 @@ from agents.analyst import AnalystAgent, AnalystRunResult, build_packet_from_ret
 from agents.contracts import (
     AnalysisTask,
     AnalystPacket,
+    ContextItem,
+    ContextItemKind,
     ContextQuality,
     FilingMetadata,
+    FormType,
     OpenIssue,
     PlannerIntent,
     Severity,
+    SourceRef,
 )
 from agents.planner import InteractivePlannerAgent
 from agents.planner.interactive_target_resolution import (
@@ -30,6 +35,7 @@ from agents.planner.interactive_target_resolution import (
 )
 from agents.retrieval.query_planner_v2 import retrieval_agent
 from agents.text_utils import normalize_text
+from mcp_server.tools.sec_metric_registry import METRIC_REGISTRY
 from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 from langgraph.config import get_config
 from langgraph.graph import END, StateGraph
@@ -56,6 +62,8 @@ class OrchestratorState(TypedDict, total=False):
     retrieval_output: Dict[str, Any]
     retrieval_timing_ms: Dict[str, int]
     retrieval_skipped_reason: str
+    structured_fact_results: List[Dict[str, Any]]
+    structured_fact_timing_ms: Dict[str, int]
 
     packet: AnalystPacket
     analyst_result: Any
@@ -92,6 +100,39 @@ _ORCHESTRATOR_LAST_PRUNE_TS = 0.0
 _ORCHESTRATOR_MCP_CLIENT: Optional[Any] = None
 _ORCHESTRATOR_MCP_CLIENT_LOCK: Optional[asyncio.Lock] = None
 _BACKGROUND_TASKS: set[Any] = set()
+_TICKER_LIKE_RE = re.compile(r"^[A-Z][A-Z0-9.\-]{0,9}$")
+# Keep aliases conservative. Broad single-word finance terms are intentionally
+# avoided here to reduce false positives in metric auto-resolution.
+_STRUCTURED_FACT_ALIAS_MAP: Dict[str, tuple[str, ...]] = {
+    "total_debt": (
+        "total debt",
+        "interest bearing debt",
+        "borrowings",
+    ),
+    "revenue": ("revenue", "sales", "total revenue"),
+    "gross_profit": ("gross profit", "gross earnings"),
+    "operating_income": ("operating income", "operating profit", "ebit"),
+    "net_income": ("net income", "net earnings"),
+    "cash_and_cash_equivalents": (
+        "cash and cash equivalents",
+        "cash equivalents",
+        "cash",
+    ),
+    "total_assets": ("total assets",),
+    "total_liabilities": ("total liabilities",),
+    "stockholders_equity": (
+        "stockholders equity",
+        "shareholders equity",
+    ),
+    "operating_cash_flow": (
+        "operating cash flow",
+        "cash flow from operations",
+        "cash from operations",
+        "cfo",
+        "cash",
+    ),
+    "capex": ("capex", "capital expenditures", "capital expenditure"),
+}
 
 
 async def _get_orchestrator_checkpointer() -> AsyncSqliteSaver:
@@ -447,6 +488,17 @@ def _coerce_intent(plan_obj: Dict[str, Any]) -> PlannerIntent:
         return PlannerIntent(raw)
     except Exception:
         return PlannerIntent.FILING_FACT
+
+
+def _coerce_plan_route(plan_obj: Dict[str, Any]) -> str:
+    route = _normalize_text((plan_obj or {}).get("route")) or "kb"
+    if route in {"kb", "structured_fact", "hybrid"}:
+        return route
+    return "kb"
+
+
+def _route_uses_structured_facts(route: str) -> bool:
+    return route in {"structured_fact", "hybrid"}
 
 
 def _coerce_metadata(plan_obj: Dict[str, Any]) -> FilingMetadata:
@@ -850,6 +902,8 @@ def _init_node(state: OrchestratorState) -> Dict[str, Any]:
         "start_time": time.time(),
         "retrieval_timing_ms": {},
         "retrieval_skipped_reason": "",
+        "structured_fact_timing_ms": {},
+        "structured_fact_results": [],
         "clarification_turns": [],
         "planner_timing_ms": {},
         "open_issues": [],
@@ -942,6 +996,11 @@ def _route_after_planner_turn(state: OrchestratorState) -> str:
     if status == "needs_clarification":
         return "planner_interrupt"
     if status == "completed":
+        route = _coerce_plan_route(plan_obj)
+        if route == "structured_fact":
+            return "structured_facts"
+        if route == "hybrid":
+            return "check_retrieval_metadata"
         return "check_retrieval_metadata" if bool(plan_obj.get("retrieval_needed")) else "build_packet_without_retrieval"
     if status == "error":
         return "planner_error"
@@ -1144,7 +1203,9 @@ def _check_retrieval_metadata_node(state: OrchestratorState) -> Dict[str, Any]:
 
 def _route_after_retrieval_metadata(state: OrchestratorState) -> str:
     retrieval_state = state.get("retrieval_state") or {}
-    return "retrieval" if retrieval_state else "build_packet_without_retrieval"
+    if retrieval_state:
+        return "retrieval"
+    return "structured_facts" if _route_uses_structured_facts(_coerce_plan_route(state.get("plan_obj") or {})) else "build_packet_without_retrieval"
 
 
 async def _retrieval_node(state: OrchestratorState) -> Dict[str, Any]:
@@ -1204,13 +1265,403 @@ async def _retrieval_node(state: OrchestratorState) -> Dict[str, Any]:
     }
 
 
+def _route_after_retrieval_node(state: OrchestratorState) -> str:
+    return "structured_facts" if _route_uses_structured_facts(_coerce_plan_route(state.get("plan_obj") or {})) else "build_packet_from_retrieval"
+
+
+def _normalize_metric_lookup_text(value: Any) -> str:
+    text = _normalize_text(value) or ""
+    text = text.replace("_", " ").replace("-", " ")
+    text = re.sub(r"[^a-z0-9.\s]", " ", text.lower())
+    return re.sub(r"\s+", " ", text).strip()
+
+
+def _metric_registry_lookup_terms(metric_id: str, label: str) -> tuple[str, ...]:
+    terms = [_normalize_metric_lookup_text(metric_id), _normalize_metric_lookup_text(label)]
+    for alias in _STRUCTURED_FACT_ALIAS_MAP.get(metric_id, ()):
+        normalized = _normalize_metric_lookup_text(alias)
+        if normalized:
+            terms.append(normalized)
+    deduped: list[str] = []
+    seen: set[str] = set()
+    for term in terms:
+        if not term or term in seen:
+            continue
+        seen.add(term)
+        deduped.append(term)
+    return tuple(deduped)
+
+
+def _resolve_metric_id_for_structured_fact_request(
+    *,
+    metric_hint: Any,
+    subquestion: Any,
+) -> tuple[Optional[str], str, Optional[str]]:
+    query = _normalize_metric_lookup_text(metric_hint) or _normalize_metric_lookup_text(subquestion)
+    if not query:
+        return None, "unresolved", "No metric hint or subquestion text was available for resolution."
+
+    exact_matches: list[str] = []
+    for metric_id, definition in METRIC_REGISTRY.items():
+        terms = _metric_registry_lookup_terms(metric_id, definition.label)
+        if query in terms:
+            exact_matches.append(metric_id)
+
+    if len(exact_matches) == 1:
+        resolved = exact_matches[0]
+        return resolved, "resolved", f"Resolved metric from exact registry match: {resolved}."
+    if len(exact_matches) > 1:
+        matches = sorted(set(exact_matches))
+        return None, "ambiguous", f"Metric text matched multiple registered metrics exactly: {', '.join(matches)}."
+
+    contained_matches: list[str] = []
+    query_padded = f" {query} "
+    for metric_id, definition in METRIC_REGISTRY.items():
+        terms = _metric_registry_lookup_terms(metric_id, definition.label)
+        if any(f" {term} " in query_padded for term in terms if term):
+            contained_matches.append(metric_id)
+
+    unique_matches = sorted(set(contained_matches))
+    if len(unique_matches) == 1:
+        resolved = unique_matches[0]
+        return resolved, "resolved", f"Resolved metric from registry phrase match: {resolved}."
+    if len(unique_matches) > 1:
+        return None, "ambiguous", (
+            "Metric text matched multiple registered metrics: "
+            f"{', '.join(unique_matches)}."
+        )
+    return None, "unresolved", f"Metric text did not match any registered SEC metric: {query}."
+
+
+def _entity_hint_looks_like_ticker(entity_hint: Any) -> Optional[str]:
+    text = _normalize_text(entity_hint)
+    if not text:
+        return None
+    stripped = str(text).strip()
+    return stripped if _TICKER_LIKE_RE.fullmatch(stripped) else None
+
+
+def _select_matching_target_for_structured_fact(
+    *,
+    plan_obj: Dict[str, Any],
+    entity_hint: Any,
+    fiscal_year: Optional[int],
+) -> Optional[Dict[str, Any]]:
+    targets = [
+        dict(target)
+        for target in (plan_obj.get("targets") or [])
+        if isinstance(target, dict)
+    ]
+    if not targets:
+        return None
+
+    hinted_ticker = _entity_hint_looks_like_ticker(entity_hint)
+    normalized_entity = _normalize_metric_lookup_text(entity_hint)
+    requested_year = _normalize_int(fiscal_year)
+
+    def _matches(target: Dict[str, Any]) -> bool:
+        target_ticker = _normalize_text(target.get("ticker"))
+        target_company = _normalize_metric_lookup_text(target.get("company_name"))
+        target_year = _normalize_int(target.get("fiscal_year"))
+        if requested_year is not None and target_year is not None and requested_year != target_year:
+            return False
+        if hinted_ticker and target_ticker == hinted_ticker:
+            return True
+        if normalized_entity and normalized_entity == target_company:
+            return True
+        return False
+
+    matched = [target for target in targets if _matches(target)]
+    if matched:
+        return matched[0]
+    if len(targets) == 1:
+        return targets[0]
+    return None
+
+
+def _resolve_structured_fact_inputs(
+    *,
+    plan_obj: Dict[str, Any],
+    request: Dict[str, Any],
+) -> tuple[Optional[str], Optional[int], Optional[Dict[str, Any]]]:
+    metadata = _coerce_metadata(plan_obj)
+    matched_target = _select_matching_target_for_structured_fact(
+        plan_obj=plan_obj,
+        entity_hint=request.get("entity_hint"),
+        fiscal_year=_normalize_int(request.get("fiscal_year")),
+    )
+
+    resolved_ticker = (
+        _entity_hint_looks_like_ticker(request.get("entity_hint"))
+        or metadata.ticker
+        or _normalize_text((matched_target or {}).get("ticker"))
+    )
+    resolved_year = (
+        _normalize_int(request.get("fiscal_year"))
+        or metadata.fiscal_year
+        or _normalize_int((matched_target or {}).get("fiscal_year"))
+    )
+    return resolved_ticker, resolved_year, matched_target
+
+
+def _build_structured_fact_result(
+    *,
+    request: Dict[str, Any],
+    resolved_ticker: Optional[str],
+    resolved_year: Optional[int],
+    resolved_metric_id: Optional[str],
+    resolver_status: str,
+    resolver_reason: Optional[str],
+    tool_result: Optional[Dict[str, Any]],
+) -> Dict[str, Any]:
+    return {
+        "subquestion": _normalize_text(request.get("subquestion")),
+        "metric_hint": _normalize_text(request.get("metric_hint")),
+        "entity_hint": _normalize_text(request.get("entity_hint")),
+        "requested_fiscal_year": _normalize_int(request.get("fiscal_year")),
+        "requested_fiscal_period": _normalize_text(request.get("fiscal_period")),
+        "resolved_ticker": resolved_ticker,
+        "resolved_fiscal_year": resolved_year,
+        "resolved_metric_id": resolved_metric_id,
+        "resolver_status": resolver_status,
+        "resolver_reason": resolver_reason,
+        "tool_result": tool_result,
+    }
+
+
+async def _execute_structured_fact_requests(
+    *,
+    plan_obj: Dict[str, Any],
+    client: Any,
+) -> list[Dict[str, Any]]:
+    requests = [
+        dict(item)
+        for item in (plan_obj.get("structured_fact_requests") or [])
+        if isinstance(item, dict)
+    ]
+    results: list[Dict[str, Any]] = []
+    for request in requests:
+        resolved_ticker, resolved_year, _matched_target = _resolve_structured_fact_inputs(
+            plan_obj=plan_obj,
+            request=request,
+        )
+        resolved_metric_id, resolver_status, resolver_reason = _resolve_metric_id_for_structured_fact_request(
+            metric_hint=request.get("metric_hint"),
+            subquestion=request.get("subquestion"),
+        )
+
+        if not resolved_ticker or resolved_year is None:
+            missing_bits = []
+            if not resolved_ticker:
+                missing_bits.append("ticker")
+            if resolved_year is None:
+                missing_bits.append("fiscal_year")
+            results.append(
+                _build_structured_fact_result(
+                    request=request,
+                    resolved_ticker=resolved_ticker,
+                    resolved_year=resolved_year,
+                    resolved_metric_id=resolved_metric_id if resolver_status == "resolved" else None,
+                    resolver_status="missing_inputs",
+                    resolver_reason=(
+                        "Missing structured-fact execution inputs: " + ", ".join(missing_bits) + "."
+                    ),
+                    tool_result=None,
+                )
+            )
+            continue
+
+        if resolver_status != "resolved" or not resolved_metric_id:
+            results.append(
+                _build_structured_fact_result(
+                    request=request,
+                    resolved_ticker=resolved_ticker,
+                    resolved_year=resolved_year,
+                    resolved_metric_id=None,
+                    resolver_status=resolver_status,
+                    resolver_reason=resolver_reason,
+                    tool_result=None,
+                )
+            )
+            continue
+
+        tool_result: Optional[Dict[str, Any]] = None
+        try:
+            response = await client.get_metric(
+                ticker=resolved_ticker,
+                fiscal_year=resolved_year,
+                metric_id=resolved_metric_id,
+            )
+            tool_result = dict(response or {})
+        except Exception as exc:
+            if _is_mcp_transport_error(str(exc)):
+                await _reset_orchestrator_mcp_client(client)
+            tool_result = {
+                "ok": False,
+                "status": "error",
+                "metric_id": resolved_metric_id,
+                "error": str(exc),
+            }
+
+        results.append(
+            _build_structured_fact_result(
+                request=request,
+                resolved_ticker=resolved_ticker,
+                resolved_year=resolved_year,
+                resolved_metric_id=resolved_metric_id,
+                resolver_status="resolved",
+                resolver_reason=resolver_reason,
+                tool_result=tool_result,
+            )
+        )
+    return results
+
+
+async def _structured_facts_node(state: OrchestratorState) -> Dict[str, Any]:
+    plan_obj = dict(state.get("plan_obj") or {})
+    requests = list(plan_obj.get("structured_fact_requests") or [])
+    timing = dict(state.get("structured_fact_timing_ms") or {})
+    if not requests:
+        timing["structured_facts_ms"] = 0
+        return {"structured_fact_results": [], "structured_fact_timing_ms": timing}
+
+    t0 = time.perf_counter()
+    client = None
+    try:
+        client = await _get_orchestrator_mcp_client()
+        results = await _execute_structured_fact_requests(plan_obj=plan_obj, client=client)
+    except Exception as exc:
+        if _is_mcp_transport_error(str(exc)):
+            await _reset_orchestrator_mcp_client(client)
+        results = [
+            {
+                "subquestion": _normalize_text(request.get("subquestion")),
+                "metric_hint": _normalize_text(request.get("metric_hint")),
+                "entity_hint": _normalize_text(request.get("entity_hint")),
+                "requested_fiscal_year": _normalize_int(request.get("fiscal_year")),
+                "requested_fiscal_period": _normalize_text(request.get("fiscal_period")),
+                "resolved_ticker": None,
+                "resolved_fiscal_year": None,
+                "resolved_metric_id": None,
+                "resolver_status": "unresolved",
+                "resolver_reason": f"Structured fact execution failed before tool invocation: {exc}",
+                "tool_result": None,
+            }
+            for request in requests
+            if isinstance(request, dict)
+        ]
+
+    timing["structured_facts_ms"] = int((time.perf_counter() - t0) * 1000)
+    return {"structured_fact_results": results, "structured_fact_timing_ms": timing}
+
+
+def _route_after_structured_facts(state: OrchestratorState) -> str:
+    retrieval_output = state.get("retrieval_output")
+    return "build_packet_from_retrieval" if isinstance(retrieval_output, dict) else "build_packet_without_retrieval"
+
+
+def _coerce_form_type_value(value: Any) -> Optional[FormType]:
+    text = _normalize_text(value)
+    if not text:
+        return None
+    try:
+        return FormType(text)
+    except Exception:
+        return None
+
+
+def _structured_fact_context_text(result: Dict[str, Any]) -> str:
+    metric_label = (
+        _normalize_text((result.get("tool_result") or {}).get("metric_id"))
+        or _normalize_text(result.get("resolved_metric_id"))
+        or _normalize_text(result.get("metric_hint"))
+        or "structured metric"
+    )
+    tool_result = result.get("tool_result") or {}
+    if isinstance(tool_result, dict) and tool_result.get("ok"):
+        value = tool_result.get("value")
+        unit = _normalize_text(tool_result.get("unit")) or ""
+        form_type = _normalize_text(tool_result.get("form_type")) or ""
+        report_date = _normalize_text(tool_result.get("report_date")) or ""
+        accession_number = _normalize_text(tool_result.get("accession_number")) or ""
+        anchor_bits = [bit for bit in [form_type, report_date, accession_number] if bit]
+        anchor_text = f" ({', '.join(anchor_bits)})" if anchor_bits else ""
+        return f"Structured fact: {metric_label} = {value} {unit}".strip() + anchor_text + "."
+
+    if isinstance(tool_result, dict) and tool_result:
+        status = _normalize_text(tool_result.get("status")) or "error"
+        reason = _normalize_text(tool_result.get("error")) or _normalize_text(result.get("resolver_reason")) or "No additional detail."
+        return f"Structured fact: {metric_label} returned status {status}. {reason}"
+
+    status = _normalize_text(result.get("resolver_status")) or "unresolved"
+    reason = _normalize_text(result.get("resolver_reason")) or "Could not resolve the structured fact request."
+    return f"Structured fact request {status}. {reason}"
+
+
+def _build_structured_fact_context_items(
+    *,
+    packet: AnalystPacket,
+    structured_fact_results: Sequence[Dict[str, Any]],
+) -> list[ContextItem]:
+    items: list[ContextItem] = []
+    next_index = len(packet.context_items) + 1
+    for result in structured_fact_results or []:
+        if not isinstance(result, dict):
+            continue
+        tool_result = result.get("tool_result") or {}
+        form_type = _coerce_form_type_value((tool_result or {}).get("form_type")) or packet.metadata.form_type
+        source = SourceRef(
+            ticker=_normalize_text(result.get("resolved_ticker")) or packet.metadata.ticker,
+            fiscal_year=_normalize_int(result.get("resolved_fiscal_year")) or packet.metadata.fiscal_year,
+            form_type=form_type,
+            filing_date=_normalize_text((tool_result or {}).get("filed_date")),
+            accession_no=_normalize_text((tool_result or {}).get("accession_number")),
+        )
+        items.append(
+            ContextItem(
+                context_id=f"ctx_{next_index}",
+                kind=ContextItemKind.TEXT,
+                source=source,
+                payload={"content": _structured_fact_context_text(result)},
+            )
+        )
+        next_index += 1
+    return items
+
+
+def _append_structured_fact_context_items(
+    *,
+    packet: AnalystPacket,
+    structured_fact_results: Sequence[Dict[str, Any]],
+) -> AnalystPacket:
+    new_items = _build_structured_fact_context_items(
+        packet=packet,
+        structured_fact_results=structured_fact_results,
+    )
+    if not new_items:
+        return packet
+
+    updated_context_items = list(packet.context_items) + new_items
+    context_quality = packet.context_quality
+    if not packet.context_items and new_items and packet.context_quality == ContextQuality.LOW:
+        context_quality = ContextQuality.MEDIUM
+    return packet.model_copy(
+        update={
+            "context_items": updated_context_items,
+            "context_quality": context_quality,
+        }
+    )
+
+
 def _route_after_retrieval_attach_open_issues(state: OrchestratorState) -> str:
     plan_obj = dict(state.get("plan_obj") or {})
+    route = _coerce_plan_route(plan_obj)
     retrieval_state = state.get("retrieval_state") or {}
     retrieval_output = state.get("retrieval_output")
     skipped_reason = _normalize_text(state.get("retrieval_skipped_reason"))
     if (
-        plan_obj.get("retrieval_needed")
+        route == "kb"
+        and plan_obj.get("retrieval_needed")
         and skipped_reason in {
             "MISSING_METADATA",
             "MISSING_TARGET_METADATA",
@@ -1219,7 +1670,7 @@ def _route_after_retrieval_attach_open_issues(state: OrchestratorState) -> str:
         }
     ):
         return "finalize"
-    if retrieval_state and isinstance(retrieval_output, dict) and retrieval_output.get("ok") is False:
+    if route == "kb" and retrieval_state and isinstance(retrieval_output, dict) and retrieval_output.get("ok") is False:
         return "finalize"
     return "analyst"
 
@@ -1237,6 +1688,10 @@ def _build_packet_from_retrieval_node(state: OrchestratorState) -> Dict[str, Any
         analysis_task=analysis_task,
         max_tables=3,
     )
+    packet = _append_structured_fact_context_items(
+        packet=packet,
+        structured_fact_results=state.get("structured_fact_results") or [],
+    )
     return {"packet": packet}
 
 
@@ -1246,6 +1701,10 @@ def _build_packet_without_retrieval_node(state: OrchestratorState) -> Dict[str, 
         user_query=state["user_query"],
         plan_obj=plan_obj,
         plan_id=state["plan_id"],
+    )
+    packet = _append_structured_fact_context_items(
+        packet=packet,
+        structured_fact_results=state.get("structured_fact_results") or [],
     )
     open_issues: list[Dict[str, Any]] = []
     if str(plan_obj.get("status") or "").strip().lower() == "needs_clarification":
@@ -1343,12 +1802,14 @@ def _derive_failure_stage(
     retrieval_output = dict(state_values.get("retrieval_output") or {})
     retrieval_skipped_reason = _normalize_text(state_values.get("retrieval_skipped_reason"))
     retrieval_state = dict(state_values.get("retrieval_state") or {})
+    route = _coerce_plan_route(plan_obj)
     planner_status = str(plan_obj.get("status") or "").strip().lower()
     if planner_status and planner_status != "completed":
         return "planner"
 
     if (
-        plan_obj.get("retrieval_needed")
+        route == "kb"
+        and plan_obj.get("retrieval_needed")
         and not bool(retrieval_state)
         and retrieval_skipped_reason in {
             "MISSING_METADATA",
@@ -1359,7 +1820,7 @@ def _derive_failure_stage(
     ):
         return "retrieval"
 
-    if plan_obj.get("retrieval_needed") and (
+    if route == "kb" and plan_obj.get("retrieval_needed") and (
         isinstance(retrieval_output, dict) and retrieval_output.get("ok") is False
     ):
         return "retrieval"
@@ -1382,6 +1843,7 @@ def _get_orchestrator_graph(checkpointer_id: int):
     builder.add_node("planner_error", _planner_error_node)
     builder.add_node("check_retrieval_metadata", _check_retrieval_metadata_node)
     builder.add_node("retrieval", _retrieval_node)
+    builder.add_node("structured_facts", _structured_facts_node)
     builder.add_node("build_packet_from_retrieval", _build_packet_from_retrieval_node)
     builder.add_node("build_packet_without_retrieval", _build_packet_without_retrieval_node)
     builder.add_node("attach_open_issues", _attach_open_issues_node)
@@ -1396,6 +1858,7 @@ def _get_orchestrator_graph(checkpointer_id: int):
         {
             "planner_interrupt": "planner_interrupt",
             "check_retrieval_metadata": "check_retrieval_metadata",
+            "structured_facts": "structured_facts",
             "build_packet_without_retrieval": "build_packet_without_retrieval",
             "planner_error": "planner_error",
         },
@@ -1407,10 +1870,26 @@ def _get_orchestrator_graph(checkpointer_id: int):
         _route_after_retrieval_metadata,
         {
             "retrieval": "retrieval",
+            "structured_facts": "structured_facts",
             "build_packet_without_retrieval": "build_packet_without_retrieval",
         },
     )
-    builder.add_edge("retrieval", "build_packet_from_retrieval")
+    builder.add_conditional_edges(
+        "retrieval",
+        _route_after_retrieval_node,
+        {
+            "structured_facts": "structured_facts",
+            "build_packet_from_retrieval": "build_packet_from_retrieval",
+        },
+    )
+    builder.add_conditional_edges(
+        "structured_facts",
+        _route_after_structured_facts,
+        {
+            "build_packet_from_retrieval": "build_packet_from_retrieval",
+            "build_packet_without_retrieval": "build_packet_without_retrieval",
+        },
+    )
     builder.add_edge("build_packet_from_retrieval", "attach_open_issues")
     builder.add_edge("build_packet_without_retrieval", "attach_open_issues")
     builder.add_conditional_edges(
@@ -1450,6 +1929,7 @@ def _format_run_output(
     )
     out = {
         "run_id": run_id,
+        "route": _coerce_plan_route(state_values.get("plan_obj") or {}),
         "status": (
             "interrupted"
             if interrupted
@@ -1463,12 +1943,14 @@ def _format_run_output(
         "retrieval": _compact_retrieval_result_for_user(
             retrieval_output=state_values.get("retrieval_output"),
         ),
+        "structured_fact_results": list(state_values.get("structured_fact_results") or []),
         "analyst": _serialize_analyst_result(state_values.get("analyst_result")),
         "interrupt": _serialize_interrupts(getattr(state_snapshot, "interrupts", ()) or ()),
         "orchestrator_trace": {
             "total_ms": total_ms,
             "planner_timing_ms": dict(state_values.get("planner_timing_ms") or {}),
             "retrieval_timing_ms": dict(state_values.get("retrieval_timing_ms") or {}),
+            "structured_fact_timing_ms": dict(state_values.get("structured_fact_timing_ms") or {}),
         },
     }
     return out
