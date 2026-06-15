@@ -18,6 +18,8 @@ DEFAULT_DASHSCOPE_BASE_URL = "https://dashscope.aliyuncs.com/compatible-mode/v1"
 DEFAULT_DASHSCOPE_TIMEOUT_S = 120.0
 DEFAULT_DASHSCOPE_TEMPERATURE = 0.0
 DEFAULT_DASHSCOPE_ENABLE_THINKING = False
+DEFAULT_OLLAMA_BASE_URL = "http://localhost:11434"
+DEFAULT_OLLAMA_TIMEOUT_S = 120.0
 DEFAULT_LITELLM_TIMEOUT_S = 120.0
 DEFAULT_LLM_FALLBACK_MODELS_ENV = "LLM_FALLBACK_MODELS"
 
@@ -58,6 +60,11 @@ def is_qwen_chat_model(model_name: str) -> bool:
     return "embed" not in raw and "rerank" not in raw
 
 
+def is_ollama_chat_model(model_name: str) -> bool:
+    raw = str(model_name or "").strip().lower()
+    return raw.startswith("ollama/")
+
+
 def is_gemini_chat_model(model_name: str) -> bool:
     raw = str(model_name or "").strip().lower()
     return raw.startswith("gemini/") or raw.startswith("gemini-")
@@ -65,6 +72,9 @@ def is_gemini_chat_model(model_name: str) -> bool:
 
 def resolve_chat_model_backend(model_name: str) -> tuple[str, str]:
     resolved_model = _normalize_litellm_model_alias(model_name)
+
+    if is_ollama_chat_model(resolved_model):
+        return "ollama", normalize_ollama_chat_model_name(resolved_model)
 
     if is_qwen_chat_model(resolved_model):
         return "dashscope", resolved_model
@@ -91,6 +101,13 @@ def normalize_gemini_chat_model_name(model_name: str) -> str:
 def normalize_qwen_chat_model_name(model_name: str) -> str:
     raw = str(model_name or "").strip()
     return _QWEN_MODEL_ALIASES.get(raw.lower(), raw)
+
+
+def normalize_ollama_chat_model_name(model_name: str) -> str:
+    raw = str(model_name or "").strip()
+    if raw.lower().startswith("ollama/"):
+        return raw.split("/", 1)[1]
+    return raw
 
 
 def _normalize_model_name(model_name: str) -> str:
@@ -192,6 +209,15 @@ def _build_single_chat_model(
 ) -> Any:
     backend, resolved_model = resolve_chat_model_backend(model)
 
+    if backend == "ollama":
+        return OllamaChatModel(
+            model_name=resolved_model,
+            temperature=temperature,
+            num_predict=num_predict,
+            timeout=timeout,
+            base_url=base_url,
+        )
+
     if backend == "dashscope":
         return DashScopeChatModel(
             model_name=resolved_model,
@@ -235,6 +261,10 @@ def dashscope_api_key() -> str:
     if not api_key:
         raise RuntimeError("DASHSCOPE_API_KEY is not set.")
     return api_key
+
+
+def ollama_base_url() -> str:
+    return str(os.getenv("OLLAMA_BASE_URL", DEFAULT_OLLAMA_BASE_URL)).rstrip("/")
 
 
 def _normalize_options(
@@ -428,6 +458,62 @@ def chat_with_litellm(
     return _response_message_text(message)
 
 
+def _ollama_chat_completion(
+    messages: Sequence[Dict[str, Any]],
+    *,
+    model: str,
+    options: Optional[Dict[str, Any]] = None,
+    tools: Optional[Sequence[Dict[str, Any]]] = None,
+    timeout: float = DEFAULT_OLLAMA_TIMEOUT_S,
+    base_url: Optional[str] = None,
+    extra_payload: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
+    root_url = str(base_url or ollama_base_url()).rstrip("/")
+    url = f"{root_url}/api/chat"
+    payload: Dict[str, Any] = {
+        "model": normalize_ollama_chat_model_name(model),
+        "messages": [
+            {
+                "role": str(message.get("role") or "user"),
+                "content": _response_message_text(message),
+            }
+            for message in messages
+        ],
+        "stream": False,
+    }
+    normalized_options = _normalize_options(options)
+    if normalized_options:
+        payload["options"] = normalized_options
+    if tools:
+        payload["tools"] = list(tools)
+    if extra_payload:
+        payload.update({k: v for k, v in extra_payload.items() if v is not None})
+
+    resp = requests.post(url, json=payload, timeout=timeout)
+    resp.raise_for_status()
+    return resp.json()
+
+
+def chat_with_ollama_model(
+    prompt: str,
+    *,
+    model: str,
+    as_list: bool,
+    options: Optional[Dict[str, Any]] = None,
+    timeout: float = DEFAULT_OLLAMA_TIMEOUT_S,
+    base_url: Optional[str] = None,
+) -> str:
+    _ = as_list
+    data = _ollama_chat_completion(
+        [{"role": "user", "content": prompt}],
+        model=model,
+        options=options,
+        timeout=timeout,
+        base_url=base_url,
+    )
+    return _response_message_text(data.get("message") or {})
+
+
 class LiteLLMChatModel(BaseChatModel):
     model_name: str = Field()
     temperature: Optional[float] = Field(default=None)
@@ -511,6 +597,97 @@ class LiteLLMChatModel(BaseChatModel):
         return ChatResult(
             generations=[ChatGeneration(message=message)],
             llm_output={"usage": data.get("usage"), "model": data.get("model")},
+        )
+
+
+class OllamaChatModel(BaseChatModel):
+    model_name: str = Field()
+    temperature: Optional[float] = Field(default=None)
+    num_predict: Optional[int] = Field(default=None)
+    timeout: float = Field(default=DEFAULT_OLLAMA_TIMEOUT_S)
+    base_url: Optional[str] = Field(default=None, exclude=True)
+    bound_tools: list[dict[str, Any]] = Field(default_factory=list, exclude=True)
+    bound_tool_choice: Any = Field(default=None, exclude=True)
+    bound_tool_kwargs: dict[str, Any] = Field(default_factory=dict, exclude=True)
+
+    @property
+    def _llm_type(self) -> str:
+        return "ollama"
+
+    @property
+    def _identifying_params(self) -> Dict[str, Any]:
+        return {
+            "model_name": normalize_ollama_chat_model_name(self.model_name),
+            "temperature": self.temperature,
+            "num_predict": self.num_predict,
+            "base_url": self.base_url or ollama_base_url(),
+        }
+
+    def bind_tools(
+        self,
+        tools: Sequence[dict[str, Any] | type | Callable[..., Any] | Any],
+        *,
+        tool_choice: str | None = None,
+        **kwargs: Any,
+    ) -> "OllamaChatModel":
+        openai_tools = [convert_to_openai_tool(tool) for tool in tools]
+        return self.model_copy(
+            update={
+                "bound_tools": openai_tools,
+                "bound_tool_choice": tool_choice,
+                "bound_tool_kwargs": dict(kwargs),
+            }
+        )
+
+    def _generate(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: Any | None = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        openai_messages = convert_to_openai_messages(messages)
+        options = _normalize_options(
+            kwargs.get("options"),
+            temperature=self.temperature,
+            num_predict=self.num_predict,
+        )
+        if stop:
+            options["stop"] = stop
+
+        data = _ollama_chat_completion(
+            openai_messages,
+            model=self.model_name,
+            options=options,
+            tools=self.bound_tools,
+            timeout=float(kwargs.get("timeout", self.timeout)),
+            base_url=self.base_url,
+            extra_payload=self.bound_tool_kwargs,
+        )
+        raw_message = data.get("message") or {}
+        raw_tool_calls = raw_message.get("tool_calls") or []
+        tool_calls, invalid_tool_calls = default_tool_parser(raw_tool_calls)
+        message = AIMessage(
+            content=_response_message_text(raw_message),
+            tool_calls=tool_calls,
+            invalid_tool_calls=invalid_tool_calls,
+            additional_kwargs={"tool_calls": raw_tool_calls} if raw_tool_calls else {},
+            response_metadata={
+                "model_name": data.get("model"),
+                "finish_reason": data.get("done_reason"),
+                "token_usage": {
+                    "prompt_eval_count": data.get("prompt_eval_count"),
+                    "eval_count": data.get("eval_count"),
+                },
+            },
+        )
+        return ChatResult(
+            generations=[ChatGeneration(message=message)],
+            llm_output={
+                "model": data.get("model"),
+                "prompt_eval_count": data.get("prompt_eval_count"),
+                "eval_count": data.get("eval_count"),
+            },
         )
 
 
@@ -811,6 +988,8 @@ def build_chat_model(
 __all__ = [
     "LiteLLMChatModel",
     "chat_with_litellm",
+    "OllamaChatModel",
+    "chat_with_ollama_model",
     "DashScopeChatModel",
     "FallbackChatModel",
     "build_chat_model",
@@ -819,7 +998,10 @@ __all__ = [
     "dashscope_base_url",
     "dashscope_chat_completion",
     "is_qwen_chat_model",
+    "is_ollama_chat_model",
+    "normalize_ollama_chat_model_name",
     "normalize_qwen_chat_model_name",
+    "ollama_base_url",
     "resolve_chat_model_backend",
     "is_claude_chat_model",
     "is_gpt_chat_model",

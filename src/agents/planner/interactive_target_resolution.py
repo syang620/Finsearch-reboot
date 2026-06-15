@@ -669,7 +669,7 @@ How to use the deterministic input:
 - Choose `route="kb"` for narrative, descriptive, explanatory, qualitative, or filing-evidence questions.
 - Choose `route="structured_fact"` for direct supported numeric metric questions that can be answered by a structured SEC fact.
 - Choose `route="hybrid"` when the user wants both a direct numeric metric answer and filing-based explanation or context.
-- Supported structured-fact metrics include direct scalar items such as revenue, gross profit, operating income, net income, cash and cash equivalents, total assets, total liabilities, stockholders equity, operating cash flow, capex, and total debt.
+- Supported structured-fact metrics are direct reported scalar facts, such as revenue, gross profit, operating income, net income, cash and cash equivalents, total assets, total liabilities, stockholders equity, operating cash flow, capex, and total debt.
 - Do not emit final SEC `metric_id`; that mapping happens downstream.
 - When `route` is `structured_fact` or `hybrid`, emit one or more `structured_fact_requests` using only:
   - `subquestion`
@@ -679,8 +679,9 @@ How to use the deterministic input:
   - `fiscal_period`
 - Keep `metric_hint` human-readable, such as "revenue" or "cash and cash equivalents". Do not emit snake_case or registry-style IDs such as "cash_and_cash_equivalents", "total_debt", or "stockholders_equity".
 - Keep routing conservative. If the question is unsupported, comparative, ratio-based, margin-based, per-share, or otherwise likely to need filing interpretation, prefer `kb` over `structured_fact`.
-- Do not route gross margin, EPS, debt-to-equity ratio, or balance-sheet summary questions to `structured_fact`.
-- Do not decompose unsupported ratios or margins into multiple structured fact requests. Keep those questions on `kb`.
+- Do NOT route derived financial ratios or calculated metrics to `structured_fact`.
+- Examples that should remain `kb`: return on equity (ROE), return on assets (ROA), debt-to-equity ratio, gross margin, operating margin, EBITDA margin, free cash flow yield, EV/EBITDA, EPS, diluted EPS, and balance-sheet summary questions.
+- Do not decompose unsupported ratios, margins, per-share metrics, or calculated metrics into multiple structured fact requests. Keep those questions on `kb`.
 - Do not route multi-company comparison questions such as "Compare Apple and Microsoft revenue in FY2024" to `structured_fact`. Keep them on `kb`.
 - Use `hybrid` only when the user clearly asks for both a supported scalar fact and narrative explanation or filing context.
 
@@ -753,10 +754,16 @@ _ALLOWED_JOB_TYPES = {
 }
 _UNSUPPORTED_STRUCTURED_FACT_HINT_PATTERNS = (
     "gross margin",
-    "earnings per share",
-    "eps",
+    "operating margin",
+    "ebitda margin",
+    "return on equity",
+    "roe",
+    "return on assets",
+    "roa",
     "debt-to-equity",
     "debt to equity",
+    "earnings per share",
+    "eps",
 )
 
 class _StructuredTargetResolutionTarget(BaseModel):
@@ -1821,7 +1828,7 @@ class InteractivePlannerAgent:
         planner: Optional[Any] = None,
         *,
         llm: Optional[Any] = None,
-        model: str = "qwen2.5-14b-instruct-1m",
+        model: str = "ollama/qwen2.5:14b-instruct",
         temperature: float = 0.0,
         target_resolution_prompt_template: str = DEFAULT_TARGET_RESOLUTION_PROMPT_TEMPLATE,
         default_doc_types: Optional[List[str]] = None,
