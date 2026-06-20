@@ -1,0 +1,9 @@
+# Python bytecode and local caches
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.cache/
+
+# Notebook and OS-generated files
+.ipynb_checkpoints/
+.DS_Store
