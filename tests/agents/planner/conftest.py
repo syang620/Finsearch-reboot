@@ -1,6 +1,7 @@
 import asyncio
 import json
 import re
+from pathlib import Path
 from typing import Any, Dict, List
 
 import pytest
@@ -15,6 +16,10 @@ _COMPANY_TICKERS = {
     "Alphabet": "GOOGL",
     "Google": "GOOGL",
 }
+_ROOT = Path(__file__).resolve().parents[3]
+_PLANNER_EVAL_CASES_PATH = (
+    _ROOT / "data" / "evals" / "agents" / "planner" / "planner_routing_core.v1.json"
+)
 
 
 def _extract_payload(prompt: str) -> Dict[str, Any]:
@@ -229,7 +234,7 @@ class FakePlannerRoutingLLM:
 
 @pytest.fixture(scope="session")
 def planner_eval_cases() -> List[PlannerEvalCase]:
-    return load_planner_eval_cases()
+    return load_planner_eval_cases(_PLANNER_EVAL_CASES_PATH)
 
 
 @pytest.fixture(scope="session")

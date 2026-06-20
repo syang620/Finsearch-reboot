@@ -39,4 +39,5 @@ PYTHONPATH=src python scripts/ingestion_cli.py run-all --help
 ## Evaluation Scripts
 - `scripts/evals/eval_retrieval_v0.py`: retrieval-only evaluation CLI (deterministic + optional RAGAS metrics).
 - `scripts/evals/eval_agents_v0.py`: end-to-end planner/retrieval/analyst evaluation CLI.
-- Backward-compatible wrapper: `scripts/eval_retrieval_v0.py`.
+- `scripts/evals/agents/eval_planner_routes.py`: planner routing evaluation CLI.
+- Backward-compatible wrappers: `scripts/eval_retrieval_v0.py`, `scripts/eval_planner_routes.py`.
