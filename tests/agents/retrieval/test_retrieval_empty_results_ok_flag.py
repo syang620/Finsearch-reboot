@@ -2,7 +2,7 @@ import sys
 from pathlib import Path
 import unittest
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "src"))
 
 from agents.orchestrator.agent_orchestrator import _compact_retrieval_result_for_user
 from agents.retrieval.query_planner_v2 import _build_retrieval_output

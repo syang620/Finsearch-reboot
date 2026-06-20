@@ -11,9 +11,9 @@ from mcp import types
 from mcp_server.tools import sec_metric as sec_metric_module
 
 
-FIXTURE_ROOT = Path(__file__).resolve().parent / "fixtures" / "sec_metric"
-AMBIGUOUS_CAPEX_FIXTURE_ROOT = Path(__file__).resolve().parent / "fixtures" / "sec_metric_capex_ambiguous"
-PARTIAL_FIXTURE_ROOT = Path(__file__).resolve().parent / "fixtures" / "sec_metric_partial"
+FIXTURE_ROOT = Path(__file__).resolve().parents[2] / "fixtures" / "sec_metric"
+AMBIGUOUS_CAPEX_FIXTURE_ROOT = Path(__file__).resolve().parents[2] / "fixtures" / "sec_metric_capex_ambiguous"
+PARTIAL_FIXTURE_ROOT = Path(__file__).resolve().parents[2] / "fixtures" / "sec_metric_partial"
 
 
 class SecMetricToolIntegrationTests(unittest.TestCase):

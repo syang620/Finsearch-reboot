@@ -7,9 +7,9 @@ from unittest import mock
 from mcp_server.tools.sec_metric import get_metric
 
 
-FIXTURE_ROOT = Path(__file__).resolve().parent / "fixtures" / "sec_metric"
-AMBIGUOUS_CAPEX_FIXTURE_ROOT = Path(__file__).resolve().parent / "fixtures" / "sec_metric_capex_ambiguous"
-PARTIAL_FIXTURE_ROOT = Path(__file__).resolve().parent / "fixtures" / "sec_metric_partial"
+FIXTURE_ROOT = Path(__file__).resolve().parents[2] / "fixtures" / "sec_metric"
+AMBIGUOUS_CAPEX_FIXTURE_ROOT = Path(__file__).resolve().parents[2] / "fixtures" / "sec_metric_capex_ambiguous"
+PARTIAL_FIXTURE_ROOT = Path(__file__).resolve().parents[2] / "fixtures" / "sec_metric_partial"
 
 
 class SecMetricFilingAnchorTests(unittest.TestCase):

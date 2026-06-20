@@ -4,7 +4,7 @@ from pathlib import Path
 
 from langchain_core.messages import AIMessage
 
-sys.path.append(str(Path(__file__).resolve().parents[1] / "src"))
+sys.path.append(str(Path(__file__).resolve().parents[3] / "src"))
 
 from agents.retrieval.query_planner_v2 import RetrievalWorkflowAgent
 

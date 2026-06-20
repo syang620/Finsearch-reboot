@@ -28,7 +28,7 @@ from agents.orchestrator.agent_orchestrator import (
     _invoke_orchestrator,
     aclose_orchestrator_runtime,
 )
-from snapshot_utils import assert_graph_snapshot_jsonable
+from tests.snapshot_utils import assert_graph_snapshot_jsonable
 
 
 class _ConcurrentPlanner:

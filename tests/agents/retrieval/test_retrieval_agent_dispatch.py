@@ -3,7 +3,7 @@ from pathlib import Path
 import unittest
 from unittest.mock import AsyncMock, patch
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "src"))
 
 from agents.retrieval.query_planner_v2 import retrieval_agent as retrieval_agent_entry
 

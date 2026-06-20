@@ -6,7 +6,7 @@ from typing import Any, Dict, Optional
 from langchain_core.messages import AIMessage
 import unittest
 
-sys.path.append(str(Path(__file__).resolve().parents[1] / "src"))
+sys.path.append(str(Path(__file__).resolve().parents[2] / "src"))
 
 from agents.planner.interactive_target_resolution import _build_metadata
 from agents.retrieval.query_planner_v2 import RetrievalWorkflowAgent

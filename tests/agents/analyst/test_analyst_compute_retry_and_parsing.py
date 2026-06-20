@@ -6,7 +6,7 @@ import unittest
 from langchain_core.messages import AIMessage, ToolMessage
 from langchain_core.messages import HumanMessage
 
-sys.path.append(str(Path(__file__).resolve().parents[1] / "src"))
+sys.path.append(str(Path(__file__).resolve().parents[3] / "src"))
 
 from agents.analyst.agent import (
     AnalystAgent,
