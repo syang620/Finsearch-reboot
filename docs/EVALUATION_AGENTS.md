@@ -38,7 +38,7 @@ Expected row shape (simplified):
 Deterministic + RAGAS:
 
 ```bash
-PYTHONPATH=src python scripts/evals/eval_agents_v0.py \
+PYTHONPATH=src python scripts/evals/agents/eval_agents_v0.py \
   --eval-path data/evals/agents/v0/agent_eval_v0.jsonl \
   --out-dir artifacts/evals/agents/v0 \
   --analyst-model qwen3:14b
@@ -47,14 +47,14 @@ PYTHONPATH=src python scripts/evals/eval_agents_v0.py \
 Deterministic only (skip RAGAS):
 
 ```bash
-PYTHONPATH=src python scripts/evals/eval_agents_v0.py \
+PYTHONPATH=src python scripts/evals/agents/eval_agents_v0.py \
   --disable-ragas
 ```
 
 Enable context RAGAS metrics explicitly:
 
 ```bash
-PYTHONPATH=src python scripts/evals/eval_agents_v0.py \
+PYTHONPATH=src python scripts/evals/agents/eval_agents_v0.py \
   --enable-context-precision \
   --enable-context-recall
 ```

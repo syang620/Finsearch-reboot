@@ -43,7 +43,7 @@ Expected row shape (simplified):
 ## Run
 
 ```bash
-PYTHONPATH=src python scripts/evals/eval_retrieval_v0.py \
+PYTHONPATH=src python scripts/evals/retrieval/eval_retrieval_v0.py \
   --eval-mode table \
   --eval-path data/evals/retrieval/table/table_eval_v1.jsonl \
   --top-k 10 \
@@ -54,7 +54,7 @@ PYTHONPATH=src python scripts/evals/eval_retrieval_v0.py \
 Text retrieval eval:
 
 ```bash
-PYTHONPATH=src python scripts/evals/eval_retrieval_v0.py \
+PYTHONPATH=src python scripts/evals/retrieval/eval_retrieval_v0.py \
   --eval-mode text \
   --eval-path data/evals/retrieval/text/aapl_2024_10k_text_retrieval_eval_split_with_uids.jsonl \
   --doc-types text_chunk \
@@ -66,7 +66,7 @@ PYTHONPATH=src python scripts/evals/eval_retrieval_v0.py \
 Disable RAGAS if Ollama judge is unavailable:
 
 ```bash
-PYTHONPATH=src python scripts/evals/eval_retrieval_v0.py \
+PYTHONPATH=src python scripts/evals/retrieval/eval_retrieval_v0.py \
   --disable-ragas
 ```
 

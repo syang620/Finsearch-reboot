@@ -7,7 +7,7 @@ from pathlib import Path
 
 
 def main() -> None:
-    new_script = Path(__file__).resolve().parent / "evals" / "eval_retrieval_v0.py"
+    new_script = Path(__file__).resolve().parent / "evals" / "retrieval" / "eval_retrieval_v0.py"
     display_path = str(new_script)
     try:
         display_path = str(new_script.relative_to(Path.cwd()))

@@ -37,7 +37,9 @@ PYTHONPATH=src python scripts/ingestion_cli.py run-all --help
 - Runtime usage audit and rationale are captured in `artifacts/scripts_runtime_usage_audit.md`.
 
 ## Evaluation Scripts
-- `scripts/evals/eval_retrieval_v0.py`: retrieval-only evaluation CLI (deterministic + optional RAGAS metrics).
-- `scripts/evals/eval_agents_v0.py`: end-to-end planner/retrieval/analyst evaluation CLI.
+- `scripts/evals/retrieval/eval_retrieval_v0.py`: retrieval-only evaluation CLI (deterministic + optional RAGAS metrics).
+- `scripts/evals/agents/eval_agents_v0.py`: end-to-end planner/retrieval/analyst evaluation CLI.
 - `scripts/evals/agents/eval_planner_routes.py`: planner routing evaluation CLI.
-- Backward-compatible wrappers: `scripts/eval_retrieval_v0.py`, `scripts/eval_planner_routes.py`.
+- `scripts/evals/llm_judge/eval_llm_judge_rag_answers.py`: LLM-as-judge evaluation CLI.
+- `scripts/evals/chunking/`: chunking strategy and table-summary benchmark scripts.
+- Backward-compatible wrappers: `scripts/eval_retrieval_v0.py`, `scripts/eval_planner_routes.py`, and the legacy files directly under `scripts/evals/`.

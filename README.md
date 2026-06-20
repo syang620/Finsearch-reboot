@@ -70,7 +70,7 @@ See `scripts/README.md` for ingestion details.
 Run retrieval-only evaluation (deterministic metrics + optional RAGAS context metrics):
 
 ```bash
-PYTHONPATH=src python scripts/evals/eval_retrieval_v0.py \
+PYTHONPATH=src python scripts/evals/retrieval/eval_retrieval_v0.py \
   --eval-mode table \
   --eval-path data/evals/retrieval/table/table_eval_v1.jsonl \
   --top-k 10 \
@@ -85,7 +85,7 @@ Detailed guide: `docs/EVALUATION_RETRIEVAL.md`
 Run end-to-end multi-agent evaluation (planner -> retrieval -> analyst):
 
 ```bash
-PYTHONPATH=src python scripts/evals/eval_agents_v0.py \
+PYTHONPATH=src python scripts/evals/agents/eval_agents_v0.py \
   --eval-path data/evals/agents/v0/agent_eval_v0.jsonl \
   --out-dir artifacts/evals/agents/v0 \
   --analyst-model qwen3:14b
