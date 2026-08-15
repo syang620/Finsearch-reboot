@@ -1,14 +1,17 @@
 # FinSearch Reboot
 
-Agentic RAG system for SEC filings (10-K / 10-Q) using a planner -> retrieval -> analyst workflow.
+Route-aware research system for SEC filings (10-K / 10-Q) using KB retrieval,
+deterministic structured facts, and a grounded analyst.
 
 ## Overview
 
 Runtime flow:
 
-1. Planner extracts metadata, intent, and retrieval queries.
-2. Retrieval fetches/reranks filing context via MCP tools.
-3. Analyst computes metrics and produces the final grounded answer.
+1. Planner extracts metadata and selects `kb`, `structured_fact`, or `hybrid`.
+2. Orchestrator handles clarification/resume and executes the selected evidence lanes.
+3. KB retrieval searches and reranks filing context; structured facts resolve supported SEC metrics.
+4. Hybrid runs KB retrieval first and structured-fact execution second.
+5. Orchestrator builds a normalized evidence packet for the grounded analyst.
 
 Core runtime entrypoint:
 
@@ -82,7 +85,7 @@ Detailed guide: `docs/EVALUATION_RETRIEVAL.md`
 
 ## Agent Evaluation (v0)
 
-Run end-to-end multi-agent evaluation (planner -> retrieval -> analyst):
+Run the existing end-to-end agent evaluation:
 
 ```bash
 PYTHONPATH=src python scripts/evals/agents/eval_agents_v0.py \
@@ -92,6 +95,9 @@ PYTHONPATH=src python scripts/evals/agents/eval_agents_v0.py \
 ```
 
 Detailed guide: `docs/EVALUATION_AGENTS.md`
+
+This v0 harness primarily covers the legacy planner -> retrieval -> analyst path; it
+does not yet provide complete `structured_fact` or `hybrid` validation.
 
 ## Repository Map
 
@@ -134,6 +140,6 @@ short aliases (`gpt`, `claude`, `gemini`) to `analyst_model` / `planner_model`.
 
 ## Documentation
 
-- Detailed architecture and runbook: `docs/ARCHITECTURE.md`
+- Current runtime architecture: `docs/ARCHITECTURE.md`
 - Ingestion script guide: `scripts/README.md`
 - Change history: `docs/CHANGELOG.md`

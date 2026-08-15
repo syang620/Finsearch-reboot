@@ -1,218 +1,269 @@
 # FinSearch Architecture
 
-This document is the detailed engineering map for the current agentic SEC-filing RAG system.
+This document describes the FinSearch runtime as it is implemented today. It is the
+current-system reference, not a roadmap, implementation plan, runbook, or record of
+evaluation results.
 
-## 1. End-to-End Runtime Flow
+## 1. Runtime Overview
 
-Primary runtime flow:
+FinSearch is a route-aware SEC-filing research system. The planner describes the
+work, the orchestrator owns execution, and the analyst answers from a normalized
+evidence packet.
 
-1. `InteractivePlannerAgent` generates `PlannerOutput`.
-2. If retrieval is needed and metadata is sufficient, orchestrator calls retrieval MCP tool.
-3. Retrieval output is transformed into `AnalystPacket` with hydrated context.
-4. `AnalystAgent` answers (and calls `financial_evaluator` for compute tasks).
-5. Orchestrator returns planner/retrieval/analyst outputs plus timing traces.
+```text
+User query
+    |
+    v
+Planner
+    |-- needs clarification --> interrupt --> checkpoint --> resume planner
+    |
+    `-- completed: kb | structured_fact | hybrid
+                         |
+                         v
+                    Orchestrator
+                    |-- KB retrieval evidence
+                    |-- structured SEC fact evidence
+                    `-- sequential combination for hybrid
+                         |
+                         v
+                    AnalystPacket
+                         |
+                         v
+                       Analyst
+```
 
-Main entrypoint:
+The runtime entrypoint is:
 
 - `agents.orchestrator.run_multi_agent_orchestration`
+- Implementation: `src/agents/orchestrator/agent_orchestrator.py`
+
+### Route contract
+
+| Route | Current execution |
+|---|---|
+| `kb` | Use filing retrieval for narrative, comparative, table-heavy, interpretive, or unsupported structured-metric questions. |
+| `structured_fact` | Skip KB retrieval and execute supported scalar SEC metric requests. |
+| `hybrid` | Run KB retrieval first, then structured facts, and provide both evidence sets to the analyst. |
+
+The planner recommends a route. The orchestrator interprets that route and owns
+sequencing, interruption, failure handling, packet construction, and finalization.
+
+## 2. Planner Routing
+
+`InteractivePlannerAgent` combines deterministic extraction with an LLM planning
+step. It extracts or resolves:
+
+- Company and ticker.
+- Fiscal year and form type.
+- Task class and analysis instructions.
+- Retrieval targets and jobs.
+- Human-readable structured metric hints.
+- Clarification requirements and open issues.
+
+Planner output is normalized after the model call. Post-model safeguards keep known
+unsupported ratios, calculated metrics, and multi-company comparisons on the KB
+route. If the planner model is unavailable or its output is invalid, the current
+fallback produces a conservative KB-oriented plan from deterministically extracted
+metadata.
+
+A planner turn has one of three effective states:
+
+- `completed`: execution can continue using the selected route.
+- `needs_clarification`: blocking metadata or intent is unresolved.
+- `error`: the orchestrator builds an error packet rather than running an evidence lane.
 
 Implementation:
 
-- `src/agents/orchestrator/agent_orchestrator.py`
-
-## 2. Core Modules
-
-### 2.1 Agents (`src/agents`)
-
-- `src/agents/contracts.py`
-  - Shared Pydantic schemas for planner/retrieval/analyst handoffs.
-
 - `src/agents/planner/interactive_target_resolution.py`
-  - Interactive planner (`InteractivePlannerAgent`) with deterministic metadata prefill.
-  - Clarification loop and target-resolution output schema.
-  - Fallback target-resolution path and timing trace output.
 
-- `src/agents/retrieval/mcp_client.py`
-  - Async stdio MCP client wrapper.
-  - Invokes `sec_retrieve_tables` on MCP server.
+## 3. Clarification and Resume
+
+Clarification is part of the orchestrator graph rather than an out-of-band caller
+loop.
+
+1. The planner returns `needs_clarification` with one or more questions.
+2. The orchestrator invokes a LangGraph interrupt.
+3. Graph state is persisted by the SQLite checkpointer under the run's thread ID.
+4. The caller resumes the same run with answers.
+5. Answers are appended to clarification history and the planner runs again.
+
+The planner treats recorded answers as authoritative and should not repeat a resolved
+question. A run remains interrupted until it is resumed or otherwise terminated by
+the caller.
+
+## 4. Orchestration and Route Execution
+
+The LangGraph orchestrator contains nodes for initialization, planning, interruption,
+resume handling, retrieval checks, KB retrieval, structured-fact execution, packet
+construction, open-issue handling, analysis, and finalization.
+
+### KB route
+
+For a KB plan that requires retrieval, the orchestrator validates required target
+metadata, executes the retrieval workflow, converts the returned evidence into
+analyst context, and records retrieval issues. A KB plan that does not require
+retrieval proceeds to packet construction without a retrieval call.
+
+### Structured-fact route
+
+The orchestrator skips KB retrieval, resolves each planner metric hint against the
+supported metric registry, calls the SEC metric tool, and converts each result into
+analyst context.
+
+### Hybrid route
+
+Hybrid execution is intentionally sequential in the current implementation:
+
+```text
+KB retrieval --> structured-fact execution --> combined AnalystPacket
+```
+
+The two lanes do not mutate graph state concurrently. Their evidence becomes sibling
+context in the same packet. A lane can return errors or unresolved results without
+silently disappearing; those results and associated open issues remain visible to
+the analyst and in the final run output.
+
+### Final run output
+
+The orchestrator returns a structured object containing:
+
+- `run_id`, `thread_id`, route, status, and `ok`.
+- A derived failure stage and accumulated open issues.
+- Planner and planner-turn payloads.
+- Compact KB retrieval output.
+- Structured-fact resolver and tool results.
+- Analyst output and pending interrupt data.
+- Total, planner, retrieval, and structured-fact timing traces.
+
+## 5. KB Retrieval Lane
+
+The planner produces targets and retrieval jobs. The retrieval workflow executes the
+applicable jobs, invokes the retrieval MCP tool, reviews the returned evidence, and
+can retry within a fixed attempt limit.
+
+`sec_retrieve_tables` performs the filing search against the configured Qdrant
+collection. The current retrieval path includes:
+
+- Target-specific queries and metadata filters.
+- Dense and BM25 retrieval combined with reciprocal-rank fusion.
+- Candidate enrichment and reranking.
+- Normalized text, row, and table evidence.
+- Per-attempt review, timing, and error information.
+
+Multiple retrieval jobs or targets may execute concurrently inside the retrieval
+workflow. This is separate from hybrid lane sequencing, which remains sequential.
+
+Primary implementations:
 
 - `src/agents/retrieval/query_planner_v2.py`
-  - Canonical retrieval runtime.
+- `src/agents/retrieval/mcp_client.py`
+- `src/mcp_server/tools/sec_retrieval.py`
+
+## 6. Structured-Fact Lane
+
+The planner emits human-readable requests such as `revenue` or `total debt`; it does
+not emit SEC concept names. Resolver logic in the orchestrator maps those hints to
+the supported metric registry and resolves ticker and fiscal year before calling
+`sec_get_metric`.
+
+The metric tool uses SEC submissions and company-facts data to:
+
+- Resolve the company CIK.
+- Anchor the request to an annual `10-K` or `10-K/A` filing.
+- Select facts associated with the requested filing and fiscal year.
+- Return direct metrics or explicitly registered derived metrics.
+- Preserve result status, value, unit, filing identifiers, components, and source URL
+  in the tool result.
+
+Unsupported, ambiguous, missing, and error results use explicit statuses rather than
+inventing a value. The client applies SEC request identification, rate limiting,
+retry behavior, and local caching.
+
+Primary implementations:
+
+- `src/mcp_server/tools/sec_metric_registry.py`
+- `src/mcp_server/tools/sec_metric.py`
+- `src/mcp_server/tools/sec_metric_client.py`
+
+## 7. Analyst Packet and Synthetic Structured Context
+
+The orchestrator normalizes available evidence into `AnalystPacket`. KB results are
+represented as analyst-visible context items with stable context IDs and available
+filing provenance.
+
+Structured facts currently pass through a compatibility adapter. Each resolver/tool
+result is rendered into synthetic prose and stored as a `TEXT` context item. The
+synthetic item includes the requested metric, resolution status, tool status, value,
+unit, filing metadata, and components when available.
+
+This means KB and structured evidence are siblings in the packet, but structured
+facts are not yet a native context kind. The original structured result remains
+available separately in the orchestrator's `structured_fact_results` output.
+
+Shared packet models live in:
+
+- `src/agents/contracts.py`
+
+## 8. Analyst
+
+`AnalystAgent` receives the user query, analysis task, normalized context, open
+issues, and packet metadata. It is instructed to reason only from supplied context.
+
+The analyst:
+
+- Produces a structured `AnalystRunResult`.
+- Uses `financial_evaluator` for arithmetic instead of performing unsupported
+  free-form calculations.
+- Runs within bounded model-attempt and tool-round limits.
+- Returns answer status, narrative answer, metric/computation data, citations, and a
+  trace.
+- Cites analyst-visible context IDs; unknown IDs are excluded from resolved citation
+  metadata and recorded as warnings.
+
+Implementation:
 
 - `src/agents/analyst/agent.py`
-  - Builds analyst prompts from `AnalystPacket` context.
-  - Executes ReAct-style loop with tool access.
-  - Parses tool calls and emits `AnalystRunResult` trace.
 
-- `src/agents/analyst/table_loader.py`
-  - Hydrates retrieved table references into full table dictionaries from chunk files.
+## 9. MCP Tool Boundary
 
-### 2.2 Retrieval (`src/retrieval`)
+The stdio MCP server registers three runtime tools:
 
-- `src/retrieval/evaluator.py`
-  - Retrieval utilities and scoring helpers.
-  - BM25/dense/sparse helpers and selection utilities.
+| Tool | Responsibility |
+|---|---|
+| `sec_retrieve_tables` | Search, combine, rerank, and return SEC filing evidence from the KB. |
+| `sec_get_metric` | Return a supported, filing-anchored SEC metric or an explicit non-OK status. |
+| `financial_evaluator` | Safely evaluate arithmetic expressions from named variables. |
 
-- `src/retrieval/rerank_enricher.py`
-  - Candidate enrichment for reranking context.
+The server is assembled in `src/mcp_server/server.py`. The orchestrator and agents
+use MCP clients rather than importing tool implementations as their runtime
+interface.
 
-- `src/retrieval/query_expansion.py`
-  - Query expansion prompt and expansion execution.
+## 10. Current Implementation Boundaries
 
-- `src/retrieval/ollama_client.py`
-  - Shared Ollama invocation and list-output parsing.
+The following are current architectural limitations, not descriptions of planned
+behavior:
 
-- `src/retrieval/accounting_terms.py`
-  - Accounting term digest utilities for planner/query expansion prompts.
+- The shared `PlannerOutput` contract does not contain every field used by the
+  orchestrator. Runtime planner payloads and LangGraph state still contain normalized
+  dictionaries alongside Pydantic models.
+- Structured metric resolution and execution coordination are embedded in the
+  orchestrator, and structured-capability policy is duplicated across prompts,
+  normalization safeguards, registry aliases, and tests.
+- Structured results are flattened into synthetic `TEXT` context. Native numeric
+  types, metric status, components, and source URLs are not fully represented by the
+  analyst context contract.
+- Hybrid lanes execute sequentially rather than concurrently.
+- The top-level failure-stage model has no dedicated structured-fact stage and no
+  complete per-lane status model.
+- The planner fallback is KB-oriented and does not reconstruct structured or hybrid
+  requests when the planner model fails.
+- Structured facts are limited to the registered annual metrics and filing-anchor
+  behavior. Other ratios, comparisons, quarterly questions, and broad filing
+  interpretation remain KB work.
+- The existing end-to-end agent evaluator primarily models the legacy
+  planner/retrieval/analyst path and does not yet provide complete structured-fact or
+  hybrid validation.
 
-### 2.3 Analysis (`src/analysis`)
-
-- `src/analysis/answer_synthesis.py`
-  - Table text loading and answer-synthesis helper functions.
-  - Used by notebook-side analysis workflows.
-
-### 2.4 MCP Server (`src/mcp_server`)
-
-- `src/mcp_server/server.py`
-  - Registers and runs MCP tools over stdio.
-
-- `src/mcp_server/tools/sec_retrieval.py`
-  - Retrieval MCP tool (`sec_retrieve_tables`).
-  - Uses `retrieval.evaluator` + `retrieval.rerank_enricher`.
-
-- `src/mcp_server/tools/financial_evaluator.py`
-  - Safe arithmetic tool used by analyst compute tasks.
-
-### 2.5 Ingestion (`src/ingestion`)
-
-- `src/ingestion/sec_html_fetcher.py`
-- `src/ingestion/sec_chunker.py`
-- `src/ingestion/chunk_splitter.py`
-- `src/ingestion/tables_summarizer.py`
-- `src/ingestion/sec_embedder.py`
-- `src/ingestion/qdrant_ingester.py`
-
-These components are build-time/indexing infrastructure (not request-time serving).
-
-## 3. Contracts and Data Interfaces
-
-All cross-agent payloads should be driven by `src/agents/contracts.py`.
-
-Primary models:
-
-- `PlannerOutput`
-- `RetrieveTablesResponse`
-- `AnalystPacket`
-- `AnalystRunResult`
-
-Contract-first rule:
-
-1. Update contract schema.
-2. Update planner output and retrieval packet adapters.
-3. Update analyst input/result handling.
-
-## 4. Orchestration Details
-
-Orchestrator graph (LangGraph) includes these phases:
-
-1. Initialize run state/timing.
-2. Planner node.
-3. Route:
-   - retrieval path if `retrieval_needed=True` and metadata exists.
-   - analyst-only path otherwise.
-4. Retrieval node (MCP tool call).
-5. Packet-building node (with retrieval quality gate issue tagging).
-6. Analyst node.
-7. Finalize timing and return structured result.
-
-Returned top-level object contains:
-
-- planner payload
-- retrieval payload (if attempted)
-- analyst payload
-- orchestrator timing traces
-
-## 5. Runtime Configuration
-
-Common environment variables:
-
-- `QDRANT_HOST` (default `localhost`)
-- `QDRANT_PORT` (default `6333`)
-- `QDRANT_COLLECTION_NAME` (default `sec_docs_dense_bm25`)
-- `sec_docs_dense_bm25` is the default retrieval and ingestion target in this repo.
-- `TABLES_DIR` (default resolves to `data/chunked`)
-- Default ingestion profile for `sec_docs_dense_bm25` is dense + BM25 only.
-
-For XBRL helper script only:
-
-- `SEC_API_KEY`
-
-## 6. Running the System
-
-### 6.1 Start MCP server
-
-```bash
-PYTHONPATH=src python -m mcp_server.server
-```
-
-### 6.2 Run orchestration
-
-```bash
-PYTHONPATH=src python - <<'PY'
-import asyncio
-from agents.orchestrator import run_multi_agent_orchestration
-
-async def main():
-    result = await run_multi_agent_orchestration(
-        "What was Apple's total debt (short-term plus long-term) at year-end 2024?",
-        debug=True,
-    )
-    print(result)
-
-asyncio.run(main())
-PY
-```
-
-## 7. Ingestion Pipeline
-
-Use the unified ingestion CLI:
-
-```bash
-PYTHONPATH=src python scripts/ingestion_cli.py --help
-PYTHONPATH=src python scripts/ingestion_cli.py run-all --help
-```
-
-Reference:
-
-- `scripts/README.md`
-
-## 8. Troubleshooting
-
-### 8.1 Retrieval returns empty/low quality
-
-- Verify planner extracted `ticker` and `fiscal_year`.
-- Confirm `sec_docs_dense_bm25` exists and is populated.
-- Confirm `TABLES_DIR` matches chunk files used for lexical scoring.
-
-### 8.2 Analyst does not call `financial_evaluator`
-
-- Ensure planner intent/task is compute-oriented.
-- Ensure context includes required numeric line items.
-
-### 8.3 MCP timeout on first request
-
-- First request can include model loading overhead.
-- Retry once before assuming failure.
-
-## 9. Migration Notes
-
-Legacy package `src/rag10kq` has been removed.
-
-Key path migrations:
-
-- `rag10kq.query_expansion_helper` -> `retrieval.query_expansion`
-- `rag10kq.retrieval_evaluator` -> `retrieval.evaluator`
-- `rag10kq.rerank_context_enricher` -> `retrieval.rerank_enricher`
-- `rag10kq.sec_*` + `rag10kq.qdrant_ingester` + `rag10kq.tables_summarizer` -> `ingestion.*`
-- `rag10kq.context_generator` helpers -> `analysis.answer_synthesis`
-- `mcp_backend` -> `mcp_server`
+These boundaries are important when interpreting runtime status, citations, and
+evaluation results. Proposed changes and measured model baselines intentionally do
+not belong in this document.
