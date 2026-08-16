@@ -5,6 +5,7 @@ import unittest
 from unittest import mock
 
 from langgraph.checkpoint.memory import InMemorySaver
+from pydantic import ValidationError
 
 from agents.analyst import AnalystRunResult
 from agents.contracts import (
@@ -15,9 +16,12 @@ from agents.contracts import (
     FilingMetadata,
     FormType,
     PlannerIntent,
+    PlannerRuntimeOutput,
     SourceRef,
 )
 from agents.orchestrator.agent_orchestrator import (
+    _build_runtime_contract_error_plan,
+    _format_runtime_contract_validation_error,
     _get_pooled_analyst,
     _get_orchestrator_graph,
     _graph_config,
@@ -31,6 +35,67 @@ from agents.orchestrator.agent_orchestrator import (
 from tests.snapshot_utils import assert_graph_snapshot_jsonable
 
 
+def _runtime_output(
+    *,
+    query: str,
+    fiscal_year: int,
+    intent: str = "filing_fact",
+    route: str = "kb",
+    retrieval_needed: bool = False,
+    structured_fact_requests: list[dict] | None = None,
+) -> dict:
+    targets = []
+    retrieval_plan = None
+    if retrieval_needed:
+        targets = [
+            {
+                "target_id": 1,
+                "target_key": f"AAPL_FY{fiscal_year}",
+                "company_name": "Apple",
+                "ticker": "AAPL",
+                "fiscal_year": fiscal_year,
+                "form_type": "10-K",
+            }
+        ]
+        retrieval_plan = {
+            "fanout_mode": "single_target",
+            "jobs": [
+                {
+                    "job_type": "metric_extract",
+                    "goal": "Find revenue",
+                    "applies_to_target_ids": [1],
+                }
+            ],
+        }
+    return {
+        "status": "completed",
+        "retrieval_needed": retrieval_needed,
+        "intent": intent,
+        "route": route,
+        "structured_fact_requests": list(structured_fact_requests or []),
+        "metadata": {
+            "ticker": "AAPL",
+            "fiscal_year": fiscal_year,
+            "form_type": "10-K",
+        },
+        "analysis_task": {
+            "task_type": "extract",
+            "metric": "revenue",
+            "requires_calculation": False,
+            "expected_artifacts": ["text"],
+            "output_format": "short_answer",
+        },
+        "task_class": "single_target_fact",
+        "targets": targets,
+        "retrieval_plan": retrieval_plan,
+        "open_issues": [],
+        "original_user_query": query,
+        "effective_user_query": query,
+        "clarification_history": [],
+        "clarification_request": None,
+    }
+
+
 class _ConcurrentPlanner:
     model = "planner-model"
     enable_query_expansion = True
@@ -41,20 +106,11 @@ class _ConcurrentPlanner:
 
     async def aplan_turn(self, **_kwargs):
         return {
-            "planner_output": {
-                "status": "completed",
-                "retrieval_needed": False,
-                "intent": "filing_fact",
-                "metadata": {"ticker": "AAPL", "fiscal_year": 2024, "form_type": "10-K"},
-                "analysis_task": {
-                    "task_type": "extract",
-                    "metric": "revenue",
-                    "requires_calculation": False,
-                    "expected_artifacts": ["text"],
-                    "output_format": "short_answer",
-                },
-                "open_issues": [],
-            }
+            "planner_output": _runtime_output(
+                query="What is revenue?",
+                fiscal_year=2024,
+                intent="definition",
+            )
         }
 
 
@@ -68,33 +124,11 @@ class _RetrievalPlanner:
 
     async def aplan_turn(self, **_kwargs):
         return {
-            "planner_output": {
-                "status": "completed",
-                "retrieval_needed": True,
-                "intent": "filing_fact",
-                "metadata": {"ticker": "AAPL", "fiscal_year": 2024, "form_type": "10-K"},
-                "targets": [
-                    {"target_id": 1, "ticker": "AAPL", "fiscal_year": 2024, "form_type": "10-K"}
-                ],
-                "retrieval_plan": {
-                    "fanout_mode": "single_target",
-                    "jobs": [
-                        {
-                            "job_type": "metric_extract",
-                            "goal": "Find revenue",
-                            "applies_to_target_ids": [1],
-                        }
-                    ],
-                },
-                "analysis_task": {
-                    "task_type": "extract",
-                    "metric": "revenue",
-                    "requires_calculation": False,
-                    "expected_artifacts": ["text"],
-                    "output_format": "short_answer",
-                },
-                "open_issues": [],
-            }
+            "planner_output": _runtime_output(
+                query="What was revenue?",
+                fiscal_year=2024,
+                retrieval_needed=True,
+            )
         }
 
 
@@ -127,12 +161,11 @@ class _StructuredFactPlanner:
 
     async def aplan_turn(self, **_kwargs):
         return {
-            "planner_output": {
-                "status": "completed",
-                "retrieval_needed": False,
-                "intent": "filing_fact",
-                "route": "structured_fact",
-                "structured_fact_requests": [
+            "planner_output": _runtime_output(
+                query=self.subquestion,
+                fiscal_year=2025,
+                route="structured_fact",
+                structured_fact_requests=[
                     {
                         "subquestion": self.subquestion,
                         "metric_hint": self.metric_hint,
@@ -141,16 +174,7 @@ class _StructuredFactPlanner:
                         "fiscal_period": "FY",
                     }
                 ],
-                "metadata": {"ticker": "AAPL", "fiscal_year": 2025, "form_type": "10-K"},
-                "analysis_task": {
-                    "task_type": "extract",
-                    "metric": "revenue",
-                    "requires_calculation": False,
-                    "expected_artifacts": ["text"],
-                    "output_format": "short_answer",
-                },
-                "open_issues": [],
-            }
+            )
         }
 
 
@@ -312,6 +336,81 @@ class OrchestratorPlannerErrorTests(unittest.TestCase):
         self.assertEqual(packet.context_items, [])
         self.assertTrue(any(issue.code == "PLANNER_RUNTIME_ERROR" for issue in analyst_result.open_issues))
 
+    def test_runtime_contract_error_plan_is_valid_and_not_duplicated(self) -> None:
+        plan_obj = _build_runtime_contract_error_plan(
+            user_query="What was revenue?",
+            clarification_history=[],
+            validation_error="PLANNER_RUNTIME_CONTRACT_INVALID: missing route",
+        )
+        PlannerRuntimeOutput.model_validate(plan_obj)
+
+        result = _planner_error_node(
+            {
+                "user_query": "What was revenue?",
+                "plan_id": "run-id",
+                "plan_obj": plan_obj,
+                "planner_turn": {
+                    "planner_output": plan_obj,
+                    "validation_error": "PLANNER_RUNTIME_CONTRACT_INVALID: missing route",
+                    "runtime_contract_error": True,
+                },
+            }
+        )
+
+        issue_codes = [
+            issue.code for issue in result["analyst_result"].open_issues
+        ]
+        self.assertEqual(issue_codes.count("PLANNER_RUNTIME_CONTRACT_INVALID"), 1)
+
+    def test_runtime_contract_validation_error_omits_input_values(self) -> None:
+        payload = _runtime_output(
+            query="What was revenue?",
+            fiscal_year=2024,
+            retrieval_needed=True,
+        )
+        payload["route"] = "sensitive-route-value"
+        payload["targets"][0]["target_id"] = 0
+
+        with self.assertRaises(ValidationError) as caught:
+            PlannerRuntimeOutput.model_validate(payload)
+
+        message = _format_runtime_contract_validation_error(caught.exception)
+
+        self.assertIn("planner_output.route: Input should be", message)
+        self.assertIn(
+            "planner_output.targets.0.target_id: Input should be greater than or equal to 1",
+            message,
+        )
+        self.assertNotIn("sensitive-route-value", message)
+        self.assertNotIn("input_value", message)
+
+    def test_runtime_contract_validation_error_is_capped(self) -> None:
+        payload = _runtime_output(
+            query="What was revenue?",
+            fiscal_year=2024,
+            retrieval_needed=True,
+        )
+        for field_name in (
+            "status",
+            "retrieval_needed",
+            "intent",
+            "route",
+            "structured_fact_requests",
+            "metadata",
+        ):
+            del payload[field_name]
+
+        with self.assertRaises(ValidationError) as caught:
+            PlannerRuntimeOutput.model_validate(payload)
+
+        message = _format_runtime_contract_validation_error(caught.exception)
+
+        self.assertEqual(
+            message.splitlines()[-1],
+            "... 1 additional validation error omitted",
+        )
+        self.assertEqual(len(message.splitlines()), 6)
+
     def test_resolver_keeps_specific_total_debt_alias(self) -> None:
         metric_id, status, _reason = _resolve_metric_id_for_structured_fact_request(
             metric_hint="total debt",
@@ -394,6 +493,75 @@ class OrchestratorRuntimeTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(output["status"], "completed")
         self.assertFalse(fake_graph.used_get_state)
         self.assertTrue(fake_graph.used_aget_state)
+
+    async def test_malformed_planner_payload_fails_at_planner_boundary(self) -> None:
+        class _MalformedPlanner:
+            model = "planner-model"
+            enable_query_expansion = True
+            auto_run_full_planner = False
+            default_doc_types = []
+            company_ticker_map = None
+            full_planner_include_trace = False
+
+            async def aplan_turn(self, **_kwargs):
+                return {
+                    "planner_output": {
+                        "status": "completed",
+                        "retrieval_needed": False,
+                        "unexpected": object(),
+                    }
+                }
+
+        await aclose_orchestrator_runtime()
+        saver = InMemorySaver()
+        analyst = mock.AsyncMock()
+        with (
+            mock.patch(
+                "agents.orchestrator.agent_orchestrator._get_orchestrator_checkpointer",
+                new=mock.AsyncMock(return_value=saver),
+            ),
+            mock.patch(
+                "agents.orchestrator.agent_orchestrator._orchestrator_checkpoint_ttl_seconds",
+                return_value=0,
+            ),
+            mock.patch(
+                "agents.orchestrator.agent_orchestrator._get_pooled_analyst",
+                new=analyst,
+            ),
+        ):
+            output = await _invoke_orchestrator(
+                {
+                    "user_query": "What was revenue?",
+                    "plan_id": "invalid-plan",
+                    "analyst_model": "shared-model",
+                    "tables_dir": "data/chunked",
+                    "debug": False,
+                },
+                run_id="invalid-plan",
+                planner=_MalformedPlanner(),
+            )
+
+        self.assertEqual(output["status"], "failed")
+        self.assertEqual(output["failure_stage"], "planner")
+        self.assertEqual(output["planner"]["status"], "error")
+        self.assertIn(
+            "invalid_planner_output",
+            output["planner_turn"],
+        )
+        self.assertEqual(
+            set(output["planner_turn"]["invalid_planner_output"]),
+            {"repr"},
+        )
+        self.assertFalse(output["retrieval"]["ok"])
+        self.assertEqual(output["retrieval"]["attempts"], [])
+        self.assertEqual(output["structured_fact_results"], [])
+        self.assertFalse(analyst.await_count)
+        self.assertEqual(
+            [issue["code"] for issue in output["open_issues"]].count(
+                "PLANNER_RUNTIME_CONTRACT_INVALID"
+            ),
+            1,
+        )
 
     async def test_aclose_orchestrator_runtime_closes_cached_resources(self) -> None:
         class _FakeAnalyst:

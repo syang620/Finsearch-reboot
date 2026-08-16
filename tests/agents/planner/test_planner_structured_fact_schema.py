@@ -12,8 +12,11 @@ from agents.planner.interactive_target_resolution import (
 
 def _base_planner_output_payload() -> dict:
     return {
+        "status": "completed",
         "retrieval_needed": True,
         "intent": "filing_fact",
+        "route": "kb",
+        "structured_fact_requests": [],
         "metadata": {"ticker": "AAPL", "fiscal_year": 2025, "form_type": "10-K"},
         "analysis_task": {
             "task_type": "extract",
@@ -22,7 +25,32 @@ def _base_planner_output_payload() -> dict:
             "expected_artifacts": ["table", "row", "text"],
             "output_format": "short_answer",
         },
+        "task_class": "single_target_fact",
+        "targets": [
+            {
+                "target_id": 1,
+                "target_key": "AAPL_FY2025",
+                "company_name": "Apple",
+                "ticker": "AAPL",
+                "fiscal_year": 2025,
+                "form_type": "10-K",
+            }
+        ],
+        "retrieval_plan": {
+            "fanout_mode": "single_target",
+            "jobs": [
+                {
+                    "applies_to_target_ids": [1],
+                    "goal": "extract annual revenue",
+                    "job_type": "metric_extract",
+                }
+            ],
+        },
         "open_issues": [],
+        "original_user_query": "What was Apple revenue in FY2025?",
+        "effective_user_query": "What was Apple revenue in FY2025?",
+        "clarification_history": [],
+        "clarification_request": None,
     }
 
 
@@ -48,7 +76,7 @@ def _base_target_run() -> dict:
 
 
 class PlannerStructuredFactSchemaTests(unittest.TestCase):
-    def test_planner_output_defaults_route_and_structured_fact_requests(self) -> None:
+    def test_planner_output_accepts_complete_kb_runtime_shape(self) -> None:
         planner_output = PlannerOutput.model_validate(_base_planner_output_payload())
 
         self.assertEqual(planner_output.route, "kb")
@@ -62,6 +90,7 @@ class PlannerStructuredFactSchemaTests(unittest.TestCase):
         planner_output = PlannerOutput.model_validate(
             {
                 **_base_planner_output_payload(),
+                "retrieval_needed": False,
                 "route": "structured_fact",
                 "structured_fact_requests": [
                     {
@@ -72,6 +101,7 @@ class PlannerStructuredFactSchemaTests(unittest.TestCase):
                         "fiscal_period": "FY",
                     }
                 ],
+                "retrieval_plan": None,
             }
         )
 
@@ -219,8 +249,87 @@ class PlannerStructuredFactSchemaTests(unittest.TestCase):
         )
 
         self.assertEqual(planner_output["route"], "structured_fact")
-        self.assertEqual(len(planner_output["structured_fact_requests"]), 1)
+        self.assertEqual(planner_output["structured_fact_requests"], [])
         self.assertIsNone(planner_output["retrieval_plan"])
+
+    def test_build_planner_output_canonicalizes_completed_route_execution(self) -> None:
+        target = {
+            "target_id": 1,
+            "target_key": "AAPL_FY2025",
+            "company_name": "Apple",
+            "ticker": "AAPL",
+            "fiscal_year": 2025,
+            "form_type": "10-K",
+        }
+        request = {
+            "subquestion": "What was Apple revenue in FY2025?",
+            "metric_hint": "revenue",
+            "entity_hint": "Apple",
+            "fiscal_year": 2025,
+            "fiscal_period": "FY",
+        }
+        retrieval_plan = {
+            "fanout_mode": "single_target",
+            "jobs": [
+                {
+                    "applies_to_target_ids": [1],
+                    "goal": "extract annual revenue",
+                    "job_type": "metric_extract",
+                }
+            ],
+        }
+
+        structured = _build_planner_output(
+            status="completed",
+            target_run=_base_target_run(),
+            target_resolution={
+                "retrieval_needed": True,
+                "route": "structured_fact",
+                "structured_fact_requests": [request],
+                "task_class": "single_target_fact",
+                "targets": [target],
+                "retrieval_plan": retrieval_plan,
+                "open_issues": [],
+            },
+            clarification_request=None,
+        )
+        self.assertFalse(structured["retrieval_needed"])
+        self.assertIsNone(structured["retrieval_plan"])
+        self.assertEqual(len(structured["structured_fact_requests"]), 1)
+
+        hybrid = _build_planner_output(
+            status="completed",
+            target_run=_base_target_run(),
+            target_resolution={
+                "retrieval_needed": False,
+                "route": "hybrid",
+                "structured_fact_requests": [request],
+                "task_class": "single_target_fact",
+                "targets": [target],
+                "retrieval_plan": None,
+                "open_issues": [],
+            },
+            clarification_request=None,
+        )
+        self.assertTrue(hybrid["retrieval_needed"])
+        self.assertIsNotNone(hybrid["retrieval_plan"])
+        self.assertEqual(len(hybrid["structured_fact_requests"]), 1)
+
+        kb = _build_planner_output(
+            status="completed",
+            target_run=_base_target_run(),
+            target_resolution={
+                "retrieval_needed": True,
+                "route": "kb",
+                "structured_fact_requests": [request],
+                "task_class": "single_target_fact",
+                "targets": [target],
+                "retrieval_plan": retrieval_plan,
+                "open_issues": [],
+            },
+            clarification_request=None,
+        )
+        self.assertEqual(kb["structured_fact_requests"], [])
 
     def test_fallback_target_resolution_stays_kb_only(self) -> None:
         fallback = _build_fallback_target_resolution(

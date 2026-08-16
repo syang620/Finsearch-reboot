@@ -47,6 +47,12 @@ class Severity(str, Enum):
 
 
 PlannerRoute = Literal["kb", "structured_fact", "hybrid"]
+PlannerTaskClass = Literal[
+    "single_target_fact",
+    "multi_target_compare",
+    "multi_target_screen",
+    "other",
+]
 
 
 # -----------------------------
@@ -164,6 +170,8 @@ class AnalysisTask(BaseModel):
 
 
 class StructuredFactRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     subquestion: str = Field(..., description="User-facing subquestion for a future structured fact lane.")
     metric_hint: Optional[str] = Field(default=None)
     entity_hint: Optional[str] = Field(default=None)
@@ -197,32 +205,235 @@ class StructuredFactRequest(BaseModel):
         return year
 
 
-class PlannerOutput(BaseModel):
-    """
-    What the planner LLM must output (crawl mode).
-    This is the core plan object that drives the orchestrator state machine.
-    """
-    retrieval_needed: bool = Field(default=True)
-    intent: PlannerIntent = Field(default=PlannerIntent.FILING_FACT)
-    route: PlannerRoute = Field(default="kb")
-    structured_fact_requests: List[StructuredFactRequest] = Field(default_factory=list)
+class PlannerTarget(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    target_id: int = Field(..., ge=1)
+    target_key: str
+    company_name: Optional[str]
+    ticker: Optional[str]
+    fiscal_year: Optional[int]
+    form_type: Optional[FormType]
+
+    @field_validator("target_key")
+    @classmethod
+    def _target_key_non_empty(cls, v: str) -> str:
+        text = str(v).strip()
+        if not text:
+            raise ValueError("target_key must be non-empty")
+        return text
+
+    @field_validator("company_name", "ticker")
+    @classmethod
+    def _normalize_optional_target_text(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return None
+        text = str(v).strip()
+        return text or None
+
+    @field_validator("ticker")
+    @classmethod
+    def _normalize_target_ticker(cls, v: Optional[str]) -> Optional[str]:
+        return v.upper() if v is not None else None
+
+    @field_validator("fiscal_year")
+    @classmethod
+    def _validate_target_year(cls, v: Optional[int]) -> Optional[int]:
+        if v is None:
+            return None
+        year = int(v)
+        if not (1900 <= year <= 2100):
+            raise ValueError("fiscal_year out of reasonable range (1900-2100)")
+        return year
+
+
+class RetrievalPlanJob(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    applies_to_target_ids: List[int]
+    goal: str
+    job_type: Literal["metric_extract", "narrative_extract"]
+
+    @field_validator("applies_to_target_ids")
+    @classmethod
+    def _validate_target_ids(cls, v: List[int]) -> List[int]:
+        target_ids = [int(target_id) for target_id in v]
+        if not target_ids:
+            raise ValueError("applies_to_target_ids must be non-empty")
+        if any(target_id < 1 for target_id in target_ids):
+            raise ValueError("applies_to_target_ids must contain positive integers")
+        if len(target_ids) != len(set(target_ids)):
+            raise ValueError("applies_to_target_ids must be unique")
+        return target_ids
+
+    @field_validator("goal")
+    @classmethod
+    def _goal_non_empty(cls, v: str) -> str:
+        text = str(v).strip()
+        if not text:
+            raise ValueError("goal must be non-empty")
+        return text
+
+
+class RetrievalPlan(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    fanout_mode: Literal["single_target", "per_target"]
+    jobs: List[RetrievalPlanJob]
+
+    @field_validator("jobs")
+    @classmethod
+    def _jobs_non_empty(cls, v: List[RetrievalPlanJob]) -> List[RetrievalPlanJob]:
+        if not v:
+            raise ValueError("jobs must be non-empty")
+        return v
+
+
+class PlannerClarificationTurn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    question: str
+    answer: str
+
+    @field_validator("question")
+    @classmethod
+    def _question_non_empty(cls, v: str) -> str:
+        text = str(v).strip()
+        if not text:
+            raise ValueError("question must be non-empty")
+        return text
+
+    @field_validator("answer")
+    @classmethod
+    def _normalize_answer(cls, v: str) -> str:
+        return str(v).strip()
+
+
+class PlannerClarification(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    reason: Optional[str]
+    questions: List[str]
+
+    @field_validator("reason")
+    @classmethod
+    def _normalize_reason(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return None
+        text = str(v).strip()
+        return text or None
+
+    @field_validator("questions")
+    @classmethod
+    def _questions_non_empty(cls, v: List[str]) -> List[str]:
+        questions = [str(question).strip() for question in v]
+        if not questions or any(not question for question in questions):
+            raise ValueError("questions must contain at least one non-empty question")
+        return questions
+
+
+class PlannerRuntimeOutput(BaseModel):
+    """Normalized planner output consumed by the orchestrator runtime."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    status: Literal["completed", "needs_clarification", "error"]
+    retrieval_needed: bool
+    intent: PlannerIntent
+    route: PlannerRoute
+    structured_fact_requests: List[StructuredFactRequest]
     metadata: FilingMetadata
     analysis_task: AnalysisTask
-    open_issues: List[OpenIssue] = Field(default_factory=list)
+    task_class: PlannerTaskClass
+    targets: List[PlannerTarget]
+    retrieval_plan: Optional[RetrievalPlan]
+    open_issues: List[OpenIssue]
+    original_user_query: str
+    effective_user_query: str
+    clarification_history: List[PlannerClarificationTurn]
+    clarification_request: Optional[PlannerClarification]
+
+    @field_validator("original_user_query", "effective_user_query")
+    @classmethod
+    def _query_non_empty(cls, v: str) -> str:
+        text = str(v).strip()
+        if not text:
+            raise ValueError("query fields must be non-empty")
+        return text
 
     @model_validator(mode="after")
-    def _sanity_checks(self) -> "PlannerOutput":
-        # If planner says retrieval not needed, keep the issue list as a traceable signal.
-        # but flag missing context expectation.
-        if not self.retrieval_needed and self.intent in (PlannerIntent.FILING_FACT, PlannerIntent.FILING_CALC):
-            self.open_issues.append(
-                OpenIssue(
-                    code="RETRIEVAL_DISABLED",
-                    message="Planner set retrieval_needed=False for a filing-based intent.",
-                    severity=Severity.WARNING,
+    def _validate_runtime_semantics(self) -> "PlannerRuntimeOutput":
+        target_ids = [target.target_id for target in self.targets]
+        if len(target_ids) != len(set(target_ids)):
+            raise ValueError("target_id values must be unique")
+
+        target_keys = [target.target_key for target in self.targets]
+        if len(target_keys) != len(set(target_keys)):
+            raise ValueError("target_key values must be unique")
+
+        if self.retrieval_plan is not None:
+            known_target_ids = set(target_ids)
+            for job in self.retrieval_plan.jobs:
+                unknown_target_ids = sorted(
+                    set(job.applies_to_target_ids) - known_target_ids
                 )
+                if unknown_target_ids:
+                    raise ValueError(
+                        "retrieval plan references unknown target IDs: "
+                        f"{unknown_target_ids}"
+                    )
+
+        if self.status != "completed":
+            if self.retrieval_needed or self.retrieval_plan is not None:
+                raise ValueError(
+                    "non-completed planner output cannot contain executable retrieval"
+                )
+            if self.structured_fact_requests:
+                raise ValueError(
+                    "non-completed planner output cannot contain structured fact requests"
+                )
+        elif self.route == "kb":
+            if self.structured_fact_requests:
+                raise ValueError("kb route cannot contain structured fact requests")
+            if (
+                self.intent in {PlannerIntent.FILING_FACT, PlannerIntent.FILING_CALC}
+                and not self.retrieval_needed
+            ):
+                raise ValueError(
+                    "kb route requires retrieval for filing-based intents"
+                )
+            if self.retrieval_needed != (self.retrieval_plan is not None):
+                raise ValueError(
+                    "kb retrieval plan must be present iff retrieval is needed"
+                )
+        elif self.route == "structured_fact":
+            if self.retrieval_needed or self.retrieval_plan is not None:
+                raise ValueError("structured_fact route cannot execute KB retrieval")
+            if not self.structured_fact_requests:
+                raise ValueError(
+                    "structured_fact route requires structured fact requests"
+                )
+        elif self.route == "hybrid":
+            if not self.retrieval_needed or self.retrieval_plan is None:
+                raise ValueError("hybrid route requires KB retrieval")
+            if not self.structured_fact_requests:
+                raise ValueError("hybrid route requires structured fact requests")
+
+        if self.status == "needs_clarification":
+            if self.clarification_request is None:
+                raise ValueError(
+                    "needs_clarification status requires a clarification request"
+                )
+        elif self.clarification_request is not None:
+            raise ValueError(
+                "clarification_request must be null unless clarification is needed"
             )
+
         return self
+
+
+# Backward-compatible alias. Prefer PlannerRuntimeOutput in new code.
+PlannerOutput = PlannerRuntimeOutput
 
 
 # -----------------------------
