@@ -395,6 +395,13 @@ class PlannerRuntimeOutput(BaseModel):
         elif self.route == "kb":
             if self.structured_fact_requests:
                 raise ValueError("kb route cannot contain structured fact requests")
+            if (
+                self.intent in {PlannerIntent.FILING_FACT, PlannerIntent.FILING_CALC}
+                and not self.retrieval_needed
+            ):
+                raise ValueError(
+                    "kb route requires retrieval for filing-based intents"
+                )
             if self.retrieval_needed != (self.retrieval_plan is not None):
                 raise ValueError(
                     "kb retrieval plan must be present iff retrieval is needed"

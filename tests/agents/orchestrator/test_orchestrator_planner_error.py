@@ -37,6 +37,7 @@ def _runtime_output(
     *,
     query: str,
     fiscal_year: int,
+    intent: str = "filing_fact",
     route: str = "kb",
     retrieval_needed: bool = False,
     structured_fact_requests: list[dict] | None = None,
@@ -67,7 +68,7 @@ def _runtime_output(
     return {
         "status": "completed",
         "retrieval_needed": retrieval_needed,
-        "intent": "filing_fact",
+        "intent": intent,
         "route": route,
         "structured_fact_requests": list(structured_fact_requests or []),
         "metadata": {
@@ -102,7 +103,13 @@ class _ConcurrentPlanner:
     full_planner_include_trace = False
 
     async def aplan_turn(self, **_kwargs):
-        return {"planner_output": _runtime_output(query="What was revenue?", fiscal_year=2024)}
+        return {
+            "planner_output": _runtime_output(
+                query="What is revenue?",
+                fiscal_year=2024,
+                intent="definition",
+            )
+        }
 
 
 class _RetrievalPlanner:

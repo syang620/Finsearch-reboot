@@ -123,14 +123,49 @@ class PlannerRuntimeContractTests(unittest.TestCase):
         )
         self.assertEqual(PlannerRuntimeOutput.model_validate(hybrid).route, "hybrid")
 
-    def test_filing_intent_without_retrieval_is_not_flagged(self) -> None:
+    def test_kb_filing_intent_requires_retrieval(self) -> None:
+        for intent in ("filing_fact", "filing_calc"):
+            payload = _runtime_payload()
+            payload.update(
+                {
+                    "intent": intent,
+                    "retrieval_needed": False,
+                    "retrieval_plan": None,
+                }
+            )
+            with self.subTest(intent=intent):
+                self.assert_invalid(payload)
+
+    def test_kb_definition_may_skip_retrieval(self) -> None:
         payload = _runtime_payload()
-        payload.update({"retrieval_needed": False, "retrieval_plan": None})
+        payload.update(
+            {
+                "intent": "definition",
+                "retrieval_needed": False,
+                "retrieval_plan": None,
+            }
+        )
+
+        plan = PlannerRuntimeOutput.model_validate(payload)
+
+        self.assertEqual(plan.intent.value, "definition")
+        self.assertFalse(plan.retrieval_needed)
+
+    def test_structured_fact_filing_intent_skips_kb_retrieval(self) -> None:
+        payload = _runtime_payload()
+        payload.update(
+            {
+                "route": "structured_fact",
+                "retrieval_needed": False,
+                "retrieval_plan": None,
+                "structured_fact_requests": [_structured_request()],
+            }
+        )
 
         plan = PlannerRuntimeOutput.model_validate(payload)
 
         self.assertEqual(plan.intent.value, "filing_fact")
-        self.assertFalse(any(issue.code == "RETRIEVAL_DISABLED" for issue in plan.open_issues))
+        self.assertFalse(plan.retrieval_needed)
 
     def test_valid_non_completed_states(self) -> None:
         clarification = _runtime_payload()
