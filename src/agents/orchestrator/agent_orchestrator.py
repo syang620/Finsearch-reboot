@@ -25,6 +25,7 @@ from agents.contracts import (
     FormType,
     OpenIssue,
     PlannerIntent,
+    PlannerRuntimeOutput,
     Severity,
     SourceRef,
 )
@@ -40,6 +41,7 @@ from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 from langgraph.config import get_config
 from langgraph.graph import END, StateGraph
 from langgraph.types import Command, interrupt
+from pydantic import ValidationError
 
 
 class OrchestratorState(TypedDict, total=False):
@@ -925,6 +927,56 @@ def _coerce_planner_answers(answers: Any, questions: Sequence[str]) -> List[str]
     raise TypeError("answers must be a string or a list/tuple of strings.")
 
 
+def _build_runtime_contract_error_plan(
+    *,
+    user_query: str,
+    clarification_history: Sequence[Dict[str, Any]],
+    validation_error: str,
+) -> Dict[str, Any]:
+    clean_query = str(user_query or "").strip() or "Unavailable user query"
+    error_message = str(validation_error or "Planner runtime contract validation failed.").strip()
+    plan = PlannerRuntimeOutput(
+        status="error",
+        retrieval_needed=False,
+        intent=PlannerIntent.OTHER,
+        route="kb",
+        structured_fact_requests=[],
+        metadata=FilingMetadata(),
+        analysis_task=AnalysisTask(
+            task_type="extract",
+            metric="filing evidence",
+            requires_calculation=False,
+            expected_artifacts=[],
+            output_format="short_answer",
+        ),
+        task_class="other",
+        targets=[],
+        retrieval_plan=None,
+        open_issues=[
+            OpenIssue(
+                code="PLANNER_RUNTIME_CONTRACT_INVALID",
+                message=error_message,
+                severity=Severity.ERROR,
+            )
+        ],
+        original_user_query=clean_query,
+        effective_user_query=clean_query,
+        clarification_history=_normalize_clarification_turns(
+            list(clarification_history or [])
+        ),
+        clarification_request=None,
+    )
+    return plan.model_dump(mode="json")
+
+
+def _serialize_invalid_planner_output(value: Any) -> Any:
+    try:
+        json.dumps(value)
+    except (TypeError, ValueError):
+        return {"repr": repr(value)}
+    return value
+
+
 async def _planner_graph_node(state: OrchestratorState) -> Dict[str, Any]:
     planner = _get_runtime_planner()
     t0 = time.perf_counter()
@@ -932,13 +984,39 @@ async def _planner_graph_node(state: OrchestratorState) -> Dict[str, Any]:
         "user_query": state["user_query"],
         "clarification_turns": list(state.get("clarification_turns") or []),
     }
-    if hasattr(planner, "aplan_turn"):
-        planner_turn = await planner.aplan_turn(**planner_kwargs)
-    else:
-        planner_turn = await asyncio.to_thread(planner.start, state["user_query"])
-    if not isinstance(planner_turn, dict):
-        planner_turn = {}
-    planner_dump = dict(planner_turn.get("planner_output") or {})
+    planner_turn: Dict[str, Any] = {}
+    invalid_planner_output: Any = None
+    try:
+        if hasattr(planner, "aplan_turn"):
+            raw_planner_turn = await planner.aplan_turn(**planner_kwargs)
+        else:
+            raw_planner_turn = await asyncio.to_thread(
+                planner.start, state["user_query"]
+            )
+        if isinstance(raw_planner_turn, dict):
+            planner_turn = dict(raw_planner_turn)
+        invalid_planner_output = planner_turn.get("planner_output")
+        planner_dump = PlannerRuntimeOutput.model_validate(
+            invalid_planner_output
+        ).model_dump(mode="json")
+        planner_turn["planner_output"] = planner_dump
+    except ValidationError as exc:
+        validation_error = f"PLANNER_RUNTIME_CONTRACT_INVALID: {exc}"
+        planner_dump = _build_runtime_contract_error_plan(
+            user_query=state["user_query"],
+            clarification_history=state.get("clarification_turns") or [],
+            validation_error=validation_error,
+        )
+        planner_turn.update(
+            {
+                "planner_output": planner_dump,
+                "invalid_planner_output": _serialize_invalid_planner_output(
+                    invalid_planner_output
+                ),
+                "validation_error": validation_error,
+                "runtime_contract_error": True,
+            }
+        )
     planner_timing_ms = dict(state.get("planner_timing_ms") or {})
     elapsed_ms = int((time.perf_counter() - t0) * 1000)
     if state.get("clarification_turns"):
@@ -1026,16 +1104,19 @@ def _planner_error_node(state: OrchestratorState) -> Dict[str, Any]:
     ]
     error_message = " ".join(part for part in error_parts if part) or "Planner execution failed before retrieval."
     error_code = "PLANNER_EXECUTION_ERROR"
-    if any(part for part in error_parts):
+    if planner_turn.get("runtime_contract_error"):
+        error_code = "PLANNER_RUNTIME_CONTRACT_INVALID"
+    elif any(part for part in error_parts):
         error_code = "PLANNER_RUNTIME_ERROR"
 
-    packet.open_issues.append(
-        OpenIssue(
-            code=error_code,
-            message=error_message,
-            severity=Severity.ERROR,
+    if not any(issue.code == error_code for issue in packet.open_issues):
+        packet.open_issues.append(
+            OpenIssue(
+                code=error_code,
+                message=error_message,
+                severity=Severity.ERROR,
+            )
         )
-    )
 
     analyst_result = AnalystRunResult(
         ok=False,

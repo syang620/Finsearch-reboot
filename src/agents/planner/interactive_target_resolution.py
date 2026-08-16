@@ -12,6 +12,7 @@ from agents.contracts import (
     FormType,
     OpenIssue,
     PlannerIntent,
+    PlannerRuntimeOutput,
     Severity,
 )
 from pydantic import BaseModel, Field
@@ -1634,7 +1635,16 @@ def _build_planner_output(
     )
 
     retrieval_needed = bool((target_resolution or {}).get("retrieval_needed")) and status == "completed"
+    if status == "completed" and route == "structured_fact":
+        retrieval_needed = False
+    elif status == "completed" and route == "hybrid":
+        retrieval_needed = True
+    elif status == "completed" and route == "kb":
+        structured_fact_requests = []
+
     retrieval_plan = (target_resolution or {}).get("retrieval_plan")
+    if status == "completed" and route == "structured_fact":
+        retrieval_plan = None
     if retrieval_needed and retrieval_plan is None:
         retrieval_plan = _build_default_retrieval_plan(
             targets=targets,
@@ -1643,6 +1653,7 @@ def _build_planner_output(
         )
     if status != "completed":
         retrieval_plan = None
+        structured_fact_requests = []
 
     intent = _normalize_text(target_run.get("deterministic_intent_hint")) or "filing_fact"
     if intent not in {"filing_fact", "filing_calc", "definition", "other"}:
@@ -1660,7 +1671,15 @@ def _build_planner_output(
         (target_resolution or {}).get("open_issues") or [],
     )
 
-    return {
+    original_user_query = str(
+        planner_state.get("original_user_query")
+        or target_run.get("user_query")
+        or ""
+    ).strip()
+    effective_user_query = str(
+        planner_state.get("effective_user_query") or original_user_query
+    ).strip()
+    payload = {
         "status": status,
         "retrieval_needed": retrieval_needed,
         "intent": intent,
@@ -1672,11 +1691,12 @@ def _build_planner_output(
         "task_class": task_class,
         "targets": targets,
         "retrieval_plan": retrieval_plan,
-        "original_user_query": str(planner_state.get("original_user_query") or target_run.get("user_query") or "").strip(),
+        "original_user_query": original_user_query,
         "clarification_history": list(planner_state.get("clarification_history") or []),
         "clarification_request": clarification_request,
-        "effective_user_query": str(planner_state.get("effective_user_query") or "").strip(),
+        "effective_user_query": effective_user_query,
     }
+    return PlannerRuntimeOutput.model_validate(payload).model_dump(mode="json")
 
 
 def run_target_resolution_prompt(
