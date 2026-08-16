@@ -927,6 +927,25 @@ def _coerce_planner_answers(answers: Any, questions: Sequence[str]) -> List[str]
     raise TypeError("answers must be a string or a list/tuple of strings.")
 
 
+def _format_runtime_contract_validation_error(
+    exc: ValidationError,
+    *,
+    max_errors: int = 5,
+) -> str:
+    errors = exc.errors(include_input=False)
+    details = []
+    for error in errors[:max_errors]:
+        location = ".".join(str(part) for part in error.get("loc", ()))
+        field_path = f"planner_output.{location}" if location else "planner_output"
+        details.append(f"{field_path}: {error.get('msg', 'Invalid value')}")
+
+    omitted_count = len(errors) - len(details)
+    if omitted_count:
+        noun = "error" if omitted_count == 1 else "errors"
+        details.append(f"... {omitted_count} additional validation {noun} omitted")
+    return "\n".join(details) or "Planner runtime contract validation failed."
+
+
 def _build_runtime_contract_error_plan(
     *,
     user_query: str,
@@ -1001,7 +1020,7 @@ async def _planner_graph_node(state: OrchestratorState) -> Dict[str, Any]:
         ).model_dump(mode="json")
         planner_turn["planner_output"] = planner_dump
     except ValidationError as exc:
-        validation_error = f"PLANNER_RUNTIME_CONTRACT_INVALID: {exc}"
+        validation_error = _format_runtime_contract_validation_error(exc)
         planner_dump = _build_runtime_contract_error_plan(
             user_query=state["user_query"],
             clarification_history=state.get("clarification_turns") or [],

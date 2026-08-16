@@ -5,6 +5,7 @@ import unittest
 from unittest import mock
 
 from langgraph.checkpoint.memory import InMemorySaver
+from pydantic import ValidationError
 
 from agents.analyst import AnalystRunResult
 from agents.contracts import (
@@ -20,6 +21,7 @@ from agents.contracts import (
 )
 from agents.orchestrator.agent_orchestrator import (
     _build_runtime_contract_error_plan,
+    _format_runtime_contract_validation_error,
     _get_pooled_analyst,
     _get_orchestrator_graph,
     _graph_config,
@@ -359,6 +361,55 @@ class OrchestratorPlannerErrorTests(unittest.TestCase):
             issue.code for issue in result["analyst_result"].open_issues
         ]
         self.assertEqual(issue_codes.count("PLANNER_RUNTIME_CONTRACT_INVALID"), 1)
+
+    def test_runtime_contract_validation_error_omits_input_values(self) -> None:
+        payload = _runtime_output(
+            query="What was revenue?",
+            fiscal_year=2024,
+            retrieval_needed=True,
+        )
+        payload["route"] = "sensitive-route-value"
+        payload["targets"][0]["target_id"] = 0
+
+        with self.assertRaises(ValidationError) as caught:
+            PlannerRuntimeOutput.model_validate(payload)
+
+        message = _format_runtime_contract_validation_error(caught.exception)
+
+        self.assertIn("planner_output.route: Input should be", message)
+        self.assertIn(
+            "planner_output.targets.0.target_id: Input should be greater than or equal to 1",
+            message,
+        )
+        self.assertNotIn("sensitive-route-value", message)
+        self.assertNotIn("input_value", message)
+
+    def test_runtime_contract_validation_error_is_capped(self) -> None:
+        payload = _runtime_output(
+            query="What was revenue?",
+            fiscal_year=2024,
+            retrieval_needed=True,
+        )
+        for field_name in (
+            "status",
+            "retrieval_needed",
+            "intent",
+            "route",
+            "structured_fact_requests",
+            "metadata",
+        ):
+            del payload[field_name]
+
+        with self.assertRaises(ValidationError) as caught:
+            PlannerRuntimeOutput.model_validate(payload)
+
+        message = _format_runtime_contract_validation_error(caught.exception)
+
+        self.assertEqual(
+            message.splitlines()[-1],
+            "... 1 additional validation error omitted",
+        )
+        self.assertEqual(len(message.splitlines()), 6)
 
     def test_resolver_keeps_specific_total_debt_alias(self) -> None:
         metric_id, status, _reason = _resolve_metric_id_for_structured_fact_request(
