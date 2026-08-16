@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 import os
 import re
 from functools import lru_cache
@@ -40,6 +41,9 @@ from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 from langgraph.config import get_config
 from langgraph.graph import END, StateGraph
 from langgraph.types import Command, interrupt
+
+
+logger = logging.getLogger(__name__)
 
 
 class OrchestratorState(TypedDict, total=False):
@@ -99,7 +103,7 @@ _ANALYST_CACHE_MAX_SIZE = 4
 _ORCHESTRATOR_LAST_PRUNE_TS = 0.0
 _ORCHESTRATOR_MCP_CLIENT: Optional[Any] = None
 _ORCHESTRATOR_MCP_CLIENT_LOCK: Optional[asyncio.Lock] = None
-_BACKGROUND_TASKS: set[Any] = set()
+_BACKGROUND_TASKS: set[asyncio.Task[Any]] = set()
 _TICKER_LIKE_RE = re.compile(r"^[A-Z][A-Z0-9.\-]{0,9}$")
 # Keep aliases conservative. Broad single-word finance terms are intentionally
 # avoided here to reduce false positives in metric auto-resolution.
@@ -133,6 +137,16 @@ _STRUCTURED_FACT_ALIAS_MAP: Dict[str, tuple[str, ...]] = {
     ),
     "capex": ("capex", "capital expenditures", "capital expenditure"),
 }
+
+
+def _observe_background_task(task: asyncio.Task[Any]) -> None:
+    _BACKGROUND_TASKS.discard(task)
+    try:
+        task.result()
+    except asyncio.CancelledError:
+        return
+    except Exception:
+        logger.exception("Checkpoint-pruning background task failed")
 
 
 async def _get_orchestrator_checkpointer() -> AsyncSqliteSaver:
@@ -1977,7 +1991,7 @@ async def _invoke_orchestrator(
         _ORCHESTRATOR_LAST_PRUNE_TS = time.time()
         prune_task = asyncio.create_task(_prune_stale_orchestrator_runs(max_age_seconds=ttl_seconds))
         _BACKGROUND_TASKS.add(prune_task)
-        prune_task.add_done_callback(_BACKGROUND_TASKS.discard)
+        prune_task.add_done_callback(_observe_background_task)
 
     graph = _get_orchestrator_graph(id(_ORCHESTRATOR_CHECKPOINTER))
     config = _graph_config(run_id=run_id, planner=resolved_planner)
