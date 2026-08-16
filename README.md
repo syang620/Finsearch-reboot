@@ -140,6 +140,7 @@ short aliases (`gpt`, `claude`, `gemini`) to `analyst_model` / `planner_model`.
 
 ## Documentation
 
-- Current runtime architecture: `docs/ARCHITECTURE.md`
-- Ingestion script guide: `scripts/README.md`
-- Change history: `docs/CHANGELOG.md`
+- [Architecture](docs/ARCHITECTURE.md) — what exists
+- [Implementation Plan](docs/IMPLEMENTATION_PLAN.md) — what we're changing
+- [Evaluation](docs/EVALUATION.md) — how quality is measured
+- [Runbook](docs/RUNBOOK.md) — how to run/debug it

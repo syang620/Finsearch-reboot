@@ -1,4 +1,4 @@
-# Agent Evaluation v0
+# Agent Evaluation v0 (Legacy)
 
 This evaluator measures end-to-end multi-agent performance:
 
@@ -6,6 +6,18 @@ This evaluator measures end-to-end multi-agent performance:
 - Retrieval handoff quality
 - Analyst behavior (tool use, computation, citations)
 - Optional RAGAS LLM-judge metrics
+
+> **Legacy evaluator warning:** This evaluator was designed around the legacy
+> KB-oriented filing path and is not route-aware.
+>
+> - **Route logic:** It classifies `filing_fact` or `filing_calc` with
+>   `retrieval_needed=False` as `RETRIEVAL_ROUTING_INVALID`, so valid
+>   `structured_fact` behavior fails by definition.
+> - **Semantic context:** It derives RAGAS contexts only from KB retrieval output and
+>   excludes structured-fact evidence.
+>
+> Consequently, its overall score is diagnostic only and is not a valid multi-lane
+> release gate until the route-aware evaluator in PR 2 lands.
 
 ## Inputs
 
@@ -105,5 +117,6 @@ RAGAS/Ollama judge:
 ## Notes
 
 - Use deterministic metrics for fast iteration.
-- Use RAGAS runs for semantic quality checks and release decisions.
+- Use RAGAS runs for diagnostic semantic quality checks only; do not use v0 scores
+  for release decisions until PR 2 provides route-aware evaluation.
 - Keep `gold_answer` non-empty in dataset rows; RAGAS quality degrades otherwise.
