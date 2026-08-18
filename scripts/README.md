@@ -38,7 +38,8 @@ PYTHONPATH=src python scripts/ingestion_cli.py run-all --help
 
 ## Evaluation Scripts
 - `scripts/evals/retrieval/eval_retrieval_v0.py`: retrieval-only evaluation CLI (deterministic + optional RAGAS metrics).
-- `scripts/evals/agents/eval_agents_v0.py`: end-to-end planner/retrieval/analyst evaluation CLI.
+- `scripts/evals/agents/eval_agents_v1.py`: route-aware multi-lane end-to-end evaluation CLI.
+- `scripts/evals/agents/eval_agents_v0.py`: legacy KB-oriented end-to-end evaluation CLI.
 - `scripts/evals/agents/eval_planner_routes.py`: planner routing evaluation CLI.
 - `scripts/evals/llm_judge/eval_llm_judge_rag_answers.py`: LLM-as-judge evaluation CLI.
 - `scripts/evals/chunking/`: chunking strategy and table-summary benchmark scripts.

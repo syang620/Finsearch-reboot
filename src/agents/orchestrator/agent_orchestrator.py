@@ -54,6 +54,7 @@ class OrchestratorState(TypedDict, total=False):
     analyst_model: str
     tables_dir: str
     debug: bool
+    include_evidence_trace: bool
     start_time: float
     clarification_turns: Annotated[list[Dict[str, str]], operator.add]
     open_issues: Annotated[list[Dict[str, Any]], _dedupe_open_issue_payloads]
@@ -2067,6 +2068,14 @@ def _format_run_output(
             "structured_fact_timing_ms": dict(state_values.get("structured_fact_timing_ms") or {}),
         },
     }
+    if bool(state_values.get("include_evidence_trace")):
+        out["evaluation_trace"] = {
+            "analyst_packet": (
+                packet.model_dump(mode="json")
+                if isinstance(packet, AnalystPacket)
+                else None
+            )
+        }
     return out
 
 
@@ -2118,6 +2127,7 @@ async def run_multi_agent_orchestration(
     analyst_model: str = "qwen2.5-14b-instruct-1m",
     tables_dir: str = "data/chunked",
     debug: bool = True,
+    include_evidence_trace: bool = False,
 ) -> Dict[str, Any]:
     plan_id = f"run-{uuid.uuid4().hex[:8]}"
     resolved_tables_dir = _resolve_tables_dir(tables_dir)
@@ -2128,6 +2138,7 @@ async def run_multi_agent_orchestration(
             "analyst_model": analyst_model,
             "tables_dir": resolved_tables_dir,
             "debug": debug,
+            "include_evidence_trace": include_evidence_trace,
         },
         run_id=plan_id,
         planner=planner,

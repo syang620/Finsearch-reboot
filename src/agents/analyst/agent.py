@@ -64,6 +64,9 @@ from agents.contracts import (
 )
 
 
+ANALYST_CONTEXT_ITEM_LIMIT = 5
+
+
 SYSTEM_PROMPT = """You are a senior financial analyst in an SEC filings RAG system.
 Use ONLY the provided context items. Do not use outside knowledge.
 
@@ -631,7 +634,12 @@ def _context_item_to_text(item: ContextItem, idx: int) -> str:
     )
 
 
-def build_analyst_prompt(packet: AnalystPacket, *, max_context_items: int = 5, tools_available: bool = True) -> str:
+def build_analyst_prompt(
+    packet: AnalystPacket,
+    *,
+    max_context_items: int = ANALYST_CONTEXT_ITEM_LIMIT,
+    tools_available: bool = True,
+) -> str:
     grouped: Dict[str, List[str]] = {}
     for i, item in enumerate(packet.context_items[:max_context_items], start=1):
         target_id = item.target_id or "default"
@@ -1610,7 +1618,7 @@ class AnalystAgent:
     timeout_s: float = 120.0
     financial_tool_script: Optional[str] = None
     financial_mcp_url: Optional[str] = None
-    max_context_items: int = 5
+    max_context_items: int = ANALYST_CONTEXT_ITEM_LIMIT
     max_attempts: int = 2
     max_tool_rounds: int = 6
 

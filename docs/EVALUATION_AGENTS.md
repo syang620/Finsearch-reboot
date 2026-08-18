@@ -1,4 +1,73 @@
-# Agent Evaluation v0 (Legacy)
+# Agent Evaluation
+
+The route-aware v1 evaluator is the end-to-end architecture gate for the current
+`kb`, `structured_fact`, and `hybrid` runtime. The original v0 evaluator remains
+available unchanged for historical reproducibility.
+
+## Route-aware v1
+
+Default dataset:
+
+- `data/evals/agents/v1/agent_eval_routing_v1.jsonl`
+
+Run deterministic architectural checks:
+
+```bash
+PYTHONPATH=src python scripts/evals/agents/eval_agents_v1.py \
+  --analyst-model ollama/qwen2.5:14b-instruct
+```
+
+Add optional RAGAS diagnostics:
+
+```bash
+PYTHONPATH=src python scripts/evals/agents/eval_agents_v1.py \
+  --enable-ragas \
+  --enable-context-precision \
+  --enable-context-recall
+```
+
+V1 checks the reported runtime status separately from the evaluation-only effective
+status:
+
+```json
+{
+  "reported_status": "completed",
+  "effective_status": "degraded",
+  "effective_status_source": "evaluator_derived"
+}
+```
+
+Until the runtime exposes first-class lane summaries, v1 derives KB and structured
+lane outcomes from the planner, retrieval result, structured-fact results, and
+analyst result. Once runtime lane summaries are available, they become authoritative
+while the evaluator continues deriving a shadow result and reports consistency.
+
+The v1 evaluator requests the opt-in orchestration evidence trace. Its only payload
+is the final serialized `AnalystPacket`; semantic contexts are derived from that
+packet in analyst-visible order. The analyst and evaluator share the same current
+five-context visibility limit.
+
+V1 outputs:
+
+- `artifacts/evals/agents/v1/per_query.jsonl`
+- `artifacts/evals/agents/v1/summary.json`
+- `artifacts/evals/agents/v1/errors.jsonl`
+
+The per-query artifact preserves expected behavior, raw stage outputs, reported and
+effective status, runtime and derived lane summaries, structured outcomes, analyst
+evidence, timings, deterministic checks, and errors. Any explicitly required route,
+lane, structured outcome, status, failure stage, analyst status, calculator use, or
+positive citation minimum is release-critical.
+
+Clarification cases stop at the initial `interrupted` result. V1 does not resume the
+run or evaluate a multi-turn conversation.
+
+The live v1 dataset favors stable success, control-flow, and analyst-behavior cases.
+Forced KB/structured degradation combinations are authoritative deterministic unit
+fixtures so SEC data and capability-policy changes do not make the release gate
+artificially brittle.
+
+## Legacy v0
 
 This evaluator measures end-to-end multi-agent performance:
 
@@ -17,9 +86,9 @@ This evaluator measures end-to-end multi-agent performance:
 >   excludes structured-fact evidence.
 >
 > Consequently, its overall score is diagnostic only and is not a valid multi-lane
-> release gate until the route-aware evaluator in PR 2 lands.
+> release gate. Use route-aware v1 for current architecture decisions.
 
-## Inputs
+### Inputs
 
 Default eval set:
 
@@ -45,7 +114,7 @@ Expected row shape (simplified):
 }
 ```
 
-## Run
+### Run
 
 Deterministic + RAGAS:
 
@@ -71,13 +140,13 @@ PYTHONPATH=src python scripts/evals/agents/eval_agents_v0.py \
   --enable-context-recall
 ```
 
-## Outputs
+### Outputs
 
 - `artifacts/evals/agents/v0/per_query.jsonl`
 - `artifacts/evals/agents/v0/summary.json`
 - `artifacts/evals/agents/v0/errors.jsonl`
 
-## Deterministic checks
+### Deterministic checks
 
 Per query:
 
@@ -91,7 +160,7 @@ Per query:
 
 A weighted deterministic score is produced per query and aggregated.
 
-## RAGAS checks
+### RAGAS checks
 
 When enabled, the evaluator computes:
 
@@ -101,7 +170,7 @@ When enabled, the evaluator computes:
 
 RAGAS errors are captured in `errors.jsonl` and reflected in gate decisions.
 
-## Environment
+### Environment
 
 Agent runtime dependencies:
 
@@ -114,9 +183,9 @@ RAGAS/Ollama judge:
 - `RAGAS_JUDGE_MODEL` (default `llama3.1:8b-instruct`)
 - `RAGAS_EMBED_MODEL` (default `nomic-embed-text`)
 
-## Notes
+### Notes
 
-- Use deterministic metrics for fast iteration.
-- Use RAGAS runs for diagnostic semantic quality checks only; do not use v0 scores
-  for release decisions until PR 2 provides route-aware evaluation.
+- Use deterministic metrics for architecture gating and fast iteration.
+- Use RAGAS runs as diagnostic semantic quality checks.
+- Do not use v0 scores for multi-lane release decisions.
 - Keep `gold_answer` non-empty in dataset rows; RAGAS quality degrades otherwise.
