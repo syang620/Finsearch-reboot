@@ -1,6 +1,7 @@
 """Analyst agent package."""
 
 from .agent import (
+    ANALYST_CONTEXT_ITEM_LIMIT,
     AnalystAgent,
     AnalystCitation,
     AnalystComputation,
@@ -15,6 +16,7 @@ from .agent import (
 from .table_loader import load_table_data
 
 __all__ = [
+    "ANALYST_CONTEXT_ITEM_LIMIT",
     "AnalystAgent",
     "AnalystCitation",
     "AnalystComputation",

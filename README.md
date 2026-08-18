@@ -83,7 +83,22 @@ PYTHONPATH=src python scripts/evals/retrieval/eval_retrieval_v0.py \
 
 Detailed guide: `docs/EVALUATION_RETRIEVAL.md`
 
-## Agent Evaluation (v0)
+## Agent Evaluation (route-aware v1)
+
+Run the current multi-lane end-to-end evaluation:
+
+```bash
+PYTHONPATH=src python scripts/evals/agents/eval_agents_v1.py \
+  --eval-path data/evals/agents/v1/agent_eval_routing_v1.jsonl \
+  --out-dir artifacts/evals/agents/v1 \
+  --analyst-model ollama/qwen2.5:14b-instruct
+```
+
+The v1 harness validates `kb`, `structured_fact`, and `hybrid` routes, lane outcomes,
+reported versus evaluation-derived status, analyst behavior, citations, and stage
+latency. RAGAS diagnostics are opt-in with `--enable-ragas`.
+
+## Agent Evaluation (legacy v0)
 
 Run the existing end-to-end agent evaluation:
 
@@ -96,8 +111,9 @@ PYTHONPATH=src python scripts/evals/agents/eval_agents_v0.py \
 
 Detailed guide: `docs/EVALUATION_AGENTS.md`
 
-This v0 harness primarily covers the legacy planner -> retrieval -> analyst path; it
-does not yet provide complete `structured_fact` or `hybrid` validation.
+This v0 harness covers the legacy planner -> retrieval -> analyst path and remains
+available only for historical reproducibility. It intentionally retains its
+KB-oriented routing assumptions.
 
 ## Repository Map
 

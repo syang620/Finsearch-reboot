@@ -11,8 +11,8 @@ and measured results stay in [Evaluation Baselines](EVALUATION_BASELINES.md).
 | Deterministic tests | Contracts, routing, execution, tools, and failure behavior | Required for affected changes | Repository test suite |
 | Planner routing | Route selection and structured-fact request shape | Release gate for planner and routing changes; every selected P0 case must pass | `scripts/evals/agents/eval_planner_routes.py` |
 | Retrieval | Filing evidence ranking and recall | Deterministic retrieval metrics gate retrieval changes; RAGAS metrics are supplemental | [Retrieval Evaluation](EVALUATION_RETRIEVAL.md) |
-| End-to-end agents v0 | Planner, legacy KB-oriented filing flow, and analyst behavior | Diagnostic only | [Agent Evaluation v0 (Legacy)](EVALUATION_AGENTS.md) |
-| Route-aware multi-lane E2E | `kb`, `structured_fact`, and `hybrid` behavior | Planned for PR 2; not yet a release gate | [Implementation Plan](IMPLEMENTATION_PLAN.md) |
+| Route-aware agents v1 | `kb`, `structured_fact`, and `hybrid` behavior | Multi-lane release gate | [Agent Evaluation](EVALUATION_AGENTS.md) |
+| End-to-end agents v0 | Planner, legacy KB-oriented filing flow, and analyst behavior | Diagnostic only | [Agent Evaluation](EVALUATION_AGENTS.md) |
 
 ## Release-Gate Policy
 
@@ -20,11 +20,10 @@ and measured results stay in [Evaluation Baselines](EVALUATION_BASELINES.md).
 - Planner or route-contract changes must pass the selected P0 planner-routing suite.
 - Retrieval changes must pass the deterministic criteria described in the retrieval
   evaluation guide. RAGAS results provide supporting evidence but are not a gate.
-- Do not use the current end-to-end v0 overall score as a release gate. Its route
+- Use route-aware v1 deterministic checks as the multi-lane end-to-end release gate.
+- Do not use the legacy v0 overall score as a release gate. Its route
   logic is incompatible with valid `structured_fact` behavior, and its semantic
   context extraction excludes structured-fact evidence.
-- Route-aware E2E evaluation becomes the multi-lane release gate only after the PR 2
-  evaluator and acceptance criteria are implemented.
 
 ## Results and Artifacts
 
