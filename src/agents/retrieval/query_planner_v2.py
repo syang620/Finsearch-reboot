@@ -69,7 +69,7 @@ from langgraph.graph import END, START, StateGraph
 from langgraph.runtime import Runtime
 
 _DEFAULT_FORM_TYPE = "10-K"
-_DEFAULT_MODEL = "qwen2.5-14b-instruct-1m"
+_DEFAULT_MODEL = "ollama/qwen2.5:14b-instruct"
 _MAX_QUERIES = 4
 _ALLOWED_DOC_TYPES = {"text_chunk", "table", "table_row"}
 _JOB_TYPES = {"metric_extract", "narrative_extract"}

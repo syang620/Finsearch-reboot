@@ -1,7 +1,7 @@
 import sys
 from pathlib import Path
 import unittest
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, call, patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "src"))
 
@@ -49,13 +49,48 @@ class RetrievalAgentDispatchTests(unittest.IsolatedAsyncioTestCase):
             return {"ok": True, "state": state, "retrieval": expected_output}
 
         with (
-            patch("llm_client.build_chat_model", return_value=SimpleModel("mock")),
+            patch(
+                "agents.retrieval.query_planner_v2.build_chat_model",
+                side_effect=lambda *, model, temperature: SimpleModel(model),
+            ) as mock_build_chat_model,
             patch("agents.retrieval.query_planner_v2.retrieval_agent_v2", new=AsyncMock(side_effect=fake_v2)) as mock_v2,
         ):
             result = await retrieval_agent_entry(_base_state(), client=object())
 
         self.assertEqual(mock_v2.await_count, 1)
+        self.assertEqual(
+            mock_build_chat_model.call_args_list,
+            [
+                call(model="ollama/qwen2.5:14b-instruct", temperature=0.0),
+                call(model="ollama/qwen2.5:14b-instruct", temperature=0.0),
+            ],
+        )
         self.assertEqual(result.get("retrieval", {}).get("metadata_used", {}).get("retrieval_agent_flow"), "query_planner_v2")
+
+    async def test_explicit_retrieval_and_reviewer_models_override_default(self) -> None:
+        state = _base_state()
+        state["retrieval_query_planner_model"] = "ollama/qwen3.5:4b"
+        state["retrieval_reviewer_model"] = "ollama/qwen3.5:9b"
+
+        with (
+            patch(
+                "agents.retrieval.query_planner_v2.build_chat_model",
+                side_effect=lambda *, model, temperature: SimpleModel(model),
+            ) as mock_build_chat_model,
+            patch(
+                "agents.retrieval.query_planner_v2.retrieval_agent_v2",
+                new=AsyncMock(return_value={"retrieval": {"ok": True}}),
+            ),
+        ):
+            await retrieval_agent_entry(state, client=object())
+
+        self.assertEqual(
+            mock_build_chat_model.call_args_list,
+            [
+                call(model="ollama/qwen3.5:4b", temperature=0.0),
+                call(model="ollama/qwen3.5:9b", temperature=0.0),
+            ],
+        )
 
     async def test_explicit_legacy_agent_bypasses_v2(self) -> None:
         with patch("agents.retrieval.query_planner_v2.retrieval_agent_v2") as mock_v2:
