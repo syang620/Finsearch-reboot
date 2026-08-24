@@ -104,6 +104,7 @@ _ORCHESTRATOR_CHECKPOINTER_OWNER: Optional[
 ] = None
 _ORCHESTRATOR_CHECKPOINTER_LOCK: Optional[asyncio.Lock] = None
 _ORCHESTRATOR_CHECKPOINTER_CLOSING = False
+_ORCHESTRATOR_CHECKPOINTER_CLOSE_TASK: Optional[asyncio.Task[None]] = None
 _ANALYST_CACHE: "OrderedDict[str, AnalystAgent]" = OrderedDict()
 _ANALYST_BUILD_LOCKS: Dict[str, asyncio.Lock] = {}
 _ANALYST_DEFAULT_MODEL = "qwen2.5-14b-instruct-1m"
@@ -342,30 +343,23 @@ async def _reset_orchestrator_mcp_client(
         pass
 
 
-async def aclose_orchestrator_runtime() -> None:
+async def _close_orchestrator_checkpointer_lifecycle() -> None:
     global _ORCHESTRATOR_CHECKPOINTER
     global _ORCHESTRATOR_CHECKPOINTER_CLOSING
     global _ORCHESTRATOR_CHECKPOINTER_OWNER
     global _ORCHESTRATOR_CHECKPOINTER_LOCK
-    global _ORCHESTRATOR_MCP_CLIENT
 
     if _ORCHESTRATOR_CHECKPOINTER_LOCK is None:
         _ORCHESTRATOR_CHECKPOINTER_LOCK = asyncio.Lock()
 
-    owns_checkpointer_teardown = False
-    async with _ORCHESTRATOR_CHECKPOINTER_LOCK:
-        if not _ORCHESTRATOR_CHECKPOINTER_CLOSING:
-            _ORCHESTRATOR_CHECKPOINTER_CLOSING = True
-            owns_checkpointer_teardown = True
-
-    if owns_checkpointer_teardown:
-        background_tasks = tuple(_BACKGROUND_TASKS)
+    background_tasks = tuple(_BACKGROUND_TASKS)
+    try:
         for task in background_tasks:
             task.cancel()
         if background_tasks:
             await asyncio.gather(*background_tasks, return_exceptions=True)
-            _BACKGROUND_TASKS.difference_update(background_tasks)
-
+    finally:
+        _BACKGROUND_TASKS.difference_update(background_tasks)
         async with _ORCHESTRATOR_CHECKPOINTER_LOCK:
             owner = _ORCHESTRATOR_CHECKPOINTER_OWNER
             _ORCHESTRATOR_CHECKPOINTER = None
@@ -378,6 +372,27 @@ async def aclose_orchestrator_runtime() -> None:
                         pass
             finally:
                 _ORCHESTRATOR_CHECKPOINTER_CLOSING = False
+
+
+async def aclose_orchestrator_runtime() -> None:
+    global _ORCHESTRATOR_CHECKPOINTER_CLOSE_TASK
+    global _ORCHESTRATOR_CHECKPOINTER_CLOSING
+    global _ORCHESTRATOR_CHECKPOINTER_LOCK
+    global _ORCHESTRATOR_MCP_CLIENT
+
+    if _ORCHESTRATOR_CHECKPOINTER_LOCK is None:
+        _ORCHESTRATOR_CHECKPOINTER_LOCK = asyncio.Lock()
+
+    async with _ORCHESTRATOR_CHECKPOINTER_LOCK:
+        close_task = _ORCHESTRATOR_CHECKPOINTER_CLOSE_TASK
+        if close_task is None or close_task.done():
+            _ORCHESTRATOR_CHECKPOINTER_CLOSING = True
+            close_task = asyncio.create_task(
+                _close_orchestrator_checkpointer_lifecycle()
+            )
+            _ORCHESTRATOR_CHECKPOINTER_CLOSE_TASK = close_task
+
+    await asyncio.shield(close_task)
 
     cached_analysts = list(_ANALYST_CACHE.values())
     _ANALYST_CACHE.clear()

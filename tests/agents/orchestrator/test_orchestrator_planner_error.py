@@ -464,6 +464,24 @@ class OrchestratorRuntimeTests(unittest.IsolatedAsyncioTestCase):
     async def asyncTearDown(self) -> None:
         await aclose_orchestrator_runtime()
 
+    async def _track_blocked_prune(self, orchestrator):
+        prune_cancelled = asyncio.Event()
+        allow_prune_to_finish = asyncio.Event()
+
+        async def _pending_prune() -> None:
+            try:
+                await asyncio.Future()
+            except asyncio.CancelledError:
+                prune_cancelled.set()
+                await allow_prune_to_finish.wait()
+                raise
+
+        prune_task = asyncio.create_task(_pending_prune())
+        orchestrator._BACKGROUND_TASKS.add(prune_task)
+        prune_task.add_done_callback(orchestrator._observe_background_task)
+        await asyncio.sleep(0)
+        return prune_task, prune_cancelled, allow_prune_to_finish
+
     async def _assert_checkpointer_initialization_cleanup(
         self,
         failure: BaseException,
@@ -625,6 +643,119 @@ class OrchestratorRuntimeTests(unittest.IsolatedAsyncioTestCase):
                 self.assertEqual(len(factory_paths), 2)
                 self.assertEqual(await _select_one(second), (1,))
                 await aclose_orchestrator_runtime()
+
+    async def test_cancelled_close_caller_does_not_strand_teardown(self) -> None:
+        import agents.orchestrator.agent_orchestrator as orchestrator
+
+        class _FakeOwner:
+            def __init__(self) -> None:
+                self.closed = 0
+
+            async def __aexit__(self, *_args) -> None:
+                self.closed += 1
+
+        async def _select_one(saver) -> tuple[int]:
+            async with saver.conn.execute("SELECT 1") as cursor:
+                return await cursor.fetchone()
+
+        await aclose_orchestrator_runtime()
+        owner = _FakeOwner()
+        orchestrator._ORCHESTRATOR_CHECKPOINTER = object()
+        orchestrator._ORCHESTRATOR_CHECKPOINTER_OWNER = owner
+        prune_task, prune_cancelled, allow_prune_to_finish = (
+            await self._track_blocked_prune(orchestrator)
+        )
+
+        close_caller = asyncio.create_task(aclose_orchestrator_runtime())
+        await asyncio.wait_for(prune_cancelled.wait(), timeout=1)
+        shared_teardown = orchestrator._ORCHESTRATOR_CHECKPOINTER_CLOSE_TASK
+        self.assertIsNotNone(shared_teardown)
+        self.assertFalse(shared_teardown.done())
+
+        close_caller.cancel()
+        with self.assertRaises(asyncio.CancelledError):
+            await close_caller
+
+        self.assertFalse(shared_teardown.cancelled())
+        self.assertFalse(shared_teardown.done())
+        self.assertTrue(orchestrator._ORCHESTRATOR_CHECKPOINTER_CLOSING)
+        self.assertEqual(owner.closed, 0)
+
+        second_caller = asyncio.create_task(aclose_orchestrator_runtime())
+        await asyncio.sleep(0)
+        self.assertFalse(second_caller.done())
+        self.assertIs(
+            orchestrator._ORCHESTRATOR_CHECKPOINTER_CLOSE_TASK,
+            shared_teardown,
+        )
+
+        allow_prune_to_finish.set()
+        await asyncio.wait_for(second_caller, timeout=1)
+
+        self.assertTrue(shared_teardown.done())
+        self.assertFalse(shared_teardown.cancelled())
+        self.assertTrue(prune_task.cancelled())
+        self.assertEqual(orchestrator._BACKGROUND_TASKS, set())
+        self.assertIsNone(orchestrator._ORCHESTRATOR_CHECKPOINTER)
+        self.assertIsNone(orchestrator._ORCHESTRATOR_CHECKPOINTER_OWNER)
+        self.assertFalse(orchestrator._ORCHESTRATOR_CHECKPOINTER_CLOSING)
+        self.assertEqual(owner.closed, 1)
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            checkpoint_path = Path(tmp_dir) / "orchestrator.sqlite"
+            with mock.patch(
+                "agents.orchestrator.agent_orchestrator._orchestrator_checkpoint_path",
+                return_value=checkpoint_path,
+            ):
+                saver = await _get_orchestrator_checkpointer()
+                self.assertEqual(await _select_one(saver), (1,))
+                await aclose_orchestrator_runtime()
+
+    async def test_concurrent_close_callers_await_shared_teardown(self) -> None:
+        import agents.orchestrator.agent_orchestrator as orchestrator
+
+        class _FakeOwner:
+            def __init__(self) -> None:
+                self.closed = 0
+
+            async def __aexit__(self, *_args) -> None:
+                self.closed += 1
+
+        await aclose_orchestrator_runtime()
+        owner = _FakeOwner()
+        orchestrator._ORCHESTRATOR_CHECKPOINTER = object()
+        orchestrator._ORCHESTRATOR_CHECKPOINTER_OWNER = owner
+        prune_task, prune_cancelled, allow_prune_to_finish = (
+            await self._track_blocked_prune(orchestrator)
+        )
+
+        caller_a = asyncio.create_task(aclose_orchestrator_runtime())
+        await asyncio.wait_for(prune_cancelled.wait(), timeout=1)
+        shared_teardown = orchestrator._ORCHESTRATOR_CHECKPOINTER_CLOSE_TASK
+        self.assertIsNotNone(shared_teardown)
+
+        caller_b = asyncio.create_task(aclose_orchestrator_runtime())
+        await asyncio.sleep(0)
+
+        self.assertFalse(caller_a.done())
+        self.assertFalse(caller_b.done())
+        self.assertFalse(shared_teardown.done())
+        self.assertIs(
+            orchestrator._ORCHESTRATOR_CHECKPOINTER_CLOSE_TASK,
+            shared_teardown,
+        )
+        self.assertEqual(owner.closed, 0)
+
+        allow_prune_to_finish.set()
+        await asyncio.wait_for(asyncio.gather(caller_a, caller_b), timeout=1)
+
+        self.assertTrue(shared_teardown.done())
+        self.assertTrue(prune_task.cancelled())
+        self.assertEqual(orchestrator._BACKGROUND_TASKS, set())
+        self.assertIsNone(orchestrator._ORCHESTRATOR_CHECKPOINTER)
+        self.assertIsNone(orchestrator._ORCHESTRATOR_CHECKPOINTER_OWNER)
+        self.assertFalse(orchestrator._ORCHESTRATOR_CHECKPOINTER_CLOSING)
+        self.assertEqual(owner.closed, 1)
 
     async def test_checkpointer_initialization_failure_preserves_original_error(self) -> None:
         await self._assert_checkpointer_initialization_cleanup(
