@@ -66,6 +66,7 @@ from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langchain_core.tools import tool
 from langgraph.graph import END, START, StateGraph
+from langgraph.runtime import Runtime
 
 _DEFAULT_FORM_TYPE = "10-K"
 _DEFAULT_MODEL = "qwen2.5-14b-instruct-1m"
@@ -327,7 +328,6 @@ class _RunGraphState(TypedDict, total=False):
     model_turns: List[Dict[str, Any]]
     reviewer_turns: List[Dict[str, Any]]
 
-    client: Any
     state: Dict[str, Any]
     job_plan: Dict[str, Any]
     target: Dict[str, Any]
@@ -335,6 +335,10 @@ class _RunGraphState(TypedDict, total=False):
     seed_queries: List[str]
     first_pass_input: Dict[str, Any]
     tool_args: Dict[str, Any] | None
+
+
+class _RunGraphContext(TypedDict):
+    client: Any
 
 
 @tool("sec_retrieve_tables")
@@ -1014,14 +1018,17 @@ class RetrievalWorkflowAgent:
                 "required_doc_types": required_doc_types,
             }
 
-        async def fallback_seed_retrieve(graph_state: _RunGraphState) -> Dict[str, Any]:
+        async def fallback_seed_retrieve(
+            graph_state: _RunGraphState,
+            runtime: Runtime[_RunGraphContext],
+        ) -> Dict[str, Any]:
             attempts = list(graph_state.get("attempts") or [])
             state = dict(graph_state.get("state") or {})
             job_plan = dict(graph_state.get("job_plan") or {})
             target = dict(graph_state.get("target") or {})
             seed_queries = list(graph_state.get("seed_queries") or [])
             required_doc_types = graph_state.get("required_doc_types")
-            client = graph_state.get("client")
+            client = runtime.context["client"]
 
             request = {
                 "queries": list(seed_queries),
@@ -1169,11 +1176,14 @@ class RetrievalWorkflowAgent:
                 return "call_retrieval_agent"
             return END
 
-        async def execute_tool(graph_state: _RunGraphState) -> Dict[str, Any]:
+        async def execute_tool(
+            graph_state: _RunGraphState,
+            runtime: Runtime[_RunGraphContext],
+        ) -> Dict[str, Any]:
             attempts = list(graph_state.get("attempts") or [])
             model_turns = list(graph_state.get("model_turns") or [])
             target = dict(graph_state.get("target") or {})
-            client = graph_state.get("client")
+            client = runtime.context["client"]
             seed_queries = list(graph_state.get("seed_queries") or [])
             required_doc_types = graph_state.get("required_doc_types")
             tool_args = graph_state.get("tool_args")
@@ -1211,7 +1221,7 @@ class RetrievalWorkflowAgent:
                 "model_turns": model_turns,
             }
 
-        builder = StateGraph(_RunGraphState)
+        builder = StateGraph(_RunGraphState, context_schema=_RunGraphContext)
         builder.add_node("call_retrieval_agent", call_retrieval_agent)
         builder.add_node("execute_tool", execute_tool)
         builder.add_node("fallback_seed_retrieve", fallback_seed_retrieve)
@@ -1428,7 +1438,6 @@ class RetrievalWorkflowAgent:
             "attempts": [],
             "model_turns": [],
             "reviewer_turns": [],
-            "client": client,
             "state": state,
             "job_plan": job_plan,
             "target": target,
@@ -1438,7 +1447,10 @@ class RetrievalWorkflowAgent:
         }
 
         try:
-            final_state = await self._run_graph.ainvoke(workflow_input)
+            final_state = await self._run_graph.ainvoke(
+                workflow_input,
+                context={"client": client},
+            )
         except Exception as exc:
             workflow_error = f"RETRIEVER_GRAPH_FAILED: {type(exc).__name__}: {exc}"
             failure_request = {
