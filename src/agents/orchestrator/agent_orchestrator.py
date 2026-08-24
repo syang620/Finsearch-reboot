@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 import asyncio
+from contextlib import AbstractAsyncContextManager
 import json
 import logging
 import os
 import re
+import sys
 from functools import lru_cache
 from pathlib import Path
 import operator
@@ -97,6 +99,9 @@ def _orchestrator_checkpoint_ttl_seconds() -> int:
 
 
 _ORCHESTRATOR_CHECKPOINTER: Optional[AsyncSqliteSaver] = None
+_ORCHESTRATOR_CHECKPOINTER_OWNER: Optional[
+    AbstractAsyncContextManager[AsyncSqliteSaver]
+] = None
 _ORCHESTRATOR_CHECKPOINTER_LOCK: Optional[asyncio.Lock] = None
 _ANALYST_CACHE: "OrderedDict[str, AnalystAgent]" = OrderedDict()
 _ANALYST_BUILD_LOCKS: Dict[str, asyncio.Lock] = {}
@@ -153,7 +158,9 @@ def _observe_background_task(task: asyncio.Task[Any]) -> None:
 
 
 async def _get_orchestrator_checkpointer() -> AsyncSqliteSaver:
-    global _ORCHESTRATOR_CHECKPOINTER, _ORCHESTRATOR_CHECKPOINTER_LOCK
+    global _ORCHESTRATOR_CHECKPOINTER
+    global _ORCHESTRATOR_CHECKPOINTER_OWNER
+    global _ORCHESTRATOR_CHECKPOINTER_LOCK
     if _ORCHESTRATOR_CHECKPOINTER is not None:
         return _ORCHESTRATOR_CHECKPOINTER
     if _ORCHESTRATOR_CHECKPOINTER_LOCK is None:
@@ -165,14 +172,29 @@ async def _get_orchestrator_checkpointer() -> AsyncSqliteSaver:
 
         path = _orchestrator_checkpoint_path()
         path.parent.mkdir(parents=True, exist_ok=True)
-        _ORCHESTRATOR_CHECKPOINTER = await AsyncSqliteSaver.from_conn_string(
-            str(path)
-        ).__aenter__()
-        await _ORCHESTRATOR_CHECKPOINTER.conn.execute("PRAGMA journal_mode=WAL;")
-        await _ORCHESTRATOR_CHECKPOINTER.conn.execute("PRAGMA busy_timeout = 5000;")
-        await _ORCHESTRATOR_CHECKPOINTER.conn.commit()
-        await _ORCHESTRATOR_CHECKPOINTER.setup()
-        return _ORCHESTRATOR_CHECKPOINTER
+        owner = AsyncSqliteSaver.from_conn_string(str(path))
+        entered = False
+        try:
+            saver = await owner.__aenter__()
+            entered = True
+            await saver.conn.execute("PRAGMA journal_mode=WAL;")
+            await saver.conn.execute("PRAGMA busy_timeout = 5000;")
+            await saver.conn.commit()
+            await saver.setup()
+        except BaseException:
+            exc_info = sys.exc_info()
+            if entered:
+                try:
+                    await owner.__aexit__(*exc_info)
+                except BaseException:
+                    logger.exception(
+                        "Failed to close orchestrator checkpointer after initialization error"
+                    )
+            raise
+
+        _ORCHESTRATOR_CHECKPOINTER_OWNER = owner
+        _ORCHESTRATOR_CHECKPOINTER = saver
+        return saver
 
 
 async def _prune_stale_orchestrator_runs(*, max_age_seconds: int) -> int:
@@ -321,6 +343,8 @@ async def _reset_orchestrator_mcp_client(
 
 async def aclose_orchestrator_runtime() -> None:
     global _ORCHESTRATOR_CHECKPOINTER
+    global _ORCHESTRATOR_CHECKPOINTER_OWNER
+    global _ORCHESTRATOR_CHECKPOINTER_LOCK
     global _ORCHESTRATOR_MCP_CLIENT
 
     cached_analysts = list(_ANALYST_CACHE.values())
@@ -340,13 +364,17 @@ async def aclose_orchestrator_runtime() -> None:
         except Exception:
             pass
 
-    saver = _ORCHESTRATOR_CHECKPOINTER
-    _ORCHESTRATOR_CHECKPOINTER = None
-    if saver is not None:
-        try:
-            await saver.__aexit__(None, None, None)
-        except Exception:
-            pass
+    if _ORCHESTRATOR_CHECKPOINTER_LOCK is None:
+        _ORCHESTRATOR_CHECKPOINTER_LOCK = asyncio.Lock()
+    async with _ORCHESTRATOR_CHECKPOINTER_LOCK:
+        owner = _ORCHESTRATOR_CHECKPOINTER_OWNER
+        _ORCHESTRATOR_CHECKPOINTER = None
+        _ORCHESTRATOR_CHECKPOINTER_OWNER = None
+        if owner is not None:
+            try:
+                await owner.__aexit__(None, None, None)
+            except Exception:
+                pass
 
     _get_orchestrator_graph.cache_clear()
 
