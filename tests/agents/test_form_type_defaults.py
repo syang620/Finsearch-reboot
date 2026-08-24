@@ -8,7 +8,12 @@ import unittest
 
 sys.path.append(str(Path(__file__).resolve().parents[2] / "src"))
 
-from agents.planner.interactive_target_resolution import _build_metadata
+from agents.contracts import FormType
+from agents.planner.interactive_target_resolution import (
+    _build_metadata,
+    _build_planner_output,
+    _pick_form_type,
+)
 from agents.retrieval.query_planner_v2 import RetrievalWorkflowAgent
 from agents.analyst.agent import build_packet_from_retrieval_output
 
@@ -68,6 +73,99 @@ class CaptureClient:
 
 
 class FormTypeNoDefaultTests(unittest.TestCase):
+    def test_fiscal_year_cues_infer_ten_k(self) -> None:
+        queries = [
+            "What was Apple revenue in FY2024?",
+            "What was Apple revenue in FY '24?",
+            "What was Apple revenue for fiscal year 2024?",
+            "What was Apple revenue for fiscal-year 2024?",
+        ]
+
+        for query in queries:
+            with self.subTest(query=query):
+                self.assertEqual(_pick_form_type(query), FormType.TEN_K)
+
+    def test_quarterly_cues_take_precedence_over_fiscal_year(self) -> None:
+        queries = [
+            "What was Apple revenue in its FY2024 10-Q?",
+            "What was Apple revenue in FY2024 Q1?",
+            "What was Apple revenue in the second quarter of fiscal year 2024?",
+        ]
+
+        for query in queries:
+            with self.subTest(query=query):
+                self.assertEqual(_pick_form_type(query), FormType.TEN_Q)
+
+    def test_unresolved_form_type_cues_remain_null(self) -> None:
+        queries = [
+            "What was Apple revenue in 2024?",
+            "What did Apple disclose in its filing?",
+            "What was Apple revenue in FY2024 Q4?",
+        ]
+
+        for query in queries:
+            with self.subTest(query=query):
+                self.assertIsNone(_pick_form_type(query))
+
+    def test_build_planner_output_propagates_deterministic_form_type(self) -> None:
+        query = "What was Apple revenue in FY2024?"
+        target_run = {
+            "planner_state": {
+                "original_user_query": query,
+                "effective_user_query": query,
+                "clarification_history": [],
+            },
+            "deterministic_hints": {
+                "ticker": "AAPL",
+                "fiscal_year": 2024,
+                "form_type": "10-K",
+            },
+            "deterministic_open_issues": [],
+            "metric_guess": "revenue",
+            "deterministic_intent_hint": "filing_fact",
+            "deterministic_task_type_hint": "extract",
+        }
+        target_resolution = {
+            "retrieval_needed": True,
+            "route": "kb",
+            "structured_fact_requests": [],
+            "task_class": "single_target_fact",
+            "targets": [
+                {
+                    "target_id": 1,
+                    "target_key": "AAPL_FY2024",
+                    "company_name": "Apple",
+                    "ticker": "AAPL",
+                    "fiscal_year": 2024,
+                    "form_type": None,
+                }
+            ],
+            "retrieval_plan": {
+                "fanout_mode": "single_target",
+                "jobs": [
+                    {
+                        "applies_to_target_ids": [1],
+                        "goal": "revenue",
+                        "job_type": "metric_extract",
+                    }
+                ],
+            },
+            "open_issues": [],
+        }
+
+        for llm_form_type in (None, "10-Q"):
+            with self.subTest(llm_form_type=llm_form_type):
+                target_resolution["targets"][0]["form_type"] = llm_form_type
+                output = _build_planner_output(
+                    status="completed",
+                    target_run=target_run,
+                    target_resolution=target_resolution,
+                    clarification_request=None,
+                )
+
+                self.assertEqual(output["targets"][0]["form_type"], "10-K")
+                self.assertEqual(output["metadata"]["form_type"], "10-K")
+
     def test_build_metadata_keeps_form_type_null_when_unresolved(self) -> None:
         metadata = _build_metadata(
             targets=[{"ticker": "AAPL", "fiscal_year": 2024}],
