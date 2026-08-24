@@ -553,6 +553,79 @@ class OrchestratorRuntimeTests(unittest.IsolatedAsyncioTestCase):
                 self.assertEqual(await _select_one(second), (1,))
                 await aclose_orchestrator_runtime()
 
+    async def test_shutdown_drains_prune_tasks_before_checkpointer_teardown(self) -> None:
+        import agents.orchestrator.agent_orchestrator as orchestrator
+
+        async def _select_one(saver) -> tuple[int]:
+            async with saver.conn.execute("SELECT 1") as cursor:
+                return await cursor.fetchone()
+
+        prune_cancelled = asyncio.Event()
+        allow_prune_to_finish = asyncio.Event()
+
+        async def _pending_prune() -> None:
+            try:
+                await asyncio.Future()
+            except asyncio.CancelledError:
+                prune_cancelled.set()
+                await allow_prune_to_finish.wait()
+                raise
+
+        await aclose_orchestrator_runtime()
+        original_factory = orchestrator.AsyncSqliteSaver.from_conn_string
+        factory_paths: list[str] = []
+
+        def _tracked_factory(path: str):
+            factory_paths.append(path)
+            return original_factory(path)
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            checkpoint_path = Path(tmp_dir) / "orchestrator.sqlite"
+            with (
+                mock.patch(
+                    "agents.orchestrator.agent_orchestrator._orchestrator_checkpoint_path",
+                    return_value=checkpoint_path,
+                ),
+                mock.patch.object(
+                    orchestrator.AsyncSqliteSaver,
+                    "from_conn_string",
+                    side_effect=_tracked_factory,
+                ),
+            ):
+                first = await _get_orchestrator_checkpointer()
+                self.assertEqual(await _select_one(first), (1,))
+                self.assertEqual(len(factory_paths), 1)
+
+                prune_task = asyncio.create_task(_pending_prune())
+                orchestrator._BACKGROUND_TASKS.add(prune_task)
+                prune_task.add_done_callback(orchestrator._observe_background_task)
+                await asyncio.sleep(0)
+
+                close_task = asyncio.create_task(aclose_orchestrator_runtime())
+                await asyncio.wait_for(prune_cancelled.wait(), timeout=1)
+
+                with self.assertRaisesRegex(RuntimeError, "lifecycle is closing"):
+                    await asyncio.wait_for(
+                        _get_orchestrator_checkpointer(),
+                        timeout=1,
+                    )
+                self.assertEqual(len(factory_paths), 1)
+
+                allow_prune_to_finish.set()
+                await asyncio.wait_for(close_task, timeout=1)
+
+                self.assertTrue(prune_task.cancelled())
+                self.assertEqual(orchestrator._BACKGROUND_TASKS, set())
+                self.assertIsNone(orchestrator._ORCHESTRATOR_CHECKPOINTER)
+                self.assertIsNone(orchestrator._ORCHESTRATOR_CHECKPOINTER_OWNER)
+                self.assertFalse(orchestrator._ORCHESTRATOR_CHECKPOINTER_CLOSING)
+
+                second = await _get_orchestrator_checkpointer()
+                self.assertIsNot(second, first)
+                self.assertEqual(len(factory_paths), 2)
+                self.assertEqual(await _select_one(second), (1,))
+                await aclose_orchestrator_runtime()
+
     async def test_checkpointer_initialization_failure_preserves_original_error(self) -> None:
         await self._assert_checkpointer_initialization_cleanup(
             RuntimeError("setup failed"),
