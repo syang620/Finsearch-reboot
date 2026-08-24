@@ -8,6 +8,7 @@ import requests
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage, BaseMessage
 from langchain_core.messages.ai import default_tool_parser
+from langchain_core.messages.tool import tool_call
 from langchain_core.messages.utils import convert_to_openai_messages
 from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.utils.function_calling import convert_to_openai_tool
@@ -317,6 +318,28 @@ def _response_message_text(message: Dict[str, Any]) -> str:
                 parts.append(str(block))
         return "\n".join(parts).strip()
     return "" if content is None else str(content)
+
+
+def _parse_ollama_tool_calls(raw_tool_calls: list[dict[str, Any]]) -> tuple[list[Any], list[Any]]:
+    tool_calls: list[Any] = []
+    invalid_tool_calls: list[Any] = []
+    for raw_tool_call in raw_tool_calls:
+        function = raw_tool_call.get("function")
+        arguments = function.get("arguments") if isinstance(function, dict) else None
+        if isinstance(arguments, dict):
+            tool_calls.append(
+                tool_call(
+                    name=str(function.get("name") or ""),
+                    args=arguments,
+                    id=raw_tool_call.get("id"),
+                )
+            )
+            continue
+
+        parsed, invalid = default_tool_parser([raw_tool_call])
+        tool_calls.extend(parsed)
+        invalid_tool_calls.extend(invalid)
+    return tool_calls, invalid_tool_calls
 
 
 def dashscope_chat_completion(
@@ -666,7 +689,7 @@ class OllamaChatModel(BaseChatModel):
         )
         raw_message = data.get("message") or {}
         raw_tool_calls = raw_message.get("tool_calls") or []
-        tool_calls, invalid_tool_calls = default_tool_parser(raw_tool_calls)
+        tool_calls, invalid_tool_calls = _parse_ollama_tool_calls(raw_tool_calls)
         message = AIMessage(
             content=_response_message_text(raw_message),
             tool_calls=tool_calls,
