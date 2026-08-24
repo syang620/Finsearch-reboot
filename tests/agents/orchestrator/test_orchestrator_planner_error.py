@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import asyncio
+import tempfile
 import unittest
+from pathlib import Path
 from unittest import mock
 
 from langgraph.checkpoint.memory import InMemorySaver
@@ -23,6 +25,7 @@ from agents.orchestrator.agent_orchestrator import (
     _build_runtime_contract_error_plan,
     _format_runtime_contract_validation_error,
     _get_pooled_analyst,
+    _get_orchestrator_checkpointer,
     _get_orchestrator_graph,
     _graph_config,
     _planner_error_node,
@@ -461,6 +464,179 @@ class OrchestratorRuntimeTests(unittest.IsolatedAsyncioTestCase):
     async def asyncTearDown(self) -> None:
         await aclose_orchestrator_runtime()
 
+    async def _assert_checkpointer_initialization_cleanup(
+        self,
+        failure: BaseException,
+        *,
+        cleanup_failure: BaseException | None = None,
+    ) -> None:
+        import agents.orchestrator.agent_orchestrator as orchestrator
+
+        class _FailingConnection:
+            async def execute(self, _sql: str) -> None:
+                raise failure
+
+        class _FakeSaver:
+            def __init__(self) -> None:
+                self.conn = _FailingConnection()
+
+        class _FakeOwner:
+            def __init__(self) -> None:
+                self.exited = 0
+                self.exit_args = None
+
+            async def __aenter__(self):
+                return _FakeSaver()
+
+            async def __aexit__(self, *args):
+                self.exited += 1
+                self.exit_args = args
+                if cleanup_failure is not None:
+                    raise cleanup_failure
+
+        await aclose_orchestrator_runtime()
+        owner = _FakeOwner()
+        with (
+            mock.patch(
+                "agents.orchestrator.agent_orchestrator._orchestrator_checkpoint_path",
+                return_value=Path("unused-checkpointer.sqlite"),
+            ),
+            mock.patch.object(
+                orchestrator.AsyncSqliteSaver,
+                "from_conn_string",
+                return_value=owner,
+            ),
+            mock.patch.object(orchestrator.logger, "exception") as log_exception,
+        ):
+            caught = None
+            try:
+                await _get_orchestrator_checkpointer()
+            except BaseException as exc:
+                caught = exc
+
+        self.assertIs(caught, failure)
+        self.assertEqual(owner.exited, 1)
+        self.assertIs(owner.exit_args[1], failure)
+        self.assertIsNone(orchestrator._ORCHESTRATOR_CHECKPOINTER)
+        self.assertIsNone(orchestrator._ORCHESTRATOR_CHECKPOINTER_OWNER)
+        self.assertEqual(log_exception.call_count, int(cleanup_failure is not None))
+
+    async def test_real_sqlite_checkpointer_lifetime_and_reinitialization(self) -> None:
+        import agents.orchestrator.agent_orchestrator as orchestrator
+
+        async def _select_one(saver) -> tuple[int]:
+            async with saver.conn.execute("SELECT 1") as cursor:
+                return await cursor.fetchone()
+
+        await aclose_orchestrator_runtime()
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            checkpoint_path = Path(tmp_dir) / "orchestrator.sqlite"
+            with mock.patch(
+                "agents.orchestrator.agent_orchestrator._orchestrator_checkpoint_path",
+                return_value=checkpoint_path,
+            ):
+                first = await _get_orchestrator_checkpointer()
+                self.assertEqual(await _select_one(first), (1,))
+
+                reused = await _get_orchestrator_checkpointer()
+                self.assertIs(reused, first)
+                self.assertEqual(await _select_one(reused), (1,))
+
+                await aclose_orchestrator_runtime()
+                self.assertIsNone(orchestrator._ORCHESTRATOR_CHECKPOINTER)
+                self.assertIsNone(orchestrator._ORCHESTRATOR_CHECKPOINTER_OWNER)
+                with self.assertRaises(Exception):
+                    await first.conn.execute("SELECT 1")
+
+                second = await _get_orchestrator_checkpointer()
+                self.assertIsNot(second, first)
+                self.assertEqual(await _select_one(second), (1,))
+                await aclose_orchestrator_runtime()
+
+    async def test_shutdown_drains_prune_tasks_before_checkpointer_teardown(self) -> None:
+        import agents.orchestrator.agent_orchestrator as orchestrator
+
+        async def _select_one(saver) -> tuple[int]:
+            async with saver.conn.execute("SELECT 1") as cursor:
+                return await cursor.fetchone()
+
+        prune_cancelled = asyncio.Event()
+        allow_prune_to_finish = asyncio.Event()
+
+        async def _pending_prune() -> None:
+            try:
+                await asyncio.Future()
+            except asyncio.CancelledError:
+                prune_cancelled.set()
+                await allow_prune_to_finish.wait()
+                raise
+
+        await aclose_orchestrator_runtime()
+        original_factory = orchestrator.AsyncSqliteSaver.from_conn_string
+        factory_paths: list[str] = []
+
+        def _tracked_factory(path: str):
+            factory_paths.append(path)
+            return original_factory(path)
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            checkpoint_path = Path(tmp_dir) / "orchestrator.sqlite"
+            with (
+                mock.patch(
+                    "agents.orchestrator.agent_orchestrator._orchestrator_checkpoint_path",
+                    return_value=checkpoint_path,
+                ),
+                mock.patch.object(
+                    orchestrator.AsyncSqliteSaver,
+                    "from_conn_string",
+                    side_effect=_tracked_factory,
+                ),
+            ):
+                first = await _get_orchestrator_checkpointer()
+                self.assertEqual(await _select_one(first), (1,))
+                self.assertEqual(len(factory_paths), 1)
+
+                prune_task = asyncio.create_task(_pending_prune())
+                orchestrator._BACKGROUND_TASKS.add(prune_task)
+                prune_task.add_done_callback(orchestrator._observe_background_task)
+                await asyncio.sleep(0)
+
+                close_task = asyncio.create_task(aclose_orchestrator_runtime())
+                await asyncio.wait_for(prune_cancelled.wait(), timeout=1)
+
+                with self.assertRaisesRegex(RuntimeError, "lifecycle is closing"):
+                    await asyncio.wait_for(
+                        _get_orchestrator_checkpointer(),
+                        timeout=1,
+                    )
+                self.assertEqual(len(factory_paths), 1)
+
+                allow_prune_to_finish.set()
+                await asyncio.wait_for(close_task, timeout=1)
+
+                self.assertTrue(prune_task.cancelled())
+                self.assertEqual(orchestrator._BACKGROUND_TASKS, set())
+                self.assertIsNone(orchestrator._ORCHESTRATOR_CHECKPOINTER)
+                self.assertIsNone(orchestrator._ORCHESTRATOR_CHECKPOINTER_OWNER)
+                self.assertFalse(orchestrator._ORCHESTRATOR_CHECKPOINTER_CLOSING)
+
+                second = await _get_orchestrator_checkpointer()
+                self.assertIsNot(second, first)
+                self.assertEqual(len(factory_paths), 2)
+                self.assertEqual(await _select_one(second), (1,))
+                await aclose_orchestrator_runtime()
+
+    async def test_checkpointer_initialization_failure_preserves_original_error(self) -> None:
+        await self._assert_checkpointer_initialization_cleanup(
+            RuntimeError("setup failed"),
+            cleanup_failure=ValueError("cleanup failed"),
+        )
+
+    async def test_checkpointer_initialization_cancellation_cleans_up(self) -> None:
+        await self._assert_checkpointer_initialization_cleanup(
+            asyncio.CancelledError("initialization cancelled")
+        )
+
     async def test_invoke_orchestrator_uses_async_state_snapshot(self) -> None:
         class _FakeGraph:
             def __init__(self) -> None:
@@ -578,7 +754,7 @@ class OrchestratorRuntimeTests(unittest.IsolatedAsyncioTestCase):
             async def __aexit__(self, *_args) -> None:
                 self.closed += 1
 
-        class _FakeSaver:
+        class _FakeOwner:
             def __init__(self) -> None:
                 self.closed = 0
 
@@ -587,20 +763,28 @@ class OrchestratorRuntimeTests(unittest.IsolatedAsyncioTestCase):
 
         analyst = _FakeAnalyst()
         client = _FakeClient()
-        saver = _FakeSaver()
+        saver = object()
+        owner = _FakeOwner()
 
         import agents.orchestrator.agent_orchestrator as orchestrator
 
         orchestrator._ANALYST_CACHE["model"] = analyst
         orchestrator._ORCHESTRATOR_MCP_CLIENT = client
         orchestrator._ORCHESTRATOR_CHECKPOINTER = saver
+        orchestrator._ORCHESTRATOR_CHECKPOINTER_OWNER = owner
 
+        await asyncio.gather(
+            aclose_orchestrator_runtime(),
+            aclose_orchestrator_runtime(),
+        )
         await aclose_orchestrator_runtime()
 
         self.assertEqual(analyst.closed, 1)
         self.assertEqual(client.closed, 1)
-        self.assertEqual(saver.closed, 1)
+        self.assertEqual(owner.closed, 1)
         self.assertEqual(len(orchestrator._ANALYST_CACHE), 0)
+        self.assertIsNone(orchestrator._ORCHESTRATOR_CHECKPOINTER)
+        self.assertIsNone(orchestrator._ORCHESTRATOR_CHECKPOINTER_OWNER)
 
     async def test_get_pooled_analyst_reuses_single_instance_under_concurrency(self) -> None:
         created = []
