@@ -68,6 +68,7 @@ _QUARTER_RE = re.compile(r"\b(Q[1-4])\b", re.IGNORECASE)
 _QUARTER_WORD_RE = re.compile(r"\b(first|1st|second|2nd|third|3rd|fourth|4th)[-\s]?quarter\b", re.IGNORECASE)
 _ANNUAL_REPORT_RE = re.compile(r"\bannual report\b", re.IGNORECASE)
 _QUARTERLY_REPORT_RE = re.compile(r"\bquarterly report\b", re.IGNORECASE)
+_FISCAL_YEAR_RE = re.compile(r"\bfiscal[-\s]+year\b", re.IGNORECASE)
 _MULTI_YEAR_RE = re.compile(
     r"\b(?:FY\s*)?(19\d{2}|20\d{2}|\d{2})\s*(?:/|-|to|or|and)\s*(?:FY\s*)?(\d{2}|19\d{2}|20\d{2})\b",
     re.IGNORECASE,
@@ -391,6 +392,12 @@ def _pick_form_type(query: str) -> Optional[FormType]:
     if quarter and quarter in {"Q1", "Q2", "Q3"}:
         return FormType.TEN_Q
     if re.search(r"\byear[-\s]?end\b|\byear[-\s]?ended\b|\bat year[-\s]?end\b", query, re.IGNORECASE):
+        return FormType.TEN_K
+    if quarter is None and (
+        _FY_RE.search(query)
+        or _FY_SHORT_RE.search(query)
+        or _FISCAL_YEAR_RE.search(query)
+    ):
         return FormType.TEN_K
     return None
 
@@ -1627,6 +1634,12 @@ def _build_planner_output(
     metric_guess = _normalize_text(target_run.get("metric_guess")) or "filing evidence"
     task_class = _normalize_text((target_resolution or {}).get("task_class")) or "other"
     targets = list((target_resolution or {}).get("targets") or [])
+    deterministic_form_type = _normalize_form_type(deterministic_hints.get("form_type"))
+    if deterministic_form_type is not None:
+        targets = [
+            {**target, "form_type": deterministic_form_type}
+            for target in targets
+        ]
     route = (_normalize_text((target_resolution or {}).get("route")) or "kb").lower()
     if route not in _ALLOWED_ROUTES:
         route = "kb"
