@@ -96,11 +96,39 @@ class FormTypeNoDefaultTests(unittest.TestCase):
             with self.subTest(query=query):
                 self.assertEqual(_pick_form_type(query), FormType.TEN_Q)
 
+    def test_interim_cues_take_precedence_over_fiscal_year(self) -> None:
+        queries = [
+            "FY2024 year-to-date revenue",
+            "fiscal year-to-date revenue as of June 30",
+            "FY2024 YTD revenue",
+            "three months ended March 31, 2024",
+            "six months ended June 30, 2024",
+            "nine months ended September 30, 2024",
+            "quarter-to-date revenue",
+            "QTD revenue",
+            "interim results for fiscal 2024",
+        ]
+
+        for query in queries:
+            with self.subTest(query=query):
+                self.assertEqual(_pick_form_type(query), FormType.TEN_Q)
+
+    def test_explicit_form_type_takes_precedence_over_interim_cues(self) -> None:
+        self.assertEqual(
+            _pick_form_type("FY2024 10-K year-to-date revenue"),
+            FormType.TEN_K,
+        )
+        self.assertEqual(
+            _pick_form_type("FY2024 10-Q revenue"),
+            FormType.TEN_Q,
+        )
+
     def test_unresolved_form_type_cues_remain_null(self) -> None:
         queries = [
             "What was Apple revenue in 2024?",
             "What did Apple disclose in its filing?",
             "What was Apple revenue in FY2024 Q4?",
+            "What was Apple revenue as of June 30, 2024?",
         ]
 
         for query in queries:
@@ -153,18 +181,131 @@ class FormTypeNoDefaultTests(unittest.TestCase):
             "open_issues": [],
         }
 
-        for llm_form_type in (None, "10-Q"):
-            with self.subTest(llm_form_type=llm_form_type):
-                target_resolution["targets"][0]["form_type"] = llm_form_type
-                output = _build_planner_output(
-                    status="completed",
-                    target_run=target_run,
-                    target_resolution=target_resolution,
-                    clarification_request=None,
+        output = _build_planner_output(
+            status="completed",
+            target_run=target_run,
+            target_resolution=target_resolution,
+            clarification_request=None,
+        )
+
+        self.assertEqual(output["targets"][0]["form_type"], "10-K")
+        self.assertEqual(output["metadata"]["form_type"], "10-K")
+
+        target_resolution["targets"][0]["form_type"] = "10-Q"
+        output = _build_planner_output(
+            status="completed",
+            target_run=target_run,
+            target_resolution=target_resolution,
+            clarification_request=None,
+        )
+
+        self.assertEqual(output["targets"][0]["form_type"], "10-Q")
+        self.assertEqual(output["metadata"]["form_type"], "10-Q")
+
+    def test_build_planner_output_preserves_mixed_target_forms(self) -> None:
+        query = "Compare Apple FY2023 revenue with Q1 FY2024 revenue."
+        target_run = {
+            "planner_state": {
+                "original_user_query": query,
+                "effective_user_query": query,
+                "clarification_history": [],
+            },
+            "deterministic_hints": {"form_type": "10-Q"},
+            "deterministic_open_issues": [],
+            "metric_guess": "revenue",
+            "deterministic_intent_hint": "filing_fact",
+            "deterministic_task_type_hint": "compare",
+        }
+        targets = [
+            {
+                "target_id": 1,
+                "target_key": "AAPL_FY2023",
+                "company_name": "Apple",
+                "ticker": "AAPL",
+                "fiscal_year": 2023,
+                "form_type": "10-K",
+            },
+            {
+                "target_id": 2,
+                "target_key": "AAPL_FY2024_Q1",
+                "company_name": "Apple",
+                "ticker": "AAPL",
+                "fiscal_year": 2024,
+                "form_type": "10-Q",
+            },
+        ]
+        target_resolution = {
+            "retrieval_needed": True,
+            "route": "kb",
+            "structured_fact_requests": [],
+            "task_class": "multi_target_compare",
+            "targets": targets,
+            "retrieval_plan": {
+                "fanout_mode": "per_target",
+                "jobs": [
+                    {
+                        "applies_to_target_ids": [1, 2],
+                        "goal": "revenue",
+                        "job_type": "metric_extract",
+                    }
+                ],
+            },
+            "open_issues": [],
+        }
+
+        output = _build_planner_output(
+            status="completed",
+            target_run=target_run,
+            target_resolution=target_resolution,
+            clarification_request=None,
+        )
+
+        self.assertEqual(
+            [target["form_type"] for target in output["targets"]],
+            ["10-K", "10-Q"],
+        )
+        self.assertIsNone(output["metadata"]["form_type"])
+
+        target_resolution["targets"][1]["form_type"] = None
+        output = _build_planner_output(
+            status="completed",
+            target_run=target_run,
+            target_resolution=target_resolution,
+            clarification_request=None,
+        )
+
+        self.assertEqual(
+            [target["form_type"] for target in output["targets"]],
+            ["10-K", None],
+        )
+        self.assertIsNone(output["metadata"]["form_type"])
+
+    def test_build_metadata_requires_all_targets_to_agree_on_form_type(self) -> None:
+        cases = [
+            (["10-K"], "10-K"),
+            (["10-Q"], "10-Q"),
+            (["10-K", "10-K"], "10-K"),
+            (["10-K", "10-Q"], None),
+            (["10-K", None], None),
+            ([None, None], None),
+        ]
+
+        for form_types, expected in cases:
+            with self.subTest(form_types=form_types):
+                targets = [
+                    {
+                        "ticker": "AAPL",
+                        "fiscal_year": 2024,
+                        "form_type": form_type,
+                    }
+                    for form_type in form_types
+                ]
+                metadata = _build_metadata(
+                    targets=targets,
+                    deterministic_hints={"form_type": "10-K"},
                 )
 
-                self.assertEqual(output["targets"][0]["form_type"], "10-K")
-                self.assertEqual(output["metadata"]["form_type"], "10-K")
+                self.assertEqual(metadata["form_type"], expected)
 
     def test_build_metadata_keeps_form_type_null_when_unresolved(self) -> None:
         metadata = _build_metadata(

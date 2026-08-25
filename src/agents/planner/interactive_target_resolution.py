@@ -69,6 +69,11 @@ _QUARTER_WORD_RE = re.compile(r"\b(first|1st|second|2nd|third|3rd|fourth|4th)[-\
 _ANNUAL_REPORT_RE = re.compile(r"\bannual report\b", re.IGNORECASE)
 _QUARTERLY_REPORT_RE = re.compile(r"\bquarterly report\b", re.IGNORECASE)
 _FISCAL_YEAR_RE = re.compile(r"\bfiscal[-\s]+year\b", re.IGNORECASE)
+_INTERIM_PERIOD_RE = re.compile(
+    r"\b(?:YTD|QTD|year[-\s]+to[-\s]+date|quarter[-\s]+to[-\s]+date|interim|"
+    r"(?:three|3|six|6|nine|9)[-\s]+months?(?:[-\s]+ended)?)\b",
+    re.IGNORECASE,
+)
 _MULTI_YEAR_RE = re.compile(
     r"\b(?:FY\s*)?(19\d{2}|20\d{2}|\d{2})\s*(?:/|-|to|or|and)\s*(?:FY\s*)?(\d{2}|19\d{2}|20\d{2})\b",
     re.IGNORECASE,
@@ -390,6 +395,8 @@ def _pick_form_type(query: str) -> Optional[FormType]:
         return FormType.TEN_Q
     quarter = _pick_fiscal_quarter(query)
     if quarter and quarter in {"Q1", "Q2", "Q3"}:
+        return FormType.TEN_Q
+    if _INTERIM_PERIOD_RE.search(query):
         return FormType.TEN_Q
     if re.search(r"\byear[-\s]?end\b|\byear[-\s]?ended\b|\bat year[-\s]?end\b", query, re.IGNORECASE):
         return FormType.TEN_K
@@ -1535,10 +1542,17 @@ def _build_metadata(
             if year is not None
         }
     )
-    form_types = _dedupe_strings(
+    target_form_types = [
         _normalize_form_type(target.get("form_type"))
         for target in targets
-    )
+    ]
+    agreed_form_type = None
+    if target_form_types and all(form_type is not None for form_type in target_form_types):
+        unique_form_types = set(target_form_types)
+        if len(unique_form_types) == 1:
+            agreed_form_type = target_form_types[0]
+    elif not targets:
+        agreed_form_type = _normalize_form_type(deterministic_hints.get("form_type"))
 
     metadata = FilingMetadata(
         ticker=(
@@ -1552,11 +1566,7 @@ def _build_metadata(
             else _normalize_text(deterministic_hints.get("company_name"))
         ),
         fiscal_year=fiscal_years[0] if len(fiscal_years) == 1 else _normalize_int(deterministic_hints.get("fiscal_year")),
-        form_type=_normalize_form_type(
-            first_target.get("form_type")
-            if len(targets) == 1
-            else (form_types[0] if len(form_types) == 1 else deterministic_hints.get("form_type"))
-        ),
+        form_type=agreed_form_type,
         doc_types=deterministic_hints.get("doc_types"),
         fiscal_quarter=deterministic_hints.get("fiscal_quarter"),
     )
@@ -1635,7 +1645,11 @@ def _build_planner_output(
     task_class = _normalize_text((target_resolution or {}).get("task_class")) or "other"
     targets = list((target_resolution or {}).get("targets") or [])
     deterministic_form_type = _normalize_form_type(deterministic_hints.get("form_type"))
-    if deterministic_form_type is not None:
+    if (
+        deterministic_form_type is not None
+        and len(targets) == 1
+        and _normalize_form_type(targets[0].get("form_type")) is None
+    ):
         targets = [
             {**target, "form_type": deterministic_form_type}
             for target in targets
