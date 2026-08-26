@@ -78,6 +78,11 @@ _MULTI_YEAR_RE = re.compile(
     r"\b(?:FY\s*)?(19\d{2}|20\d{2}|\d{2})\s*(?:/|-|to|or|and)\s*(?:FY\s*)?(\d{2}|19\d{2}|20\d{2})\b",
     re.IGNORECASE,
 )
+_FILING_ANCHOR_YEAR_RE = re.compile(
+    r"\b(?:FY\s*'?)?(19\d{2}|20\d{2}|\d{2})\b\s*"
+    r"(?:10[-\s]?[KQ]|filing|annual report|quarterly report)\b",
+    re.IGNORECASE,
+)
 _MULTI_COMPANY_CUE_RE = re.compile(r"\b(compare|versus|vs\.?|and)\b", re.IGNORECASE)
 
 _POSSESSIVE_NAME_RE = re.compile(
@@ -375,7 +380,30 @@ def _has_ambiguous_fiscal_year(query: str) -> bool:
     return False
 
 
+def _pick_anchored_filing_year(query: str) -> Optional[int]:
+    match = _FILING_ANCHOR_YEAR_RE.search(query or "")
+    if not match:
+        return None
+    return _expand_short_year(match.group(1))
+
+
+def _extract_requested_fiscal_years(query: str) -> List[int]:
+    years = [int(match.group(1)) for match in _YEAR_RE.finditer(query or "")]
+    years.extend(
+        int(match.group(1))
+        for match in _FY_RE.finditer(query or "")
+    )
+    years.extend(
+        _expand_short_year(match.group(1))
+        for match in _FY_SHORT_RE.finditer(query or "")
+    )
+    return sorted(set(years))
+
+
 def _pick_fiscal_year(query: str) -> Optional[int]:
+    anchored_year = _pick_anchored_filing_year(query)
+    if anchored_year is not None:
+        return anchored_year
     if _has_ambiguous_fiscal_year(query):
         return None
     m = _FY_RE.search(query)
@@ -411,6 +439,8 @@ def _pick_form_type(query: str) -> Optional[FormType]:
 
 def _guess_metric(query: str) -> str:
     q = (query or "").lower()
+    if "services" in q and ("net sales" in q or "revenue" in q):
+        return "Services net sales"
     if "net debt" in q:
         return "net debt"
     if "total debt" in q or ("debt" in q and "total" in q):
@@ -434,10 +464,26 @@ def _intent_hint_from_query(user_query: str, metric_hint: str) -> Tuple[PlannerI
     q = (user_query or "").lower()
     metric = (metric_hint or "").lower()
 
-    if re.search(r"\bwhat is\b|\bdefine\b|\bmeaning\b|\bexplain\b", q):
+    if re.search(r"\bdefine\b|\bmeaning\b", q):
         return PlannerIntent.DEFINITION, "extract", False, ["definition_pattern"]
+    if re.search(
+        r"\bwhat drove\b|\bwhy did\b|\bhow did\b.{0,60}\bexplain\b|"
+        r"\bdrivers?\s+(?:of|for|behind)\b|\bfactors?\s+(?:driving|behind)\b",
+        q,
+    ):
+        return PlannerIntent.FILING_FACT, "extract", True, ["narrative_explanation"]
 
     calc_cues: List[str] = []
+    if re.search(r"\b(?:calculat(?:e|ed|ing)|comput(?:e|ed|ing)|deriv(?:e|ed|ing))\b", q):
+        calc_cues.append("explicit_calculation")
+    if re.search(r"\bgrowth\s+rate\b", q):
+        calc_cues.append("growth_rate")
+    if re.search(r"\b(?:percentage|percent)\s+(?:increase|decrease|change)\b", q):
+        calc_cues.append("percentage_change")
+    if re.search(r"\bhow much\b.{0,80}\b(?:increase|decrease|change)(?:d)?\b", q):
+        calc_cues.append("change_magnitude")
+    if re.search(r"\bdifference\s+between\b", q):
+        calc_cues.append("difference_between")
     if re.search(r"\bplus\b|\bsum\b|\badd(ed)?\b|\bcombined\b|\baggregate(d)?\b", q):
         calc_cues.append("additive_word")
     if re.search(r"\b(short[-\s]?term).{0,40}(long[-\s]?term)\b|\b(long[-\s]?term).{0,40}(short[-\s]?term)\b", q):
@@ -445,7 +491,7 @@ def _intent_hint_from_query(user_query: str, metric_hint: str) -> Tuple[PlannerI
     if re.search(r"\bminus\b|\bless\b|\bsubtract\b|\bexcluding\b|\bnet of\b", q):
         calc_cues.append("subtractive_word")
     if re.search(
-        r"\b(net debt|ratio|margin|growth|change|delta|vs\.?|versus|compare|difference|yoy|qoq|cagr)\b",
+        r"\b(net debt|ratio|margin|delta|vs\.?|versus|compare|yoy|qoq|cagr)\b",
         q,
     ):
         calc_cues.append("comparison_or_derived_metric")
@@ -454,6 +500,8 @@ def _intent_hint_from_query(user_query: str, metric_hint: str) -> Tuple[PlannerI
 
     if calc_cues:
         return PlannerIntent.FILING_CALC, "compute", True, calc_cues
+    if re.search(r"\bwhat is\b|\bexplain\b", q):
+        return PlannerIntent.DEFINITION, "extract", False, ["definition_pattern"]
     return PlannerIntent.FILING_FACT, "extract", True, []
 
 
@@ -651,18 +699,25 @@ Rules:
 5. Only infer fiscal_year when deterministic_fiscal_year is null and the query explicitly or strongly implies one year.
 6. If the user references a supported group alias, expand it to the underlying canonical entities.
 7. If form_type is unresolved and not clearly implied, return form_type=null rather than guessing.
-8. When multiple fiscal years apply to the same resolved company set, emit one target per (company, fiscal_year) pair.
+8. When multiple fiscal years identify separate filings, emit one target per (company, fiscal_year) pair.
+   When `anchored_filing_comparison=true`, emit only the authoritative filing target from
+   `deterministic_targets`; `comparison_fiscal_years` are periods to extract from that filing,
+   not additional filing targets.
 9. If clarification is needed, DO NOT return anything to the retrieval plan.
 10. `goal` must be a short, atomic, retrieval-only evidence request.
 11. The `goal` field is a retrieval-level instruction dispatched to individual filings.
-    It must NOT reference specific company names, tickers, or fiscal years.
+    It must NOT reference specific company names or tickers. It normally should not name a
+    fiscal year, except that an anchored filing comparison must name every
+    `comparison_fiscal_years` value so both periods are retrieved from the anchored filing.
     It should describe WHAT to extract from a single filing (e.g., "extract annual revenue").
     Comparison, ranking, and aggregation happen downstream — not in the goal.
 12. When all targets require the same extraction, emit exactly ONE job whose
     `applies_to_target_ids` lists every target_id. Do NOT create separate jobs
     per company or per company-year pair unless the extraction goal differs.
-13. `goal` should be generic and reusable without company name or fiscal year.
-14. Do not mention company name(s) or year-to-year comparison language inside `goal`.
+13. `goal` should be generic and reusable without company names; include fiscal years only for
+    an anchored filing comparison.
+14. Do not mention company name(s) inside `goal`. Avoid year-to-year language unless
+    `anchored_filing_comparison=true`.
 15. If `needs_clarification=true`, return `targets=[]`.
 16. Do not emit partial, provisional, or guessed targets before clarification is resolved.
 17. `target_id` must be an integer. Use sequential integers starting at 1.
@@ -676,6 +731,10 @@ How to use the deterministic input:
 - deterministic_ticker: authoritative if non-null
 - deterministic_fiscal_year: authoritative if non-null
 - deterministic_form_type: authoritative if non-null
+- anchored_filing_year: the one filing selected by an explicit phrase such as "FY2024 filing"
+- comparison_fiscal_years: requested periods contained within that anchored filing
+- anchored_filing_comparison: true only when one filing is anchored and a derived calculation
+  requests multiple periods from it
 - unresolved_blockers: tells you which blocking fields remain unresolved after deterministic extraction
 - clarification_history contains prior clarification questions and the user's answers; treat the answers as authoritative user input
 - If unresolved_blockers is empty, do not perform gap filling for ticker or fiscal_year.
@@ -865,7 +924,7 @@ def _normalize_int(value: Any) -> Optional[int]:
 
 
 def _normalize_form_type(value: Any) -> Optional[str]:
-    text = _normalize_text(value)
+    text = _normalize_text(getattr(value, "value", value))
     if text is None:
         return None
     upper = text.upper()
@@ -1160,6 +1219,9 @@ def _build_planner_state(
     deterministic_fiscal_year: Optional[int],
     deterministic_form_type: Optional[str],
     unresolved_blockers: List[str],
+    anchored_filing_year: Optional[int] = None,
+    comparison_fiscal_years: Optional[Sequence[int]] = None,
+    anchored_filing_comparison: bool = False,
     deterministic_tickers: Optional[Sequence[str]] = None,
 ) -> Dict[str, Any]:
     return {
@@ -1171,6 +1233,9 @@ def _build_planner_state(
         "deterministic_fiscal_year": deterministic_fiscal_year,
         "deterministic_form_type": deterministic_form_type,
         "unresolved_blockers": unresolved_blockers,
+        "anchored_filing_year": anchored_filing_year,
+        "comparison_fiscal_years": list(comparison_fiscal_years or []),
+        "anchored_filing_comparison": bool(anchored_filing_comparison),
         "effective_user_query": effective_user_query,
     }
 
@@ -1197,6 +1262,14 @@ def build_target_resolution_payload(
     intent_hint, task_type_hint, retrieval_needed_hint, calc_cues = _intent_hint_from_query(
         effective_user_query,
         metric_guess,
+    )
+    anchored_filing_year = _pick_anchored_filing_year(effective_user_query)
+    comparison_fiscal_years = _extract_requested_fiscal_years(effective_user_query)
+    anchored_filing_comparison = (
+        anchored_filing_year is not None
+        and anchored_filing_year in comparison_fiscal_years
+        and len(comparison_fiscal_years) > 1
+        and intent_hint == PlannerIntent.FILING_CALC
     )
 
     candidate_tickers = _dedupe_strings(_extract_ticker_candidates(effective_user_query))
@@ -1234,6 +1307,9 @@ def build_target_resolution_payload(
         "deterministic_task_type_hint": task_type_hint,
         "deterministic_retrieval_needed_hint": retrieval_needed_hint,
         "deterministic_calc_cues": calc_cues,
+        "anchored_filing_year": anchored_filing_year,
+        "comparison_fiscal_years": comparison_fiscal_years,
+        "anchored_filing_comparison": anchored_filing_comparison,
     }
 
     planner_state = _build_planner_state(
@@ -1245,6 +1321,9 @@ def build_target_resolution_payload(
         deterministic_fiscal_year=deterministic_fiscal_year,
         deterministic_form_type=deterministic_form_type,
         unresolved_blockers=unresolved_blockers,
+        anchored_filing_year=anchored_filing_year,
+        comparison_fiscal_years=comparison_fiscal_years,
+        anchored_filing_comparison=anchored_filing_comparison,
         deterministic_tickers=candidate_tickers,
     )
 
@@ -1377,6 +1456,89 @@ def _normalize_resolution_output(parsed_output: Any) -> Dict[str, Any]:
     }
 
 
+def _apply_anchored_filing_comparison(
+    resolution: Optional[Dict[str, Any]],
+    *,
+    planner_state: Dict[str, Any],
+    metric_guess: str,
+) -> Optional[Dict[str, Any]]:
+    if not resolution or not planner_state.get("anchored_filing_comparison"):
+        return resolution
+    if planner_state.get("unresolved_blockers"):
+        return resolution
+
+    deterministic_targets = [
+        dict(target)
+        for target in (planner_state.get("deterministic_targets") or [])
+        if isinstance(target, dict)
+    ]
+    comparison_years = _dedupe_ints(
+        planner_state.get("comparison_fiscal_years") or []
+    )
+    if len(deterministic_targets) != 1 or len(comparison_years) < 2:
+        return resolution
+
+    deterministic_target = deterministic_targets[0]
+    ticker = _normalize_text(deterministic_target.get("ticker"))
+    fiscal_year = _normalize_int(deterministic_target.get("fiscal_year"))
+    if ticker is None or fiscal_year is None:
+        return resolution
+
+    target = {
+        **deterministic_target,
+        "target_id": 1,
+        "target_key": _build_target_key(
+            ticker=ticker,
+            fiscal_year=fiscal_year,
+            index=1,
+        ),
+    }
+    for model_target in resolution.get("targets") or []:
+        if not isinstance(model_target, dict):
+            continue
+        model_ticker = _normalize_text(model_target.get("ticker"))
+        model_year = _normalize_int(model_target.get("fiscal_year"))
+        if model_ticker not in {None, ticker} or model_year not in {None, fiscal_year}:
+            continue
+        explicit_form_type = _normalize_form_type(model_target.get("form_type"))
+        if explicit_form_type is not None:
+            target["form_type"] = explicit_form_type
+        break
+
+    year_text = " and ".join(str(year) for year in sorted(comparison_years))
+    goal_metric = _normalize_text(metric_guess) or "relevant filing values"
+    open_issues = [
+        issue
+        for issue in (resolution.get("open_issues") or [])
+        if isinstance(issue, dict)
+        and _normalize_text(issue.get("code"))
+        not in {"MULTI_YEAR_QUERY", "FISCAL_YEAR_AMBIGUOUS"}
+    ]
+
+    return {
+        **resolution,
+        "retrieval_needed": True,
+        "route": "kb",
+        "structured_fact_requests": [],
+        "task_class": "single_target_fact",
+        "targets": [target],
+        "retrieval_plan": {
+            "fanout_mode": "single_target",
+            "jobs": [
+                {
+                    "applies_to_target_ids": [1],
+                    "goal": f"extract {goal_metric} for fiscal years {year_text}",
+                    "job_type": "metric_extract",
+                }
+            ],
+        },
+        "needs_clarification": False,
+        "clarification_reason": None,
+        "clarification_questions": [],
+        "open_issues": open_issues,
+    }
+
+
 def _build_default_retrieval_plan(
     *,
     targets: Sequence[Dict[str, Any]],
@@ -1503,7 +1665,7 @@ def _build_fallback_target_resolution(
             ).strip(),
         )
 
-    return {
+    resolution = {
         "retrieval_needed": bool(retrieval_needed),
         "route": "kb",
         "structured_fact_requests": [],
@@ -1524,6 +1686,11 @@ def _build_fallback_target_resolution(
             }
         ],
     }
+    return _apply_anchored_filing_comparison(
+        resolution,
+        planner_state=planner_state,
+        metric_guess=metric_guess,
+    )
 
 
 def _build_metadata(
@@ -1815,6 +1982,11 @@ async def run_target_resolution_prompt_async(
     if llm_error is None and parsed_output is not None:
         try:
             final_resolution = _normalize_resolution_output(parsed_output)
+            final_resolution = _apply_anchored_filing_comparison(
+                final_resolution,
+                planner_state=pre_llm["planner_state"],
+                metric_guess=pre_llm["metric_guess"],
+            )
         except Exception as exc:
             validation_error = f"VALIDATION_FAILED: {exc}"
 
@@ -1830,6 +2002,9 @@ async def run_target_resolution_prompt_async(
         "deterministic_task_type_hint": pre_llm["payload"].get("deterministic_task_type_hint"),
         "deterministic_retrieval_needed_hint": pre_llm["payload"].get("deterministic_retrieval_needed_hint"),
         "deterministic_calc_cues": list(pre_llm["payload"].get("deterministic_calc_cues") or []),
+        "anchored_filing_year": pre_llm["payload"].get("anchored_filing_year"),
+        "comparison_fiscal_years": list(pre_llm["payload"].get("comparison_fiscal_years") or []),
+        "anchored_filing_comparison": bool(pre_llm["payload"].get("anchored_filing_comparison")),
         "expanded_queries": [],
         "expansion_error": None,
         "prompt": prompt,
