@@ -741,7 +741,7 @@ def test_structured_answer_schema_requires_explicit_lists():
     assert {"status", "answer", "used_context_ids", "missing_values", "compare_rows"} <= required
 
 
-def test_missing_computation_preserves_insufficient_data_status():
+def test_missing_computation_accepts_insufficient_data_as_terminal():
     final_answer = AIMessage(
         content="",
         tool_calls=[
@@ -770,8 +770,46 @@ def test_missing_computation_preserves_insufficient_data_status():
 
     result = asyncio.run(agent.arun(packet))
 
-    assert result.ok is False
+    assert result.ok is True
     assert result.status == "insufficient_data"
+    assert result.error is None
+    assert result.missing_values == ["weighted average shares"]
+    assert not any(issue.code == "COMPUTE_RESULT_MISSING" for issue in result.open_issues)
+
+
+def test_missing_computation_with_ok_status_still_fails_closed():
+    final_answer = AIMessage(
+        content="",
+        tool_calls=[
+            {
+                "name": "FinalAnswer",
+                "id": "call-1",
+                "args": {
+                    "status": "ok",
+                    "answer": "The result is unavailable.",
+                    "used_context_ids": ["ctx_1"],
+                    "missing_values": [],
+                    "confidence": 0.4,
+                    "calculation": None,
+                    "compare_rows": [],
+                },
+            }
+        ],
+    )
+
+    packet = _packet("compute")
+    agent = AnalystAgent(max_attempts=1)
+    agent._bound_model_override = _FakeBoundModel([final_answer])
+    agent._tool_map = {"financial_evaluator": object()}
+    agent._tools_available = True
+    agent._graph = agent._build_workflow()
+
+    result = asyncio.run(agent.arun(packet))
+
+    assert result.ok is False
+    assert result.status == "error"
+    assert result.error == "COMPUTE_RESULT_MISSING"
+    assert any(issue.code == "COMPUTE_RESULT_MISSING" for issue in result.open_issues)
 
 
 def test_tool_result_mismatch_fails_closed():

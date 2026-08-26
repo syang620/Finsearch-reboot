@@ -23,6 +23,7 @@ from agents.contracts import (
 )
 from agents.orchestrator.agent_orchestrator import (
     _build_runtime_contract_error_plan,
+    _format_run_output,
     _format_runtime_contract_validation_error,
     _get_pooled_analyst,
     _get_orchestrator_checkpointer,
@@ -272,6 +273,36 @@ class _FakeStructuredFactClient:
 
 
 class OrchestratorPlannerErrorTests(unittest.TestCase):
+    def test_insufficient_data_analyst_result_completes_runtime(self) -> None:
+        snapshot = mock.Mock()
+        snapshot.values = {
+            "plan_obj": {
+                "status": "completed",
+                "route": "kb",
+                "retrieval_needed": True,
+            },
+            "retrieval_state": {"targets": [{"ticker": "AAPL", "fiscal_year": 2024}]},
+            "retrieval_output": {"ok": True},
+            "analyst_result": AnalystRunResult(
+                ok=True,
+                status="insufficient_data",
+                answer="The filing does not contain the required market price.",
+                intent=PlannerIntent.FILING_CALC,
+                metric="price-to-earnings ratio",
+                missing_values=["market share price"],
+                error=None,
+            ),
+            "total_ms": 1,
+        }
+        snapshot.interrupts = ()
+
+        output = _format_run_output(run_id="run-id", state_snapshot=snapshot)
+
+        self.assertTrue(output["ok"])
+        self.assertEqual(output["status"], "completed")
+        self.assertEqual(output["failure_stage"], "none")
+        self.assertEqual(output["analyst"]["status"], "insufficient_data")
+
     def test_route_after_planner_turn_routes_error_and_unknown_status_to_planner_error(self) -> None:
         completed_no_error = {
             "status": "completed",

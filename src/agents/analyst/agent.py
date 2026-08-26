@@ -2274,8 +2274,12 @@ class AnalystAgent:
             )
 
         computation = tool_computation if tool_computation is not None else final_calculation
+        insufficient_data_terminal = (
+            final_output.status == "insufficient_data"
+            and not parsed.get("tool_error")
+        )
 
-        if _requires_calculation(packet):
+        if _requires_calculation(packet) and not insufficient_data_terminal:
             if computation is None or computation.result is None:
                 result_open_issues.append(
                     OpenIssue(
@@ -2344,8 +2348,8 @@ class AnalystAgent:
                 f"tool_exec_ms={timing_ms.get('tool_exec_ms', 0)} total_ms={elapsed}"
             )
 
-        ok = final_output.status == "ok"
-        if _requires_calculation(packet):
+        ok = final_output.status == "ok" or insufficient_data_terminal
+        if _requires_calculation(packet) and final_output.status == "ok":
             ok = ok and computation is not None and computation.result is not None
 
         return AnalystRunResult(
