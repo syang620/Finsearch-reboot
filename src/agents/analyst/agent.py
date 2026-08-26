@@ -1277,16 +1277,63 @@ def _computations_match(
     return math.isclose(float(structured_result), float(tool_result), rel_tol=1e-3, abs_tol=1e-9)
 
 
-def _matching_successful_computation(
+def _normalized_computation_expression(expression: Optional[str]) -> str:
+    return re.sub(r"\s+", "", str(expression or ""))
+
+
+def _computation_variables_match(
+    structured: Dict[str, str],
+    tool_variables: Dict[str, str],
+) -> bool:
+    if set(structured) != set(tool_variables):
+        return False
+    for name, structured_value in structured.items():
+        tool_value = tool_variables[name]
+        structured_number = _to_float(structured_value)
+        tool_number = _to_float(tool_value)
+        if structured_number is not None and tool_number is not None:
+            if not math.isclose(structured_number, tool_number, rel_tol=1e-3, abs_tol=1e-9):
+                return False
+        elif str(structured_value).strip() != str(tool_value).strip():
+            return False
+    return True
+
+
+def _computation_provenance_matches(
+    structured: AnalystComputation,
+    tool_computation: AnalystComputation,
+) -> bool:
+    return (
+        _normalized_computation_expression(structured.expression)
+        == _normalized_computation_expression(tool_computation.expression)
+        and _computation_variables_match(structured.variables, tool_computation.variables)
+    )
+
+
+def _resolve_matching_successful_computation(
     structured: Optional[AnalystComputation],
     successful_computations: List[AnalystComputation],
-) -> Optional[AnalystComputation]:
+) -> tuple[Optional[AnalystComputation], bool]:
     if structured is None:
-        return None
-    for computation in successful_computations:
-        if _computations_match(structured, computation):
-            return computation
-    return None
+        return None, False
+    numeric_matches = [
+        computation
+        for computation in successful_computations
+        if _computations_match(structured, computation)
+    ]
+    if len(numeric_matches) == 1:
+        return numeric_matches[0], False
+    if not numeric_matches:
+        return None, False
+
+    provenance_matches = [
+        computation
+        for computation in numeric_matches
+        if _computation_provenance_matches(structured, computation)
+    ]
+    if len(provenance_matches) == 1:
+        return provenance_matches[0], False
+    return None, True
 
 
 def _tool_error_is_retryable(
@@ -2316,6 +2363,7 @@ class AnalystAgent:
         final_calculation = final_output.calculation
         computation = tool_computation if tool_computation is not None else final_calculation
         calculation_mismatch = False
+        calculation_ambiguous = False
 
         if requires_calculation and not insufficient_data_terminal:
             if parsed.get("tool_error"):
@@ -2324,51 +2372,59 @@ class AnalystAgent:
                     tool_computation,
                 )
             elif final_calculation is not None:
-                matched_computation = _matching_successful_computation(
-                    final_calculation,
-                    successful_computations,
+                matched_computation, calculation_ambiguous = (
+                    _resolve_matching_successful_computation(
+                        final_calculation,
+                        successful_computations,
+                    )
                 )
-                if matched_computation is None:
+                if matched_computation is None and not calculation_ambiguous:
                     calculation_mismatch = True
-                else:
+                elif matched_computation is not None:
                     computation = matched_computation
+                else:
+                    computation = None
             elif len(successful_computations) == 1:
                 computation = successful_computations[0]
             elif len(successful_computations) > 1:
-                result_open_issues.append(
-                    OpenIssue(
-                        code="CALCULATION_RESULT_AMBIGUOUS",
-                        message=(
-                            "FinalAnswer omitted its calculation after multiple successful "
-                            "financial_evaluator computations."
-                        ),
-                        severity=Severity.ERROR,
-                    )
-                )
-                return AnalystRunResult(
-                    ok=False,
-                    status="tool_error",
-                    answer=final_output.answer,
-                    intent=packet.intent,
-                    metric=packet.analysis_task.metric,
-                    used_context_ids=list(final_output.used_context_ids),
-                    missing_values=list(final_output.missing_values),
-                    confidence=final_output.confidence,
-                    computation=None,
-                    compare_rows=list(final_output.compare_rows),
-                    open_issues=result_open_issues,
-                    trace=AnalystTrace(
-                        timing_ms={**timing_ms, "total_ms": elapsed},
-                        used_financial_evaluator=bool(parsed.get("used_financial_evaluator")),
-                        tool_calls=list(parsed.get("tool_calls") or []),
-                        raw_message_count=len(messages),
-                        final_output_valid=True,
-                        tool_error_code=_parsed_tool_error_code(parsed),
-                    ),
-                    error="CALCULATION_RESULT_AMBIGUOUS",
-                )
+                calculation_ambiguous = True
+                computation = None
             else:
                 computation = None
+
+        if calculation_ambiguous:
+            result_open_issues.append(
+                OpenIssue(
+                    code="CALCULATION_RESULT_AMBIGUOUS",
+                    message=(
+                        "FinalAnswer calculation could not be uniquely matched to one "
+                        "successful financial_evaluator computation."
+                    ),
+                    severity=Severity.ERROR,
+                )
+            )
+            return AnalystRunResult(
+                ok=False,
+                status="tool_error",
+                answer=final_output.answer,
+                intent=packet.intent,
+                metric=packet.analysis_task.metric,
+                used_context_ids=list(final_output.used_context_ids),
+                missing_values=list(final_output.missing_values),
+                confidence=final_output.confidence,
+                computation=None,
+                compare_rows=list(final_output.compare_rows),
+                open_issues=result_open_issues,
+                trace=AnalystTrace(
+                    timing_ms={**timing_ms, "total_ms": elapsed},
+                    used_financial_evaluator=bool(parsed.get("used_financial_evaluator")),
+                    tool_calls=list(parsed.get("tool_calls") or []),
+                    raw_message_count=len(messages),
+                    final_output_valid=True,
+                    tool_error_code=_parsed_tool_error_code(parsed),
+                ),
+                error="CALCULATION_RESULT_AMBIGUOUS",
+            )
 
         if calculation_mismatch:
             result_open_issues.append(

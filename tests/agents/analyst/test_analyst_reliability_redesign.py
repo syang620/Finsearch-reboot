@@ -982,6 +982,74 @@ def test_final_calculation_matches_later_successful_computation():
     assert result.computation.result == pytest.approx(growth_result)
 
 
+def test_equal_results_use_unique_final_calculation_provenance():
+    result = _run_computation_history_case(
+        tool_calls=[
+            ("revenue", {"revenue": "100"}),
+            ("expense", {"expense": "100.0"}),
+        ],
+        tool_results=[
+            {"result": 100.0, "expression": "revenue", "variables": {"revenue": "100"}},
+            {"result": 100.0, "expression": "expense", "variables": {"expense": "100.0"}},
+        ],
+        final_calculation={
+            "expression": " expense ",
+            "variables": {"expense": "100"},
+            "result": 100.0,
+        },
+    )
+
+    assert result.ok is True
+    assert result.computation is not None
+    assert result.computation.expression == "expense"
+    assert result.computation.variables == {"expense": "100.0"}
+
+
+def test_equal_results_without_matching_provenance_are_ambiguous():
+    result = _run_computation_history_case(
+        tool_calls=[
+            ("revenue", {"revenue": "100"}),
+            ("expense", {"expense": "100"}),
+        ],
+        tool_results=[
+            {"result": 100.0, "expression": "revenue", "variables": {"revenue": "100"}},
+            {"result": 100.0, "expression": "expense", "variables": {"expense": "100"}},
+        ],
+        final_calculation={
+            "expression": "margin",
+            "variables": {"margin": "100"},
+            "result": 100.0,
+        },
+    )
+
+    assert result.ok is False
+    assert result.error == "CALCULATION_RESULT_AMBIGUOUS"
+    assert result.computation is None
+    assert any(issue.code == "CALCULATION_RESULT_AMBIGUOUS" for issue in result.open_issues)
+
+
+def test_duplicate_matching_provenance_is_ambiguous():
+    result = _run_computation_history_case(
+        tool_calls=[
+            ("revenue", {"revenue": "100"}),
+            ("revenue", {"revenue": "100.0"}),
+        ],
+        tool_results=[
+            {"result": 100.0, "expression": "revenue", "variables": {"revenue": "100"}},
+            {"result": 100.0, "expression": "revenue", "variables": {"revenue": "100.0"}},
+        ],
+        final_calculation={
+            "expression": "revenue",
+            "variables": {"revenue": "100"},
+            "result": 100.0,
+        },
+    )
+
+    assert result.ok is False
+    assert result.error == "CALCULATION_RESULT_AMBIGUOUS"
+    assert result.computation is None
+
+
 def test_final_calculation_must_match_successful_computation_history():
     variables = {"services_2023": "85200", "services_2024": "96169"}
     result = _run_computation_history_case(
