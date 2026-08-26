@@ -983,14 +983,15 @@ def test_final_calculation_matches_later_successful_computation():
 
 
 def test_equal_results_use_unique_final_calculation_provenance():
+    tool_variables = {"revenue": "100", "expense": "100.0"}
     result = _run_computation_history_case(
         tool_calls=[
-            ("revenue", {"revenue": "100"}),
-            ("expense", {"expense": "100.0"}),
+            ("revenue", tool_variables),
+            ("expense", tool_variables),
         ],
         tool_results=[
-            {"result": 100.0, "expression": "revenue", "variables": {"revenue": "100"}},
-            {"result": 100.0, "expression": "expense", "variables": {"expense": "100.0"}},
+            {"result": 100.0, "expression": "revenue", "variables": tool_variables},
+            {"result": 100.0, "expression": "expense", "variables": tool_variables},
         ],
         final_calculation={
             "expression": " expense ",
@@ -1002,7 +1003,7 @@ def test_equal_results_use_unique_final_calculation_provenance():
     assert result.ok is True
     assert result.computation is not None
     assert result.computation.expression == "expense"
-    assert result.computation.variables == {"expense": "100.0"}
+    assert result.computation.variables == tool_variables
 
 
 def test_equal_results_without_matching_provenance_are_ambiguous():

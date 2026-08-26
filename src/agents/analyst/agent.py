@@ -1282,12 +1282,17 @@ def _normalized_computation_expression(expression: Optional[str]) -> str:
 
 
 def _computation_variables_match(
+    expression: Optional[str],
     structured: Dict[str, str],
     tool_variables: Dict[str, str],
 ) -> bool:
-    if set(structured) != set(tool_variables):
+    referenced_variables = set(_EXPRESSION_IDENTIFIER_RE.findall(str(expression or "")))
+    if not referenced_variables.issubset(structured) or not referenced_variables.issubset(
+        tool_variables
+    ):
         return False
-    for name, structured_value in structured.items():
+    for name in referenced_variables:
+        structured_value = structured[name]
         tool_value = tool_variables[name]
         structured_number = _to_float(structured_value)
         tool_number = _to_float(tool_value)
@@ -1306,7 +1311,11 @@ def _computation_provenance_matches(
     return (
         _normalized_computation_expression(structured.expression)
         == _normalized_computation_expression(tool_computation.expression)
-        and _computation_variables_match(structured.variables, tool_computation.variables)
+        and _computation_variables_match(
+            structured.expression,
+            structured.variables,
+            tool_computation.variables,
+        )
     )
 
 
