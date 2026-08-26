@@ -1070,6 +1070,25 @@ def test_expression_normalization_preserves_token_boundaries():
     assert result.computation is None
 
 
+def test_provenance_inputs_require_exact_normalized_numeric_match():
+    result = _run_computation_history_case(
+        tool_calls=[("x-x", {"x": "1000"}), ("x-x", {"x": "1002"})],
+        tool_results=[
+            {"result": 0.0, "expression": "x-x", "variables": {"x": "1000"}},
+            {"result": 0.0, "expression": "x-x", "variables": {"x": "1002"}},
+        ],
+        final_calculation={
+            "expression": "x-x",
+            "variables": {"x": "1001.9"},
+            "result": 0.0,
+        },
+    )
+
+    assert result.ok is False
+    assert result.error == "CALCULATION_RESULT_AMBIGUOUS"
+    assert result.computation is None
+
+
 def test_final_calculation_must_match_successful_computation_history():
     variables = {"services_2023": "85200", "services_2024": "96169"}
     result = _run_computation_history_case(

@@ -21,6 +21,7 @@ import sys
 import time
 import warnings
 from dataclasses import dataclass
+from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import Annotated, Any, Dict, List, Literal, Optional, Sequence
 
@@ -1286,6 +1287,24 @@ def _normalized_computation_expression(expression: Optional[str]) -> Optional[st
     return ast.dump(parsed, annotate_fields=True, include_attributes=False)
 
 
+def _normalized_computation_variable(value: str) -> Optional[Decimal]:
+    text = str(value).strip().replace(",", "").replace("$", "")
+    if text.startswith("(") and text.endswith(")"):
+        text = "-" + text[1:-1].strip()
+    is_percent = text.endswith("%")
+    if is_percent:
+        text = text[:-1].strip()
+    if not text:
+        return None
+    try:
+        normalized = Decimal(text)
+    except InvalidOperation:
+        return None
+    if not normalized.is_finite():
+        return None
+    return normalized / Decimal(100) if is_percent else normalized
+
+
 def _computation_variables_match(
     expression: Optional[str],
     structured: Dict[str, str],
@@ -1299,10 +1318,10 @@ def _computation_variables_match(
     for name in referenced_variables:
         structured_value = structured[name]
         tool_value = tool_variables[name]
-        structured_number = _to_float(structured_value)
-        tool_number = _to_float(tool_value)
+        structured_number = _normalized_computation_variable(structured_value)
+        tool_number = _normalized_computation_variable(tool_value)
         if structured_number is not None and tool_number is not None:
-            if not math.isclose(structured_number, tool_number, rel_tol=1e-3, abs_tol=1e-9):
+            if structured_number != tool_number:
                 return False
         elif str(structured_value).strip() != str(tool_value).strip():
             return False
