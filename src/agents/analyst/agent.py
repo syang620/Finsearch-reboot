@@ -190,6 +190,12 @@ class _SerializedToolCall(TypedDict, total=False):
     id: Optional[str]
 
 
+class _SerializedAnalystComputation(TypedDict):
+    expression: Optional[str]
+    variables: Dict[str, str]
+    result: float
+
+
 class _SerializedInvalidToolCall(TypedDict, total=False):
     name: str
     id: Optional[str]
@@ -941,6 +947,8 @@ def _parse_agent_messages(messages: List[Any]) -> Dict[str, Any]:
     numeric_result: Optional[float] = None
     tool_error: Optional[str] = None
     tool_error_code: Optional[str] = None
+    successful_computations: List[_SerializedAnalystComputation] = []
+    evaluator_call_inputs: Dict[str, Dict[str, Any]] = {}
 
     for msg in messages:
         if isinstance(msg, HumanMessage):
@@ -961,6 +969,12 @@ def _parse_agent_messages(messages: List[Any]) -> Dict[str, Any]:
                     raw_vars = args.get("variables")
                     if isinstance(raw_vars, dict):
                         variables = {str(k): str(v) for k, v in raw_vars.items()}
+                    call_id = call.get("id")
+                    if call_id is not None:
+                        evaluator_call_inputs[str(call_id)] = {
+                            "expression": args.get("expression"),
+                            "variables": dict(raw_vars) if isinstance(raw_vars, dict) else {},
+                        }
             elif name == "FinalAnswer":
                 final_tool_called = True
                 try:
@@ -974,21 +988,36 @@ def _parse_agent_messages(messages: List[Any]) -> Dict[str, Any]:
         if isinstance(msg, ToolMessage) and getattr(msg, "name", None) == "financial_evaluator":
             used_financial_evaluator = True
             structured = _structured_tool_payload(msg)
+            tool_call_id = getattr(msg, "tool_call_id", None)
+            call_inputs = evaluator_call_inputs.get(str(tool_call_id), {}) if tool_call_id is not None else {}
             if isinstance(structured, dict):
-                expression = structured.get("expression") or expression
+                expression = structured.get("expression") or call_inputs.get("expression") or expression
                 raw_vars = structured.get("variables")
+                if not isinstance(raw_vars, dict):
+                    raw_vars = call_inputs.get("variables")
                 if isinstance(raw_vars, dict):
                     variables = {str(k): str(v) for k, v in raw_vars.items()}
                 raw_error = structured.get("error")
                 raw_error_code = structured.get("error_code")
-                if raw_error:
-                    tool_error = str(raw_error)
+                message_failed = bool(raw_error) or str(getattr(msg, "status", "") or "").strip().lower() == "error"
+                if message_failed:
+                    tool_error = str(raw_error or _message_text(msg) or "financial_evaluator returned an error")
                     tool_error_code = str(raw_error_code).strip() if raw_error_code is not None else None
                     numeric_result = None
+                    maybe_float = None
                 else:
                     tool_error = None
                     tool_error_code = None
-                maybe_float = _first_float_from_object(structured)
+                    maybe_float = _first_float_from_object(structured)
+                    explicit_result = _to_float(structured.get("result"))
+                    if explicit_result is not None:
+                        successful_computations.append(
+                            {
+                                "expression": str(expression) if expression is not None else None,
+                                "variables": dict(variables),
+                                "result": explicit_result,
+                            }
+                        )
             else:
                 maybe_float = _first_float(_message_text(msg))
                 tool_error = None
@@ -1025,6 +1054,7 @@ def _parse_agent_messages(messages: List[Any]) -> Dict[str, Any]:
         "expression": expression,
         "variables": variables,
         "numeric_result": numeric_result,
+        "successful_computations": successful_computations,
         "tool_error": tool_error,
         "tool_error_code": tool_error_code,
     }
@@ -1061,6 +1091,7 @@ class _SerializedAnalystParsedState(TypedDict, total=False):
     expression: Optional[str]
     variables: Dict[str, str]
     numeric_result: Optional[float]
+    successful_computations: List[_SerializedAnalystComputation]
     tool_error: Optional[str]
     tool_error_code: Optional[str]
     tool_round_limit_exceeded: bool
@@ -1210,6 +1241,29 @@ def _computation_from_parsed_state(parsed: Dict[str, Any] | _SerializedAnalystPa
     )
 
 
+def _successful_computations_from_parsed_state(
+    parsed: Dict[str, Any] | _SerializedAnalystParsedState,
+) -> List[AnalystComputation]:
+    computations: List[AnalystComputation] = []
+    raw_computations = parsed.get("successful_computations")
+    if isinstance(raw_computations, list):
+        for raw_computation in raw_computations:
+            if not isinstance(raw_computation, dict):
+                continue
+            try:
+                computation = AnalystComputation.model_validate(raw_computation)
+            except ValidationError:
+                continue
+            if computation.result is not None:
+                computations.append(computation)
+        return computations
+
+    legacy_computation = _computation_from_parsed_state(parsed)
+    if legacy_computation is not None and legacy_computation.result is not None and not parsed.get("tool_error"):
+        computations.append(legacy_computation)
+    return computations
+
+
 def _computations_match(
     structured: Optional[AnalystComputation],
     tool_computation: Optional[AnalystComputation],
@@ -1221,6 +1275,18 @@ def _computations_match(
     if structured_result is None or tool_result is None:
         return structured_result is None and tool_result is None
     return math.isclose(float(structured_result), float(tool_result), rel_tol=1e-3, abs_tol=1e-9)
+
+
+def _matching_successful_computation(
+    structured: Optional[AnalystComputation],
+    successful_computations: List[AnalystComputation],
+) -> Optional[AnalystComputation]:
+    if structured is None:
+        return None
+    for computation in successful_computations:
+        if _computations_match(structured, computation):
+            return computation
+    return None
 
 
 def _tool_error_is_retryable(
@@ -2240,9 +2306,71 @@ class AnalystAgent:
                 )
             )
 
+        requires_calculation = _requires_calculation(packet)
+        insufficient_data_terminal = (
+            final_output.status == "insufficient_data"
+            and not parsed.get("tool_error")
+        )
         tool_computation = _computation_from_parsed_state(parsed)
+        successful_computations = _successful_computations_from_parsed_state(parsed)
         final_calculation = final_output.calculation
-        if _requires_calculation(packet) and tool_computation is not None and not _computations_match(final_calculation, tool_computation):
+        computation = tool_computation if tool_computation is not None else final_calculation
+        calculation_mismatch = False
+
+        if requires_calculation and not insufficient_data_terminal:
+            if parsed.get("tool_error"):
+                calculation_mismatch = tool_computation is not None and not _computations_match(
+                    final_calculation,
+                    tool_computation,
+                )
+            elif final_calculation is not None:
+                matched_computation = _matching_successful_computation(
+                    final_calculation,
+                    successful_computations,
+                )
+                if matched_computation is None:
+                    calculation_mismatch = True
+                else:
+                    computation = matched_computation
+            elif len(successful_computations) == 1:
+                computation = successful_computations[0]
+            elif len(successful_computations) > 1:
+                result_open_issues.append(
+                    OpenIssue(
+                        code="CALCULATION_RESULT_AMBIGUOUS",
+                        message=(
+                            "FinalAnswer omitted its calculation after multiple successful "
+                            "financial_evaluator computations."
+                        ),
+                        severity=Severity.ERROR,
+                    )
+                )
+                return AnalystRunResult(
+                    ok=False,
+                    status="tool_error",
+                    answer=final_output.answer,
+                    intent=packet.intent,
+                    metric=packet.analysis_task.metric,
+                    used_context_ids=list(final_output.used_context_ids),
+                    missing_values=list(final_output.missing_values),
+                    confidence=final_output.confidence,
+                    computation=None,
+                    compare_rows=list(final_output.compare_rows),
+                    open_issues=result_open_issues,
+                    trace=AnalystTrace(
+                        timing_ms={**timing_ms, "total_ms": elapsed},
+                        used_financial_evaluator=bool(parsed.get("used_financial_evaluator")),
+                        tool_calls=list(parsed.get("tool_calls") or []),
+                        raw_message_count=len(messages),
+                        final_output_valid=True,
+                        tool_error_code=_parsed_tool_error_code(parsed),
+                    ),
+                    error="CALCULATION_RESULT_AMBIGUOUS",
+                )
+            else:
+                computation = None
+
+        if calculation_mismatch:
             result_open_issues.append(
                 OpenIssue(
                     code="CALCULATION_RESULT_MISMATCH",
@@ -2252,7 +2380,7 @@ class AnalystAgent:
             )
             return AnalystRunResult(
                 ok=False,
-                status="tool_error" if _requires_calculation(packet) else "error",
+                status="tool_error",
                 answer=final_output.answer,
                 intent=packet.intent,
                 metric=packet.analysis_task.metric,
@@ -2273,13 +2401,7 @@ class AnalystAgent:
                 error="CALCULATION_RESULT_MISMATCH",
             )
 
-        computation = tool_computation if tool_computation is not None else final_calculation
-        insufficient_data_terminal = (
-            final_output.status == "insufficient_data"
-            and not parsed.get("tool_error")
-        )
-
-        if _requires_calculation(packet) and not insufficient_data_terminal:
+        if requires_calculation and not insufficient_data_terminal:
             if computation is None or computation.result is None:
                 result_open_issues.append(
                     OpenIssue(
@@ -2349,7 +2471,7 @@ class AnalystAgent:
             )
 
         ok = final_output.status == "ok" or insufficient_data_terminal
-        if _requires_calculation(packet) and final_output.status == "ok":
+        if requires_calculation and final_output.status == "ok":
             ok = ok and computation is not None and computation.result is not None
 
         return AnalystRunResult(

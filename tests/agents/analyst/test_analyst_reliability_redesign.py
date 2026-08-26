@@ -181,6 +181,63 @@ class _FakeInjectedTool:
         return self.result
 
 
+class _SequentialInjectedTool:
+    def __init__(self, results):
+        self._results = list(results)
+        self._index = 0
+
+    async def ainvoke(self, _args):
+        result = self._results[self._index]
+        self._index += 1
+        return result
+
+
+def _run_computation_history_case(*, tool_calls, tool_results, final_calculation):
+    responses = [
+        AIMessage(
+            content="",
+            tool_calls=[
+                {
+                    "name": "financial_evaluator",
+                    "id": f"tool-{index}",
+                    "args": {
+                        "expression": expression,
+                        "variables": variables,
+                    },
+                }
+            ],
+        )
+        for index, (expression, variables) in enumerate(tool_calls, start=1)
+    ]
+    responses.append(
+        AIMessage(
+            content="",
+            tool_calls=[
+                {
+                    "name": "FinalAnswer",
+                    "id": "call-final",
+                    "args": {
+                        "status": "ok",
+                        "answer": "The computed result is 12.87%.",
+                        "used_context_ids": ["ctx_1"],
+                        "missing_values": [],
+                        "confidence": 0.9,
+                        "calculation": final_calculation,
+                        "compare_rows": [],
+                    },
+                }
+            ],
+        )
+    )
+
+    agent = AnalystAgent(max_attempts=1, max_tool_rounds=max(4, len(tool_calls)))
+    agent._bound_model_override = _FakeBoundModel(responses)
+    agent._tool_map = {"financial_evaluator": _SequentialInjectedTool(tool_results)}
+    agent._tools_available = True
+    agent._graph = agent._build_workflow()
+    return asyncio.run(agent.arun(_packet("compute")))
+
+
 def _packet(task_type: str = "extract") -> AnalystPacket:
     return AnalystPacket(
         plan_id="plan-1",
@@ -867,6 +924,184 @@ def test_tool_result_mismatch_fails_closed():
     assert result.computation is not None
     assert result.computation.result == 42.0
     assert any(issue.code == "CALCULATION_RESULT_MISMATCH" for issue in result.open_issues)
+
+
+def test_final_calculation_matches_earlier_successful_computation():
+    growth_expression = "((services_2024 - services_2023) / services_2023) * 100"
+    variables = {"services_2023": "85200", "services_2024": "96169"}
+    growth_result = 12.874413145539906
+    result = _run_computation_history_case(
+        tool_calls=[
+            (growth_expression, variables),
+            ("services_2024", variables),
+        ],
+        tool_results=[
+            {"result": growth_result, "expression": growth_expression, "variables": variables},
+            {"result": 96169.0, "expression": "services_2024", "variables": variables},
+        ],
+        final_calculation={
+            "expression": growth_expression,
+            "variables": variables,
+            "result": growth_result,
+        },
+    )
+
+    assert result.ok is True
+    assert result.status == "ok"
+    assert result.error is None
+    assert result.computation is not None
+    assert result.computation.expression == growth_expression
+    assert result.computation.result == pytest.approx(growth_result)
+    assert not any(issue.code == "CALCULATION_RESULT_MISMATCH" for issue in result.open_issues)
+    assert [call.get("name") for call in result.trace.tool_calls].count("financial_evaluator") == 2
+
+
+def test_final_calculation_matches_later_successful_computation():
+    growth_expression = "((services_2024 - services_2023) / services_2023) * 100"
+    variables = {"services_2023": "85200", "services_2024": "96169"}
+    growth_result = 12.874413145539906
+    result = _run_computation_history_case(
+        tool_calls=[
+            ("services_2024", variables),
+            (growth_expression, variables),
+        ],
+        tool_results=[
+            {"result": 96169.0, "expression": "services_2024", "variables": variables},
+            {"result": growth_result, "expression": growth_expression, "variables": variables},
+        ],
+        final_calculation={
+            "expression": growth_expression,
+            "variables": variables,
+            "result": growth_result,
+        },
+    )
+
+    assert result.ok is True
+    assert result.computation is not None
+    assert result.computation.expression == growth_expression
+    assert result.computation.result == pytest.approx(growth_result)
+
+
+def test_final_calculation_must_match_successful_computation_history():
+    variables = {"services_2023": "85200", "services_2024": "96169"}
+    result = _run_computation_history_case(
+        tool_calls=[
+            ("services_2024 - services_2023", variables),
+            ("services_2024", variables),
+        ],
+        tool_results=[
+            {
+                "result": 10969.0,
+                "expression": "services_2024 - services_2023",
+                "variables": variables,
+            },
+            {"result": 96169.0, "expression": "services_2024", "variables": variables},
+        ],
+        final_calculation={
+            "expression": "unrelated",
+            "variables": variables,
+            "result": 42.0,
+        },
+    )
+
+    assert result.ok is False
+    assert result.error == "CALCULATION_RESULT_MISMATCH"
+    assert any(issue.code == "CALCULATION_RESULT_MISMATCH" for issue in result.open_issues)
+
+
+def test_omitted_final_calculation_uses_only_successful_computation():
+    variables = {"a": "20", "b": "22"}
+    result = _run_computation_history_case(
+        tool_calls=[("a+b", variables)],
+        tool_results=[{"result": 42.0, "expression": "a+b", "variables": variables}],
+        final_calculation=None,
+    )
+
+    assert result.ok is True
+    assert result.computation is not None
+    assert result.computation.expression == "a+b"
+    assert result.computation.result == 42.0
+
+
+def test_omitted_final_calculation_rejects_ambiguous_computation_history():
+    variables = {"a": "20", "b": "22"}
+    result = _run_computation_history_case(
+        tool_calls=[("a+b", variables), ("a", variables)],
+        tool_results=[
+            {"result": 42.0, "expression": "a+b", "variables": variables},
+            {"result": 20.0, "expression": "a", "variables": variables},
+        ],
+        final_calculation=None,
+    )
+
+    assert result.ok is False
+    assert result.error == "CALCULATION_RESULT_AMBIGUOUS"
+    assert result.computation is None
+    assert any(issue.code == "CALCULATION_RESULT_AMBIGUOUS" for issue in result.open_issues)
+
+
+def test_later_tool_error_preserves_history_and_still_fails_closed():
+    variables = {"a": "20", "b": "22"}
+    parsed = _parse_agent_messages(
+        [
+            AIMessage(
+                content="",
+                tool_calls=[
+                    {
+                        "name": "financial_evaluator",
+                        "id": "tool-1",
+                        "args": {"expression": "a+b", "variables": variables},
+                    }
+                ],
+            ),
+            ToolMessage(
+                content='{"result":42,"expression":"a+b","variables":{"a":"20","b":"22"}}',
+                name="financial_evaluator",
+                tool_call_id="tool-1",
+                artifact={"result": 42.0, "expression": "a+b", "variables": variables},
+                status="success",
+            ),
+            AIMessage(
+                content="",
+                tool_calls=[
+                    {
+                        "name": "financial_evaluator",
+                        "id": "tool-2",
+                        "args": {"expression": "a+/b", "variables": variables},
+                    }
+                ],
+            ),
+            ToolMessage(
+                content='{"error":"bad expression","error_code":"invalid_expression"}',
+                name="financial_evaluator",
+                tool_call_id="tool-2",
+                artifact={"error": "bad expression", "error_code": "invalid_expression"},
+                status="error",
+            ),
+        ]
+    )
+    assert parsed["tool_error"] == "bad expression"
+    assert parsed["numeric_result"] is None
+    assert parsed["successful_computations"] == [
+        {"expression": "a+b", "variables": variables, "result": 42.0}
+    ]
+
+    result = _run_computation_history_case(
+        tool_calls=[("a+b", variables), ("a+/b", variables)],
+        tool_results=[
+            {"result": 42.0, "expression": "a+b", "variables": variables},
+            {
+                "error": "bad expression",
+                "error_code": "invalid_expression",
+                "expression": "a+/b",
+                "variables": variables,
+            },
+        ],
+        final_calculation={"expression": "a+b", "variables": variables, "result": 42.0},
+    )
+
+    assert result.ok is False
+    assert any(issue.code == "FINANCIAL_EVALUATOR_ERROR" for issue in result.open_issues)
 
 
 def test_tool_result_rounding_difference_is_accepted():
