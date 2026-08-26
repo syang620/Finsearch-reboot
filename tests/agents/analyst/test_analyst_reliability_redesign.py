@@ -1051,6 +1051,25 @@ def test_duplicate_matching_provenance_is_ambiguous():
     assert result.computation is None
 
 
+def test_expression_normalization_preserves_token_boundaries():
+    result = _run_computation_history_case(
+        tool_calls=[("100", {}), ("50+50", {})],
+        tool_results=[
+            {"result": 100.0, "expression": "100", "variables": {}},
+            {"result": 100.0, "expression": "50+50", "variables": {}},
+        ],
+        final_calculation={
+            "expression": "1 00",
+            "variables": {},
+            "result": 100.0,
+        },
+    )
+
+    assert result.ok is False
+    assert result.error == "CALCULATION_RESULT_AMBIGUOUS"
+    assert result.computation is None
+
+
 def test_final_calculation_must_match_successful_computation_history():
     variables = {"services_2023": "85200", "services_2024": "96169"}
     result = _run_computation_history_case(

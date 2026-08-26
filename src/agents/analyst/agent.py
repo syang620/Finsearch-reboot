@@ -9,6 +9,7 @@ This module provides:
 
 from __future__ import annotations
 
+import ast
 import asyncio
 import inspect
 import json
@@ -1277,8 +1278,12 @@ def _computations_match(
     return math.isclose(float(structured_result), float(tool_result), rel_tol=1e-3, abs_tol=1e-9)
 
 
-def _normalized_computation_expression(expression: Optional[str]) -> str:
-    return re.sub(r"\s+", "", str(expression or ""))
+def _normalized_computation_expression(expression: Optional[str]) -> Optional[str]:
+    try:
+        parsed = ast.parse(str(expression or "").strip(), mode="eval")
+    except (SyntaxError, ValueError, TypeError):
+        return None
+    return ast.dump(parsed, annotate_fields=True, include_attributes=False)
 
 
 def _computation_variables_match(
@@ -1308,8 +1313,10 @@ def _computation_provenance_matches(
     structured: AnalystComputation,
     tool_computation: AnalystComputation,
 ) -> bool:
+    structured_expression = _normalized_computation_expression(structured.expression)
     return (
-        _normalized_computation_expression(structured.expression)
+        structured_expression is not None
+        and structured_expression
         == _normalized_computation_expression(tool_computation.expression)
         and _computation_variables_match(
             structured.expression,
