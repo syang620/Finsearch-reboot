@@ -10,6 +10,11 @@ Default dataset:
 
 - `data/evals/agents/v1/agent_eval_routing_v1.jsonl`
 
+Canonical release baseline: evaluated commit
+`6aae2651518e4495c947e393ed78978b515bd482`; immutable artifacts and full run
+provenance are recorded in `docs/EVALUATION_BASELINES.md` under
+“Route-Aware Agent E2E v1 — 2026-08-26.”
+
 Run deterministic architectural checks:
 
 ```bash
