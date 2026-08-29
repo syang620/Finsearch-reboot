@@ -6,6 +6,12 @@
 **Primary runtime:** `agents.orchestrator.run_multi_agent_orchestration`
 **Purpose:** Align the implemented multi-lane FinSearch runtime with enforceable contracts, route-aware evaluation, typed evidence, and maintainable architecture governance.
 
+## Roadmap status
+
+- PR1 — complete: planner/orchestrator runtime contracts.
+- PR2 — complete: canonical route-aware gate passed at `6aae2651518e4495c947e393ed78978b515bd482`.
+- PR3 — next: centralized structured-fact capability policy.
+
 ---
 
 # 1. Executive Summary

@@ -1,0 +1,55 @@
+{
+  "num_queries": 15,
+  "num_valid_queries": 15,
+  "num_failures": 0,
+  "deterministic": {
+    "score_mean": 1.0,
+    "contract_valid_rate": 1.0,
+    "intent_match_rate": 1.0,
+    "route_match_rate": 1.0,
+    "metadata_match_rate": 1.0,
+    "kb_lane_match_rate": 1.0,
+    "structured_lane_match_rate": 1.0,
+    "structured_metric_match_rate": 1.0,
+    "structured_status_match_rate": 1.0,
+    "reported_status_match_rate": 1.0,
+    "effective_status_match_rate": 1.0,
+    "failure_stage_match_rate": 1.0,
+    "degradation_match_rate": 1.0,
+    "lane_status_consistent_rate": 0.0,
+    "effective_status_consistent_rate": 0.0,
+    "analyst_status_match_rate": 1.0,
+    "tool_use_match_rate": 1.0,
+    "compute_match_rate": 0.0,
+    "citation_match_rate": 1.0,
+    "critical_failure_rate": 0.0,
+    "planner_ms_mean": 30537.0,
+    "retrieval_ms_mean": 32706.866666666665,
+    "structured_fact_ms_mean": 254.53333333333333,
+    "analyst_ms_mean": 55578.8,
+    "total_ms_mean": 119147.6
+  },
+  "ragas": {},
+  "gate": {
+    "deterministic_gate_pass": true,
+    "ragas_gate_pass": true,
+    "overall_pass": true
+  },
+  "config": {
+    "mode": "route_aware_v1",
+    "eval_path": "data/evals/agents/v1/agent_eval_routing_v1.jsonl",
+    "analyst_model": "ollama/qwen2.5:14b-instruct",
+    "planner_model": "ollama/qwen2.5:14b-instruct",
+    "enable_ragas": false,
+    "thresholds": {
+      "deterministic_score_min": 0.9,
+      "max_critical_failure_rate": 0.0,
+      "ragas_faithfulness_min": 0.75,
+      "ragas_answer_relevancy_min": 0.75,
+      "max_ragas_error_rate": 0.1
+    },
+    "timing_ms": {
+      "total": 1787765
+    }
+  }
+}
