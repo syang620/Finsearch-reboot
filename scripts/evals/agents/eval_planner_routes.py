@@ -30,7 +30,7 @@ DEFAULT_CASES_PATH = (
     / "evals"
     / "agents"
     / "planner"
-    / "planner_routing_core.v1.json"
+    / "planner_routing_core.v1.1.json"
 )
 
 
@@ -71,7 +71,7 @@ def _build_parser() -> argparse.ArgumentParser:
         default=str(DEFAULT_CASES_PATH),
         help=(
             "Planner eval JSON file. Defaults to "
-            "data/evals/agents/planner/planner_routing_core.v1.json."
+            "data/evals/agents/planner/planner_routing_core.v1.1.json."
         ),
     )
     parser.add_argument(

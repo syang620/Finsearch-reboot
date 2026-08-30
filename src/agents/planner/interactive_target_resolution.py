@@ -17,6 +17,12 @@ from agents.contracts import (
 )
 from pydantic import BaseModel, Field
 from llm_client import build_chat_model
+from structured_facts.capabilities import (
+    DEFAULT_STRUCTURED_FACT_CAPABILITY_POLICY,
+    StructuredFactCapabilityDecision,
+    StructuredFactQuestionClass,
+    sanitize_capability_text,
+)
 
 
 _TICKER_STOPWORDS = {
@@ -743,7 +749,7 @@ How to use the deterministic input:
 - Choose `route="kb"` for narrative, descriptive, explanatory, qualitative, or filing-evidence questions.
 - Choose `route="structured_fact"` for direct supported numeric metric questions that can be answered by a structured SEC fact.
 - Choose `route="hybrid"` when the user wants both a direct numeric metric answer and filing-based explanation or context.
-- Supported structured-fact metrics are direct reported scalar facts, such as revenue, gross profit, operating income, net income, cash and cash equivalents, total assets, total liabilities, stockholders equity, operating cash flow, capex, and total debt.
+{{STRUCTURED_FACT_CAPABILITY_POLICY}}
 - Do not emit final SEC `metric_id`; that mapping happens downstream.
 - When `route` is `structured_fact` or `hybrid`, emit one or more `structured_fact_requests` using only:
   - `subquestion`
@@ -752,10 +758,6 @@ How to use the deterministic input:
   - `fiscal_year`
   - `fiscal_period`
 - Keep `metric_hint` human-readable, such as "revenue" or "cash and cash equivalents". Do not emit snake_case or registry-style IDs such as "cash_and_cash_equivalents", "total_debt", or "stockholders_equity".
-- Keep routing conservative. If the question is unsupported, comparative, ratio-based, margin-based, per-share, or otherwise likely to need filing interpretation, prefer `kb` over `structured_fact`.
-- Do NOT route derived financial ratios or calculated metrics to `structured_fact`.
-- Examples that should remain `kb`: return on equity (ROE), return on assets (ROA), debt-to-equity ratio, gross margin, operating margin, EBITDA margin, free cash flow yield, EV/EBITDA, EPS, diluted EPS, and balance-sheet summary questions.
-- Do not decompose unsupported ratios, margins, per-share metrics, or calculated metrics into multiple structured fact requests. Keep those questions on `kb`.
 - Do not route multi-company comparison questions such as "Compare Apple and Microsoft revenue in FY2024" to `structured_fact`. Keep them on `kb`.
 - Use `hybrid` only when the user clearly asks for both a supported scalar fact and narrative explanation or filing context.
 
@@ -826,20 +828,6 @@ _ALLOWED_JOB_TYPES = {
     "metric_extract",
     "narrative_extract",
 }
-_UNSUPPORTED_STRUCTURED_FACT_HINT_PATTERNS = (
-    "gross margin",
-    "operating margin",
-    "ebitda margin",
-    "return on equity",
-    "roe",
-    "return on assets",
-    "roa",
-    "debt-to-equity",
-    "debt to equity",
-    "earnings per share",
-    "eps",
-)
-
 class _StructuredTargetResolutionTarget(BaseModel):
     target_id: int = Field(default=1)
     target_key: Optional[str] = None
@@ -968,11 +956,15 @@ def _normalize_open_issue(issue: Any) -> Optional[Dict[str, Any]]:
     severity = (_normalize_text(issue.get("severity")) or "warning").lower()
     if severity not in _ALLOWED_SEVERITIES:
         severity = "warning"
-    return {
+    normalized = {
         "code": code,
         "message": message,
         "severity": severity,
     }
+    metadata = issue.get("metadata")
+    if isinstance(metadata, dict):
+        normalized["metadata"] = dict(metadata)
+    return normalized
 
 
 def _dedupe_strings(values: Sequence[Any], *, limit: Optional[int] = None) -> List[str]:
@@ -1110,37 +1102,259 @@ def _normalize_structured_fact_requests(values: Any) -> List[Dict[str, Any]]:
     return normalized
 
 
-def _should_force_kb_route(
+def _sanitize_retrieval_goal_fragment(
+    value: Any,
+    *,
+    request: Dict[str, Any],
+    targets: Sequence[Dict[str, Any]],
+) -> str:
+    text = sanitize_capability_text(value, limit=160) or "requested financial concept"
+    removals = [
+        request.get("entity_hint"),
+        request.get("fiscal_year"),
+        request.get("fiscal_period"),
+    ]
+    for target in targets:
+        removals.extend(
+            [
+                target.get("company_name"),
+                target.get("ticker"),
+                target.get("fiscal_year"),
+            ]
+        )
+    for removal in removals:
+        token = str(removal or "").strip()
+        if token:
+            text = re.sub(re.escape(token), " ", text, flags=re.IGNORECASE)
+    text = re.sub(r"\bFY\s*\d{2,4}\b", " ", text, flags=re.IGNORECASE)
+    text = re.sub(r"\b(?:19|20)\d{2}\b", " ", text)
+    text = re.sub(r"\s+", " ", text).strip(" ,.;:-")
+    return text or "requested financial concept"
+
+
+def _append_capability_fallback_jobs(
+    retrieval_plan: Optional[Dict[str, Any]],
+    *,
+    rejected: Sequence[tuple[int, Dict[str, Any], StructuredFactCapabilityDecision]],
+    targets: Sequence[Dict[str, Any]],
+) -> Optional[Dict[str, Any]]:
+    target_ids: List[int] = []
+    for target in targets:
+        if not isinstance(target, dict):
+            continue
+        target_id = _normalize_int(target.get("target_id"))
+        if target_id is not None:
+            target_ids.append(target_id)
+    if not target_ids:
+        return retrieval_plan
+
+    jobs = [
+        dict(job)
+        for job in ((retrieval_plan or {}).get("jobs") or [])
+        if isinstance(job, dict)
+    ]
+    seen = {
+        (
+            (_normalize_text(job.get("goal")) or "").lower(),
+            tuple(_dedupe_ints(job.get("applies_to_target_ids") or [])),
+            _normalize_text(job.get("job_type")) or "metric_extract",
+        )
+        for job in jobs
+    }
+    for _index, request, _decision in rejected:
+        fragment = _sanitize_retrieval_goal_fragment(
+            request.get("metric_hint") or request.get("subquestion"),
+            request=request,
+            targets=targets,
+        )
+        goal = f"retrieve filing evidence needed for the requested {fragment}"
+        key = (goal.lower(), tuple(target_ids), "metric_extract")
+        if key in seen:
+            continue
+        seen.add(key)
+        jobs.append(
+            {
+                "applies_to_target_ids": target_ids,
+                "goal": goal,
+                "job_type": "metric_extract",
+            }
+        )
+    if not jobs:
+        return None
+    return {
+        "fanout_mode": "single_target" if len(target_ids) == 1 else "per_target",
+        "jobs": jobs,
+    }
+
+
+def _capability_rejection_issue(
+    *,
+    request_index: int,
+    request: Dict[str, Any],
+    decision: StructuredFactCapabilityDecision,
+    original_route: str,
+    effective_route: Optional[str],
+    outcome: str,
+) -> Dict[str, Any]:
+    return {
+        "code": "STRUCTURED_FACT_CAPABILITY_REJECTED",
+        "message": decision.reason,
+        "severity": "warning",
+        "metadata": {
+            "request_index": request_index,
+            "question_class": decision.question_class.value,
+            "metric_hint": sanitize_capability_text(request.get("metric_hint")),
+            "subquestion": sanitize_capability_text(request.get("subquestion")),
+            "original_route": original_route,
+            "effective_route": effective_route,
+            "outcome": outcome,
+            "reason": decision.reason,
+            "candidate_metric_ids": list(decision.matched_metric_ids),
+        },
+    }
+
+
+def _apply_structured_fact_capability_policy(
     *,
     route: str,
     structured_fact_requests: Sequence[Dict[str, Any]],
+    targets: Sequence[Dict[str, Any]],
+    retrieval_plan: Optional[Dict[str, Any]],
+    needs_clarification: bool,
+    clarification_reason: Optional[str],
+    clarification_questions: Sequence[str],
     open_issues: Sequence[Dict[str, Any]],
-) -> bool:
+    original_user_query: Any = None,
+) -> Dict[str, Any]:
+    original_route = route
     if route not in {"structured_fact", "hybrid"}:
-        return False
+        return {
+            "route": route,
+            "structured_fact_requests": [],
+            "retrieval_plan": retrieval_plan,
+            "needs_clarification": needs_clarification,
+            "clarification_reason": clarification_reason,
+            "clarification_questions": list(clarification_questions),
+            "open_issues": list(open_issues),
+            "targets": list(targets),
+        }
 
     issue_codes = {
-        (_normalize_text(issue.get("code")) or "")
+        _normalize_text(issue.get("code")) or ""
         for issue in open_issues
         if isinstance(issue, dict)
     }
-    if "MULTI_COMPANY_QUERY" in issue_codes:
-        return True
-
-    for request in structured_fact_requests:
-        if not isinstance(request, dict):
-            continue
-        combined_text = " ".join(
-            part
-            for part in (
-                _normalize_metric_hint_text(request.get("metric_hint")),
-                _normalize_text(request.get("subquestion")),
+    multi_company_query = "MULTI_COMPANY_QUERY" in issue_codes
+    if multi_company_query:
+        capability_decisions = tuple(
+            StructuredFactCapabilityDecision(
+                question_class=StructuredFactQuestionClass.UNSUPPORTED_COMPARISON,
+                permitted=False,
+                matched_metric_ids=(),
+                reason=(
+                    "Multi-company comparisons are not executable by the current "
+                    "structured-fact lane."
+                ),
             )
-            if part
-        ).lower()
-        if any(pattern in combined_text for pattern in _UNSUPPORTED_STRUCTURED_FACT_HINT_PATTERNS):
-            return True
-    return False
+            for _request in structured_fact_requests
+        )
+    else:
+        capability_decisions = (
+            DEFAULT_STRUCTURED_FACT_CAPABILITY_POLICY.classify_requests(
+                structured_fact_requests,
+                original_user_query=original_user_query,
+            )
+        )
+    decisions = [
+        (index, request, decision)
+        for index, (request, decision) in enumerate(
+            zip(structured_fact_requests, capability_decisions)
+        )
+    ]
+    supported = [item for item in decisions if item[2].permitted]
+    rejected = [item for item in decisions if not item[2].permitted]
+    ambiguous = [
+        item
+        for item in rejected
+        if item[2].question_class == StructuredFactQuestionClass.AMBIGUOUS
+    ]
+
+    if ambiguous:
+        effective_route = None
+        outcome = "clarification"
+        route = "kb"
+        supported_requests: List[Dict[str, Any]] = []
+        retrieval_plan = None
+        needs_clarification = True
+        targets_for_result: Sequence[Dict[str, Any]] = []
+        clarification_reason = "A structured financial metric is materially ambiguous."
+        generated_questions = []
+        for _index, request, decision in ambiguous:
+            metric_text = sanitize_capability_text(
+                request.get("metric_hint") or request.get("subquestion"),
+                limit=100,
+            ) or "the requested metric"
+            candidates = ", ".join(
+                metric_id.replace("_", " ")
+                for metric_id in decision.matched_metric_ids
+            )
+            suffix = f" Candidate metrics: {candidates}." if candidates else ""
+            generated_questions.append(
+                f"Which precise financial metric did you mean by '{metric_text}'?{suffix}"
+            )
+        clarification_questions = _dedupe_strings(
+            [*clarification_questions, *generated_questions],
+            limit=3,
+        )
+    elif supported and rejected:
+        effective_route = "hybrid"
+        outcome = "partial_kb_fallback"
+        route = "hybrid"
+        supported_requests = [request for _index, request, _decision in supported]
+        retrieval_plan = _append_capability_fallback_jobs(
+            retrieval_plan,
+            rejected=rejected,
+            targets=targets,
+        )
+        targets_for_result = targets
+    elif supported:
+        effective_route = route
+        outcome = "structured_execution"
+        supported_requests = [request for _index, request, _decision in supported]
+        targets_for_result = targets
+    else:
+        effective_route = "kb"
+        outcome = "kb_fallback"
+        route = "kb"
+        supported_requests = []
+        retrieval_plan = _append_capability_fallback_jobs(
+            retrieval_plan,
+            rejected=rejected,
+            targets=targets,
+        )
+        targets_for_result = targets
+
+    generated_issues = [
+        _capability_rejection_issue(
+            request_index=index,
+            request=request,
+            decision=decision,
+            original_route=original_route,
+            effective_route=effective_route,
+            outcome=outcome,
+        )
+        for index, request, decision in rejected
+    ]
+    return {
+        "route": route,
+        "structured_fact_requests": supported_requests,
+        "retrieval_plan": retrieval_plan,
+        "needs_clarification": needs_clarification,
+        "clarification_reason": clarification_reason,
+        "clarification_questions": list(clarification_questions),
+        "open_issues": [*open_issues, *generated_issues],
+        "targets": list(targets_for_result),
+    }
 
 
 def _normalize_clarification_turns(
@@ -1347,6 +1561,14 @@ def render_target_resolution_prompt(
     payload_json = json.dumps(payload, ensure_ascii=False)
     prompt = str(prompt_template or "")
     prompt = prompt.replace("{{USER_QUERY}}", user_query)
+    capability_appendix = DEFAULT_STRUCTURED_FACT_CAPABILITY_POLICY.prompt_appendix()
+    if "{{STRUCTURED_FACT_CAPABILITY_POLICY}}" in prompt:
+        prompt = prompt.replace(
+            "{{STRUCTURED_FACT_CAPABILITY_POLICY}}",
+            capability_appendix,
+        )
+    else:
+        prompt = prompt + "\n\n" + capability_appendix
     if "{{PLANNER_PAYLOAD_JSON}}" in prompt:
         prompt = prompt.replace("{{PLANNER_PAYLOAD_JSON}}", payload_json)
     else:
@@ -1388,13 +1610,18 @@ async def _ainvoke_llm(model: Any, prompt: str) -> Any:
     return await asyncio.to_thread(invoke_sync, prompt)
 
 
-def _normalize_resolution_output(parsed_output: Any) -> Dict[str, Any]:
+def _normalize_resolution_output(
+    parsed_output: Any,
+    *,
+    original_user_query: Any = None,
+) -> Dict[str, Any]:
     if not isinstance(parsed_output, dict):
         raise ValueError("Parsed output must be a JSON object.")
 
     route = (_normalize_text(parsed_output.get("route")) or "kb").lower()
     if route not in _ALLOWED_ROUTES:
         route = "kb"
+    proposed_structured_route = route in {"structured_fact", "hybrid"}
 
     task_class = _normalize_text(parsed_output.get("task_class")) or "other"
     if task_class not in _ALLOWED_TASK_CLASSES:
@@ -1434,23 +1661,41 @@ def _normalize_resolution_output(parsed_output: Any) -> Dict[str, Any]:
         if issue is not None
     ]
 
-    if _should_force_kb_route(
+    policy_result = _apply_structured_fact_capability_policy(
         route=route,
         structured_fact_requests=structured_fact_requests,
+        targets=targets,
+        retrieval_plan=retrieval_plan,
+        needs_clarification=needs_clarification,
+        clarification_reason=_normalize_text(parsed_output.get("clarification_reason")),
+        clarification_questions=clarification_questions,
         open_issues=open_issues,
-    ):
-        route = "kb"
-        structured_fact_requests = []
+        original_user_query=original_user_query,
+    )
+    route = policy_result["route"]
+    structured_fact_requests = policy_result["structured_fact_requests"]
+    targets = policy_result["targets"]
+    retrieval_plan = policy_result["retrieval_plan"]
+    needs_clarification = policy_result["needs_clarification"]
+    clarification_questions = policy_result["clarification_questions"]
+    open_issues = policy_result["open_issues"]
+
+    retrieval_needed = _normalize_bool(parsed_output.get("retrieval_needed"))
+    if proposed_structured_route:
+        if needs_clarification or route == "structured_fact":
+            retrieval_needed = False
+        elif route in {"hybrid", "kb"}:
+            retrieval_needed = True
 
     return {
-        "retrieval_needed": _normalize_bool(parsed_output.get("retrieval_needed")),
+        "retrieval_needed": retrieval_needed,
         "route": route,
         "structured_fact_requests": structured_fact_requests,
         "task_class": task_class,
         "targets": targets,
         "retrieval_plan": retrieval_plan,
         "needs_clarification": needs_clarification,
-        "clarification_reason": _normalize_text(parsed_output.get("clarification_reason")),
+        "clarification_reason": policy_result["clarification_reason"],
         "clarification_questions": clarification_questions,
         "open_issues": open_issues,
     }
@@ -1981,7 +2226,10 @@ async def run_target_resolution_prompt_async(
 
     if llm_error is None and parsed_output is not None:
         try:
-            final_resolution = _normalize_resolution_output(parsed_output)
+            final_resolution = _normalize_resolution_output(
+                parsed_output,
+                original_user_query=pre_llm["effective_user_query"],
+            )
             final_resolution = _apply_anchored_filing_comparison(
                 final_resolution,
                 planner_state=pre_llm["planner_state"],

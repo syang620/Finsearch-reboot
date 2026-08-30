@@ -1628,6 +1628,45 @@ class OrchestratorRuntimeTests(unittest.IsolatedAsyncioTestCase):
         self.assertIsNone(result["structured_fact_results"][0]["tool_result"])
         self.assertEqual(client.calls, [])
 
+    async def test_structured_facts_node_rejects_hostile_ratio_before_client_initialization(self) -> None:
+        get_client = mock.AsyncMock()
+        with mock.patch(
+            "agents.orchestrator.agent_orchestrator._get_orchestrator_mcp_client",
+            new=get_client,
+        ):
+            result = await _structured_facts_node(
+                {
+                    "plan_obj": {
+                        "route": "structured_fact",
+                        "metadata": {
+                            "ticker": "AAPL",
+                            "fiscal_year": 2025,
+                            "form_type": "10-K",
+                        },
+                        "structured_fact_requests": [
+                            {
+                                "subquestion": "Calculate Apple's return on equity in FY2025.",
+                                "metric_hint": "revenue",
+                                "entity_hint": "Apple",
+                                "fiscal_year": 2025,
+                            }
+                        ],
+                    }
+                }
+            )
+
+        get_client.assert_not_awaited()
+        rejected = result["structured_fact_results"][0]
+        self.assertEqual(rejected["resolver_status"], "unresolved")
+        self.assertIsNone(rejected["resolved_metric_id"])
+        self.assertIsNone(rejected["tool_result"])
+        issue = result["open_issues"][0]
+        self.assertEqual(issue["code"], "STRUCTURED_FACT_CAPABILITY_REJECTED")
+        self.assertEqual(issue["metadata"]["question_class"], "unsupported_ratio")
+        self.assertEqual(issue["metadata"]["metric_hint"], "revenue")
+        self.assertIn("return on equity", issue["metadata"]["subquestion"])
+        self.assertEqual(issue["metadata"]["candidate_metric_ids"], [])
+
     async def test_structured_facts_node_preserves_non_ok_tool_result(self) -> None:
         client = _FakeStructuredFactClient(
             tool_result={

@@ -18,7 +18,7 @@ _COMPANY_TICKERS = {
 }
 _ROOT = Path(__file__).resolve().parents[3]
 _PLANNER_EVAL_CASES_PATH = (
-    _ROOT / "data" / "evals" / "agents" / "planner" / "planner_routing_core.v1.json"
+    _ROOT / "data" / "evals" / "agents" / "planner" / "planner_routing_core.v1.1.json"
 )
 
 
@@ -206,9 +206,15 @@ class FakePlannerRoutingLLM:
         structured_fact_requests: List[Dict[str, Any]] = []
         if route in {"structured_fact", "hybrid"}:
             first_target = targets[0] if targets else {}
+            subquestion = query
+            if route == "hybrid":
+                company = first_target.get("company_name") or "the company"
+                year = first_target.get("fiscal_year")
+                year_text = f" in FY{year}" if year is not None else ""
+                subquestion = f"What was {company} {_metric_hint(query)}{year_text}?"
             structured_fact_requests.append(
                 {
-                    "subquestion": query,
+                    "subquestion": subquestion,
                     "metric_hint": _metric_hint(query),
                     "entity_hint": first_target.get("company_name"),
                     "fiscal_year": first_target.get("fiscal_year"),

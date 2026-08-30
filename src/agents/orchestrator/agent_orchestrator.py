@@ -40,6 +40,12 @@ from agents.planner.interactive_target_resolution import (
 from agents.retrieval.query_planner_v2 import retrieval_agent
 from agents.text_utils import normalize_text
 from mcp_server.tools.sec_metric_registry import METRIC_REGISTRY
+from structured_facts.capabilities import (
+    DEFAULT_STRUCTURED_FACT_CAPABILITY_POLICY,
+    StructuredFactCapabilityDecision,
+    StructuredFactQuestionClass,
+    sanitize_capability_text,
+)
 from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 from langgraph.config import get_config
 from langgraph.graph import END, StateGraph
@@ -122,6 +128,7 @@ _STRUCTURED_FACT_ALIAS_MAP: Dict[str, tuple[str, ...]] = {
         "total debt",
         "interest bearing debt",
         "borrowings",
+        "debt balance",
     ),
     "revenue": ("revenue", "sales", "total revenue"),
     "gross_profit": ("gross profit", "gross earnings"),
@@ -1607,6 +1614,68 @@ def _build_structured_fact_result(
     }
 
 
+def _structured_fact_capability_decisions(
+    *,
+    plan_obj: Dict[str, Any],
+    requests: Sequence[Dict[str, Any]],
+) -> tuple[StructuredFactCapabilityDecision, ...]:
+    return DEFAULT_STRUCTURED_FACT_CAPABILITY_POLICY.classify_requests(
+        requests,
+        original_user_query=plan_obj.get("original_user_query"),
+    )
+
+
+def _build_capability_rejected_structured_fact_result(
+    *,
+    plan_obj: Dict[str, Any],
+    request: Dict[str, Any],
+    decision: StructuredFactCapabilityDecision,
+) -> Dict[str, Any]:
+    resolved_ticker, resolved_year, _matched_target = _resolve_structured_fact_inputs(
+        plan_obj=plan_obj,
+        request=request,
+    )
+    resolver_status = (
+        "ambiguous"
+        if decision.question_class == StructuredFactQuestionClass.AMBIGUOUS
+        else "unresolved"
+    )
+    return _build_structured_fact_result(
+        request=request,
+        resolved_ticker=resolved_ticker,
+        resolved_year=resolved_year,
+        resolved_metric_id=None,
+        resolver_status=resolver_status,
+        resolver_reason=f"Structured-fact capability rejected: {decision.reason}",
+        tool_result=None,
+    )
+
+
+def _structured_fact_capability_issue(
+    *,
+    request_index: int,
+    request: Dict[str, Any],
+    decision: StructuredFactCapabilityDecision,
+    original_route: str,
+) -> Dict[str, Any]:
+    return OpenIssue(
+        code="STRUCTURED_FACT_CAPABILITY_REJECTED",
+        message=decision.reason,
+        severity=Severity.WARNING,
+        metadata={
+            "request_index": request_index,
+            "question_class": decision.question_class.value,
+            "metric_hint": sanitize_capability_text(request.get("metric_hint")),
+            "subquestion": sanitize_capability_text(request.get("subquestion")),
+            "original_route": original_route,
+            "effective_route": None,
+            "outcome": "defensive_rejection",
+            "reason": decision.reason,
+            "candidate_metric_ids": list(decision.matched_metric_ids),
+        },
+    ).model_dump(mode="json")
+
+
 async def _execute_structured_fact_requests(
     *,
     plan_obj: Dict[str, Any],
@@ -1617,8 +1686,22 @@ async def _execute_structured_fact_requests(
         for item in (plan_obj.get("structured_fact_requests") or [])
         if isinstance(item, dict)
     ]
+    capability_decisions = _structured_fact_capability_decisions(
+        plan_obj=plan_obj,
+        requests=requests,
+    )
     results: list[Dict[str, Any]] = []
-    for request in requests:
+    for request, capability_decision in zip(requests, capability_decisions):
+        if not capability_decision.permitted:
+            results.append(
+                _build_capability_rejected_structured_fact_result(
+                    plan_obj=plan_obj,
+                    request=request,
+                    decision=capability_decision,
+                )
+            )
+            continue
+
         resolved_ticker, resolved_year, _matched_target = _resolve_structured_fact_inputs(
             plan_obj=plan_obj,
             request=request,
@@ -1703,10 +1786,28 @@ async def _structured_facts_node(state: OrchestratorState) -> Dict[str, Any]:
         timing["structured_facts_ms"] = 0
         return {"structured_fact_results": [], "structured_fact_timing_ms": timing}
 
+    normalized_requests = [request for request in requests if isinstance(request, dict)]
+    capability_decisions = _structured_fact_capability_decisions(
+        plan_obj=plan_obj,
+        requests=normalized_requests,
+    )
+    request_decisions = list(zip(normalized_requests, capability_decisions))
+    rejected_issues = [
+        _structured_fact_capability_issue(
+            request_index=index,
+            request=request,
+            decision=decision,
+            original_route=_coerce_plan_route(plan_obj),
+        )
+        for index, (request, decision) in enumerate(request_decisions)
+        if not decision.permitted
+    ]
+
     t0 = time.perf_counter()
     client = None
     try:
-        client = await _get_orchestrator_mcp_client()
+        if any(decision.permitted for _request, decision in request_decisions):
+            client = await _get_orchestrator_mcp_client()
         results = await _execute_structured_fact_requests(plan_obj=plan_obj, client=client)
     except Exception as exc:
         if _is_mcp_transport_error(str(exc)):
@@ -1730,7 +1831,13 @@ async def _structured_facts_node(state: OrchestratorState) -> Dict[str, Any]:
         ]
 
     timing["structured_facts_ms"] = int((time.perf_counter() - t0) * 1000)
-    return {"structured_fact_results": results, "structured_fact_timing_ms": timing}
+    output = {
+        "structured_fact_results": results,
+        "structured_fact_timing_ms": timing,
+    }
+    if rejected_issues:
+        output["open_issues"] = rejected_issues
+    return output
 
 
 def _route_after_structured_facts(state: OrchestratorState) -> str:

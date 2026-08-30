@@ -7,6 +7,7 @@ from agents.planner.interactive_target_resolution import (
     _build_fallback_target_resolution,
     _build_planner_output,
     _normalize_resolution_output,
+    render_target_resolution_prompt,
 )
 
 
@@ -390,11 +391,17 @@ class PlannerStructuredFactSchemaTests(unittest.TestCase):
         self.assertEqual(normalized["retrieval_plan"]["jobs"][0]["goal"], "extract annual revenue")
 
     def test_prompt_template_keeps_unsupported_finance_questions_on_kb(self) -> None:
-        self.assertIn("gross margin", DEFAULT_TARGET_RESOLUTION_PROMPT_TEMPLATE)
-        self.assertIn("EPS", DEFAULT_TARGET_RESOLUTION_PROMPT_TEMPLATE)
-        self.assertIn("debt-to-equity ratio", DEFAULT_TARGET_RESOLUTION_PROMPT_TEMPLATE)
-        self.assertIn("Compare Apple and Microsoft revenue in FY2024", DEFAULT_TARGET_RESOLUTION_PROMPT_TEMPLATE)
-        self.assertIn("Keep them on `kb`.", DEFAULT_TARGET_RESOLUTION_PROMPT_TEMPLATE)
+        rendered = render_target_resolution_prompt(
+            DEFAULT_TARGET_RESOLUTION_PROMPT_TEMPLATE,
+            user_query="What was Apple's revenue?",
+            payload={},
+        )
+
+        self.assertNotIn("{{STRUCTURED_FACT_CAPABILITY_POLICY}}", rendered)
+        self.assertIn("Ratios, margins, yields, per-share metrics", rendered)
+        self.assertIn("Generic cash, profit, and profitability", rendered)
+        self.assertIn("Compare Apple and Microsoft revenue in FY2024", rendered)
+        self.assertIn("Keep them on `kb`.", rendered)
 
     def test_prompt_template_requires_human_readable_metric_hints(self) -> None:
         self.assertIn("Keep `metric_hint` human-readable", DEFAULT_TARGET_RESOLUTION_PROMPT_TEMPLATE)
@@ -512,6 +519,156 @@ class PlannerStructuredFactSchemaTests(unittest.TestCase):
 
         self.assertEqual(normalized["route"], "kb")
         self.assertEqual(normalized["structured_fact_requests"], [])
+
+    def test_normalize_resolution_output_keeps_supported_subset_in_hybrid_fallback(self) -> None:
+        normalized = _normalize_resolution_output(
+            {
+                "retrieval_needed": False,
+                "route": "structured_fact",
+                "structured_fact_requests": [
+                    {
+                        "subquestion": "What was Apple's revenue in FY2025?",
+                        "metric_hint": "revenue",
+                        "entity_hint": "Apple",
+                        "fiscal_year": 2025,
+                    },
+                    {
+                        "subquestion": "What was Apple's return on equity in FY2025?",
+                        "metric_hint": "ROE",
+                        "entity_hint": "Apple",
+                        "fiscal_year": 2025,
+                    },
+                ],
+                "task_class": "single_target_fact",
+                "targets": [
+                    {
+                        "target_id": 1,
+                        "target_key": "AAPL_FY2025",
+                        "company_name": "Apple",
+                        "ticker": "AAPL",
+                        "fiscal_year": 2025,
+                        "form_type": "10-K",
+                    }
+                ],
+                "retrieval_plan": None,
+                "needs_clarification": False,
+                "clarification_reason": None,
+                "clarification_questions": [],
+                "open_issues": [],
+            }
+        )
+
+        self.assertEqual(normalized["route"], "hybrid")
+        self.assertTrue(normalized["retrieval_needed"])
+        self.assertEqual(
+            [request["metric_hint"] for request in normalized["structured_fact_requests"]],
+            ["revenue"],
+        )
+        fallback_job = normalized["retrieval_plan"]["jobs"][0]
+        self.assertIn("ROE", fallback_job["goal"])
+        self.assertNotIn("Apple", fallback_job["goal"])
+        self.assertNotIn("2025", fallback_job["goal"])
+        issue = normalized["open_issues"][0]
+        self.assertEqual(issue["code"], "STRUCTURED_FACT_CAPABILITY_REJECTED")
+        self.assertEqual(issue["metadata"]["question_class"], "unsupported_ratio")
+        self.assertEqual(issue["metadata"]["metric_hint"], "ROE")
+        self.assertEqual(issue["metadata"]["effective_route"], "hybrid")
+        self.assertEqual(issue["metadata"]["outcome"], "partial_kb_fallback")
+
+    def test_normalize_resolution_output_clarifies_material_metric_ambiguity(self) -> None:
+        normalized = _normalize_resolution_output(
+            {
+                "retrieval_needed": False,
+                "route": "structured_fact",
+                "structured_fact_requests": [
+                    {
+                        "subquestion": "What was Apple's cash in FY2025?",
+                        "metric_hint": "cash",
+                        "entity_hint": "Apple",
+                        "fiscal_year": 2025,
+                    }
+                ],
+                "task_class": "single_target_fact",
+                "targets": [
+                    {
+                        "target_id": 1,
+                        "target_key": "AAPL_FY2025",
+                        "company_name": "Apple",
+                        "ticker": "AAPL",
+                        "fiscal_year": 2025,
+                        "form_type": "10-K",
+                    }
+                ],
+                "retrieval_plan": None,
+                "needs_clarification": False,
+                "clarification_reason": None,
+                "clarification_questions": [],
+                "open_issues": [],
+            }
+        )
+
+        self.assertEqual(normalized["route"], "kb")
+        self.assertTrue(normalized["needs_clarification"])
+        self.assertFalse(normalized["retrieval_needed"])
+        self.assertEqual(normalized["structured_fact_requests"], [])
+        self.assertEqual(normalized["targets"], [])
+        self.assertIsNone(normalized["retrieval_plan"])
+        self.assertIn("cash and cash equivalents", normalized["clarification_questions"][0])
+        self.assertEqual(
+            normalized["open_issues"][0]["metadata"]["candidate_metric_ids"],
+            ["cash_and_cash_equivalents", "operating_cash_flow"],
+        )
+
+    def test_normalize_resolution_output_rejects_ratio_component_decomposition(self) -> None:
+        normalized = _normalize_resolution_output(
+            {
+                "retrieval_needed": True,
+                "route": "hybrid",
+                "structured_fact_requests": [
+                    {
+                        "subquestion": "What was Apple's total debt in FY2024?",
+                        "metric_hint": "total debt",
+                    },
+                    {
+                        "subquestion": "What was Apple's stockholders equity in FY2024?",
+                        "metric_hint": "stockholders equity",
+                    },
+                ],
+                "task_class": "single_target_fact",
+                "targets": [
+                    {
+                        "target_id": 1,
+                        "target_key": "AAPL_FY2024",
+                        "company_name": "Apple",
+                        "ticker": "AAPL",
+                        "fiscal_year": 2024,
+                        "form_type": "10-K",
+                    }
+                ],
+                "retrieval_plan": {
+                    "fanout_mode": "single_target",
+                    "jobs": [
+                        {
+                            "applies_to_target_ids": [1],
+                            "goal": "extract debt and equity evidence",
+                            "job_type": "metric_extract",
+                        }
+                    ],
+                },
+                "needs_clarification": False,
+                "clarification_reason": None,
+                "clarification_questions": [],
+                "open_issues": [],
+            },
+            original_user_query="What was Apple's debt-to-equity ratio in FY2024?",
+        )
+
+        self.assertEqual(normalized["route"], "kb")
+        self.assertEqual(normalized["structured_fact_requests"], [])
+        self.assertEqual(
+            {issue["metadata"]["question_class"] for issue in normalized["open_issues"]},
+            {"unsupported_ratio"},
+        )
 
 
 if __name__ == "__main__":

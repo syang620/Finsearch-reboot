@@ -32,6 +32,7 @@ not create speculative ADRs for unresolved roadmap work.
 | ADR | Status | Decision |
 |---|---|---|
 | [001](001-routing-and-lane-ownership.md) | `Accepted` | Routing and lane ownership |
+| [002](002-structured-fact-capability-policy.md) | `Accepted` | Structured-fact capability policy |
 
 ## Backlog
 
@@ -40,7 +41,6 @@ decision concrete. Their outcomes are intentionally unspecified here.
 
 | Planned ADR | Topic |
 |---|---|
-| `002-structured-fact-capability-policy.md` | Structured-fact capability policy |
 | `003-degradation-semantics.md` | Per-lane and overall degradation semantics |
 | `004-citation-policy.md` | Citation and grounding policy |
 | `005-filing-anchor-and-amendments.md` | Filing anchor and amendment precedence |

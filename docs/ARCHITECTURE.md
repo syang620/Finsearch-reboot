@@ -60,11 +60,12 @@ step. It extracts or resolves:
 - Human-readable structured metric hints.
 - Clarification requirements and open issues.
 
-Planner output is normalized after the model call. Post-model safeguards keep known
-unsupported ratios, calculated metrics, and multi-company comparisons on the KB
-route. If the planner model is unavailable or its output is invalid, the current
-fallback produces a conservative KB-oriented plan from deterministically extracted
-metadata.
+Planner output is normalized after the model call. The shared structured-fact
+capability policy classifies every proposed structured request independently. It
+retains supported requests, moves rejected portions to KB work, and requests
+clarification for materially ambiguous metrics. If the planner model is unavailable
+or its output is invalid, the current fallback produces a conservative KB-oriented
+plan from deterministically extracted metadata.
 
 A planner turn has one of three effective states:
 
@@ -106,9 +107,9 @@ retrieval proceeds to packet construction without a retrieval call.
 
 ### Structured-fact route
 
-The orchestrator skips KB retrieval, resolves each planner metric hint against the
-supported metric registry, calls the SEC metric tool, and converts each result into
-analyst context.
+The orchestrator skips KB retrieval, revalidates each request against the shared
+capability policy, resolves permitted metric hints against the supported metric
+registry, calls the SEC metric tool, and converts each result into analyst context.
 
 ### Hybrid route
 
@@ -165,6 +166,21 @@ The planner emits human-readable requests such as `revenue` or `total debt`; it 
 not emit SEC concept names. Resolver logic in the orchestrator maps those hints to
 the supported metric registry and resolves ticker and fiscal year before calling
 `sec_get_metric`.
+
+`src/structured_facts/capabilities.py` answers whether structured execution is
+permitted and classifies unsupported, ambiguous, and unknown requests. It also
+generates the planner prompt appendix and provides the orchestrator's defensive
+execution check. It may report supported or candidate metric IDs for policy and
+diagnostics, but it does not perform filing-specific metric resolution or own SEC
+fact execution semantics.
+
+Classification precedence is explicit: unsupported semantics, exact supported
+phrases, ambiguous generic metrics, supported aliases, then unknown concepts. Mixed
+supported and rejected proposals become hybrid plans; supported requests remain in
+the structured lane while KB retrieval covers rejected portions. A materially
+ambiguous metric pauses the plan for clarification. The original user request is
+also checked so an unsupported top-level derivation cannot bypass policy through
+supported-looking component decomposition.
 
 The metric tool uses SEC submissions and company-facts data to:
 
@@ -246,9 +262,9 @@ behavior:
 - The shared `PlannerOutput` contract does not contain every field used by the
   orchestrator. Runtime planner payloads and LangGraph state still contain normalized
   dictionaries alongside Pydantic models.
-- Structured metric resolution and execution coordination are embedded in the
-  orchestrator, and structured-capability policy is duplicated across prompts,
-  normalization safeguards, registry aliases, and tests.
+- Structured metric resolution and execution coordination remain embedded in the
+  orchestrator. The capability policy intentionally does not absorb this future
+  resolver-extraction work.
 - Structured results are flattened into synthetic `TEXT` context. Native numeric
   types, metric status, components, and source URLs are not fully represented by the
   analyst context contract.
