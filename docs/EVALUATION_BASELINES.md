@@ -223,3 +223,118 @@ forms, and filings, amendment precedence correctness, production SLOs,
 load/concurrency behavior, full claim-level citation faithfulness, or complete
 structured-fact capability coverage. RAGAS was disabled, so this baseline also
 does not measure RAGAS semantic quality.
+
+## Structured-Fact Capability Policy v1 — 2026-08-30
+
+### Run identity
+
+| Field | Value |
+|---|---|
+| Status | Canonical PR3 capability-policy baseline |
+| Pre-PR3 commit | `586fe24cdeeb87040ad241a1cac39e71648d907b` |
+| PR3 implementation evaluated commit | `6b6b6173bac9045b03ad2292910b5acfd51740c8` |
+| PR3 evidence commit | This documentation/artifact-only follow-up commit |
+| Dataset | `data/evals/agents/planner/structured_fact_capability_adversarial.v1.jsonl` |
+| Dataset SHA-256 | `cb683920ac5f4f99ce6ec603c11f80be8c2e2b36598536e480781e28d8133273` |
+| Evaluator SHA-256 | `ee7daa52e50c8c7c7793ca1a7e30d6e63faf55933109bac28fb0f3563f7628f7` |
+| Cases / proposed requests | 40 / 44 |
+
+The dataset and evaluator were frozen before implementation. The pre-PR3 run used
+the same bytes from outside the baseline checkout, so neither the policy nor its
+tests could generate the expected cases.
+
+### Commands
+
+Pre-PR3 checkout:
+
+```bash
+PYTHONPATH=src <EVAL_VENV>/bin/python <FROZEN_EVALUATOR> \
+  --dataset <FROZEN_DATASET> \
+  --output <BEFORE_OUTPUT>
+```
+
+Evaluated PR3 implementation:
+
+```bash
+PYTHONPATH=src <EVAL_VENV>/bin/python \
+  scripts/evals/agents/eval_structured_fact_capabilities.py \
+  --dataset data/evals/agents/planner/structured_fact_capability_adversarial.v1.jsonl \
+  --output <AFTER_OUTPUT>
+```
+
+Live planner P0 regression gate:
+
+```bash
+PYTHONPATH=src <EVAL_VENV>/bin/python scripts/evals/agents/eval_planner_routes.py \
+  --cases-path data/evals/agents/planner/planner_routing_core.v1.1.json \
+  --priority P0 \
+  --model ollama/qwen2.5:14b-instruct \
+  --out-path <PLANNER_P0_OUTPUT>
+```
+
+### Artifacts
+
+| Artifact | SHA-256 |
+|---|---|
+| `artifacts/evals/agents/planner/structured_fact_capability_adversarial.v1/baselines/586fe24_before.json` | `d0bd5eae53864c2ed72938011dc64b838274517d0bcd6ce39edac35a21232db5` |
+| `artifacts/evals/agents/planner/structured_fact_capability_adversarial.v1/runs/6b6b617_after.json` | `e7ed34f0be56ba41a3b636f3093a930e70aed7fc866295105638d14be12dc41a` |
+| `artifacts/evals/agents/planner/planner_routing_core.v1.1/runs/6b6b617_p0_ollama_qwen2.5_14b-instruct.json` | `e3cc95fe8a56db9596a4bcfa27ad0d99267352b732d56b176932df49da1c31a7` |
+
+### Before / after result
+
+| Metric | Pre-PR3 `586fe24` | PR3 `6b6b617` |
+|---|---:|---:|
+| Structured-route precision | 19 / 36 (52.78%) | 19 / 19 (100%) |
+| Supported-query recall | 18 / 19 (94.74%) | 19 / 19 (100%) |
+| Unsupported-query rejection rate | 7 / 20 (35%) | 20 / 20 (100%) |
+| Ambiguous-query clarification accuracy | 0 / 4 (0%) | 4 / 4 (100%) |
+| False structured-routing rate | 17 / 24 (70.83%) | 0 / 24 (0%) |
+| Effective-route accuracy | 23 / 40 (57.5%) | 40 / 40 (100%) |
+
+PR3 therefore reduced invalid structured routing from 70.83% to 0% on the frozen
+adversarial set while raising supported-query recall from 94.74% to 100%.
+
+Structured-route precision counts supported requests among all retained structured
+requests. Supported-query recall counts retained supported requests. Rejection rate
+counts rejected unsupported and unknown requests. Ambiguity accuracy requires the
+whole case to request clarification. False structured-routing counts retained
+unsupported, ambiguous, or unknown requests. Effective-route accuracy requires the
+normalized route and retained request set to match the independently authored case.
+
+The live planner P0 gate used dataset version `1.1`, SHA-256
+`64103d8ad9e130ef9a62b6208abcc0f7ebb7e309f39503e15390d037631e931b`,
+and `ollama/qwen2.5:14b-instruct`. It passed 25/25: 5/5 each for
+`structured_fact`, `kb_narrative`, `hybrid`, `unsupported_metrics`, and
+`multi_company_comparison`.
+
+### Route-aware live-gate diagnostic
+
+A 15-case route-aware v1 run against the sealed PR3 implementation completed all
+cases with perfect intent, route, metadata, lane, structured-metric, and
+structured-status match rates. It was not promoted to a canonical passing baseline:
+two analyst calls reached the existing 120-second local-model deadline and one
+retrieval call reached the existing 30-second MCP deadline, yielding a 0.9172 mean
+score and 20% critical-failure rate.
+
+Fresh-checkpointer retries cleared the risk-factors and insufficient-data cases.
+The calculation case then returned the correct 12.8744% result and used the
+financial evaluator, but was rejected because the model emitted multiple competing
+calculation calls. An isolated run of that identical frozen case on untouched
+pre-PR3 commit `586fe24cdeeb87040ad241a1cac39e71648d907b` reproduced the same
+`CALCULATION_RESULT_AMBIGUOUS` outcome and 0.6154 score. This is therefore recorded
+as a pre-existing live-model/tool-call instability, not a PR3 behavior regression.
+The post-run MCP/AnyIO asynchronous-generator cleanup warnings remain tracked by
+issue #17 and are out of scope for this policy PR. RAGAS was disabled.
+
+### Freeze and coverage limitations
+
+Commit `6b6b6173bac9045b03ad2292910b5acfd51740c8` is the sealed implementation
+measured by these artifacts. This follow-up may contain only evaluation artifacts
+and documentation; any later source, test, prompt, policy, evaluator, or dataset
+change invalidates the measurements and requires a rerun.
+
+The adversarial baseline measures routing permission and normalization, not SEC fact
+numeric correctness, filing-specific metric resolution, retrieval relevance,
+analyst synthesis, citations, latency, load, or production distribution shift. Its
+40 cases intentionally emphasize known boundary classes and hostile proposals; it
+is not a frequency-weighted sample of user traffic.
