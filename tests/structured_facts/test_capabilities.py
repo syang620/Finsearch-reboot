@@ -28,6 +28,21 @@ def test_exact_supported_phrases_precede_generic_ambiguity() -> None:
     assert gross_profit.permitted
     assert gross_profit.matched_metric_ids == ("gross_profit",)
 
+    cash_question = _classify("", "What were Apple's cash and cash equivalents?")
+    cash_amount_question = _classify(
+        "cash and cash equivalents",
+        "How much cash and cash equivalents did Apple report at FY2025 year end?",
+    )
+    profit_question = _classify("", "What was Apple's gross profit?")
+    assert cash_question.permitted
+    assert cash_question.matched_metric_ids == ("cash_and_cash_equivalents",)
+    assert cash_amount_question.permitted
+    assert cash_amount_question.matched_metric_ids == (
+        "cash_and_cash_equivalents",
+    )
+    assert profit_question.permitted
+    assert profit_question.matched_metric_ids == ("gross_profit",)
+
 
 def test_generic_cash_profit_and_profitability_are_ambiguous() -> None:
     for metric_hint in ("cash", "profit", "profitability"):
@@ -99,6 +114,14 @@ def test_supported_phrase_does_not_match_inside_modified_metric_name() -> None:
     assert not without_hint.permitted
     assert without_hint.question_class == StructuredFactQuestionClass.UNKNOWN
 
+    contradictory_hint = _classify("revenue", "What was deferred revenue?")
+    assert not contradictory_hint.permitted
+    assert contradictory_hint.question_class == StructuredFactQuestionClass.UNKNOWN
+
+    subscription = _classify("revenue", "What was subscription revenue?")
+    assert not subscription.permitted
+    assert subscription.question_class == StructuredFactQuestionClass.UNKNOWN
+
 
 def test_unknown_metric_is_not_permitted() -> None:
     decision = _classify("bookings")
@@ -121,6 +144,26 @@ def test_original_unsupported_semantics_block_supported_looking_decomposition() 
 
     assert {decision.question_class for decision in decisions} == {
         StructuredFactQuestionClass.UNSUPPORTED_RATIO
+    }
+    assert not any(decision.permitted for decision in decisions)
+
+
+def test_comparison_operand_conjunction_does_not_look_independent() -> None:
+    decisions = DEFAULT_STRUCTURED_FACT_CAPABILITY_POLICY.classify_requests(
+        [
+            {"metric_hint": "total assets", "subquestion": "What were total assets?"},
+            {
+                "metric_hint": "total liabilities",
+                "subquestion": "What were total liabilities?",
+            },
+        ],
+        original_user_query=(
+            "Calculate the difference between total assets and total liabilities."
+        ),
+    )
+
+    assert {decision.question_class for decision in decisions} == {
+        StructuredFactQuestionClass.UNSUPPORTED_COMPARISON
     }
     assert not any(decision.permitted for decision in decisions)
 

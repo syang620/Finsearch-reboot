@@ -41,6 +41,12 @@ def _normalize_lookup_text(value: Any) -> str:
     return re.sub(r"\s+", " ", text).strip()
 
 
+def _normalize_lookup_text_case(value: Any) -> str:
+    text = str(value or "").replace("_", " ").replace("-", " ")
+    text = re.sub(r"[^A-Za-z0-9\s]", " ", text)
+    return re.sub(r"\s+", " ", text).strip()
+
+
 def sanitize_capability_text(value: Any, *, limit: int = 240) -> str | None:
     text = " ".join(str(value or "").split()).strip()
     if not text:
@@ -144,6 +150,41 @@ _DERIVED_PATTERNS = (
     re.compile(r"\bkey financial metrics\b"),
 )
 _AMBIGUOUS_GENERIC_TERMS = frozenset({"cash", "profit", "profitability"})
+_QUESTION_METRIC_PREFIX_TERMS = frozenset(
+    {
+        "a",
+        "an",
+        "are",
+        "at",
+        "company",
+        "did",
+        "does",
+        "for",
+        "in",
+        "is",
+        "its",
+        "much",
+        "of",
+        "reported",
+        "s",
+        "the",
+        "was",
+        "were",
+    }
+)
+_METRIC_CONCEPT_MODIFIERS = frozenset(
+    {
+        "adjusted",
+        "deferred",
+        "domestic",
+        "international",
+        "organic",
+        "product",
+        "segment",
+        "service",
+        "subscription",
+    }
+)
 _EXPLICIT_UNSUPPORTED_CLASSES = frozenset(
     {
         StructuredFactQuestionClass.UNSUPPORTED_DERIVED_METRIC,
@@ -179,6 +220,7 @@ class StructuredFactCapabilityPolicy:
     ) -> StructuredFactCapabilityDecision:
         metric_text = _normalize_lookup_text(metric_hint)
         question_text = _normalize_lookup_text(subquestion)
+        question_case_text = _normalize_lookup_text_case(subquestion)
         combined_text = " ".join(part for part in (metric_text, question_text) if part)
 
         if _matches_any(combined_text, _PER_SHARE_PATTERNS):
@@ -203,10 +245,7 @@ class StructuredFactCapabilityPolicy:
             )
 
         hint_metric_ids = self._matching_hint_metric_ids(metric_text)
-        question_metric_ids = self._matching_metric_ids(
-            question_text,
-            use_aliases=False,
-        ) + self._matching_metric_ids(question_text, use_aliases=True)
+        question_metric_ids = self._matching_question_metric_ids(question_case_text)
         if (
             metric_text
             and question_text
@@ -237,6 +276,18 @@ class StructuredFactCapabilityPolicy:
             return self._rejected(
                 StructuredFactQuestionClass.UNKNOWN,
                 "The metric hint is not a direct structured-fact capability.",
+            )
+
+        question_metric_ids = self._matching_question_metric_ids(question_case_text)
+        if len(question_metric_ids) == 1:
+            return self._supported(
+                question_metric_ids[0],
+                "Matched a complete supported metric phrase.",
+            )
+        if len(question_metric_ids) > 1:
+            return self._ambiguous(
+                question_metric_ids,
+                "The question contains multiple supported metric phrases.",
             )
 
         ambiguous_term = next(
@@ -315,14 +366,6 @@ class StructuredFactCapabilityPolicy:
             "hybrid plan while rejected portions are handled by KB retrieval."
         )
 
-    def _matching_metric_ids(self, text: str, *, use_aliases: bool) -> tuple[str, ...]:
-        matches: list[str] = []
-        for capability in self.capabilities:
-            phrases = capability.aliases if use_aliases else capability.exact_phrases
-            if any(_contains_phrase(text, phrase) for phrase in phrases):
-                matches.append(capability.metric_id)
-        return tuple(sorted(set(matches)))
-
     def _matching_hint_metric_ids(self, metric_text: str) -> tuple[str, ...]:
         matches = [
             capability.metric_id
@@ -330,6 +373,37 @@ class StructuredFactCapabilityPolicy:
             if metric_text in {*capability.exact_phrases, *capability.aliases}
         ]
         return tuple(sorted(set(matches)))
+
+    def _matching_question_metric_ids(self, text: str) -> tuple[str, ...]:
+        matches: list[str] = []
+        for capability in self.capabilities:
+            for phrase in (*capability.exact_phrases, *capability.aliases):
+                for match in re.finditer(
+                    rf"(?<![a-z0-9]){re.escape(phrase)}(?![a-z0-9])",
+                    text,
+                    flags=re.IGNORECASE,
+                ):
+                    prefix_tokens = text[: match.start()].split()
+                    if prefix_tokens and not self._is_question_metric_prefix(
+                        prefix_tokens[-1]
+                    ):
+                        continue
+                    matches.append(capability.metric_id)
+                    break
+        return tuple(sorted(set(matches)))
+
+    @staticmethod
+    def _is_question_metric_prefix(token: str) -> bool:
+        normalized_token = token.lower()
+        return (
+            normalized_token in _QUESTION_METRIC_PREFIX_TERMS
+            or (
+                token[:1].isupper()
+                and normalized_token not in _METRIC_CONCEPT_MODIFIERS
+            )
+            or token.isdigit()
+            or bool(re.fullmatch(r"(?:fy|q)\d+", normalized_token))
+        )
 
     def _has_independent_conjoined_requests(self, text: str) -> bool:
         for conjunction in re.finditer(
@@ -339,6 +413,8 @@ class StructuredFactCapabilityPolicy:
             left = text[: conjunction.start()].strip()
             right = text[conjunction.end() :].strip()
             if not left or not right:
+                continue
+            if conjunction.group() == "and" and self._comparison_needs_operand(left):
                 continue
             left_decision = self._classify_original_clause(left)
             right_decision = self._classify_original_clause(right)
@@ -358,6 +434,17 @@ class StructuredFactCapabilityPolicy:
                 return True
         return False
 
+    @staticmethod
+    def _comparison_needs_operand(left: str) -> bool:
+        comparison_start = re.search(
+            r"\b(?:compare|comparison between|difference between)\b",
+            left,
+        )
+        if comparison_start is None:
+            return False
+        comparison_text = left[comparison_start.end() :]
+        return not re.search(r"\b(?:to|versus|vs)\b", comparison_text)
+
     def _classify_original_clause(
         self,
         text: str,
@@ -365,7 +452,7 @@ class StructuredFactCapabilityPolicy:
         decision = self.classify_request(metric_hint=None, subquestion=text)
         if decision.question_class != StructuredFactQuestionClass.UNKNOWN:
             return decision
-        matches = self._matching_metric_ids(text, use_aliases=False)
+        matches = self._matching_question_metric_ids(text)
         if len(matches) == 1:
             return self._supported(
                 matches[0],
