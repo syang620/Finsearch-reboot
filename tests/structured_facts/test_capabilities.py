@@ -385,6 +385,13 @@ def test_quarterly_periods_are_rejected_from_annual_structured_execution() -> No
         )
         assert not leading_quarter[0].permitted
 
+    for notation in ("H1 2024", "H2 2024", "the first half of 2024"):
+        half_year = DEFAULT_STRUCTURED_FACT_CAPABILITY_POLICY.classify_requests(
+            [{"metric_hint": "revenue", "subquestion": "What was revenue?"}],
+            original_user_query=f"What was revenue for {notation}?",
+        )
+        assert not half_year[0].permitted
+
 
 def test_arithmetic_request_blocks_supported_looking_decomposition() -> None:
     decisions = DEFAULT_STRUCTURED_FACT_CAPABILITY_POLICY.classify_requests(

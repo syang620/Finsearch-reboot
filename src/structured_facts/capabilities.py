@@ -118,6 +118,9 @@ _PER_SHARE_PATTERNS = (
 _QUARTERLY_PERIOD_PATTERNS = (
     re.compile(r"\bq\s*[1-4](?:\s+\d{4})?\b"),
     re.compile(r"\b[1-4]q(?:\s*(?:\d{2}|\d{4}))?\b"),
+    re.compile(r"\bh\s*[12](?:\s+\d{4})?\b"),
+    re.compile(r"\b(?:first|second|1st|2nd) half(?: of)?(?: \d{4})?\b"),
+    re.compile(r"\bhalf year\b"),
     re.compile(r"\bquarter(?:ly)?\b"),
     re.compile(r"\b(?:three|six|nine|3|6|9) months?\b"),
     re.compile(r"\binterim\b"),
@@ -541,8 +544,17 @@ class StructuredFactCapabilityPolicy:
                 residual,
                 entity_hints=shared_entity_hints,
             )
-            if not decision.permitted:
-                uncovered_clauses.append((residual, decision))
+            if decision.permitted:
+                decision = StructuredFactCapabilityDecision(
+                    question_class=StructuredFactQuestionClass.UNKNOWN,
+                    permitted=False,
+                    matched_metric_ids=decision.matched_metric_ids,
+                    reason=(
+                        "A supported clause omitted from the structured proposal "
+                        "requires KB fallback rather than incomplete execution."
+                    ),
+                )
+            uncovered_clauses.append((residual, decision))
         return tuple(uncovered_clauses)
 
     def _covered_request_represents_clause(

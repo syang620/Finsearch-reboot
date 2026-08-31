@@ -272,6 +272,28 @@ def test_ambiguous_sibling_clarification_names_ambiguous_clause() -> None:
     assert "'revenue'" not in result["clarification_questions"][0]
 
 
+def test_omitted_supported_sibling_routes_to_retrieval() -> None:
+    result = _apply_structured_fact_capability_policy(
+        route="structured_fact",
+        structured_fact_requests=[
+            {"subquestion": "What was revenue?", "metric_hint": "revenue"}
+        ],
+        targets=[{"target_id": 1, "ticker": "AAPL", "fiscal_year": 2025}],
+        retrieval_plan=None,
+        needs_clarification=False,
+        clarification_reason=None,
+        clarification_questions=[],
+        open_issues=[],
+        original_user_query="Give revenue and total assets.",
+    )
+
+    assert result["route"] == "hybrid"
+    assert [request["metric_hint"] for request in result["structured_fact_requests"]] == [
+        "revenue"
+    ]
+    assert "total assets" in result["retrieval_plan"]["jobs"][0]["goal"]
+
+
 def _base_planner_output_payload() -> dict:
     return {
         "status": "completed",
