@@ -6,6 +6,7 @@ from agents.planner.interactive_target_resolution import (
     InteractivePlannerAgent,
     _build_fallback_target_resolution,
     _build_planner_output,
+    _apply_structured_fact_capability_policy,
     _capability_guard_query,
     _normalize_resolution_output,
     render_target_resolution_prompt,
@@ -157,6 +158,33 @@ def test_mixed_proposal_preserves_omitted_unknown_sibling_for_retrieval() -> Non
     fallback_goals = [job["goal"] for job in normalized["retrieval_plan"]["jobs"]]
     assert any("bookings" in goal for goal in fallback_goals)
     assert any("gross margin" in goal for goal in fallback_goals)
+
+
+def test_unknown_sibling_preserves_conjunction_inside_financial_concept() -> None:
+    result = _apply_structured_fact_capability_policy(
+        route="structured_fact",
+        structured_fact_requests=[
+            {"subquestion": "What was revenue?", "metric_hint": "revenue"}
+        ],
+        targets=[
+            {
+                "target_id": 1,
+                "company_name": "Apple",
+                "ticker": "AAPL",
+                "fiscal_year": 2025,
+            }
+        ],
+        retrieval_plan=None,
+        needs_clarification=False,
+        clarification_reason=None,
+        clarification_questions=[],
+        open_issues=[],
+        original_user_query="What were research and development expenses and revenue?",
+    )
+
+    assert result["route"] == "hybrid"
+    assert len(result["retrieval_plan"]["jobs"]) == 1
+    assert "research and development expenses" in result["retrieval_plan"]["jobs"][0]["goal"]
 
 
 def _base_planner_output_payload() -> dict:

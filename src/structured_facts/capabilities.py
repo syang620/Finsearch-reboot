@@ -240,6 +240,12 @@ class StructuredFactCapabilityPolicy:
                 "The requested fiscal period is not executable by the annual structured-fact lane.",
             )
 
+        if "%" in raw_text:
+            return self._rejected(
+                StructuredFactQuestionClass.UNSUPPORTED_RATIO,
+                "Percentage ratios require derivation outside the structured-fact lane.",
+            )
+
         if re.search(r"\S\s*[+*/]\s*\S", raw_text) or re.search(
             r"\S\s+-\s+\S",
             raw_text,
@@ -402,6 +408,7 @@ class StructuredFactCapabilityPolicy:
         self,
         original_user_query: Any,
         *,
+        covered_requests: Iterable[dict[str, Any]] = (),
         entity_hints: Iterable[Any] = (),
     ) -> tuple[tuple[str, StructuredFactCapabilityDecision], ...]:
         original_source = str(original_user_query or "").replace(
@@ -411,11 +418,9 @@ class StructuredFactCapabilityPolicy:
         if not original_text:
             return ()
         shared_entity_hints = tuple(entity_hints)
-        boundaries = tuple(
-            re.finditer(
-                r"\bas well as\b|\bclauseboundary\b|\bplus\b|\band\b",
-                original_text,
-            )
+        boundaries = self._independent_conjunctions(
+            original_text,
+            entity_hints=shared_entity_hints,
         )
         if not boundaries:
             return ()
@@ -425,24 +430,59 @@ class StructuredFactCapabilityPolicy:
             clauses.append(original_text[start : boundary.start()].strip())
             start = boundary.end()
         clauses.append(original_text[start:].strip())
-        classified = tuple(
-            (
-                clause,
-                self._classify_original_clause(
-                    clause,
-                    entity_hints=shared_entity_hints,
-                ),
+        covered_phrases = tuple(
+            phrase
+            for request in covered_requests
+            if isinstance(request, dict)
+            for phrase in (_normalize_lookup_text(request.get("metric_hint")),)
+            if phrase
+        )
+        entity_phrases = tuple(
+            phrase
+            for value in shared_entity_hints
+            for phrase in (_normalize_lookup_text(value),)
+            if phrase
+        )
+        unknown_clauses: list[tuple[str, StructuredFactCapabilityDecision]] = []
+        for clause in clauses:
+            residual = clause
+            for phrase in (*covered_phrases, *entity_phrases):
+                residual = re.sub(
+                    rf"(?<![a-z0-9]){re.escape(phrase)}(?![a-z0-9])",
+                    " ",
+                    residual,
+                )
+            residual = _normalize_lookup_text(residual)
+            meaningful_tokens = {
+                token
+                for token in residual.split()
+                if token not in _QUESTION_PREFIX_BOUNDARIES
+                and token
+                not in {
+                    "and",
+                    "as",
+                    "at",
+                    "clauseboundary",
+                    "for",
+                    "in",
+                    "of",
+                    "on",
+                    "plus",
+                    "to",
+                    "well",
+                }
+                and not token.isdigit()
+                and not re.fullmatch(r"fy\d{4}", token)
+            }
+            if not meaningful_tokens:
+                continue
+            decision = self._classify_original_clause(
+                residual,
+                entity_hints=shared_entity_hints,
             )
-            for clause in clauses
-            if clause
-        )
-        if not any(decision.permitted for _clause, decision in classified):
-            return ()
-        return tuple(
-            (clause, decision)
-            for clause, decision in classified
-            if decision.question_class == StructuredFactQuestionClass.UNKNOWN
-        )
+            if decision.question_class == StructuredFactQuestionClass.UNKNOWN:
+                unknown_clauses.append((residual, decision))
+        return tuple(unknown_clauses)
 
     def prompt_appendix(self) -> str:
         supported = ", ".join(

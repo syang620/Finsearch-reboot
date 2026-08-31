@@ -1239,72 +1239,6 @@ def _capability_rejection_issue(
     }
 
 
-_CAPABILITY_COVERAGE_STOPWORDS = frozenset(
-    {
-        "a",
-        "an",
-        "as",
-        "at",
-        "did",
-        "does",
-        "for",
-        "give",
-        "in",
-        "is",
-        "me",
-        "of",
-        "on",
-        "show",
-        "tell",
-        "the",
-        "was",
-        "were",
-        "what",
-    }
-)
-
-
-def _capability_coverage_terms(
-    value: Any,
-    *,
-    targets: Sequence[Dict[str, Any]],
-) -> frozenset[str]:
-    excluded = set(_CAPABILITY_COVERAGE_STOPWORDS)
-    for target in targets:
-        if not isinstance(target, dict):
-            continue
-        for field in ("company_name", "ticker"):
-            excluded.update((_normalize_text(target.get(field)) or "").lower().split())
-    return frozenset(
-        token
-        for token in re.findall(r"[a-z0-9]+", (_normalize_text(value) or "").lower())
-        if token not in excluded
-        and not token.isdigit()
-        and not re.fullmatch(r"fy\d{4}", token)
-    )
-
-
-def _unknown_capability_clause_is_covered(
-    clause: str,
-    *,
-    request: Dict[str, Any],
-    targets: Sequence[Dict[str, Any]],
-) -> bool:
-    clause_terms = _capability_coverage_terms(clause, targets=targets)
-    request_terms = _capability_coverage_terms(
-        " ".join(
-            part
-            for part in (
-                _normalize_text(request.get("metric_hint")),
-                _normalize_text(request.get("subquestion")),
-            )
-            if part
-        ),
-        targets=targets,
-    )
-    return bool(clause_terms and request_terms and clause_terms <= request_terms)
-
-
 def _apply_structured_fact_capability_policy(
     *,
     route: str,
@@ -1376,24 +1310,8 @@ def _apply_structured_fact_capability_policy(
         uncovered_unknowns = (
             DEFAULT_STRUCTURED_FACT_CAPABILITY_POLICY.classify_unknown_original_clauses(
                 original_user_query,
+                covered_requests=structured_fact_requests,
                 entity_hints=capability_entity_hints,
-            )
-        )
-        existing_unknown_requests = [
-            request
-            for _index, request, decision in decisions
-            if decision.question_class == StructuredFactQuestionClass.UNKNOWN
-        ]
-        uncovered_unknowns = tuple(
-            (clause, decision)
-            for clause, decision in uncovered_unknowns
-            if not any(
-                _unknown_capability_clause_is_covered(
-                    clause,
-                    request=request,
-                    targets=targets,
-                )
-                for request in existing_unknown_requests
             )
         )
         decisions.extend(

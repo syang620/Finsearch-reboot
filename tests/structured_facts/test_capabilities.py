@@ -254,6 +254,20 @@ def test_original_unsupported_semantics_block_supported_looking_decomposition() 
         StructuredFactQuestionClass.UNSUPPORTED_RATIO
     }
 
+    percent_symbol = DEFAULT_STRUCTURED_FACT_CAPABILITY_POLICY.classify_requests(
+        [
+            {
+                "metric_hint": "operating income",
+                "subquestion": "What was operating income?",
+            },
+            {"metric_hint": "revenue", "subquestion": "What was revenue?"},
+        ],
+        original_user_query="What was operating income as % of revenue?",
+    )
+    assert {decision.question_class for decision in percent_symbol} == {
+        StructuredFactQuestionClass.UNSUPPORTED_RATIO
+    }
+
 
 def test_trend_semantics_block_yearly_fact_decomposition() -> None:
     decisions = DEFAULT_STRUCTURED_FACT_CAPABILITY_POLICY.classify_requests(
