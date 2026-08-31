@@ -360,6 +360,29 @@ def test_conjoined_clauses_reject_only_unsupported_request() -> None:
     assert decisions[1].permitted
 
 
+def test_three_conjoined_clauses_preserve_supported_middle_request() -> None:
+    decisions = DEFAULT_STRUCTURED_FACT_CAPABILITY_POLICY.classify_requests(
+        [
+            {"metric_hint": "revenue", "subquestion": "What was revenue?"},
+            {"metric_hint": "total assets", "subquestion": "What were total assets?"},
+            {
+                "metric_hint": "explanation",
+                "subquestion": "Explain why net income increased.",
+            },
+        ],
+        original_user_query=(
+            "Give revenue and total assets and explain why net income increased."
+        ),
+    )
+
+    assert decisions[0].permitted
+    assert decisions[1].permitted
+    assert (
+        decisions[2].question_class
+        == StructuredFactQuestionClass.UNSUPPORTED_DERIVED_METRIC
+    )
+
+
 def test_mixed_supported_and_rejected_requests_remain_independent() -> None:
     decisions = DEFAULT_STRUCTURED_FACT_CAPABILITY_POLICY.classify_requests(
         [

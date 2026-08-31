@@ -505,12 +505,21 @@ class StructuredFactCapabilityPolicy:
         entity_hints: Iterable[Any] = (),
     ) -> tuple[re.Match[str], ...]:
         independent: list[re.Match[str]] = []
-        for conjunction in re.finditer(
-            r"\bas well as\b|\bclauseboundary\b|\bplus\b|\band\b",
-            text,
-        ):
-            left = text[: conjunction.start()].strip()
-            right = text[conjunction.end() :].strip()
+        conjunctions = tuple(
+            re.finditer(
+                r"\bas well as\b|\bclauseboundary\b|\bplus\b|\band\b",
+                text,
+            )
+        )
+        for index, conjunction in enumerate(conjunctions):
+            left_start = conjunctions[index - 1].end() if index > 0 else 0
+            right_end = (
+                conjunctions[index + 1].start()
+                if index + 1 < len(conjunctions)
+                else len(text)
+            )
+            left = text[left_start : conjunction.start()].strip()
+            right = text[conjunction.end() : right_end].strip()
             if not left or not right:
                 continue
             if conjunction.group() in {"and", "plus"} and (

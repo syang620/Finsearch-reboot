@@ -1410,6 +1410,17 @@ def _format_clarification_context(clarification_turns: List[Dict[str, str]]) -> 
     return "\n".join(lines)
 
 
+def _capability_guard_query(
+    effective_user_query: str,
+    clarification_history: Sequence[Dict[str, str]],
+) -> str:
+    for turn in reversed(clarification_history):
+        answer = _normalize_text(turn.get("answer"))
+        if answer:
+            return answer
+    return effective_user_query
+
+
 def _build_deterministic_targets(
     hints: Any,
     *,
@@ -2250,7 +2261,10 @@ async def run_target_resolution_prompt_async(
         try:
             final_resolution = _normalize_resolution_output(
                 parsed_output,
-                original_user_query=pre_llm["effective_user_query"],
+                original_user_query=_capability_guard_query(
+                    pre_llm["effective_user_query"],
+                    pre_llm["clarification_history"],
+                ),
             )
             final_resolution = _apply_anchored_filing_comparison(
                 final_resolution,

@@ -6,9 +6,25 @@ from agents.planner.interactive_target_resolution import (
     InteractivePlannerAgent,
     _build_fallback_target_resolution,
     _build_planner_output,
+    _capability_guard_query,
     _normalize_resolution_output,
     render_target_resolution_prompt,
 )
+
+
+def test_capability_guard_uses_latest_clarification_answer() -> None:
+    assert (
+        _capability_guard_query(
+            "What was Apple's cash?\n\nAnswer: cash and cash equivalents",
+            [
+                {
+                    "question": "Which cash metric?",
+                    "answer": "cash and cash equivalents",
+                }
+            ],
+        )
+        == "cash and cash equivalents"
+    )
 
 
 def _base_planner_output_payload() -> dict:
