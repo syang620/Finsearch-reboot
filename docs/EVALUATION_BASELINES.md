@@ -234,7 +234,8 @@ does not measure RAGAS semantic quality.
 | Pre-PR3 commit | `586fe24cdeeb87040ad241a1cac39e71648d907b` |
 | PR3 implementation evaluated commit | `6b6b6173bac9045b03ad2292910b5acfd51740c8` |
 | First review-fix evaluated commit | `5a93171562dce106d1dd45cfe0c80aa5c01628ac` |
-| Final review-fix evaluated commit | `af15c3c0acc301790d74187dcfacdc11c3dabe98` |
+| Second review-fix evaluated commit | `af15c3c0acc301790d74187dcfacdc11c3dabe98` |
+| Final review-fix evaluated commit | `a3af6f08cf1b28c6a53ca52f4c58747ad62c4a99` |
 | PR3 evidence commit | This documentation/artifact-only follow-up commit |
 | Dataset | `data/evals/agents/planner/structured_fact_capability_adversarial.v1.jsonl` |
 | Dataset SHA-256 | `cb683920ac5f4f99ce6ec603c11f80be8c2e2b36598536e480781e28d8133273` |
@@ -282,6 +283,7 @@ PYTHONPATH=src <EVAL_VENV>/bin/python scripts/evals/agents/eval_planner_routes.p
 | `artifacts/evals/agents/planner/structured_fact_capability_adversarial.v1/runs/6b6b617_after.json` | `e7ed34f0be56ba41a3b636f3093a930e70aed7fc866295105638d14be12dc41a` |
 | `artifacts/evals/agents/planner/structured_fact_capability_adversarial.v1/runs/5a93171_post_review.json` | `12486d8ec4497fe2c6367b477bc83d5c27ea1cb2ab71e61e24c12f56f82262d8` |
 | `artifacts/evals/agents/planner/structured_fact_capability_adversarial.v1/runs/af15c3c_post_review_2.json` | `0dcecc9b25ddc7ec636945f681801c1b7baa2088913b97e22e6b5bb060dd8b89` |
+| `artifacts/evals/agents/planner/structured_fact_capability_adversarial.v1/runs/a3af6f0_post_review_3.json` | `1b37eaf2f822e71e2838a74f824b76b35707d3f1f9bd19ea98af36d5e70ab360` |
 | `artifacts/evals/agents/planner/planner_routing_core.v1.1/runs/6b6b617_p0_ollama_qwen2.5_14b-instruct.json` | `e3cc95fe8a56db9596a4bcfa27ad0d99267352b732d56b176932df49da1c31a7` |
 
 ### Before / after result
@@ -326,6 +328,10 @@ subquestions. Commit `af15c3c0acc301790d74187dcfacdc11c3dabe98` added determinis
 hint/subquestion agreement validation and was rerun against the same unchanged
 dataset and evaluator. Its 40-case/44-request result preserved all six metrics.
 
+The next review tightened exact metric-phrase boundaries and target-identifier
+sanitization. Commit `a3af6f08cf1b28c6a53ca52f4c58747ad62c4a99` was rerun against
+the same unchanged dataset and evaluator and again preserved all six metrics.
+
 ### Route-aware live-gate diagnostic
 
 A 15-case route-aware v1 run against the sealed PR3 implementation completed all
@@ -350,7 +356,8 @@ issue #17 and are out of scope for this policy PR. RAGAS was disabled.
 Commit `6b6b6173bac9045b03ad2292910b5acfd51740c8` remains the sealed initial
 implementation measured by the original artifacts. The review-fix implementation
 at `5a93171562dce106d1dd45cfe0c80aa5c01628ac` and the final review fix at
-`af15c3c0acc301790d74187dcfacdc11c3dabe98` are measured separately by their
+`af15c3c0acc301790d74187dcfacdc11c3dabe98`, and the final review fix at
+`a3af6f08cf1b28c6a53ca52f4c58747ad62c4a99` are measured separately by their
 post-review artifacts. Changes after the final SHA are limited to evaluation
 artifacts and documentation; any later source, test, prompt, policy, evaluator, or
 dataset change invalidates the final post-review measurement and requires a rerun.

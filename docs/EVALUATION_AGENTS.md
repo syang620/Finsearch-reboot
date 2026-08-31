@@ -18,7 +18,8 @@ provenance are recorded in `docs/EVALUATION_BASELINES.md` under
 The initial PR3 structured-fact capability baseline was evaluated independently at
 `6b6b6173bac9045b03ad2292910b5acfd51740c8`; review fixes were verified at
 `5a93171562dce106d1dd45cfe0c80aa5c01628ac` and
-`af15c3c0acc301790d74187dcfacdc11c3dabe98` against the same frozen dataset. The
+`af15c3c0acc301790d74187dcfacdc11c3dabe98`, with final verification at
+`a3af6f08cf1b28c6a53ca52f4c58747ad62c4a99`, against the same frozen dataset. The
 adversarial before/after artifacts, metric definitions, and planner P0 gate are recorded in
 `docs/EVALUATION_BASELINES.md` under “Structured-Fact Capability Policy v1 —
 2026-08-30.”

@@ -10,7 +10,7 @@
 
 - PR1 — complete: planner/orchestrator runtime contracts.
 - PR2 — complete: canonical route-aware gate passed at `6aae2651518e4495c947e393ed78978b515bd482`.
-- PR3 — complete: centralized capability policy post-review verified at `af15c3c0acc301790d74187dcfacdc11c3dabe98`.
+- PR3 — complete: centralized capability policy post-review verified at `a3af6f08cf1b28c6a53ca52f4c58747ad62c4a99`.
 - PR4 — next: native structured evidence and SEC provenance.
 
 ---
