@@ -42,7 +42,8 @@ verification at `21dd490e287f208bff92c8d4613db0009a93d8c0` and final occurrence/
 verification at `dfd3ffe997fbdb55173ff5878ddd7cd8f0160f2a`, followed by final scoped-fallback
 verification at `7791e64c586a4bacfb6e3a46e8f7b4c8aac31ae1` and final original-query agreement
 verification at `efb5e4251dd97af5165b24850aee06a4b18c542b`, followed by final deterministic-context
-verification at `5df0d19771015908abdca2dc949189418bc26016`.
+verification at `5df0d19771015908abdca2dc949189418bc26016` and final period-boundary
+verification at `8ee0d1e0c7e3ec840ff7ccf149a535433d6ca9d4`.
 The adversarial before/after artifacts, metric definitions, and planner P0 gate are recorded in
 `docs/EVALUATION_BASELINES.md` under “Structured-Fact Capability Policy v1 —
 2026-08-30.”
