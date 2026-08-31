@@ -187,6 +187,13 @@ def test_lowercase_entity_prefix_does_not_change_supported_classification() -> N
     )
     assert leading_article_issuer.permitted
 
+    semantic_word_issuer = _classify(
+        "revenue",
+        "What was Change Healthcare revenue in FY 2024?",
+        entity_hints=("Change Healthcare",),
+    )
+    assert semantic_word_issuer.permitted
+
 
 def test_unknown_metric_is_not_permitted() -> None:
     decision = _classify("bookings")
@@ -280,6 +287,20 @@ def test_trend_semantics_block_yearly_fact_decomposition() -> None:
     assert {decision.question_class for decision in decisions} == {
         StructuredFactQuestionClass.UNSUPPORTED_DERIVED_METRIC
     }
+
+
+def test_narrative_semantics_do_not_enter_scalar_structured_execution() -> None:
+    for question in (
+        "What drove revenue?",
+        "Explain revenue.",
+        "Why was revenue lower?",
+    ):
+        decision = _classify("revenue", question)
+        assert not decision.permitted
+        assert (
+            decision.question_class
+            == StructuredFactQuestionClass.UNSUPPORTED_DERIVED_METRIC
+        )
 
 
 def test_comparison_operand_conjunction_does_not_look_independent() -> None:

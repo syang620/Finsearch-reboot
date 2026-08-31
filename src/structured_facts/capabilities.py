@@ -166,6 +166,13 @@ _DERIVED_PATTERNS = (
     ),
     re.compile(r"\b(?:calculate|compute)\b.*\bplus\b"),
 )
+_NARRATIVE_PATTERNS = (
+    re.compile(r"\bwhy\b"),
+    re.compile(r"\bexplain\b"),
+    re.compile(r"\bwhat drove\b"),
+    re.compile(r"\bdrivers?\b"),
+    re.compile(r"\breasons?\b"),
+)
 _AMBIGUOUS_GENERIC_TERMS = frozenset({"cash", "profit", "profitability"})
 _QUESTION_PREFIX_BOUNDARIES = frozenset(
     {
@@ -174,6 +181,10 @@ _QUESTION_PREFIX_BOUNDARIES = frozenset(
         "are",
         "did",
         "does",
+        "drove",
+        "driver",
+        "drivers",
+        "explain",
         "give",
         "how",
         "is",
@@ -186,6 +197,7 @@ _QUESTION_PREFIX_BOUNDARIES = frozenset(
         "was",
         "were",
         "what",
+        "why",
     }
 )
 _EXPLICIT_UNSUPPORTED_CLASSES = frozenset(
@@ -223,9 +235,22 @@ class StructuredFactCapabilityPolicy:
         fiscal_period: Any = None,
         entity_hints: Iterable[Any] = (),
     ) -> StructuredFactCapabilityDecision:
+        shared_entity_hints = tuple(entity_hints)
         metric_text = _normalize_lookup_text(metric_hint)
         question_text = _normalize_lookup_text(subquestion)
-        combined_text = " ".join(part for part in (metric_text, question_text) if part)
+        semantic_question_text = question_text
+        for value in shared_entity_hints:
+            entity_text = _normalize_lookup_text(value)
+            if not entity_text:
+                continue
+            semantic_question_text = re.sub(
+                rf"(?<![a-z0-9]){re.escape(entity_text)}(?![a-z0-9])",
+                " ",
+                semantic_question_text,
+            )
+        semantic_text = " ".join(
+            part for part in (metric_text, semantic_question_text) if part
+        )
         raw_text = " ".join(
             part for part in (str(metric_hint or ""), str(subquestion or "")) if part
         )
@@ -255,27 +280,27 @@ class StructuredFactCapabilityPolicy:
                 "Symbolic arithmetic is not executable by the structured-fact lane.",
             )
 
-        if _matches_any(combined_text, _PER_SHARE_PATTERNS):
+        if _matches_any(semantic_text, _PER_SHARE_PATTERNS):
             return self._rejected(
                 StructuredFactQuestionClass.UNSUPPORTED_PER_SHARE,
                 "Per-share metrics are not executable by the structured-fact lane.",
             )
-        if _matches_any(combined_text, _QUARTERLY_PERIOD_PATTERNS):
+        if _matches_any(semantic_text, _QUARTERLY_PERIOD_PATTERNS):
             return self._rejected(
                 StructuredFactQuestionClass.UNSUPPORTED_DERIVED_METRIC,
                 "Quarterly periods are not executable by the annual structured-fact lane.",
             )
-        if _matches_any(combined_text, _RATIO_PATTERNS):
+        if _matches_any(semantic_text, _RATIO_PATTERNS):
             return self._rejected(
                 StructuredFactQuestionClass.UNSUPPORTED_RATIO,
                 "Ratios, margins, and yields require derivation outside the structured-fact lane.",
             )
-        if _matches_any(combined_text, _COMPARISON_PATTERNS):
+        if _matches_any(semantic_text, _COMPARISON_PATTERNS):
             return self._rejected(
                 StructuredFactQuestionClass.UNSUPPORTED_COMPARISON,
                 "Comparisons requiring derivation are not executable by the structured-fact lane.",
             )
-        if _matches_any(combined_text, _DERIVED_PATTERNS):
+        if _matches_any(semantic_text, _DERIVED_PATTERNS):
             return self._rejected(
                 StructuredFactQuestionClass.UNSUPPORTED_DERIVED_METRIC,
                 "The requested calculated metric is not a supported registry capability.",
@@ -284,8 +309,32 @@ class StructuredFactCapabilityPolicy:
         hint_metric_ids = self._matching_hint_metric_ids(metric_text)
         question_metric_ids = self._matching_question_metric_ids(
             question_text,
-            entity_hints=entity_hints,
+            entity_hints=shared_entity_hints,
         )
+        if metric_text in _AMBIGUOUS_GENERIC_TERMS:
+            return self._ambiguous(
+                self._ambiguous_candidate_ids(metric_text),
+                "The metric phrase is too broad for deterministic structured execution.",
+            )
+        if not metric_text and not question_metric_ids:
+            ambiguous_term = next(
+                (
+                    term
+                    for term in _AMBIGUOUS_GENERIC_TERMS
+                    if _contains_phrase(question_text, term)
+                ),
+                None,
+            )
+            if ambiguous_term is not None:
+                return self._ambiguous(
+                    self._ambiguous_candidate_ids(ambiguous_term),
+                    "The metric phrase is too broad for deterministic structured execution.",
+                )
+        if _matches_any(semantic_text, _NARRATIVE_PATTERNS):
+            return self._rejected(
+                StructuredFactQuestionClass.UNSUPPORTED_DERIVED_METRIC,
+                "Narrative explanations are not executable by the structured-fact lane.",
+            )
         if (
             metric_text
             and question_text
@@ -308,11 +357,6 @@ class StructuredFactCapabilityPolicy:
                     hint_metric_ids,
                     "The metric hint maps to multiple supported metrics.",
                 )
-            if metric_text in _AMBIGUOUS_GENERIC_TERMS:
-                return self._ambiguous(
-                    self._ambiguous_candidate_ids(metric_text),
-                    "The metric phrase is too broad for deterministic structured execution.",
-                )
             return self._rejected(
                 StructuredFactQuestionClass.UNKNOWN,
                 "The metric hint is not a direct structured-fact capability.",
@@ -320,7 +364,7 @@ class StructuredFactCapabilityPolicy:
 
         question_metric_ids = self._matching_question_metric_ids(
             question_text,
-            entity_hints=entity_hints,
+            entity_hints=shared_entity_hints,
         )
         if len(question_metric_ids) == 1:
             return self._supported(
@@ -333,19 +377,6 @@ class StructuredFactCapabilityPolicy:
                 "The question contains multiple supported metric phrases.",
             )
 
-        ambiguous_term = next(
-            (
-                term
-                for term in _AMBIGUOUS_GENERIC_TERMS
-                if _contains_phrase(question_text, term)
-            ),
-            None,
-        )
-        if ambiguous_term is not None:
-            return self._ambiguous(
-                self._ambiguous_candidate_ids(ambiguous_term),
-                "The metric phrase is too broad for deterministic structured execution.",
-            )
         return self._rejected(
             StructuredFactQuestionClass.UNKNOWN,
             "A direct metric hint is required for structured execution.",
@@ -375,10 +406,18 @@ class StructuredFactCapabilityPolicy:
         if not decisions:
             return decisions
 
-        original_source = str(original_user_query or "").replace(
-            ";", " clauseboundary "
+        original_source = re.sub(
+            r"[;.!?]+|\n+|,\s*(?=also\b)",
+            " clauseboundary ",
+            str(original_user_query or ""),
+            flags=re.IGNORECASE,
         )
         original_text = _normalize_lookup_text(original_source)
+        original_text = re.sub(
+            r"^(?:clauseboundary )+|(?: clauseboundary)+$",
+            "",
+            original_text,
+        )
         if not original_text:
             return decisions
         original_decision = self.classify_request(
@@ -411,10 +450,18 @@ class StructuredFactCapabilityPolicy:
         covered_requests: Iterable[dict[str, Any]] = (),
         entity_hints: Iterable[Any] = (),
     ) -> tuple[tuple[str, StructuredFactCapabilityDecision], ...]:
-        original_source = str(original_user_query or "").replace(
-            ";", " clauseboundary "
+        original_source = re.sub(
+            r"[;.!?]+|\n+|,\s*(?=also\b)",
+            " clauseboundary ",
+            str(original_user_query or ""),
+            flags=re.IGNORECASE,
         )
         original_text = _normalize_lookup_text(original_source)
+        original_text = re.sub(
+            r"^(?:clauseboundary )+|(?: clauseboundary)+$",
+            "",
+            original_text,
+        )
         if not original_text:
             return ()
         shared_entity_hints = tuple(entity_hints)

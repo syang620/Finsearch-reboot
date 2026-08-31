@@ -187,6 +187,32 @@ def test_unknown_sibling_preserves_conjunction_inside_financial_concept() -> Non
     assert "research and development expenses" in result["retrieval_plan"]["jobs"][0]["goal"]
 
 
+def test_unknown_sibling_survives_sentence_boundary_normalization() -> None:
+    result = _apply_structured_fact_capability_policy(
+        route="structured_fact",
+        structured_fact_requests=[
+            {"subquestion": "What was revenue?", "metric_hint": "revenue"}
+        ],
+        targets=[
+            {
+                "target_id": 1,
+                "company_name": "Apple",
+                "ticker": "AAPL",
+                "fiscal_year": 2025,
+            }
+        ],
+        retrieval_plan=None,
+        needs_clarification=False,
+        clarification_reason=None,
+        clarification_questions=[],
+        open_issues=[],
+        original_user_query="Give revenue. Also provide bookings.",
+    )
+
+    assert result["route"] == "hybrid"
+    assert "bookings" in result["retrieval_plan"]["jobs"][0]["goal"]
+
+
 def _base_planner_output_payload() -> dict:
     return {
         "status": "completed",
