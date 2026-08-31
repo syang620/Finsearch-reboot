@@ -15,9 +15,10 @@ Canonical release baseline: evaluated commit
 provenance are recorded in `docs/EVALUATION_BASELINES.md` under
 “Route-Aware Agent E2E v1 — 2026-08-26.”
 
-The PR3 structured-fact capability baseline was evaluated independently at
-`6b6b6173bac9045b03ad2292910b5acfd51740c8`. Its frozen adversarial before/after
-artifacts, metric definitions, and planner P0 gate are recorded in
+The initial PR3 structured-fact capability baseline was evaluated independently at
+`6b6b6173bac9045b03ad2292910b5acfd51740c8`; review fixes were verified at
+`5a93171562dce106d1dd45cfe0c80aa5c01628ac` against the same frozen dataset. The
+adversarial before/after artifacts, metric definitions, and planner P0 gate are recorded in
 `docs/EVALUATION_BASELINES.md` under “Structured-Fact Capability Policy v1 —
 2026-08-30.”
 

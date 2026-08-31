@@ -233,6 +233,7 @@ does not measure RAGAS semantic quality.
 | Status | Canonical PR3 capability-policy baseline |
 | Pre-PR3 commit | `586fe24cdeeb87040ad241a1cac39e71648d907b` |
 | PR3 implementation evaluated commit | `6b6b6173bac9045b03ad2292910b5acfd51740c8` |
+| Post-review implementation evaluated commit | `5a93171562dce106d1dd45cfe0c80aa5c01628ac` |
 | PR3 evidence commit | This documentation/artifact-only follow-up commit |
 | Dataset | `data/evals/agents/planner/structured_fact_capability_adversarial.v1.jsonl` |
 | Dataset SHA-256 | `cb683920ac5f4f99ce6ec603c11f80be8c2e2b36598536e480781e28d8133273` |
@@ -278,6 +279,7 @@ PYTHONPATH=src <EVAL_VENV>/bin/python scripts/evals/agents/eval_planner_routes.p
 |---|---|
 | `artifacts/evals/agents/planner/structured_fact_capability_adversarial.v1/baselines/586fe24_before.json` | `d0bd5eae53864c2ed72938011dc64b838274517d0bcd6ce39edac35a21232db5` |
 | `artifacts/evals/agents/planner/structured_fact_capability_adversarial.v1/runs/6b6b617_after.json` | `e7ed34f0be56ba41a3b636f3093a930e70aed7fc866295105638d14be12dc41a` |
+| `artifacts/evals/agents/planner/structured_fact_capability_adversarial.v1/runs/5a93171_post_review.json` | `12486d8ec4497fe2c6367b477bc83d5c27ea1cb2ab71e61e24c12f56f82262d8` |
 | `artifacts/evals/agents/planner/planner_routing_core.v1.1/runs/6b6b617_p0_ollama_qwen2.5_14b-instruct.json` | `e3cc95fe8a56db9596a4bcfa27ad0d99267352b732d56b176932df49da1c31a7` |
 
 ### Before / after result
@@ -307,6 +309,16 @@ and `ollama/qwen2.5:14b-instruct`. It passed 25/25: 5/5 each for
 `structured_fact`, `kb_narrative`, `hybrid`, `unsupported_metrics`, and
 `multi_company_comparison`.
 
+### Post-review verification
+
+Codex review fixes tightened alias matching, enforced the original-query guard for
+partially rejected proposals, recognized independent noun-phrase conjunctions, and
+built rejected fallback goals from the sanitized subquestion. Commit
+`5a93171562dce106d1dd45cfe0c80aa5c01628ac` was evaluated against the unchanged
+dataset and evaluator. All 40 cases and 44 requests passed with the same post-PR3
+metrics recorded above: 100% precision, recall, rejection, clarification accuracy,
+and effective-route accuracy, with 0% false structured routing.
+
 ### Route-aware live-gate diagnostic
 
 A 15-case route-aware v1 run against the sealed PR3 implementation completed all
@@ -328,10 +340,12 @@ issue #17 and are out of scope for this policy PR. RAGAS was disabled.
 
 ### Freeze and coverage limitations
 
-Commit `6b6b6173bac9045b03ad2292910b5acfd51740c8` is the sealed implementation
-measured by these artifacts. This follow-up may contain only evaluation artifacts
+Commit `6b6b6173bac9045b03ad2292910b5acfd51740c8` remains the sealed initial
+implementation measured by the original artifacts. The review-fix implementation
+at `5a93171562dce106d1dd45cfe0c80aa5c01628ac` is measured separately by the
+post-review artifact. Changes after that SHA are limited to evaluation artifacts
 and documentation; any later source, test, prompt, policy, evaluator, or dataset
-change invalidates the measurements and requires a rerun.
+change invalidates the post-review measurement and requires a rerun.
 
 The adversarial baseline measures routing permission and normalization, not SEC fact
 numeric correctness, filing-specific metric resolution, retrieval relevance,
