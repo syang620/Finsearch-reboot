@@ -1181,7 +1181,19 @@ def _append_capability_fallback_jobs(
             targets=targets,
         )
         goal = f"retrieve filing evidence needed for the requested {fragment}"
-        key = (goal.lower(), tuple(target_ids), "metric_extract")
+        request_text = " ".join(
+            str(request.get(field) or "")
+            for field in ("subquestion", "metric_hint")
+        ).lower()
+        job_type = (
+            "narrative_extract"
+            if re.search(
+                r"\b(?:why|explain|explanation|reason|driver|drove)\b",
+                request_text,
+            )
+            else "metric_extract"
+        )
+        key = (goal.lower(), tuple(target_ids), job_type)
         if key in seen:
             continue
         seen.add(key)
@@ -1189,7 +1201,7 @@ def _append_capability_fallback_jobs(
             {
                 "applies_to_target_ids": target_ids,
                 "goal": goal,
-                "job_type": "metric_extract",
+                "job_type": job_type,
             }
         )
     if not jobs:
@@ -1416,7 +1428,11 @@ def _capability_guard_query(
 ) -> str:
     for turn in reversed(clarification_history):
         answer = _normalize_text(turn.get("answer"))
-        if answer:
+        question = (_normalize_text(turn.get("question")) or "").lower()
+        is_metric_clarification = "metric" in question and (
+            "which" in question or "mean" in question
+        )
+        if answer and is_metric_clarification:
             return answer
     return effective_user_query
 

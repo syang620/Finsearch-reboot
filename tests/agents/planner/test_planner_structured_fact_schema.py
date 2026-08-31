@@ -25,6 +25,48 @@ def test_capability_guard_uses_latest_clarification_answer() -> None:
         )
         == "cash and cash equivalents"
     )
+    original = "Why did revenue increase?\n\nAnswer: Apple"
+    assert (
+        _capability_guard_query(
+            original,
+            [{"question": "Which company?", "answer": "Apple"}],
+        )
+        == original
+    )
+
+
+def test_explanatory_capability_fallback_uses_narrative_job() -> None:
+    normalized = _normalize_resolution_output(
+        {
+            "retrieval_needed": False,
+            "route": "structured_fact",
+            "structured_fact_requests": [
+                {
+                    "subquestion": "Explain why revenue increased.",
+                    "metric_hint": "revenue increase",
+                    "entity_hint": "Apple",
+                }
+            ],
+            "task_class": "single_target_fact",
+            "targets": [
+                {
+                    "target_id": 1,
+                    "target_key": "AAPL_FY2025",
+                    "company_name": "Apple",
+                    "ticker": "AAPL",
+                    "fiscal_year": 2025,
+                    "form_type": "10-K",
+                }
+            ],
+            "retrieval_plan": None,
+            "needs_clarification": False,
+            "clarification_reason": None,
+            "clarification_questions": [],
+            "open_issues": [],
+        }
+    )
+
+    assert normalized["retrieval_plan"]["jobs"][0]["job_type"] == "narrative_extract"
 
 
 def _base_planner_output_payload() -> dict:

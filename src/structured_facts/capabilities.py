@@ -121,6 +121,7 @@ _RATIO_PATTERNS = (
     re.compile(r"\bratio\b"),
     re.compile(r"\breturn on (?:equity|assets|investment|capital)\b"),
     re.compile(r"\b(?:roe|roa|roic)\b"),
+    re.compile(r"\bdebt to equity\b"),
     re.compile(r"\bev\s+ebitda\b"),
     re.compile(r"\bpercentage of\b"),
 )
@@ -621,26 +622,35 @@ class StructuredFactCapabilityPolicy:
 
     def _metric_ids_in_text(self, text: str) -> tuple[str, ...]:
         matches = sorted(
-            (
-                match.start(),
-                capability.metric_id,
-            )
-            for capability in self.capabilities
-            for phrase in (*capability.exact_phrases, *capability.aliases)
-            for match in [
-                re.search(
-                    rf"(?<![a-z0-9]){re.escape(phrase)}(?![a-z0-9])",
-                    text,
+            [
+                (
+                    match.start(),
+                    match.end(),
+                    capability.metric_id,
                 )
-            ]
-            if match is not None
+                for capability in self.capabilities
+                for phrase in (*capability.exact_phrases, *capability.aliases)
+                for match in [
+                    re.search(
+                        rf"(?<![a-z0-9]){re.escape(phrase)}(?![a-z0-9])",
+                        text,
+                    )
+                ]
+                if match is not None
+            ],
+            key=lambda item: (item[0], -(item[1] - item[0])),
         )
-        return tuple(
-            dict.fromkeys(
-                metric_id
-                for _position, metric_id in matches
-            )
-        )
+        selected: list[tuple[int, int, str]] = []
+        for position, end, metric_id in matches:
+            if any(
+                selected_metric_id == metric_id
+                and position < selected_end
+                and end > selected_start
+                for selected_start, selected_end, selected_metric_id in selected
+            ):
+                continue
+            selected.append((position, end, metric_id))
+        return tuple(metric_id for _start, _end, metric_id in selected)
 
     def _classify_original_clause(
         self,

@@ -203,6 +203,20 @@ def test_original_unsupported_semantics_block_supported_looking_decomposition() 
     }
     assert not any(decision.permitted for decision in decisions)
 
+    without_ratio_word = DEFAULT_STRUCTURED_FACT_CAPABILITY_POLICY.classify_requests(
+        [
+            {"metric_hint": "total debt", "subquestion": "What was total debt?"},
+            {
+                "metric_hint": "stockholders equity",
+                "subquestion": "What was stockholders equity?",
+            },
+        ],
+        original_user_query="What was Apple's debt-to-equity?",
+    )
+    assert {decision.question_class for decision in without_ratio_word} == {
+        StructuredFactQuestionClass.UNSUPPORTED_RATIO
+    }
+
 
 def test_comparison_operand_conjunction_does_not_look_independent() -> None:
     decisions = DEFAULT_STRUCTURED_FACT_CAPABILITY_POLICY.classify_requests(
@@ -305,6 +319,20 @@ def test_completed_expression_preserves_later_independent_request() -> None:
         == StructuredFactQuestionClass.UNSUPPORTED_COMPARISON
     )
     assert decisions[2].permitted
+
+    repeated = DEFAULT_STRUCTURED_FACT_CAPABILITY_POLICY.classify_requests(
+        [
+            {"metric_hint": "revenue", "subquestion": "What was 2024 revenue?"},
+            {"metric_hint": "revenue", "subquestion": "What was 2023 revenue?"},
+            {"metric_hint": "total assets", "subquestion": "What were total assets?"},
+        ],
+        original_user_query=(
+            "Calculate the difference between revenue in 2024 and revenue in 2023; "
+            "also give total assets."
+        ),
+    )
+    assert all(not decision.permitted for decision in repeated[:2])
+    assert repeated[2].permitted
 
 
 def test_symbolic_arithmetic_blocks_supported_looking_decomposition() -> None:
