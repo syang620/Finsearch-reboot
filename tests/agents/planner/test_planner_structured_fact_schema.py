@@ -193,6 +193,25 @@ def test_partial_structured_proposal_preserves_unknown_sibling_for_retrieval() -
     assert normalized["open_issues"][0]["metadata"]["question_class"] == "unknown"
 
 
+def test_partial_structured_proposal_preserves_comma_separated_sibling() -> None:
+    result = _apply_structured_fact_capability_policy(
+        route="structured_fact",
+        structured_fact_requests=[
+            {"subquestion": "What was revenue?", "metric_hint": "revenue"}
+        ],
+        targets=[{"target_id": 1, "ticker": "AAPL", "fiscal_year": 2025}],
+        retrieval_plan=None,
+        needs_clarification=False,
+        clarification_reason=None,
+        clarification_questions=[],
+        open_issues=[],
+        original_user_query="Give revenue, bookings.",
+    )
+
+    assert result["route"] == "hybrid"
+    assert "bookings" in result["retrieval_plan"]["jobs"][0]["goal"]
+
+
 def test_mixed_proposal_preserves_omitted_unknown_sibling_for_retrieval() -> None:
     normalized = _normalize_resolution_output(
         {
@@ -977,6 +996,63 @@ class PlannerStructuredFactSchemaTests(unittest.TestCase):
         self.assertNotIn("revenue", goal)
         self.assertNotIn("Apple", goal)
         self.assertNotIn("2025", goal)
+
+    def test_rejected_request_fallback_is_scoped_to_its_fiscal_year(self) -> None:
+        normalized = _normalize_resolution_output(
+            {
+                "retrieval_needed": False,
+                "route": "structured_fact",
+                "structured_fact_requests": [
+                    {
+                        "subquestion": "What was Apple's revenue in FY2024?",
+                        "metric_hint": "revenue",
+                        "entity_hint": "Apple",
+                        "fiscal_year": 2024,
+                    },
+                    {
+                        "subquestion": "What were Apple's bookings in FY2023?",
+                        "metric_hint": "bookings",
+                        "entity_hint": "Apple",
+                        "fiscal_year": 2023,
+                    },
+                ],
+                "task_class": "single_target_fact",
+                "targets": [
+                    {
+                        "target_id": 1,
+                        "company_name": "Apple",
+                        "ticker": "AAPL",
+                        "fiscal_year": 2024,
+                        "form_type": "10-K",
+                    },
+                    {
+                        "target_id": 2,
+                        "company_name": "Apple",
+                        "ticker": "AAPL",
+                        "fiscal_year": 2023,
+                        "form_type": "10-K",
+                    },
+                    {
+                        "target_id": 3,
+                        "company_name": "Microsoft",
+                        "ticker": "MSFT",
+                        "fiscal_year": 2023,
+                        "form_type": "10-K",
+                    },
+                ],
+                "retrieval_plan": None,
+                "needs_clarification": False,
+                "clarification_reason": None,
+                "clarification_questions": [],
+                "open_issues": [],
+            }
+        )
+
+        self.assertEqual(normalized["route"], "hybrid")
+        self.assertEqual(
+            normalized["retrieval_plan"]["jobs"][0]["applies_to_target_ids"],
+            [2],
+        )
 
     def test_fallback_goal_removes_short_ticker_only_at_token_boundary(self) -> None:
         normalized = _normalize_resolution_output(

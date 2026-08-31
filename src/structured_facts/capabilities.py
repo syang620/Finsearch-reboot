@@ -411,7 +411,7 @@ class StructuredFactCapabilityPolicy:
             return decisions
 
         original_source = re.sub(
-            r"[;.!?]+|\n+|,\s*(?=also\b)",
+            r"[;,.!?]+|\n+",
             " clauseboundary ",
             str(original_user_query or ""),
             flags=re.IGNORECASE,
@@ -461,7 +461,7 @@ class StructuredFactCapabilityPolicy:
         entity_hints: Iterable[Any] = (),
     ) -> tuple[tuple[str, StructuredFactCapabilityDecision], ...]:
         original_source = re.sub(
-            r"[;.!?]+|\n+|,\s*(?=also\b)",
+            r"[;,.!?]+|\n+",
             " clauseboundary ",
             str(original_user_query or ""),
             flags=re.IGNORECASE,
@@ -583,6 +583,11 @@ class StructuredFactCapabilityPolicy:
         phrase: str,
         entity_hints: tuple[Any, ...],
     ) -> bool:
+        clause_year_match = re.search(r"\b(?:fy\s*)?((?:19|20)\d{2})\b", clause)
+        if clause_year_match is not None and self._request_fiscal_year(request) != int(
+            clause_year_match.group(1)
+        ):
+            return False
         request_decision = self.classify_request(
             metric_hint=request.get("metric_hint"),
             subquestion=request.get("subquestion"),

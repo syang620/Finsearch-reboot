@@ -1175,6 +1175,9 @@ def _append_capability_fallback_jobs(
         for job in jobs
     }
     for _index, request, _decision in rejected:
+        request_target_ids = _capability_fallback_target_ids(request, targets)
+        if not request_target_ids:
+            continue
         fragment = _sanitize_retrieval_goal_fragment(
             request.get("subquestion") or request.get("metric_hint"),
             request=request,
@@ -1193,13 +1196,13 @@ def _append_capability_fallback_jobs(
             )
             else "metric_extract"
         )
-        key = (goal.lower(), tuple(target_ids), job_type)
+        key = (goal.lower(), tuple(request_target_ids), job_type)
         if key in seen:
             continue
         seen.add(key)
         jobs.append(
             {
-                "applies_to_target_ids": target_ids,
+                "applies_to_target_ids": request_target_ids,
                 "goal": goal,
                 "job_type": job_type,
             }
@@ -1210,6 +1213,82 @@ def _append_capability_fallback_jobs(
         "fanout_mode": "single_target" if len(target_ids) == 1 else "per_target",
         "jobs": jobs,
     }
+
+
+def _capability_fallback_target_ids(
+    request: Dict[str, Any],
+    targets: Sequence[Dict[str, Any]],
+) -> List[int]:
+    request_year = _normalize_int(request.get("fiscal_year"))
+    if request_year is None:
+        year_match = re.search(
+            r"\b(?:FY\s*)?((?:19|20)\d{2})\b",
+            str(request.get("subquestion") or ""),
+            flags=re.IGNORECASE,
+        )
+        request_year = int(year_match.group(1)) if year_match else None
+
+    def _entity_text(value: Any) -> str:
+        return re.sub(r"[^a-z0-9]+", " ", str(value or "").lower()).strip()
+
+    request_entity = _entity_text(request.get("entity_hint"))
+    subquestion = _entity_text(request.get("subquestion"))
+    mentioned_target_ids = {
+        target_id
+        for target in targets
+        if isinstance(target, dict)
+        for target_id in (_normalize_int(target.get("target_id")),)
+        if target_id is not None
+        if any(
+            identifier
+            and re.search(
+                rf"(?<![a-z0-9]){re.escape(identifier)}(?![a-z0-9])",
+                subquestion,
+            )
+            for identifier in (
+                _entity_text(target.get("company_name")),
+                _entity_text(target.get("ticker")),
+            )
+        )
+    }
+
+    applicable: List[int] = []
+    for target in targets:
+        if not isinstance(target, dict):
+            continue
+        target_id = _normalize_int(target.get("target_id"))
+        if target_id is None:
+            continue
+        if (
+            request_year is not None
+            and _normalize_int(target.get("fiscal_year")) != request_year
+        ):
+            continue
+        if request_entity:
+            identifiers = (
+                _entity_text(target.get("company_name")),
+                _entity_text(target.get("ticker")),
+            )
+            if not any(
+                identifier
+                and (
+                    request_entity == identifier
+                    or re.search(
+                        rf"(?<![a-z0-9]){re.escape(identifier)}(?![a-z0-9])",
+                        request_entity,
+                    )
+                    or re.search(
+                        rf"(?<![a-z0-9]){re.escape(request_entity)}(?![a-z0-9])",
+                        identifier,
+                    )
+                )
+                for identifier in identifiers
+            ):
+                continue
+        elif mentioned_target_ids and target_id not in mentioned_target_ids:
+            continue
+        applicable.append(target_id)
+    return applicable
 
 
 def _capability_rejection_issue(

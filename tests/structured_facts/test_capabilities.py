@@ -559,6 +559,27 @@ def test_explicit_clauses_map_repeated_metrics_in_order() -> None:
     assert decisions[1].permitted
 
 
+def test_uncovered_repeated_metric_is_matched_by_fiscal_year() -> None:
+    uncovered = (
+        DEFAULT_STRUCTURED_FACT_CAPABILITY_POLICY.classify_uncovered_original_clauses(
+            "Give revenue in 2024 and revenue in 2023.",
+            covered_requests=[
+                {
+                    "metric_hint": "revenue",
+                    "subquestion": "What was revenue in 2024?",
+                    "fiscal_year": 2024,
+                }
+            ],
+        )
+    )
+
+    assert len(uncovered) == 1
+    clause, decision = uncovered[0]
+    assert "revenue in 2023" in clause
+    assert not decision.permitted
+    assert decision.matched_metric_ids == ("revenue",)
+
+
 def test_conjoined_clauses_reject_only_unsupported_request() -> None:
     decisions = DEFAULT_STRUCTURED_FACT_CAPABILITY_POLICY.classify_requests(
         [
