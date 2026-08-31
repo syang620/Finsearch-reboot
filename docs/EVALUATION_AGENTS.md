@@ -36,7 +36,8 @@ omitted-sibling verification at `011eb6ae5c6f16f6d5a8662c4a3c4d3f96bfc10c` and f
 verification at `992e715c85b7cbb8ba0f5bd772c5d6974135eb76`, followed by final concept-clause
 verification at `8b9f8ec4a32b22976a2a9ccd0de09d0b2674712d` and final narrative-boundary
 verification at `f301f32742b85faba079031c4d3381ec15a2e51f`, followed by final uncovered-clause
-verification at `f47576bfdf775ddc21ef90267bea03318ef4e397`.
+verification at `f47576bfdf775ddc21ef90267bea03318ef4e397` and final omitted-supported-clause
+verification at `089763d702020fda627303a09004b937dbfdbbbe`.
 The adversarial before/after artifacts, metric definitions, and planner P0 gate are recorded in
 `docs/EVALUATION_BASELINES.md` under “Structured-Fact Capability Policy v1 —
 2026-08-30.”
