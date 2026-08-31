@@ -151,7 +151,9 @@ _METRIC_CONCEPT_MODIFIERS = frozenset(
         "adjusted",
         "deferred",
         "domestic",
+        "gaap",
         "international",
+        "non",
         "organic",
         "product",
         "recurring",
@@ -358,9 +360,7 @@ class StructuredFactCapabilityPolicy:
                     flags=re.IGNORECASE,
                 ):
                     prefix_tokens = text[: match.start()].split()
-                    if prefix_tokens and not self._is_question_metric_prefix(
-                        prefix_tokens[-1]
-                    ):
+                    if not self._is_question_metric_prefix(prefix_tokens):
                         continue
                     suffix_tokens = text[match.end() :].split()
                     if not self._is_question_metric_suffix(suffix_tokens):
@@ -370,8 +370,11 @@ class StructuredFactCapabilityPolicy:
         return tuple(sorted(set(matches)))
 
     @staticmethod
-    def _is_question_metric_prefix(token: str) -> bool:
-        return token.lower() not in _METRIC_CONCEPT_MODIFIERS
+    def _is_question_metric_prefix(tokens: list[str]) -> bool:
+        return not any(
+            token.lower().rstrip("s") in _METRIC_CONCEPT_MODIFIERS
+            for token in tokens
+        )
 
     @staticmethod
     def _is_question_metric_suffix(tokens: list[str]) -> bool:
@@ -407,7 +410,7 @@ class StructuredFactCapabilityPolicy:
             right = text[conjunction.end() :].strip()
             if not left or not right:
                 continue
-            if conjunction.group() == "and" and self._comparison_needs_operand(left):
+            if conjunction.group() == "and" and self._expression_needs_operand(left):
                 continue
             left_decision = self._classify_original_clause(left)
             right_decision = self._classify_original_clause(right)
@@ -428,15 +431,16 @@ class StructuredFactCapabilityPolicy:
         return False
 
     @staticmethod
-    def _comparison_needs_operand(left: str) -> bool:
-        comparison_start = re.search(
-            r"\b(?:compare|comparison between|difference between)\b",
+    def _expression_needs_operand(left: str) -> bool:
+        expression_start = re.search(
+            r"\b(?:compare|comparison between|difference between|"
+            r"sum(?: of)?|average(?: of)?|mean(?: of)?|median(?: of)?|add)\b",
             left,
         )
-        if comparison_start is None:
+        if expression_start is None:
             return False
-        comparison_text = left[comparison_start.end() :]
-        return not re.search(r"\b(?:to|versus|vs)\b", comparison_text)
+        expression_text = left[expression_start.end() :]
+        return not re.search(r"\b(?:to|versus|vs)\b", expression_text)
 
     def _classify_original_clause(
         self,

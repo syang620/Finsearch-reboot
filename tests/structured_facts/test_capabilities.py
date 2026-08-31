@@ -130,6 +130,10 @@ def test_supported_phrase_does_not_match_inside_modified_metric_name() -> None:
         assert not qualified.permitted
         assert qualified.question_class == StructuredFactQuestionClass.UNKNOWN
 
+    non_gaap = _classify("operating income", "What was non-GAAP operating income?")
+    assert not non_gaap.permitted
+    assert non_gaap.question_class == StructuredFactQuestionClass.UNKNOWN
+
 
 def test_lowercase_entity_prefix_does_not_change_supported_classification() -> None:
     decision = _classify("revenue", "what was apple revenue in 2024?")
@@ -207,6 +211,21 @@ def test_arithmetic_request_blocks_supported_looking_decomposition() -> None:
             decision.question_class
             == StructuredFactQuestionClass.UNSUPPORTED_DERIVED_METRIC
         )
+
+    sum_decisions = DEFAULT_STRUCTURED_FACT_CAPABILITY_POLICY.classify_requests(
+        [
+            {"metric_hint": "total assets", "subquestion": "What were total assets?"},
+            {
+                "metric_hint": "total liabilities",
+                "subquestion": "What were total liabilities?",
+            },
+        ],
+        original_user_query="Calculate the sum of total assets and total liabilities.",
+    )
+    assert {decision.question_class for decision in sum_decisions} == {
+        StructuredFactQuestionClass.UNSUPPORTED_DERIVED_METRIC
+    }
+    assert not any(decision.permitted for decision in sum_decisions)
 
 
 def test_mixed_supported_and_rejected_requests_remain_independent() -> None:
