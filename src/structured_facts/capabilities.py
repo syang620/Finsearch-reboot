@@ -134,7 +134,7 @@ _RATIO_PATTERNS = (
     re.compile(r"\bequity multiplier\b"),
     re.compile(r"\bdividend payout\b"),
     re.compile(r"\bev\s+ebitda\b"),
-    re.compile(r"\bpercentage of\b"),
+    re.compile(r"\b(?:percent|percentage) of\b"),
 )
 _COMPARISON_PATTERNS = (
     re.compile(r"\bcompare\b"),
@@ -147,6 +147,7 @@ _COMPARISON_PATTERNS = (
 )
 _DERIVED_PATTERNS = (
     re.compile(r"\b(?:growth|growth rate|cagr)\b"),
+    re.compile(r"\b(?:trend|trajectory)\b"),
     re.compile(r"\b(?:year over year|yoy|quarter over quarter|qoq)\b"),
     re.compile(r"\b(?:change|increase|increased|decrease|decreased)\b"),
     re.compile(
@@ -410,9 +411,11 @@ class StructuredFactCapabilityPolicy:
         if not original_text:
             return ()
         shared_entity_hints = tuple(entity_hints)
-        boundaries = self._independent_conjunctions(
-            original_text,
-            entity_hints=shared_entity_hints,
+        boundaries = tuple(
+            re.finditer(
+                r"\bas well as\b|\bclauseboundary\b|\bplus\b|\band\b",
+                original_text,
+            )
         )
         if not boundaries:
             return ()
@@ -422,7 +425,7 @@ class StructuredFactCapabilityPolicy:
             clauses.append(original_text[start : boundary.start()].strip())
             start = boundary.end()
         clauses.append(original_text[start:].strip())
-        classified = (
+        classified = tuple(
             (
                 clause,
                 self._classify_original_clause(
@@ -433,6 +436,8 @@ class StructuredFactCapabilityPolicy:
             for clause in clauses
             if clause
         )
+        if not any(decision.permitted for _clause, decision in classified):
+            return ()
         return tuple(
             (clause, decision)
             for clause, decision in classified
@@ -511,6 +516,21 @@ class StructuredFactCapabilityPolicy:
         tokens: list[str],
         entity_token_sequences: tuple[tuple[str, ...], ...],
     ) -> bool:
+        lowered_tokens = tuple(token.lower() for token in tokens)
+        for entity_tokens in entity_token_sequences:
+            if not entity_tokens or lowered_tokens[-len(entity_tokens) :] != entity_tokens:
+                continue
+            scaffolding_tokens = lowered_tokens[: -len(entity_tokens)]
+            boundary = max(
+                (
+                    index
+                    for index, token in enumerate(scaffolding_tokens)
+                    if token in _QUESTION_PREFIX_BOUNDARIES
+                ),
+                default=-1,
+            )
+            if not scaffolding_tokens[boundary + 1 :]:
+                return True
         boundary = max(
             (
                 index
@@ -519,7 +539,7 @@ class StructuredFactCapabilityPolicy:
             ),
             default=-1,
         )
-        metric_prefix = tuple(token.lower() for token in tokens[boundary + 1 :])
+        metric_prefix = lowered_tokens[boundary + 1 :]
         return not metric_prefix or metric_prefix in entity_token_sequences
 
     @staticmethod
@@ -562,9 +582,9 @@ class StructuredFactCapabilityPolicy:
         return bool(
             re.fullmatch(
                 r"(?:"
-                r"(?:\d{4}|fy ?\d+(?: \d{4})?)(?: year end)?|"
+                r"(?:\d{4}|fy ?\d+(?: \d{4})?)(?: year end(?:ed)?)?|"
                 r"fiscal(?: year)? (?:\d{4}|fy ?\d+)|"
-                r"(?:date|period|year)(?: end)?(?: \d{4})?"
+                r"(?:date|period|year)(?: end(?:ed)?)?(?: \d{4})?"
                 r")",
                 temporal_text,
             )

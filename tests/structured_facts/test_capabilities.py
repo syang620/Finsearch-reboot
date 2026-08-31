@@ -180,6 +180,13 @@ def test_lowercase_entity_prefix_does_not_change_supported_classification() -> N
     assert issuer_name.permitted
     assert issuer_name.matched_metric_ids == ("revenue",)
 
+    leading_article_issuer = _classify(
+        "revenue",
+        "What was The Trade Desk revenue in FY 2024?",
+        entity_hints=("The Trade Desk",),
+    )
+    assert leading_article_issuer.permitted
+
 
 def test_unknown_metric_is_not_permitted() -> None:
     decision = _classify("bookings")
@@ -233,6 +240,33 @@ def test_original_unsupported_semantics_block_supported_looking_decomposition() 
     asset_turnover = _classify("total assets", "Calculate asset turnover.")
     assert asset_turnover.question_class == StructuredFactQuestionClass.UNSUPPORTED_RATIO
 
+    percent_of = DEFAULT_STRUCTURED_FACT_CAPABILITY_POLICY.classify_requests(
+        [
+            {
+                "metric_hint": "operating income",
+                "subquestion": "What was operating income?",
+            },
+            {"metric_hint": "revenue", "subquestion": "What was revenue?"},
+        ],
+        original_user_query="What was operating income as a percent of revenue?",
+    )
+    assert {decision.question_class for decision in percent_of} == {
+        StructuredFactQuestionClass.UNSUPPORTED_RATIO
+    }
+
+
+def test_trend_semantics_block_yearly_fact_decomposition() -> None:
+    decisions = DEFAULT_STRUCTURED_FACT_CAPABILITY_POLICY.classify_requests(
+        [
+            {"metric_hint": "revenue", "subquestion": "What was revenue in 2022?"},
+            {"metric_hint": "revenue", "subquestion": "What was revenue in 2023?"},
+        ],
+        original_user_query="Show the revenue trend over 2022 and 2023.",
+    )
+    assert {decision.question_class for decision in decisions} == {
+        StructuredFactQuestionClass.UNSUPPORTED_DERIVED_METRIC
+    }
+
 
 def test_comparison_operand_conjunction_does_not_look_independent() -> None:
     decisions = DEFAULT_STRUCTURED_FACT_CAPABILITY_POLICY.classify_requests(
@@ -272,6 +306,9 @@ def test_spaced_annual_fiscal_period_suffix_is_supported() -> None:
     decision = _classify("revenue", "What was revenue for FY 2024?")
     assert decision.permitted
     assert decision.matched_metric_ids == ("revenue",)
+
+    year_ended = _classify("revenue", "What was revenue for the year ended 2024?")
+    assert year_ended.permitted
 
 
 def test_quarterly_periods_are_rejected_from_annual_structured_execution() -> None:
