@@ -345,6 +345,12 @@ def test_spaced_annual_fiscal_period_suffix_is_supported() -> None:
     year_ended = _classify("revenue", "What was revenue for the year ended 2024?")
     assert year_ended.permitted
 
+    fiscal_year_ended = _classify(
+        "revenue",
+        "What was revenue for the fiscal year ended 2024?",
+    )
+    assert fiscal_year_ended.permitted
+
 
 def test_quarterly_periods_are_rejected_from_annual_structured_execution() -> None:
     for question in (
@@ -488,6 +494,32 @@ def test_completed_expression_preserves_later_independent_request() -> None:
     )
     assert all(not decision.permitted for decision in repeated[:2])
     assert repeated[2].permitted
+
+    reordered = DEFAULT_STRUCTURED_FACT_CAPABILITY_POLICY.classify_requests(
+        [
+            {
+                "metric_hint": "revenue",
+                "subquestion": "What was revenue in 2022?",
+                "fiscal_year": 2022,
+            },
+            {
+                "metric_hint": "revenue",
+                "subquestion": "What was revenue in 2024?",
+                "fiscal_year": 2024,
+            },
+            {
+                "metric_hint": "revenue",
+                "subquestion": "What was revenue in 2023?",
+                "fiscal_year": 2023,
+            },
+        ],
+        original_user_query=(
+            "Calculate the difference between revenue in 2024 and revenue in 2023; "
+            "also give revenue in 2022."
+        ),
+    )
+    assert reordered[0].permitted
+    assert all(not decision.permitted for decision in reordered[1:])
 
 
 def test_symbolic_arithmetic_blocks_supported_looking_decomposition() -> None:

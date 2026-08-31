@@ -1481,9 +1481,34 @@ def _capability_guard_query(
             ]
             replace_terms = question_terms or generic_terms
             if len(replace_terms) == 1:
+                term = replace_terms[0]
+                protected_spans = tuple(
+                    phrase_match.span()
+                    for capability in DEFAULT_STRUCTURED_FACT_CAPABILITY_POLICY.capabilities
+                    for phrase in (*capability.exact_phrases, *capability.aliases)
+                    if phrase != term
+                    and re.search(rf"(?<![a-z0-9]){term}(?![a-z0-9])", phrase)
+                    for phrase_match in re.finditer(
+                        rf"(?<![a-z0-9]){re.escape(phrase)}(?![a-z0-9])",
+                        base_query,
+                        flags=re.IGNORECASE,
+                    )
+                )
+                replaced = False
+
+                def replace_unprotected(match: re.Match[str]) -> str:
+                    nonlocal replaced
+                    if replaced or any(
+                        start <= match.start() and match.end() <= end
+                        for start, end in protected_spans
+                    ):
+                        return match.group()
+                    replaced = True
+                    return answer
+
                 return re.sub(
-                    rf"(?<![a-z0-9]){replace_terms[0]}(?![a-z0-9])",
-                    lambda _match: answer,
+                    rf"(?<![a-z0-9]){term}(?![a-z0-9])",
+                    replace_unprotected,
                     base_query,
                     flags=re.IGNORECASE,
                 )

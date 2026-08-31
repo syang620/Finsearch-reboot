@@ -769,7 +769,7 @@ class StructuredFactCapabilityPolicy:
             re.fullmatch(
                 r"(?:"
                 r"(?:\d{4}|fy ?\d+(?: \d{4})?)(?: year end(?:ed)?)?|"
-                r"fiscal(?: year)? (?:\d{4}|fy ?\d+)|"
+                r"fiscal(?: year)? (?:end(?:ed)? )?(?:\d{4}|fy ?\d+)|"
                 r"(?:date|period|year)(?: end(?:ed)?)?(?: \d{4})?"
                 r")",
                 temporal_text,
@@ -893,23 +893,33 @@ class StructuredFactCapabilityPolicy:
                 subquestion=clause,
                 entity_hints=entity_hints,
             )
-            clause_metric_ids = self._metric_ids_in_text(clause)
-            for metric_id in clause_metric_ids:
-                index = next(
-                    (
-                        candidate_index
-                        for candidate_index, decision in enumerate(decisions)
-                        if candidate_index not in claimed_request_indices
-                        and metric_id
-                        in (
-                            decision.matched_metric_ids
-                            or self._matching_hint_metric_ids(
-                                _normalize_lookup_text(
-                                    requests[candidate_index].get("metric_hint")
-                                )
+            clause_metric_occurrences = self._metric_occurrences_in_text(clause)
+            for metric_id, occurrence_year in clause_metric_occurrences:
+                matching_indices = [
+                    candidate_index
+                    for candidate_index, decision in enumerate(decisions)
+                    if candidate_index not in claimed_request_indices
+                    and metric_id
+                    in (
+                        decision.matched_metric_ids
+                        or self._matching_hint_metric_ids(
+                            _normalize_lookup_text(
+                                requests[candidate_index].get("metric_hint")
                             )
                         )
-                    ),
+                    )
+                ]
+                if occurrence_year is not None:
+                    year_matched_indices = [
+                        candidate_index
+                        for candidate_index in matching_indices
+                        if self._request_fiscal_year(requests[candidate_index])
+                        == occurrence_year
+                    ]
+                    if year_matched_indices:
+                        matching_indices = year_matched_indices
+                index = next(
+                    iter(matching_indices),
                     None,
                 )
                 if index is None:
@@ -922,7 +932,21 @@ class StructuredFactCapabilityPolicy:
                     updated[index] = clause_decision
         return tuple(updated)
 
-    def _metric_ids_in_text(self, text: str) -> tuple[str, ...]:
+    @staticmethod
+    def _request_fiscal_year(request: dict[str, Any]) -> int | None:
+        value = request.get("fiscal_year")
+        if value is not None:
+            try:
+                return int(value)
+            except (TypeError, ValueError):
+                pass
+        match = re.search(r"\b((?:19|20)\d{2})\b", str(request.get("subquestion") or ""))
+        return int(match.group(1)) if match else None
+
+    def _metric_occurrences_in_text(
+        self,
+        text: str,
+    ) -> tuple[tuple[str, int | None], ...]:
         matches = sorted(
             [
                 (
@@ -949,7 +973,14 @@ class StructuredFactCapabilityPolicy:
             ):
                 continue
             selected.append((position, end, metric_id))
-        return tuple(metric_id for _start, _end, metric_id in selected)
+        occurrences: list[tuple[str, int | None]] = []
+        for index, (_start, end, metric_id) in enumerate(selected):
+            next_start = selected[index + 1][0] if index + 1 < len(selected) else len(text)
+            year_match = re.search(r"\b(?:fy\s*)?((?:19|20)\d{2})\b", text[end:next_start])
+            occurrences.append(
+                (metric_id, int(year_match.group(1)) if year_match else None)
+            )
+        return tuple(occurrences)
 
     def _classify_original_clause(
         self,

@@ -62,6 +62,19 @@ def test_capability_guard_uses_latest_clarification_answer() -> None:
     )
     assert resumed["route"] == "hybrid"
     assert "revenue" in resumed["retrieval_plan"]["jobs"][0]["goal"]
+
+    protected_guard = _capability_guard_query(
+        "Give cash and operating cash flow for Apple.",
+        [
+            {
+                "question": "Which cash metric?",
+                "answer": "cash and cash equivalents",
+            }
+        ],
+    )
+    assert protected_guard == (
+        "Give cash and cash equivalents and operating cash flow for Apple."
+    )
     original = "Why did revenue increase?\n\nAnswer: Apple"
     assert (
         _capability_guard_query(
