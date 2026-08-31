@@ -44,7 +44,14 @@ def default_cases_path() -> Path:
     preferred = repo_root / "data" / "evals" / "agents" / "planner_eval_cases.json"
     if preferred.exists():
         return preferred
-    return repo_root / "data" / "evals" / "agents" / "planner_routing_core.v1.json"
+    return (
+        repo_root
+        / "data"
+        / "evals"
+        / "agents"
+        / "planner"
+        / "planner_routing_core.v1.1.json"
+    )
 
 
 def normalize_route(value: Any) -> Optional[str]:

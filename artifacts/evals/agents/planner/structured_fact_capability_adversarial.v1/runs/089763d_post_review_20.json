@@ -1,0 +1,822 @@
+{
+  "case_count": 40,
+  "cases": [
+    {
+      "actual_retained_indices": [
+        0
+      ],
+      "actual_route": "structured_fact",
+      "category": "supported_direct_metric",
+      "expected_retained_indices": [
+        0
+      ],
+      "expected_route": "structured_fact",
+      "id": "CAP_SUPPORTED_REVENUE",
+      "request_results": [
+        {
+          "actual_retained": true,
+          "expected_class": "supported_direct_metric",
+          "expected_retained": true,
+          "index": 0
+        }
+      ],
+      "route_correct": true
+    },
+    {
+      "actual_retained_indices": [
+        0
+      ],
+      "actual_route": "structured_fact",
+      "category": "supported_direct_metric",
+      "expected_retained_indices": [
+        0
+      ],
+      "expected_route": "structured_fact",
+      "id": "CAP_SUPPORTED_GROSS_PROFIT",
+      "request_results": [
+        {
+          "actual_retained": true,
+          "expected_class": "supported_direct_metric",
+          "expected_retained": true,
+          "index": 0
+        }
+      ],
+      "route_correct": true
+    },
+    {
+      "actual_retained_indices": [
+        0
+      ],
+      "actual_route": "structured_fact",
+      "category": "supported_direct_metric",
+      "expected_retained_indices": [
+        0
+      ],
+      "expected_route": "structured_fact",
+      "id": "CAP_SUPPORTED_OPERATING_INCOME",
+      "request_results": [
+        {
+          "actual_retained": true,
+          "expected_class": "supported_direct_metric",
+          "expected_retained": true,
+          "index": 0
+        }
+      ],
+      "route_correct": true
+    },
+    {
+      "actual_retained_indices": [
+        0
+      ],
+      "actual_route": "structured_fact",
+      "category": "supported_direct_metric",
+      "expected_retained_indices": [
+        0
+      ],
+      "expected_route": "structured_fact",
+      "id": "CAP_SUPPORTED_NET_INCOME",
+      "request_results": [
+        {
+          "actual_retained": true,
+          "expected_class": "supported_direct_metric",
+          "expected_retained": true,
+          "index": 0
+        }
+      ],
+      "route_correct": true
+    },
+    {
+      "actual_retained_indices": [
+        0
+      ],
+      "actual_route": "structured_fact",
+      "category": "supported_direct_metric",
+      "expected_retained_indices": [
+        0
+      ],
+      "expected_route": "structured_fact",
+      "id": "CAP_SUPPORTED_CASH_EQUIVALENTS",
+      "request_results": [
+        {
+          "actual_retained": true,
+          "expected_class": "supported_direct_metric",
+          "expected_retained": true,
+          "index": 0
+        }
+      ],
+      "route_correct": true
+    },
+    {
+      "actual_retained_indices": [
+        0
+      ],
+      "actual_route": "structured_fact",
+      "category": "supported_direct_metric",
+      "expected_retained_indices": [
+        0
+      ],
+      "expected_route": "structured_fact",
+      "id": "CAP_SUPPORTED_TOTAL_ASSETS",
+      "request_results": [
+        {
+          "actual_retained": true,
+          "expected_class": "supported_direct_metric",
+          "expected_retained": true,
+          "index": 0
+        }
+      ],
+      "route_correct": true
+    },
+    {
+      "actual_retained_indices": [
+        0
+      ],
+      "actual_route": "structured_fact",
+      "category": "supported_direct_metric",
+      "expected_retained_indices": [
+        0
+      ],
+      "expected_route": "structured_fact",
+      "id": "CAP_SUPPORTED_TOTAL_LIABILITIES",
+      "request_results": [
+        {
+          "actual_retained": true,
+          "expected_class": "supported_direct_metric",
+          "expected_retained": true,
+          "index": 0
+        }
+      ],
+      "route_correct": true
+    },
+    {
+      "actual_retained_indices": [
+        0
+      ],
+      "actual_route": "structured_fact",
+      "category": "supported_direct_metric",
+      "expected_retained_indices": [
+        0
+      ],
+      "expected_route": "structured_fact",
+      "id": "CAP_SUPPORTED_STOCKHOLDERS_EQUITY",
+      "request_results": [
+        {
+          "actual_retained": true,
+          "expected_class": "supported_direct_metric",
+          "expected_retained": true,
+          "index": 0
+        }
+      ],
+      "route_correct": true
+    },
+    {
+      "actual_retained_indices": [
+        0
+      ],
+      "actual_route": "structured_fact",
+      "category": "supported_direct_metric",
+      "expected_retained_indices": [
+        0
+      ],
+      "expected_route": "structured_fact",
+      "id": "CAP_SUPPORTED_OPERATING_CASH_FLOW",
+      "request_results": [
+        {
+          "actual_retained": true,
+          "expected_class": "supported_direct_metric",
+          "expected_retained": true,
+          "index": 0
+        }
+      ],
+      "route_correct": true
+    },
+    {
+      "actual_retained_indices": [
+        0
+      ],
+      "actual_route": "structured_fact",
+      "category": "supported_registry_derived_metric",
+      "expected_retained_indices": [
+        0
+      ],
+      "expected_route": "structured_fact",
+      "id": "CAP_SUPPORTED_CAPEX",
+      "request_results": [
+        {
+          "actual_retained": true,
+          "expected_class": "supported_direct_metric",
+          "expected_retained": true,
+          "index": 0
+        }
+      ],
+      "route_correct": true
+    },
+    {
+      "actual_retained_indices": [
+        0
+      ],
+      "actual_route": "structured_fact",
+      "category": "supported_registry_derived_metric",
+      "expected_retained_indices": [
+        0
+      ],
+      "expected_route": "structured_fact",
+      "id": "CAP_SUPPORTED_TOTAL_DEBT",
+      "request_results": [
+        {
+          "actual_retained": true,
+          "expected_class": "supported_direct_metric",
+          "expected_retained": true,
+          "index": 0
+        }
+      ],
+      "route_correct": true
+    },
+    {
+      "actual_retained_indices": [
+        0
+      ],
+      "actual_route": "structured_fact",
+      "category": "supported_alias",
+      "expected_retained_indices": [
+        0
+      ],
+      "expected_route": "structured_fact",
+      "id": "CAP_ALIAS_NET_SALES",
+      "request_results": [
+        {
+          "actual_retained": true,
+          "expected_class": "supported_direct_metric",
+          "expected_retained": true,
+          "index": 0
+        }
+      ],
+      "route_correct": true
+    },
+    {
+      "actual_retained_indices": [
+        0
+      ],
+      "actual_route": "structured_fact",
+      "category": "supported_alias",
+      "expected_retained_indices": [
+        0
+      ],
+      "expected_route": "structured_fact",
+      "id": "CAP_ALIAS_GROSS_EARNINGS",
+      "request_results": [
+        {
+          "actual_retained": true,
+          "expected_class": "supported_direct_metric",
+          "expected_retained": true,
+          "index": 0
+        }
+      ],
+      "route_correct": true
+    },
+    {
+      "actual_retained_indices": [
+        0
+      ],
+      "actual_route": "structured_fact",
+      "category": "supported_alias",
+      "expected_retained_indices": [
+        0
+      ],
+      "expected_route": "structured_fact",
+      "id": "CAP_ALIAS_EBIT",
+      "request_results": [
+        {
+          "actual_retained": true,
+          "expected_class": "supported_direct_metric",
+          "expected_retained": true,
+          "index": 0
+        }
+      ],
+      "route_correct": true
+    },
+    {
+      "actual_retained_indices": [
+        0
+      ],
+      "actual_route": "structured_fact",
+      "category": "supported_alias",
+      "expected_retained_indices": [
+        0
+      ],
+      "expected_route": "structured_fact",
+      "id": "CAP_ALIAS_SHAREHOLDERS_EQUITY",
+      "request_results": [
+        {
+          "actual_retained": true,
+          "expected_class": "supported_direct_metric",
+          "expected_retained": true,
+          "index": 0
+        }
+      ],
+      "route_correct": true
+    },
+    {
+      "actual_retained_indices": [
+        0
+      ],
+      "actual_route": "structured_fact",
+      "category": "supported_alias",
+      "expected_retained_indices": [
+        0
+      ],
+      "expected_route": "structured_fact",
+      "id": "CAP_ALIAS_CFO",
+      "request_results": [
+        {
+          "actual_retained": true,
+          "expected_class": "supported_direct_metric",
+          "expected_retained": true,
+          "index": 0
+        }
+      ],
+      "route_correct": true
+    },
+    {
+      "actual_retained_indices": [],
+      "actual_route": "kb",
+      "category": "unsupported_ratio_margin",
+      "expected_retained_indices": [],
+      "expected_route": "kb",
+      "id": "CAP_UNSUPPORTED_ROE",
+      "request_results": [
+        {
+          "actual_retained": false,
+          "expected_class": "unsupported_ratio",
+          "expected_retained": false,
+          "index": 0
+        }
+      ],
+      "route_correct": true
+    },
+    {
+      "actual_retained_indices": [],
+      "actual_route": "kb",
+      "category": "unsupported_ratio_margin",
+      "expected_retained_indices": [],
+      "expected_route": "kb",
+      "id": "CAP_UNSUPPORTED_GROSS_MARGIN",
+      "request_results": [
+        {
+          "actual_retained": false,
+          "expected_class": "unsupported_ratio",
+          "expected_retained": false,
+          "index": 0
+        }
+      ],
+      "route_correct": true
+    },
+    {
+      "actual_retained_indices": [],
+      "actual_route": "kb",
+      "category": "unsupported_ratio_margin",
+      "expected_retained_indices": [],
+      "expected_route": "kb",
+      "id": "CAP_UNSUPPORTED_FCF_YIELD",
+      "request_results": [
+        {
+          "actual_retained": false,
+          "expected_class": "unsupported_ratio",
+          "expected_retained": false,
+          "index": 0
+        }
+      ],
+      "route_correct": true
+    },
+    {
+      "actual_retained_indices": [],
+      "actual_route": "kb",
+      "category": "unsupported_ratio_margin",
+      "expected_retained_indices": [],
+      "expected_route": "kb",
+      "id": "CAP_UNSUPPORTED_EV_EBITDA",
+      "request_results": [
+        {
+          "actual_retained": false,
+          "expected_class": "unsupported_ratio",
+          "expected_retained": false,
+          "index": 0
+        }
+      ],
+      "route_correct": true
+    },
+    {
+      "actual_retained_indices": [],
+      "actual_route": "kb",
+      "category": "unsupported_ratio_margin",
+      "expected_retained_indices": [],
+      "expected_route": "kb",
+      "id": "CAP_UNSUPPORTED_DEBT_EQUITY",
+      "request_results": [
+        {
+          "actual_retained": false,
+          "expected_class": "unsupported_ratio",
+          "expected_retained": false,
+          "index": 0
+        }
+      ],
+      "route_correct": true
+    },
+    {
+      "actual_retained_indices": [],
+      "actual_route": "kb",
+      "category": "unsupported_per_share",
+      "expected_retained_indices": [],
+      "expected_route": "kb",
+      "id": "CAP_UNSUPPORTED_DILUTED_EPS",
+      "request_results": [
+        {
+          "actual_retained": false,
+          "expected_class": "unsupported_per_share",
+          "expected_retained": false,
+          "index": 0
+        }
+      ],
+      "route_correct": true
+    },
+    {
+      "actual_retained_indices": [],
+      "actual_route": "kb",
+      "category": "unsupported_per_share",
+      "expected_retained_indices": [],
+      "expected_route": "kb",
+      "id": "CAP_UNSUPPORTED_REVENUE_PER_SHARE",
+      "request_results": [
+        {
+          "actual_retained": false,
+          "expected_class": "unsupported_per_share",
+          "expected_retained": false,
+          "index": 0
+        }
+      ],
+      "route_correct": true
+    },
+    {
+      "actual_retained_indices": [],
+      "actual_route": "kb",
+      "category": "unsupported_growth_change",
+      "expected_retained_indices": [],
+      "expected_route": "kb",
+      "id": "CAP_UNSUPPORTED_REVENUE_GROWTH",
+      "request_results": [
+        {
+          "actual_retained": false,
+          "expected_class": "unsupported_derived_metric",
+          "expected_retained": false,
+          "index": 0
+        }
+      ],
+      "route_correct": true
+    },
+    {
+      "actual_retained_indices": [],
+      "actual_route": "kb",
+      "category": "unsupported_growth_change",
+      "expected_retained_indices": [],
+      "expected_route": "kb",
+      "id": "CAP_UNSUPPORTED_NET_INCOME_CHANGE",
+      "request_results": [
+        {
+          "actual_retained": false,
+          "expected_class": "unsupported_derived_metric",
+          "expected_retained": false,
+          "index": 0
+        }
+      ],
+      "route_correct": true
+    },
+    {
+      "actual_retained_indices": [],
+      "actual_route": "kb",
+      "category": "unsupported_derived_metric",
+      "expected_retained_indices": [],
+      "expected_route": "kb",
+      "id": "CAP_UNSUPPORTED_NET_DEBT",
+      "request_results": [
+        {
+          "actual_retained": false,
+          "expected_class": "unsupported_derived_metric",
+          "expected_retained": false,
+          "index": 0
+        }
+      ],
+      "route_correct": true
+    },
+    {
+      "actual_retained_indices": [],
+      "actual_route": "kb",
+      "category": "unsupported_derived_metric",
+      "expected_retained_indices": [],
+      "expected_route": "kb",
+      "id": "CAP_UNSUPPORTED_FREE_CASH_FLOW",
+      "request_results": [
+        {
+          "actual_retained": false,
+          "expected_class": "unsupported_derived_metric",
+          "expected_retained": false,
+          "index": 0
+        }
+      ],
+      "route_correct": true
+    },
+    {
+      "actual_retained_indices": [],
+      "actual_route": "kb",
+      "category": "unsupported_comparison",
+      "expected_retained_indices": [],
+      "expected_route": "kb",
+      "id": "CAP_UNSUPPORTED_COMPARISON",
+      "request_results": [
+        {
+          "actual_retained": false,
+          "expected_class": "unsupported_comparison",
+          "expected_retained": false,
+          "index": 0
+        }
+      ],
+      "route_correct": true
+    },
+    {
+      "actual_retained_indices": [],
+      "actual_route": "clarification",
+      "category": "ambiguous_generic_metric",
+      "expected_retained_indices": [],
+      "expected_route": "clarification",
+      "id": "CAP_AMBIGUOUS_CASH",
+      "request_results": [
+        {
+          "actual_retained": false,
+          "expected_class": "ambiguous",
+          "expected_retained": false,
+          "index": 0
+        }
+      ],
+      "route_correct": true
+    },
+    {
+      "actual_retained_indices": [],
+      "actual_route": "clarification",
+      "category": "ambiguous_generic_metric",
+      "expected_retained_indices": [],
+      "expected_route": "clarification",
+      "id": "CAP_AMBIGUOUS_PROFIT",
+      "request_results": [
+        {
+          "actual_retained": false,
+          "expected_class": "ambiguous",
+          "expected_retained": false,
+          "index": 0
+        }
+      ],
+      "route_correct": true
+    },
+    {
+      "actual_retained_indices": [],
+      "actual_route": "clarification",
+      "category": "ambiguous_generic_metric",
+      "expected_retained_indices": [],
+      "expected_route": "clarification",
+      "id": "CAP_AMBIGUOUS_PROFITABILITY",
+      "request_results": [
+        {
+          "actual_retained": false,
+          "expected_class": "ambiguous",
+          "expected_retained": false,
+          "index": 0
+        }
+      ],
+      "route_correct": true
+    },
+    {
+      "actual_retained_indices": [],
+      "actual_route": "kb",
+      "category": "unknown_financial_concept",
+      "expected_retained_indices": [],
+      "expected_route": "kb",
+      "id": "CAP_UNKNOWN_BOOKINGS",
+      "request_results": [
+        {
+          "actual_retained": false,
+          "expected_class": "unknown",
+          "expected_retained": false,
+          "index": 0
+        }
+      ],
+      "route_correct": true
+    },
+    {
+      "actual_retained_indices": [],
+      "actual_route": "kb",
+      "category": "unknown_financial_concept",
+      "expected_retained_indices": [],
+      "expected_route": "kb",
+      "id": "CAP_UNKNOWN_CUSTOMER_ACQUISITION_COST",
+      "request_results": [
+        {
+          "actual_retained": false,
+          "expected_class": "unknown",
+          "expected_retained": false,
+          "index": 0
+        }
+      ],
+      "route_correct": true
+    },
+    {
+      "actual_retained_indices": [],
+      "actual_route": "kb",
+      "category": "unknown_financial_concept",
+      "expected_retained_indices": [],
+      "expected_route": "kb",
+      "id": "CAP_UNKNOWN_LIQUIDITY_SCORE",
+      "request_results": [
+        {
+          "actual_retained": false,
+          "expected_class": "unknown",
+          "expected_retained": false,
+          "index": 0
+        }
+      ],
+      "route_correct": true
+    },
+    {
+      "actual_retained_indices": [
+        0
+      ],
+      "actual_route": "hybrid",
+      "category": "mixed_supported_unsupported",
+      "expected_retained_indices": [
+        0
+      ],
+      "expected_route": "hybrid",
+      "id": "CAP_MIXED_SUPPORTED_RATIO",
+      "request_results": [
+        {
+          "actual_retained": true,
+          "expected_class": "supported_direct_metric",
+          "expected_retained": true,
+          "index": 0
+        },
+        {
+          "actual_retained": false,
+          "expected_class": "unsupported_ratio",
+          "expected_retained": false,
+          "index": 1
+        }
+      ],
+      "route_correct": true
+    },
+    {
+      "actual_retained_indices": [
+        0
+      ],
+      "actual_route": "hybrid",
+      "category": "mixed_supported_unsupported",
+      "expected_retained_indices": [
+        0
+      ],
+      "expected_route": "hybrid",
+      "id": "CAP_MIXED_SUPPORTED_UNKNOWN",
+      "request_results": [
+        {
+          "actual_retained": true,
+          "expected_class": "supported_direct_metric",
+          "expected_retained": true,
+          "index": 0
+        },
+        {
+          "actual_retained": false,
+          "expected_class": "unknown",
+          "expected_retained": false,
+          "index": 1
+        }
+      ],
+      "route_correct": true
+    },
+    {
+      "actual_retained_indices": [],
+      "actual_route": "clarification",
+      "category": "mixed_supported_ambiguous",
+      "expected_retained_indices": [],
+      "expected_route": "clarification",
+      "id": "CAP_MIXED_SUPPORTED_AMBIGUOUS",
+      "request_results": [
+        {
+          "actual_retained": false,
+          "expected_class": "supported_direct_metric",
+          "expected_retained": false,
+          "index": 0
+        },
+        {
+          "actual_retained": false,
+          "expected_class": "ambiguous",
+          "expected_retained": false,
+          "index": 1
+        }
+      ],
+      "route_correct": true
+    },
+    {
+      "actual_retained_indices": [],
+      "actual_route": "kb",
+      "category": "hostile_llm_proposal",
+      "expected_retained_indices": [],
+      "expected_route": "kb",
+      "id": "CAP_HOSTILE_ROE_AS_REVENUE",
+      "request_results": [
+        {
+          "actual_retained": false,
+          "expected_class": "unsupported_ratio",
+          "expected_retained": false,
+          "index": 0
+        }
+      ],
+      "route_correct": true
+    },
+    {
+      "actual_retained_indices": [],
+      "actual_route": "kb",
+      "category": "hostile_llm_proposal",
+      "expected_retained_indices": [],
+      "expected_route": "kb",
+      "id": "CAP_HOSTILE_GROSS_MARGIN_AS_PROFIT",
+      "request_results": [
+        {
+          "actual_retained": false,
+          "expected_class": "unsupported_ratio",
+          "expected_retained": false,
+          "index": 0
+        }
+      ],
+      "route_correct": true
+    },
+    {
+      "actual_retained_indices": [
+        0
+      ],
+      "actual_route": "hybrid",
+      "category": "hostile_llm_proposal",
+      "expected_retained_indices": [
+        0
+      ],
+      "expected_route": "hybrid",
+      "id": "CAP_HOSTILE_SUPPORTED_PLUS_YIELD",
+      "request_results": [
+        {
+          "actual_retained": true,
+          "expected_class": "supported_direct_metric",
+          "expected_retained": true,
+          "index": 0
+        },
+        {
+          "actual_retained": false,
+          "expected_class": "unsupported_ratio",
+          "expected_retained": false,
+          "index": 1
+        }
+      ],
+      "route_correct": true
+    }
+  ],
+  "dataset_path": "data/evals/agents/planner/structured_fact_capability_adversarial.v1.jsonl",
+  "dataset_sha256": "cb683920ac5f4f99ce6ec603c11f80be8c2e2b36598536e480781e28d8133273",
+  "evaluated_sha": "089763d702020fda627303a09004b937dbfdbbbe",
+  "metrics": {
+    "ambiguous_query_clarification_accuracy": {
+      "denominator": 4,
+      "numerator": 4,
+      "value": 1.0
+    },
+    "effective_route_accuracy": {
+      "denominator": 40,
+      "numerator": 40,
+      "value": 1.0
+    },
+    "false_structured_routing_rate": {
+      "denominator": 24,
+      "numerator": 0,
+      "value": 0.0
+    },
+    "structured_route_precision": {
+      "denominator": 19,
+      "numerator": 19,
+      "value": 1.0
+    },
+    "supported_query_recall": {
+      "denominator": 19,
+      "numerator": 19,
+      "value": 1.0
+    },
+    "unsupported_query_rejection_rate": {
+      "denominator": 20,
+      "numerator": 20,
+      "value": 1.0
+    }
+  },
+  "request_count": 44,
+  "schema_version": "structured_fact_capability_adversarial.v1"
+}

@@ -223,3 +223,296 @@ forms, and filings, amendment precedence correctness, production SLOs,
 load/concurrency behavior, full claim-level citation faithfulness, or complete
 structured-fact capability coverage. RAGAS was disabled, so this baseline also
 does not measure RAGAS semantic quality.
+
+## Structured-Fact Capability Policy v1 — 2026-08-30
+
+### Run identity
+
+| Field | Value |
+|---|---|
+| Status | Canonical PR3 capability-policy baseline |
+| Pre-PR3 commit | `586fe24cdeeb87040ad241a1cac39e71648d907b` |
+| PR3 implementation evaluated commit | `6b6b6173bac9045b03ad2292910b5acfd51740c8` |
+| First review-fix evaluated commit | `5a93171562dce106d1dd45cfe0c80aa5c01628ac` |
+| Second review-fix evaluated commit | `af15c3c0acc301790d74187dcfacdc11c3dabe98` |
+| Third review-fix evaluated commit | `a3af6f08cf1b28c6a53ca52f4c58747ad62c4a99` |
+| Fourth review-fix evaluated commit | `4c94cffbb8fda68196ce9a0101cc07c9b0876c9d` |
+| Fifth review-fix evaluated commit | `ced41d0718f46bc4e24dd018c830492d3db96ca4` |
+| Sixth review-fix evaluated commit | `6adf1e259434f3b5034c8bac4d3122d6873a7796` |
+| Seventh review-fix evaluated commit | `79bcb8e0c6d6e3199bc99b326ada3084e27d3986` |
+| Eighth review-fix evaluated commit | `f9a07e8b02ba3dabfd881bcada14139077e22614` |
+| Ninth review-fix evaluated commit | `5d0dc4647efff81e07d576d430ac45a8b6c910c9` |
+| Tenth review-fix evaluated commit | `3ef13f3599bab9552d698c6d2270eec05cc0bb45` |
+| Eleventh review-fix evaluated commit | `e7dae4662006a2e0cef0d9adc33c1b1857b7e93a` |
+| Twelfth review-fix evaluated commit | `b1f9ebcbbcb004de1b7901c60ac88e7c641c12e0` |
+| Thirteenth review-fix evaluated commit | `eb1bc4b3cea26640604cdd6b6f5dac02cce5fe20` |
+| Fourteenth review-fix evaluated commit | `95a0efa085a54a884c8d43442b914fe59c3502de` |
+| Fifteenth review-fix evaluated commit | `011eb6ae5c6f16f6d5a8662c4a3c4d3f96bfc10c` |
+| Sixteenth review-fix evaluated commit | `992e715c85b7cbb8ba0f5bd772c5d6974135eb76` |
+| Seventeenth review-fix evaluated commit | `8b9f8ec4a32b22976a2a9ccd0de09d0b2674712d` |
+| Eighteenth review-fix evaluated commit | `f301f32742b85faba079031c4d3381ec15a2e51f` |
+| Nineteenth review-fix evaluated commit | `f47576bfdf775ddc21ef90267bea03318ef4e397` |
+| Twentieth review-fix evaluated commit | `089763d702020fda627303a09004b937dbfdbbbe` |
+| Twenty-first review-fix evaluated commit | `21dd490e287f208bff92c8d4613db0009a93d8c0` |
+| Twenty-second review-fix evaluated commit | `dfd3ffe997fbdb55173ff5878ddd7cd8f0160f2a` |
+| Twenty-third review-fix evaluated commit | `7791e64c586a4bacfb6e3a46e8f7b4c8aac31ae1` |
+| Twenty-fourth review-fix evaluated commit | `efb5e4251dd97af5165b24850aee06a4b18c542b` |
+| Twenty-fifth review-fix evaluated commit | `5df0d19771015908abdca2dc949189418bc26016` |
+| Final review-fix evaluated commit | `8ee0d1e0c7e3ec840ff7ccf149a535433d6ca9d4` |
+| PR3 evidence commit | This documentation/artifact-only follow-up commit |
+| Dataset | `data/evals/agents/planner/structured_fact_capability_adversarial.v1.jsonl` |
+| Dataset SHA-256 | `cb683920ac5f4f99ce6ec603c11f80be8c2e2b36598536e480781e28d8133273` |
+| Evaluator SHA-256 | `ee7daa52e50c8c7c7793ca1a7e30d6e63faf55933109bac28fb0f3563f7628f7` |
+| Cases / proposed requests | 40 / 44 |
+
+The dataset and evaluator were frozen before implementation. The pre-PR3 run used
+the same bytes from outside the baseline checkout, so neither the policy nor its
+tests could generate the expected cases.
+
+### Commands
+
+Pre-PR3 checkout:
+
+```bash
+PYTHONPATH=src <EVAL_VENV>/bin/python <FROZEN_EVALUATOR> \
+  --dataset <FROZEN_DATASET> \
+  --output <BEFORE_OUTPUT>
+```
+
+Evaluated PR3 implementation:
+
+```bash
+PYTHONPATH=src <EVAL_VENV>/bin/python \
+  scripts/evals/agents/eval_structured_fact_capabilities.py \
+  --dataset data/evals/agents/planner/structured_fact_capability_adversarial.v1.jsonl \
+  --output <AFTER_OUTPUT>
+```
+
+Live planner P0 regression gate:
+
+```bash
+PYTHONPATH=src <EVAL_VENV>/bin/python scripts/evals/agents/eval_planner_routes.py \
+  --cases-path data/evals/agents/planner/planner_routing_core.v1.1.json \
+  --priority P0 \
+  --model ollama/qwen2.5:14b-instruct \
+  --out-path <PLANNER_P0_OUTPUT>
+```
+
+### Artifacts
+
+| Artifact | SHA-256 |
+|---|---|
+| `artifacts/evals/agents/planner/structured_fact_capability_adversarial.v1/baselines/586fe24_before.json` | `d0bd5eae53864c2ed72938011dc64b838274517d0bcd6ce39edac35a21232db5` |
+| `artifacts/evals/agents/planner/structured_fact_capability_adversarial.v1/runs/6b6b617_after.json` | `e7ed34f0be56ba41a3b636f3093a930e70aed7fc866295105638d14be12dc41a` |
+| `artifacts/evals/agents/planner/structured_fact_capability_adversarial.v1/runs/5a93171_post_review.json` | `12486d8ec4497fe2c6367b477bc83d5c27ea1cb2ab71e61e24c12f56f82262d8` |
+| `artifacts/evals/agents/planner/structured_fact_capability_adversarial.v1/runs/af15c3c_post_review_2.json` | `0dcecc9b25ddc7ec636945f681801c1b7baa2088913b97e22e6b5bb060dd8b89` |
+| `artifacts/evals/agents/planner/structured_fact_capability_adversarial.v1/runs/a3af6f0_post_review_3.json` | `1b37eaf2f822e71e2838a74f824b76b35707d3f1f9bd19ea98af36d5e70ab360` |
+| `artifacts/evals/agents/planner/structured_fact_capability_adversarial.v1/runs/4c94cff_post_review_4.json` | `fcab6e630f4152ae8ef3d0b42ed4f732a3e3da337d502552d0b02ca79fd1d418` |
+| `artifacts/evals/agents/planner/structured_fact_capability_adversarial.v1/runs/ced41d0_post_review_5.json` | `96f21d8dc6d9e7046974af3d29f24b2a5e2d3b40ce0dd99a63fb5c01a5e992fd` |
+| `artifacts/evals/agents/planner/structured_fact_capability_adversarial.v1/runs/6adf1e2_post_review_6.json` | `8a22fafe9a58e70997cdec8970f67b507f643449cac4e901421a9b8b2280eeee` |
+| `artifacts/evals/agents/planner/structured_fact_capability_adversarial.v1/runs/79bcb8e_post_review_7.json` | `b62717a4cbbdc9bc58fde9761766c321182f3f7ed18a7a7f951da593afb2f698` |
+| `artifacts/evals/agents/planner/structured_fact_capability_adversarial.v1/runs/f9a07e8_post_review_8.json` | `5201be0ee413439019e211cc097405c265675764079696b43bd56bdf56d86a28` |
+| `artifacts/evals/agents/planner/structured_fact_capability_adversarial.v1/runs/5d0dc46_post_review_9.json` | `7c9f41f27cba1f6ee4f2f71565cef5e56df6d8699e87b0b9b4850f409d7244b9` |
+| `artifacts/evals/agents/planner/structured_fact_capability_adversarial.v1/runs/3ef13f3_post_review_10.json` | `df411f1b2e740b8eaadf36144cdf813d019474d8c334c54534ac18d452f3603e` |
+| `artifacts/evals/agents/planner/structured_fact_capability_adversarial.v1/runs/e7dae46_post_review_11.json` | `1a12199a979f5d104417a6810c35965589525a0eb7f13a03ba35bc7db1324589` |
+| `artifacts/evals/agents/planner/structured_fact_capability_adversarial.v1/runs/b1f9ebc_post_review_12.json` | `c54bd9ba6ffcc345078a402500e3b91cbad107e2fc96a59387bde1b6e1045975` |
+| `artifacts/evals/agents/planner/structured_fact_capability_adversarial.v1/runs/eb1bc4b_post_review_13.json` | `11312d471f14f306abd3ff948be4258576d2b1cf231b8066fc5c5bf0af60d7cd` |
+| `artifacts/evals/agents/planner/structured_fact_capability_adversarial.v1/runs/95a0efa_post_review_14.json` | `95aaff2fa134e752c09bc70ea8f74813b2375a29f27fbfcaee3085e90066a0b9` |
+| `artifacts/evals/agents/planner/structured_fact_capability_adversarial.v1/runs/011eb6a_post_review_15.json` | `cc2b509e5bfacf9f9b6f71da29cbec44121700020129bc607b1af56f0398fad6` |
+| `artifacts/evals/agents/planner/structured_fact_capability_adversarial.v1/runs/992e715_post_review_16.json` | `ab5e83e8f4bef6a67b8b2188ad1dbd583bddcb79d90a3c979fc90b4edeafa623` |
+| `artifacts/evals/agents/planner/structured_fact_capability_adversarial.v1/runs/8b9f8ec_post_review_17.json` | `14e140d2c6249daafd5f0ea1548ce3bd94ce0af9fb40b658a02b0a61346a4fb0` |
+| `artifacts/evals/agents/planner/structured_fact_capability_adversarial.v1/runs/f301f32_post_review_18.json` | `8650e15bd7d3b679df45fe00368e8ddd7688cf419eea56ef07bd1c5b669a2f60` |
+| `artifacts/evals/agents/planner/structured_fact_capability_adversarial.v1/runs/f47576b_post_review_19.json` | `5b73d0f17a7a9e324793514c24a299dde54e4c74cd6b67cc65b4a45e30e3d69d` |
+| `artifacts/evals/agents/planner/structured_fact_capability_adversarial.v1/runs/089763d_post_review_20.json` | `3aa9804008224368c9e85758ecb20340bebfe96ef20a5e93bebc1208e950c3e8` |
+| `artifacts/evals/agents/planner/structured_fact_capability_adversarial.v1/runs/21dd490_post_review_21.json` | `e8d2b525ed4ee63de1e1feb21a8d5cf8b5d6ac0d2b435ba6438aa5bf270377f6` |
+| `artifacts/evals/agents/planner/structured_fact_capability_adversarial.v1/runs/dfd3ffe_post_review_22.json` | `571c88669134a75b31a6636d9cd97dce1de034613c3b9a6cc288ddb935fbfc72` |
+| `artifacts/evals/agents/planner/structured_fact_capability_adversarial.v1/runs/7791e64_post_review_23.json` | `dba0a1d06ae0a3b38cb6db03a27dadba1560adc55e9f271adb85b77c4e36579f` |
+| `artifacts/evals/agents/planner/structured_fact_capability_adversarial.v1/runs/efb5e42_post_review_24.json` | `b928783350627d8aa04c150ed73509c420e7bed7f09af49012eb78c9c1441ac4` |
+| `artifacts/evals/agents/planner/structured_fact_capability_adversarial.v1/runs/5df0d19_post_review_25.json` | `b1d38a2dff6d276e6440c1fb65700a9d6a9a906f8c72d1be367bf1339773c3ca` |
+| `artifacts/evals/agents/planner/structured_fact_capability_adversarial.v1/runs/8ee0d1e_post_review_26.json` | `3f5e6ea4475e9da68283a66fb70dce13c589c73f9d8e1668e20809ab93fb4fdb` |
+| `artifacts/evals/agents/planner/planner_routing_core.v1.1/runs/6b6b617_p0_ollama_qwen2.5_14b-instruct.json` | `e3cc95fe8a56db9596a4bcfa27ad0d99267352b732d56b176932df49da1c31a7` |
+
+### Before / after result
+
+| Metric | Pre-PR3 `586fe24` | PR3 `6b6b617` |
+|---|---:|---:|
+| Structured-route precision | 19 / 36 (52.78%) | 19 / 19 (100%) |
+| Supported-query recall | 18 / 19 (94.74%) | 19 / 19 (100%) |
+| Unsupported-query rejection rate | 7 / 20 (35%) | 20 / 20 (100%) |
+| Ambiguous-query clarification accuracy | 0 / 4 (0%) | 4 / 4 (100%) |
+| False structured-routing rate | 17 / 24 (70.83%) | 0 / 24 (0%) |
+| Effective-route accuracy | 23 / 40 (57.5%) | 40 / 40 (100%) |
+
+PR3 therefore reduced invalid structured routing from 70.83% to 0% on the frozen
+adversarial set while raising supported-query recall from 94.74% to 100%.
+
+Structured-route precision counts supported requests among all retained structured
+requests. Supported-query recall counts retained supported requests. Rejection rate
+counts rejected unsupported and unknown requests. Ambiguity accuracy requires the
+whole case to request clarification. False structured-routing counts retained
+unsupported, ambiguous, or unknown requests. Effective-route accuracy requires the
+normalized route and retained request set to match the independently authored case.
+
+The live planner P0 gate used dataset version `1.1`, SHA-256
+`64103d8ad9e130ef9a62b6208abcc0f7ebb7e309f39503e15390d037631e931b`,
+and `ollama/qwen2.5:14b-instruct`. It passed 25/25: 5/5 each for
+`structured_fact`, `kb_narrative`, `hybrid`, `unsupported_metrics`, and
+`multi_company_comparison`.
+
+### Post-review verification
+
+Codex review fixes tightened alias matching, enforced the original-query guard for
+partially rejected proposals, recognized independent noun-phrase conjunctions, and
+built rejected fallback goals from the sanitized subquestion. Commit
+`5a93171562dce106d1dd45cfe0c80aa5c01628ac` was evaluated against the unchanged
+dataset and evaluator. All 40 cases and 44 requests passed with the same post-PR3
+metrics recorded above: 100% precision, recall, rejection, clarification accuracy,
+and effective-route accuracy, with 0% false structured routing.
+
+The fresh review then identified supported metric hints that contradicted unknown
+subquestions. Commit `af15c3c0acc301790d74187dcfacdc11c3dabe98` added deterministic
+hint/subquestion agreement validation and was rerun against the same unchanged
+dataset and evaluator. Its 40-case/44-request result preserved all six metrics.
+
+The next review tightened exact metric-phrase boundaries and target-identifier
+sanitization. Commit `a3af6f08cf1b28c6a53ca52f4c58747ad62c4a99` was rerun against
+the same unchanged dataset and evaluator and again preserved all six metrics.
+
+The final review required direct hints when structured proposals omit them and
+recognized independent clauses separated by `as well as`, `plus`, or semicolons.
+Commit `4c94cffbb8fda68196ce9a0101cc07c9b0876c9d` was rerun against the same
+unchanged dataset and evaluator and preserved all six metrics.
+
+The final resumed-execution review aligned orchestrator validation with the
+planner's clarified metric query and recognized `compared to` comparisons and
+spaced fiscal periods. Commit `eb1bc4b3cea26640604cdd6b6f5dac02cce5fe20` was
+rerun against the unchanged dataset and evaluator. All 40 cases and 44 requests
+again preserved the six post-PR3 metrics recorded above.
+
+The final annual-boundary review preserved every repeated metric occurrence during
+clause mapping and rejected quarterly periods from the annual-only structured
+executor. Commit `95a0efa085a54a884c8d43442b914fe59c3502de` was rerun against the
+unchanged dataset and evaluator and again preserved all six metrics.
+
+The final metadata and omitted-sibling review rejected nonannual fiscal-period
+metadata, covered additional named ratios, and retained retrieval for independently
+unknown sibling concepts omitted from structured proposals. Commit
+`011eb6ae5c6f16f6d5a8662c4a3c4d3f96bfc10c` was rerun against the unchanged
+dataset and evaluator and again preserved all six metrics.
+
+The final clarified-sibling review rejected explicit nonannual filing targets in
+both planner and orchestrator defenses and preserved unaffected clauses across
+metric clarification. Commit `21dd490e287f208bff92c8d4613db0009a93d8c0` was
+rerun against the unchanged dataset and evaluator and again preserved all six
+metrics.
+
+The final occurrence/period review preserved precise sibling metrics during generic
+clarification, matched repeated metric requests by fiscal year, and accepted the
+annual phrase `fiscal year ended`. Commit
+`dfd3ffe997fbdb55173ff5878ddd7cd8f0160f2a` was rerun against the unchanged
+dataset and evaluator and again preserved all six metrics.
+
+The final scoped-fallback review matched omitted repeated metrics by fiscal year,
+recognized comma-separated sibling requests, and limited rejected-request KB jobs
+to the applicable target year and entity. Commit
+`7791e64c586a4bacfb6e3a46e8f7b4c8aac31ae1` was rerun against the unchanged
+dataset and evaluator and again preserved all six metrics.
+
+The final original-query agreement review rejected structured proposals that
+rewrote a single supported or unknown request to a different metric, and based the
+KB fallback on the original request. Commit
+`efb5e4251dd97af5165b24850aee06a4b18c542b` was rerun against the unchanged
+dataset and evaluator and again preserved all six metrics.
+
+The final deterministic-context review rejected unclaimed metric/period proposals
+across independent clauses and applied deterministic nonannual filing metadata
+before capability routing. Commit `5df0d19771015908abdca2dc949189418bc26016`
+was rerun against the unchanged dataset and evaluator and again preserved all six
+metrics.
+
+The final period-boundary review rejected YTD and trailing-twelve-month requests,
+preserved comma-plus-conjunction clause boundaries, and accepted dated annual
+fiscal-period metadata. Commit `8ee0d1e0c7e3ec840ff7ccf149a535433d6ca9d4`
+was rerun against the unchanged dataset and evaluator and again preserved all six
+metrics.
+
+The final omitted-supported-clause review routed supported clauses missing complete
+structured inputs to KB fallback and rejected half-year period notation. Commit
+`089763d702020fda627303a09004b937dbfdbbbe` was rerun against the unchanged
+dataset and evaluator and again preserved all six metrics.
+
+The final uncovered-clause review retained omitted explicit rejections, recognized
+leading-quarter notation, preserved compound unknown concepts, and attached
+ambiguity to the clause that caused it. Commit
+`f47576bfdf775ddc21ef90267bea03318ef4e397` was rerun against the unchanged
+dataset and evaluator and again preserved all six metrics.
+
+The final narrative-boundary review routed explanation requests to retrieval,
+preserved sentence-separated omitted siblings, and removed recognized issuer names
+before semantic deny-pattern matching. Commit
+`f301f32742b85faba079031c4d3381ec15a2e51f` was rerun against the unchanged
+dataset and evaluator and again preserved all six metrics.
+
+The final concept-clause review rejected percentage-symbol ratios and preserved
+conjunctions inside unknown financial concepts while building KB fallbacks. Commit
+`8b9f8ec4a32b22976a2a9ccd0de09d0b2674712d` was rerun against the unchanged
+dataset and evaluator and again preserved all six metrics.
+
+The final semantic-coverage review added percent-of ratios and trend language,
+retained omitted unknown clauses in mixed rejected proposals, accepted annual
+year-ended wording, and preserved leading-article issuer names. Commit
+`992e715c85b7cbb8ba0f5bd772c5d6974135eb76` was rerun against the unchanged
+dataset and evaluator and again preserved all six metrics.
+
+### Route-aware live-gate diagnostic
+
+A 15-case route-aware v1 run against the sealed PR3 implementation completed all
+cases with perfect intent, route, metadata, lane, structured-metric, and
+structured-status match rates. It was not promoted to a canonical passing baseline:
+two analyst calls reached the existing 120-second local-model deadline and one
+retrieval call reached the existing 30-second MCP deadline, yielding a 0.9172 mean
+score and 20% critical-failure rate.
+
+Fresh-checkpointer retries cleared the risk-factors and insufficient-data cases.
+The calculation case then returned the correct 12.8744% result and used the
+financial evaluator, but was rejected because the model emitted multiple competing
+calculation calls. An isolated run of that identical frozen case on untouched
+pre-PR3 commit `586fe24cdeeb87040ad241a1cac39e71648d907b` reproduced the same
+`CALCULATION_RESULT_AMBIGUOUS` outcome and 0.6154 score. This is therefore recorded
+as a pre-existing live-model/tool-call instability, not a PR3 behavior regression.
+The post-run MCP/AnyIO asynchronous-generator cleanup warnings remain tracked by
+issue #17 and are out of scope for this policy PR. RAGAS was disabled.
+
+### Freeze and coverage limitations
+
+Commit `6b6b6173bac9045b03ad2292910b5acfd51740c8` remains the sealed initial
+implementation measured by the original artifacts. The review-fix implementation
+at `5a93171562dce106d1dd45cfe0c80aa5c01628ac` and the final review fix at
+`af15c3c0acc301790d74187dcfacdc11c3dabe98`, and the final review fix at
+`a3af6f08cf1b28c6a53ca52f4c58747ad62c4a99`, followed by final verification at
+`4c94cffbb8fda68196ce9a0101cc07c9b0876c9d`, and final resumed-execution
+verification at `eb1bc4b3cea26640604cdd6b6f5dac02cce5fe20`, followed by final
+annual-boundary verification at `95a0efa085a54a884c8d43442b914fe59c3502de`,
+followed by final metadata and omitted-sibling verification at
+`011eb6ae5c6f16f6d5a8662c4a3c4d3f96bfc10c` and final semantic-coverage
+verification at `992e715c85b7cbb8ba0f5bd772c5d6974135eb76` and final concept-clause
+verification at `8b9f8ec4a32b22976a2a9ccd0de09d0b2674712d` and final narrative-boundary
+verification at `f301f32742b85faba079031c4d3381ec15a2e51f` and final uncovered-clause
+verification at `f47576bfdf775ddc21ef90267bea03318ef4e397` and final
+omitted-supported-clause verification at `089763d702020fda627303a09004b937dbfdbbbe`,
+followed by final clarified-sibling verification at
+`21dd490e287f208bff92c8d4613db0009a93d8c0` and final occurrence/period
+verification at `dfd3ffe997fbdb55173ff5878ddd7cd8f0160f2a`, followed by final scoped-fallback
+verification at `7791e64c586a4bacfb6e3a46e8f7b4c8aac31ae1` and final original-query agreement
+verification at `efb5e4251dd97af5165b24850aee06a4b18c542b`, followed by final deterministic-context
+verification at `5df0d19771015908abdca2dc949189418bc26016` and final period-boundary
+verification at `8ee0d1e0c7e3ec840ff7ccf149a535433d6ca9d4`, are measured separately by their
+post-review artifacts. Changes after the final SHA are limited to evaluation
+artifacts and documentation; any later source, test, prompt, policy, evaluator, or
+dataset change invalidates the final post-review measurement and requires a rerun.
+
+The adversarial baseline measures routing permission and normalization, not SEC fact
+numeric correctness, filing-specific metric resolution, retrieval relevance,
+analyst synthesis, citations, latency, load, or production distribution shift. Its
+40 cases intentionally emphasize known boundary classes and hostile proposals; it
+is not a frequency-weighted sample of user traffic.

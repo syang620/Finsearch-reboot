@@ -1,0 +1,387 @@
+{
+    "version": "1.1",
+    "purpose": "Planner routing evaluation for kb / structured_fact / hybrid behavior",
+    "categories": [
+        {
+            "category": "structured_fact",
+            "description": "Direct supported scalar SEC metrics should route to structured_fact",
+            "cases": [
+                {
+                    "id": "sf_001",
+                    "priority": "P0",
+                    "query": "What was Apple revenue in FY2024?",
+                    "expected_route": "structured_fact",
+                    "expected_structured_fact_count": 1
+                },
+                {
+                    "id": "sf_002",
+                    "priority": "P0",
+                    "query": "What was Apple net income in FY2024?",
+                    "expected_route": "structured_fact",
+                    "expected_structured_fact_count": 1
+                },
+                {
+                    "id": "sf_003",
+                    "priority": "P0",
+                    "query": "What was Apple operating income in FY2024?",
+                    "expected_route": "structured_fact",
+                    "expected_structured_fact_count": 1
+                },
+                {
+                    "id": "sf_004",
+                    "priority": "P0",
+                    "query": "What was Apple gross profit in FY2024?",
+                    "expected_route": "structured_fact",
+                    "expected_structured_fact_count": 1
+                },
+                {
+                    "id": "sf_005",
+                    "priority": "P0",
+                    "query": "What was Apple cash and cash equivalents in FY2024?",
+                    "expected_route": "structured_fact",
+                    "expected_structured_fact_count": 1
+                },
+                {
+                    "id": "sf_006",
+                    "query": "What was Apple operating cash flow in FY2024?",
+                    "expected_route": "structured_fact",
+                    "expected_structured_fact_count": 1
+                },
+                {
+                    "id": "sf_007",
+                    "query": "What was Apple total debt in FY2024?",
+                    "expected_route": "structured_fact",
+                    "expected_structured_fact_count": 1
+                },
+                {
+                    "id": "sf_008",
+                    "query": "What were Apple's total assets in FY2024?",
+                    "expected_route": "structured_fact",
+                    "expected_structured_fact_count": 1
+                },
+                {
+                    "id": "sf_009",
+                    "query": "What were Apple's total liabilities in FY2024?",
+                    "expected_route": "structured_fact",
+                    "expected_structured_fact_count": 1
+                },
+                {
+                    "id": "sf_010",
+                    "query": "What was Apple's stockholders equity in FY2024?",
+                    "expected_route": "structured_fact",
+                    "expected_structured_fact_count": 1
+                }
+            ]
+        },
+        {
+            "category": "alias_recognition",
+            "description": "Supported aliases route to structured_fact; ambiguous generic metrics do not",
+            "cases": [
+                {
+                    "id": "alias_001",
+                    "query": "What were Apple's sales in FY2024?",
+                    "expected_route": "structured_fact"
+                },
+                {
+                    "id": "alias_002",
+                    "query": "How much revenue did Apple generate in FY2024?",
+                    "expected_route": "structured_fact"
+                },
+                {
+                    "id": "alias_003",
+                    "query": "What were Apple's borrowings in FY2024?",
+                    "expected_route": "structured_fact"
+                },
+                {
+                    "id": "alias_004",
+                    "query": "What was Apple's debt balance in FY2024?",
+                    "expected_route": "structured_fact"
+                },
+                {
+                    "id": "alias_005",
+                    "query": "How much cash did Apple have in FY2024?",
+                    "expected_route": "kb",
+                    "expected_behavior": "clarify_or_kb",
+                    "expected_structured_fact_count": 0
+                }
+            ]
+        },
+        {
+            "category": "kb_narrative",
+            "description": "Narrative and explanatory questions should route to kb",
+            "cases": [
+                {
+                    "id": "kb_001",
+                    "priority": "P0",
+                    "query": "What drove Apple Services growth in FY2024?",
+                    "expected_route": "kb"
+                },
+                {
+                    "id": "kb_002",
+                    "priority": "P0",
+                    "query": "Why did Apple revenue increase in FY2024?",
+                    "expected_route": "kb"
+                },
+                {
+                    "id": "kb_003",
+                    "priority": "P0",
+                    "query": "How did Apple describe demand in Greater China in FY2024?",
+                    "expected_route": "kb"
+                },
+                {
+                    "id": "kb_004",
+                    "priority": "P0",
+                    "query": "What risks did Apple highlight in FY2024?",
+                    "expected_route": "kb"
+                },
+                {
+                    "id": "kb_005",
+                    "priority": "P0",
+                    "query": "What were Apple's major business challenges in FY2024?",
+                    "expected_route": "kb"
+                },
+                {
+                    "id": "kb_006",
+                    "query": "Summarize Apple's strategy in FY2024.",
+                    "expected_route": "kb"
+                },
+                {
+                    "id": "kb_007",
+                    "query": "What did Apple management say about AI in FY2024?",
+                    "expected_route": "kb"
+                },
+                {
+                    "id": "kb_008",
+                    "query": "How did management describe margins in FY2024?",
+                    "expected_route": "kb"
+                },
+                {
+                    "id": "kb_009",
+                    "query": "What was discussed in Apple's risk factors section?",
+                    "expected_route": "kb"
+                },
+                {
+                    "id": "kb_010",
+                    "query": "What were the key takeaways from Apple's FY2024 filing?",
+                    "expected_route": "kb"
+                }
+            ]
+        },
+        {
+            "category": "hybrid",
+            "description": "Direct metric plus explanation should route to hybrid",
+            "cases": [
+                {
+                    "id": "hybrid_001",
+                    "priority": "P0",
+                    "query": "What was Apple revenue in FY2024 and what drove the change?",
+                    "expected_route": "hybrid",
+                    "expected_structured_fact_count": 1
+                },
+                {
+                    "id": "hybrid_002",
+                    "priority": "P0",
+                    "query": "What was Apple operating cash flow in FY2024 and how did management explain it?",
+                    "expected_route": "hybrid",
+                    "expected_structured_fact_count": 1
+                },
+                {
+                    "id": "hybrid_003",
+                    "priority": "P0",
+                    "query": "What was Apple net income in FY2024 and what factors contributed to it?",
+                    "expected_route": "hybrid",
+                    "expected_structured_fact_count": 1
+                },
+                {
+                    "id": "hybrid_004",
+                    "priority": "P0",
+                    "query": "How much cash did Apple have in FY2024 and how was it used?",
+                    "expected_route": "kb",
+                    "expected_behavior": "clarify_or_kb",
+                    "expected_structured_fact_count": 0
+                },
+                {
+                    "id": "hybrid_005",
+                    "priority": "P0",
+                    "query": "What was Apple's total debt in FY2024 and what financing strategy did management discuss?",
+                    "expected_route": "hybrid",
+                    "expected_structured_fact_count": 1
+                }
+            ]
+        },
+        {
+            "category": "unsupported_metrics",
+            "description": "Unsupported derived metrics should remain kb",
+            "cases": [
+                {
+                    "id": "unsupported_001",
+                    "priority": "P0",
+                    "query": "What was Apple's gross margin in FY2024?",
+                    "expected_route": "kb"
+                },
+                {
+                    "id": "unsupported_002",
+                    "priority": "P0",
+                    "query": "What was Apple's EPS in FY2024?",
+                    "expected_route": "kb"
+                },
+                {
+                    "id": "unsupported_003",
+                    "priority": "P0",
+                    "query": "What was Apple's diluted EPS in FY2024?",
+                    "expected_route": "kb"
+                },
+                {
+                    "id": "unsupported_004",
+                    "priority": "P0",
+                    "query": "What was Apple's debt-to-equity ratio in FY2024?",
+                    "expected_route": "kb"
+                },
+                {
+                    "id": "unsupported_005",
+                    "priority": "P0",
+                    "query": "What was Apple's return on equity in FY2024?",
+                    "expected_route": "kb"
+                },
+                {
+                    "id": "unsupported_006",
+                    "query": "What was Apple's return on assets in FY2024?",
+                    "expected_route": "kb"
+                },
+                {
+                    "id": "unsupported_007",
+                    "query": "What was Apple's free cash flow yield in FY2024?",
+                    "expected_route": "kb"
+                },
+                {
+                    "id": "unsupported_008",
+                    "query": "What was Apple's EV/EBITDA in FY2024?",
+                    "expected_route": "kb"
+                },
+                {
+                    "id": "unsupported_009",
+                    "query": "What was Apple's EBITDA margin in FY2024?",
+                    "expected_route": "kb"
+                },
+                {
+                    "id": "unsupported_010",
+                    "query": "What was Apple's operating margin in FY2024?",
+                    "expected_route": "kb"
+                }
+            ]
+        },
+        {
+            "category": "multi_company_comparison",
+            "description": "Multi-company comparisons should remain kb",
+            "cases": [
+                {
+                    "id": "compare_001",
+                    "priority": "P0",
+                    "query": "Compare Apple and Microsoft revenue in FY2024.",
+                    "expected_route": "kb"
+                },
+                {
+                    "id": "compare_002",
+                    "priority": "P0",
+                    "query": "Who had higher revenue in FY2024, Apple or Microsoft?",
+                    "expected_route": "kb"
+                },
+                {
+                    "id": "compare_003",
+                    "priority": "P0",
+                    "query": "Compare Apple and Microsoft operating cash flow in FY2024.",
+                    "expected_route": "kb"
+                },
+                {
+                    "id": "compare_004",
+                    "priority": "P0",
+                    "query": "Compare Apple and Alphabet net income in FY2024.",
+                    "expected_route": "kb"
+                },
+                {
+                    "id": "compare_005",
+                    "priority": "P0",
+                    "query": "Compare debt levels between Apple and Microsoft in FY2024.",
+                    "expected_route": "kb"
+                }
+            ]
+        },
+        {
+            "category": "derived_metrics",
+            "description": "Future derived metrics should currently stay kb",
+            "cases": [
+                {
+                    "id": "derived_001",
+                    "query": "What was Apple's revenue growth in FY2024?",
+                    "expected_route": "kb"
+                },
+                {
+                    "id": "derived_002",
+                    "query": "What was Apple's year-over-year revenue growth in FY2024?",
+                    "expected_route": "kb"
+                },
+                {
+                    "id": "derived_003",
+                    "query": "What was Apple's net debt in FY2024?",
+                    "expected_route": "kb"
+                },
+                {
+                    "id": "derived_004",
+                    "query": "What was Apple's free cash flow in FY2024?",
+                    "expected_route": "kb"
+                },
+                {
+                    "id": "derived_005",
+                    "query": "What was Apple's leverage ratio in FY2024?",
+                    "expected_route": "kb"
+                },
+                {
+                    "id": "derived_006",
+                    "query": "What was debt as a percentage of assets in FY2024?",
+                    "expected_route": "kb"
+                },
+                {
+                    "id": "derived_007",
+                    "query": "What was the change in Apple's revenue from FY2023 to FY2024?",
+                    "expected_route": "kb"
+                }
+            ]
+        },
+        {
+            "category": "ambiguous_queries",
+            "description": "Planner should avoid guessing metadata",
+            "cases": [
+                {
+                    "id": "ambiguous_001",
+                    "query": "What was revenue?",
+                    "expected_behavior": "clarify_or_kb"
+                },
+                {
+                    "id": "ambiguous_002",
+                    "query": "What was net income?",
+                    "expected_behavior": "clarify_or_kb"
+                },
+                {
+                    "id": "ambiguous_003",
+                    "query": "How much debt?",
+                    "expected_behavior": "clarify_or_kb"
+                },
+                {
+                    "id": "ambiguous_004",
+                    "query": "What was cash?",
+                    "expected_behavior": "clarify_or_kb"
+                },
+                {
+                    "id": "ambiguous_005",
+                    "query": "Tell me about Apple.",
+                    "expected_behavior": "clarify_or_kb"
+                },
+                {
+                    "id": "ambiguous_006",
+                    "query": "What happened in FY2024?",
+                    "expected_behavior": "clarify_or_kb"
+                }
+            ]
+        }
+    ]
+}

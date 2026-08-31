@@ -10,7 +10,8 @@
 
 - PR1 — complete: planner/orchestrator runtime contracts.
 - PR2 — complete: canonical route-aware gate passed at `6aae2651518e4495c947e393ed78978b515bd482`.
-- PR3 — next: centralized structured-fact capability policy.
+- PR3 — complete: centralized capability policy post-review verified at `8ee0d1e0c7e3ec840ff7ccf149a535433d6ca9d4`.
+- PR4 — next: native structured evidence and SEC provenance.
 
 ---
 
@@ -720,9 +721,20 @@ Keep adversarial test cases independently maintained so tests can catch incorrec
 ## 6.7 Acceptance criteria
 
 - Unsupported classes have one deterministic policy source.
+- Each proposed structured request is classified independently; mixed supported and
+  rejected proposals retain the supported requests and use a hybrid route for the
+  rejected portions.
+- Materially ambiguous proposals request clarification before execution.
+- Classification precedence is unsupported semantics, exact supported phrase,
+  ambiguous generic metric, supported alias, then unknown.
+- The capability policy decides whether execution is permitted; it does not own
+  filing-specific resolution or SEC fact execution semantics.
 - ROE/ROA/FCF yield/EV-EBITDA/broad summaries cannot slip through due to prompt drift.
 - Planner behavior regression remains green.
 - Adding a new supported structured capability has an explicit policy change.
+- An independently frozen adversarial dataset records before/after structured-route
+  precision, supported-query recall, unsupported-query rejection, ambiguity
+  clarification accuracy, and false structured-routing rate.
 
 ---
 

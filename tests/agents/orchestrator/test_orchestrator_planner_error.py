@@ -32,11 +32,54 @@ from agents.orchestrator.agent_orchestrator import (
     _planner_error_node,
     _resolve_metric_id_for_structured_fact_request,
     _route_after_planner_turn,
+    _structured_fact_capability_decisions,
     _structured_facts_node,
     _invoke_orchestrator,
     aclose_orchestrator_runtime,
 )
 from tests.snapshot_utils import assert_graph_snapshot_jsonable
+
+
+def test_orchestrator_capability_guard_uses_metric_clarification_answer() -> None:
+    decisions = _structured_fact_capability_decisions(
+        plan_obj={
+            "original_user_query": "What was Apple's cash?",
+            "effective_user_query": (
+                "What was Apple's cash?\n\nAnswer: cash and cash equivalents"
+            ),
+            "clarification_history": [
+                {
+                    "question": "Which precise financial metric did you mean?",
+                    "answer": "cash and cash equivalents",
+                }
+            ],
+            "targets": [
+                {"company_name": "Apple", "ticker": "AAPL"},
+            ],
+        },
+        requests=[
+            {
+                "metric_hint": "cash and cash equivalents",
+                "subquestion": "What were Apple's cash and cash equivalents?",
+                "entity_hint": "Apple",
+            }
+        ],
+    )
+
+    assert decisions[0].permitted
+
+
+def test_orchestrator_capability_guard_rejects_nonannual_target() -> None:
+    decisions = _structured_fact_capability_decisions(
+        plan_obj={
+            "original_user_query": "What revenue did Apple report in its 2024 10-Q?",
+            "targets": [{"ticker": "AAPL", "fiscal_year": 2024, "form_type": "10-Q"}],
+        },
+        requests=[{"metric_hint": "revenue", "subquestion": "What was revenue?"}],
+    )
+
+    assert not decisions[0].permitted
+    assert decisions[0].question_class.value == "unsupported_derived_metric"
 
 
 def _runtime_output(
@@ -1627,6 +1670,120 @@ class OrchestratorRuntimeTests(unittest.IsolatedAsyncioTestCase):
         self.assertIsNone(result["structured_fact_results"][0]["resolved_metric_id"])
         self.assertIsNone(result["structured_fact_results"][0]["tool_result"])
         self.assertEqual(client.calls, [])
+
+    async def test_structured_facts_node_rejects_hostile_ratio_before_client_initialization(self) -> None:
+        get_client = mock.AsyncMock()
+        with mock.patch(
+            "agents.orchestrator.agent_orchestrator._get_orchestrator_mcp_client",
+            new=get_client,
+        ):
+            result = await _structured_facts_node(
+                {
+                    "plan_obj": {
+                        "route": "structured_fact",
+                        "metadata": {
+                            "ticker": "AAPL",
+                            "fiscal_year": 2025,
+                            "form_type": "10-K",
+                        },
+                        "structured_fact_requests": [
+                            {
+                                "subquestion": "Calculate Apple's return on equity in FY2025.",
+                                "metric_hint": "revenue",
+                                "entity_hint": "Apple",
+                                "fiscal_year": 2025,
+                            }
+                        ],
+                    }
+                }
+            )
+
+        get_client.assert_not_awaited()
+        rejected = result["structured_fact_results"][0]
+        self.assertEqual(rejected["resolver_status"], "unresolved")
+        self.assertIsNone(rejected["resolved_metric_id"])
+        self.assertIsNone(rejected["tool_result"])
+        issue = result["open_issues"][0]
+        self.assertEqual(issue["code"], "STRUCTURED_FACT_CAPABILITY_REJECTED")
+        self.assertEqual(issue["metadata"]["question_class"], "unsupported_ratio")
+        self.assertEqual(issue["metadata"]["metric_hint"], "revenue")
+        self.assertIn("return on equity", issue["metadata"]["subquestion"])
+        self.assertEqual(issue["metadata"]["candidate_metric_ids"], [])
+
+    async def test_structured_facts_node_rejects_alias_inside_unrelated_metric_name(self) -> None:
+        get_client = mock.AsyncMock()
+        with mock.patch(
+            "agents.orchestrator.agent_orchestrator._get_orchestrator_mcp_client",
+            new=get_client,
+        ):
+            result = await _structured_facts_node(
+                {
+                    "plan_obj": {
+                        "route": "structured_fact",
+                        "metadata": {
+                            "ticker": "MSFT",
+                            "fiscal_year": 2025,
+                            "form_type": "10-K",
+                        },
+                        "structured_fact_requests": [
+                            {
+                                "subquestion": (
+                                    "What were Microsoft's sales and marketing expenses "
+                                    "in FY2025?"
+                                ),
+                                "metric_hint": "sales and marketing expense",
+                                "entity_hint": "Microsoft",
+                                "fiscal_year": 2025,
+                            }
+                        ],
+                    }
+                }
+            )
+
+        get_client.assert_not_awaited()
+        rejected = result["structured_fact_results"][0]
+        self.assertEqual(rejected["resolver_status"], "unresolved")
+        self.assertIsNone(rejected["resolved_metric_id"])
+        self.assertIsNone(rejected["tool_result"])
+        issue = result["open_issues"][0]
+        self.assertEqual(issue["code"], "STRUCTURED_FACT_CAPABILITY_REJECTED")
+        self.assertEqual(issue["metadata"]["question_class"], "unknown")
+
+    async def test_structured_facts_node_rejects_supported_hint_for_unknown_subquestion(self) -> None:
+        get_client = mock.AsyncMock()
+        with mock.patch(
+            "agents.orchestrator.agent_orchestrator._get_orchestrator_mcp_client",
+            new=get_client,
+        ):
+            result = await _structured_facts_node(
+                {
+                    "plan_obj": {
+                        "route": "structured_fact",
+                        "metadata": {
+                            "ticker": "AAPL",
+                            "fiscal_year": 2025,
+                            "form_type": "10-K",
+                        },
+                        "structured_fact_requests": [
+                            {
+                                "subquestion": "What were Apple's bookings in FY2025?",
+                                "metric_hint": "revenue",
+                                "entity_hint": "Apple",
+                                "fiscal_year": 2025,
+                            }
+                        ],
+                    }
+                }
+            )
+
+        get_client.assert_not_awaited()
+        rejected = result["structured_fact_results"][0]
+        self.assertEqual(rejected["resolver_status"], "unresolved")
+        self.assertIsNone(rejected["resolved_metric_id"])
+        self.assertIsNone(rejected["tool_result"])
+        issue = result["open_issues"][0]
+        self.assertEqual(issue["code"], "STRUCTURED_FACT_CAPABILITY_REJECTED")
+        self.assertEqual(issue["metadata"]["question_class"], "unknown")
 
     async def test_structured_facts_node_preserves_non_ok_tool_result(self) -> None:
         client = _FakeStructuredFactClient(

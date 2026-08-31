@@ -15,6 +15,39 @@ Canonical release baseline: evaluated commit
 provenance are recorded in `docs/EVALUATION_BASELINES.md` under
 “Route-Aware Agent E2E v1 — 2026-08-26.”
 
+The initial PR3 structured-fact capability baseline was evaluated independently at
+`6b6b6173bac9045b03ad2292910b5acfd51740c8`; review fixes were verified at
+`5a93171562dce106d1dd45cfe0c80aa5c01628ac` and
+`af15c3c0acc301790d74187dcfacdc11c3dabe98`, with final verification at
+`a3af6f08cf1b28c6a53ca52f4c58747ad62c4a99` and
+`4c94cffbb8fda68196ce9a0101cc07c9b0876c9d`; the latest review fixes were verified at
+`ced41d0718f46bc4e24dd018c830492d3db96ca4` and
+`6adf1e259434f3b5034c8bac4d3122d6873a7796`, with final verification at
+`79bcb8e0c6d6e3199bc99b326ada3084e27d3986` and
+`f9a07e8b02ba3dabfd881bcada14139077e22614`, with canonical concept verification at
+`5d0dc4647efff81e07d576d430ac45a8b6c910c9` and final boundary verification at
+`3ef13f3599bab9552d698c6d2270eec05cc0bb45`, with clarification/adjacent-clause
+verification at `e7dae4662006a2e0cef0d9adc33c1b1857b7e93a`, against the same frozen dataset. The
+final semantic-context verification was recorded at
+`b1f9ebcbbcb004de1b7901c60ac88e7c641c12e0`, followed by resumed-execution
+verification at `eb1bc4b3cea26640604cdd6b6f5dac02cce5fe20` and final annual-boundary
+verification at `95a0efa085a54a884c8d43442b914fe59c3502de`, followed by final metadata and
+omitted-sibling verification at `011eb6ae5c6f16f6d5a8662c4a3c4d3f96bfc10c` and final semantic-coverage
+verification at `992e715c85b7cbb8ba0f5bd772c5d6974135eb76`, followed by final concept-clause
+verification at `8b9f8ec4a32b22976a2a9ccd0de09d0b2674712d` and final narrative-boundary
+verification at `f301f32742b85faba079031c4d3381ec15a2e51f`, followed by final uncovered-clause
+verification at `f47576bfdf775ddc21ef90267bea03318ef4e397` and final omitted-supported-clause
+verification at `089763d702020fda627303a09004b937dbfdbbbe`, followed by final clarified-sibling
+verification at `21dd490e287f208bff92c8d4613db0009a93d8c0` and final occurrence/period
+verification at `dfd3ffe997fbdb55173ff5878ddd7cd8f0160f2a`, followed by final scoped-fallback
+verification at `7791e64c586a4bacfb6e3a46e8f7b4c8aac31ae1` and final original-query agreement
+verification at `efb5e4251dd97af5165b24850aee06a4b18c542b`, followed by final deterministic-context
+verification at `5df0d19771015908abdca2dc949189418bc26016` and final period-boundary
+verification at `8ee0d1e0c7e3ec840ff7ccf149a535433d6ca9d4`.
+The adversarial before/after artifacts, metric definitions, and planner P0 gate are recorded in
+`docs/EVALUATION_BASELINES.md` under “Structured-Fact Capability Policy v1 —
+2026-08-30.”
+
 Run deterministic architectural checks:
 
 ```bash

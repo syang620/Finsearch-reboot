@@ -6,8 +6,440 @@ from agents.planner.interactive_target_resolution import (
     InteractivePlannerAgent,
     _build_fallback_target_resolution,
     _build_planner_output,
+    _apply_structured_fact_capability_policy,
+    _capability_guard_query,
     _normalize_resolution_output,
+    render_target_resolution_prompt,
 )
+
+
+def test_capability_guard_uses_latest_clarification_answer() -> None:
+    assert (
+        _capability_guard_query(
+            "What was Apple's cash?\n\nAnswer: cash and cash equivalents",
+            [
+                {
+                    "question": "Which cash metric?",
+                    "answer": "cash and cash equivalents",
+                }
+            ],
+        )
+        == "What was Apple's cash and cash equivalents?"
+    )
+
+    resumed_guard = _capability_guard_query(
+            "Give revenue and cash for Apple.\n\nClarification answers:\nAnswer: cash and cash equivalents",
+            [
+                {
+                    "question": "Which precise financial metric did you mean by cash?",
+                    "answer": "cash and cash equivalents",
+                }
+            ],
+    )
+    assert resumed_guard == "Give revenue and cash and cash equivalents for Apple."
+    resumed = _apply_structured_fact_capability_policy(
+        route="structured_fact",
+        structured_fact_requests=[
+            {
+                "subquestion": "What were cash and cash equivalents?",
+                "metric_hint": "cash and cash equivalents",
+            }
+        ],
+        targets=[
+            {
+                "target_id": 1,
+                "company_name": "Apple",
+                "ticker": "AAPL",
+                "fiscal_year": 2025,
+            }
+        ],
+        retrieval_plan=None,
+        needs_clarification=False,
+        clarification_reason=None,
+        clarification_questions=[],
+        open_issues=[],
+        original_user_query=resumed_guard,
+    )
+    assert resumed["route"] == "hybrid"
+    assert "revenue" in resumed["retrieval_plan"]["jobs"][0]["goal"]
+
+    protected_guard = _capability_guard_query(
+        "Give cash and operating cash flow for Apple.",
+        [
+            {
+                "question": "Which cash metric?",
+                "answer": "cash and cash equivalents",
+            }
+        ],
+    )
+    assert protected_guard == (
+        "Give cash and cash equivalents and operating cash flow for Apple."
+    )
+    original = "Why did revenue increase?\n\nAnswer: Apple"
+    assert (
+        _capability_guard_query(
+            original,
+            [{"question": "Which company?", "answer": "Apple"}],
+        )
+        == original
+    )
+
+
+def test_explanatory_capability_fallback_uses_narrative_job() -> None:
+    normalized = _normalize_resolution_output(
+        {
+            "retrieval_needed": False,
+            "route": "structured_fact",
+            "structured_fact_requests": [
+                {
+                    "subquestion": "Explain why revenue increased.",
+                    "metric_hint": "revenue increase",
+                    "entity_hint": "Apple",
+                }
+            ],
+            "task_class": "single_target_fact",
+            "targets": [
+                {
+                    "target_id": 1,
+                    "target_key": "AAPL_FY2025",
+                    "company_name": "Apple",
+                    "ticker": "AAPL",
+                    "fiscal_year": 2025,
+                    "form_type": "10-K",
+                }
+            ],
+            "retrieval_plan": None,
+            "needs_clarification": False,
+            "clarification_reason": None,
+            "clarification_questions": [],
+            "open_issues": [],
+        }
+    )
+
+    assert normalized["retrieval_plan"]["jobs"][0]["job_type"] == "narrative_extract"
+
+
+def test_nonannual_target_rejects_structured_execution() -> None:
+    normalized = _normalize_resolution_output(
+        {
+            "retrieval_needed": False,
+            "route": "structured_fact",
+            "structured_fact_requests": [
+                {"subquestion": "What was revenue?", "metric_hint": "revenue"}
+            ],
+            "task_class": "single_target_fact",
+            "targets": [
+                {
+                    "target_id": 1,
+                    "target_key": "AAPL_FY2024",
+                    "company_name": "Apple",
+                    "ticker": "AAPL",
+                    "fiscal_year": 2024,
+                    "form_type": "10-Q",
+                }
+            ],
+            "retrieval_plan": None,
+            "needs_clarification": False,
+            "clarification_reason": None,
+            "clarification_questions": [],
+            "open_issues": [],
+        },
+        original_user_query="What revenue did Apple report in its 2024 10-Q?",
+    )
+
+    assert normalized["route"] == "kb"
+    assert normalized["structured_fact_requests"] == []
+
+
+def test_deterministic_nonannual_metadata_precedes_capability_routing() -> None:
+    normalized = _normalize_resolution_output(
+        {
+            "retrieval_needed": False,
+            "route": "structured_fact",
+            "structured_fact_requests": [
+                {"subquestion": "What was revenue?", "metric_hint": "revenue"}
+            ],
+            "task_class": "single_target_fact",
+            "targets": [
+                {
+                    "target_id": 1,
+                    "company_name": "Apple",
+                    "ticker": "AAPL",
+                    "fiscal_year": 2024,
+                }
+            ],
+            "retrieval_plan": None,
+            "needs_clarification": False,
+            "clarification_reason": None,
+            "clarification_questions": [],
+            "open_issues": [],
+        },
+        original_user_query="What revenue did Apple report in its 2024 10-Q?",
+        deterministic_targets=[
+            {
+                "target_id": 1,
+                "company_name": "Apple",
+                "ticker": "AAPL",
+                "fiscal_year": 2024,
+                "form_type": "10-Q",
+            }
+        ],
+        deterministic_open_issues=[
+            {
+                "code": "FORM_NOT_10K_DATASET",
+                "message": "The deterministic resolver identified a 10-Q request.",
+                "severity": "warning",
+            }
+        ],
+    )
+
+    assert normalized["route"] == "kb"
+    assert normalized["structured_fact_requests"] == []
+    assert normalized["targets"][0]["form_type"] == "10-Q"
+    assert normalized["retrieval_plan"] is not None
+
+
+def test_partial_structured_proposal_preserves_unknown_sibling_for_retrieval() -> None:
+    normalized = _normalize_resolution_output(
+        {
+            "retrieval_needed": False,
+            "route": "structured_fact",
+            "structured_fact_requests": [
+                {
+                    "subquestion": "What was Apple's revenue in FY2025?",
+                    "metric_hint": "revenue",
+                    "entity_hint": "Apple",
+                    "fiscal_year": 2025,
+                    "fiscal_period": "FY",
+                }
+            ],
+            "task_class": "single_target_fact",
+            "targets": [
+                {
+                    "target_id": 1,
+                    "target_key": "AAPL_FY2025",
+                    "company_name": "Apple",
+                    "ticker": "AAPL",
+                    "fiscal_year": 2025,
+                    "form_type": "10-K",
+                }
+            ],
+            "retrieval_plan": None,
+            "needs_clarification": False,
+            "clarification_reason": None,
+            "clarification_questions": [],
+            "open_issues": [],
+        },
+        original_user_query="Give Apple revenue and bookings for FY2025.",
+    )
+
+    assert normalized["route"] == "hybrid"
+    assert [
+        request["metric_hint"] for request in normalized["structured_fact_requests"]
+    ] == ["revenue"]
+    assert "bookings" in normalized["retrieval_plan"]["jobs"][0]["goal"]
+    assert normalized["open_issues"][0]["metadata"]["question_class"] == "unknown"
+
+
+def test_partial_structured_proposal_preserves_comma_separated_sibling() -> None:
+    result = _apply_structured_fact_capability_policy(
+        route="structured_fact",
+        structured_fact_requests=[
+            {"subquestion": "What was revenue?", "metric_hint": "revenue"}
+        ],
+        targets=[{"target_id": 1, "ticker": "AAPL", "fiscal_year": 2025}],
+        retrieval_plan=None,
+        needs_clarification=False,
+        clarification_reason=None,
+        clarification_questions=[],
+        open_issues=[],
+        original_user_query="Give revenue, bookings.",
+    )
+
+    assert result["route"] == "hybrid"
+    assert "bookings" in result["retrieval_plan"]["jobs"][0]["goal"]
+
+
+def test_mixed_proposal_preserves_omitted_unknown_sibling_for_retrieval() -> None:
+    normalized = _normalize_resolution_output(
+        {
+            "retrieval_needed": False,
+            "route": "structured_fact",
+            "structured_fact_requests": [
+                {
+                    "subquestion": "What was revenue?",
+                    "metric_hint": "revenue",
+                    "entity_hint": "Apple",
+                    "fiscal_year": 2025,
+                },
+                {
+                    "subquestion": "What was gross margin?",
+                    "metric_hint": "gross margin",
+                    "entity_hint": "Apple",
+                    "fiscal_year": 2025,
+                },
+            ],
+            "task_class": "single_target_fact",
+            "targets": [
+                {
+                    "target_id": 1,
+                    "target_key": "AAPL_FY2025",
+                    "company_name": "Apple",
+                    "ticker": "AAPL",
+                    "fiscal_year": 2025,
+                    "form_type": "10-K",
+                }
+            ],
+            "retrieval_plan": None,
+            "needs_clarification": False,
+            "clarification_reason": None,
+            "clarification_questions": [],
+            "open_issues": [],
+        },
+        original_user_query="Give revenue and bookings and gross margin.",
+    )
+
+    assert normalized["route"] == "hybrid"
+    assert [
+        request["metric_hint"] for request in normalized["structured_fact_requests"]
+    ] == ["revenue"]
+    fallback_goals = [job["goal"] for job in normalized["retrieval_plan"]["jobs"]]
+    assert any("bookings" in goal for goal in fallback_goals)
+    assert any("gross margin" in goal for goal in fallback_goals)
+
+
+def test_unknown_sibling_preserves_conjunction_inside_financial_concept() -> None:
+    result = _apply_structured_fact_capability_policy(
+        route="structured_fact",
+        structured_fact_requests=[
+            {"subquestion": "What was revenue?", "metric_hint": "revenue"}
+        ],
+        targets=[
+            {
+                "target_id": 1,
+                "company_name": "Apple",
+                "ticker": "AAPL",
+                "fiscal_year": 2025,
+            }
+        ],
+        retrieval_plan=None,
+        needs_clarification=False,
+        clarification_reason=None,
+        clarification_questions=[],
+        open_issues=[],
+        original_user_query="What were research and development expenses and revenue?",
+    )
+
+    assert result["route"] == "hybrid"
+    assert len(result["retrieval_plan"]["jobs"]) == 1
+    assert "research and development expenses" in result["retrieval_plan"]["jobs"][0]["goal"]
+
+
+def test_unknown_sibling_survives_sentence_boundary_normalization() -> None:
+    result = _apply_structured_fact_capability_policy(
+        route="structured_fact",
+        structured_fact_requests=[
+            {"subquestion": "What was revenue?", "metric_hint": "revenue"}
+        ],
+        targets=[
+            {
+                "target_id": 1,
+                "company_name": "Apple",
+                "ticker": "AAPL",
+                "fiscal_year": 2025,
+            }
+        ],
+        retrieval_plan=None,
+        needs_clarification=False,
+        clarification_reason=None,
+        clarification_questions=[],
+        open_issues=[],
+        original_user_query="Give revenue. Also provide bookings.",
+    )
+
+    assert result["route"] == "hybrid"
+    assert "bookings" in result["retrieval_plan"]["jobs"][0]["goal"]
+
+
+def test_omitted_narrative_sibling_is_retained_for_retrieval() -> None:
+    result = _apply_structured_fact_capability_policy(
+        route="structured_fact",
+        structured_fact_requests=[
+            {"subquestion": "What was revenue?", "metric_hint": "revenue"}
+        ],
+        targets=[{"target_id": 1, "ticker": "AAPL", "fiscal_year": 2025}],
+        retrieval_plan=None,
+        needs_clarification=False,
+        clarification_reason=None,
+        clarification_questions=[],
+        open_issues=[],
+        original_user_query="Give revenue and explain bookings.",
+    )
+
+    assert result["route"] == "hybrid"
+    assert result["retrieval_plan"]["jobs"][0]["job_type"] == "narrative_extract"
+    assert "bookings" in result["retrieval_plan"]["jobs"][0]["goal"]
+
+
+def test_uncovered_compound_concept_keeps_supported_word() -> None:
+    result = _apply_structured_fact_capability_policy(
+        route="structured_fact",
+        structured_fact_requests=[
+            {"subquestion": "What was revenue?", "metric_hint": "revenue"}
+        ],
+        targets=[{"target_id": 1, "ticker": "AAPL", "fiscal_year": 2025}],
+        retrieval_plan=None,
+        needs_clarification=False,
+        clarification_reason=None,
+        clarification_questions=[],
+        open_issues=[],
+        original_user_query="Give cost of revenue and revenue.",
+    )
+
+    assert result["route"] == "hybrid"
+    assert "cost of revenue" in result["retrieval_plan"]["jobs"][0]["goal"]
+
+
+def test_ambiguous_sibling_clarification_names_ambiguous_clause() -> None:
+    result = _apply_structured_fact_capability_policy(
+        route="structured_fact",
+        structured_fact_requests=[
+            {"subquestion": "What was revenue?", "metric_hint": "revenue"}
+        ],
+        targets=[{"target_id": 1, "ticker": "AAPL", "fiscal_year": 2025}],
+        retrieval_plan=None,
+        needs_clarification=False,
+        clarification_reason=None,
+        clarification_questions=[],
+        open_issues=[],
+        original_user_query="Give revenue and cash.",
+    )
+
+    assert result["needs_clarification"]
+    assert "'cash'" in result["clarification_questions"][0]
+    assert "'revenue'" not in result["clarification_questions"][0]
+
+
+def test_omitted_supported_sibling_routes_to_retrieval() -> None:
+    result = _apply_structured_fact_capability_policy(
+        route="structured_fact",
+        structured_fact_requests=[
+            {"subquestion": "What was revenue?", "metric_hint": "revenue"}
+        ],
+        targets=[{"target_id": 1, "ticker": "AAPL", "fiscal_year": 2025}],
+        retrieval_plan=None,
+        needs_clarification=False,
+        clarification_reason=None,
+        clarification_questions=[],
+        open_issues=[],
+        original_user_query="Give revenue and total assets.",
+    )
+
+    assert result["route"] == "hybrid"
+    assert [request["metric_hint"] for request in result["structured_fact_requests"]] == [
+        "revenue"
+    ]
+    assert "total assets" in result["retrieval_plan"]["jobs"][0]["goal"]
 
 
 def _base_planner_output_payload() -> dict:
@@ -390,11 +822,17 @@ class PlannerStructuredFactSchemaTests(unittest.TestCase):
         self.assertEqual(normalized["retrieval_plan"]["jobs"][0]["goal"], "extract annual revenue")
 
     def test_prompt_template_keeps_unsupported_finance_questions_on_kb(self) -> None:
-        self.assertIn("gross margin", DEFAULT_TARGET_RESOLUTION_PROMPT_TEMPLATE)
-        self.assertIn("EPS", DEFAULT_TARGET_RESOLUTION_PROMPT_TEMPLATE)
-        self.assertIn("debt-to-equity ratio", DEFAULT_TARGET_RESOLUTION_PROMPT_TEMPLATE)
-        self.assertIn("Compare Apple and Microsoft revenue in FY2024", DEFAULT_TARGET_RESOLUTION_PROMPT_TEMPLATE)
-        self.assertIn("Keep them on `kb`.", DEFAULT_TARGET_RESOLUTION_PROMPT_TEMPLATE)
+        rendered = render_target_resolution_prompt(
+            DEFAULT_TARGET_RESOLUTION_PROMPT_TEMPLATE,
+            user_query="What was Apple's revenue?",
+            payload={},
+        )
+
+        self.assertNotIn("{{STRUCTURED_FACT_CAPABILITY_POLICY}}", rendered)
+        self.assertIn("Ratios, margins, yields, per-share metrics", rendered)
+        self.assertIn("Generic cash, profit, and profitability", rendered)
+        self.assertIn("Compare Apple and Microsoft revenue in FY2024", rendered)
+        self.assertIn("Keep them on `kb`.", rendered)
 
     def test_prompt_template_requires_human_readable_metric_hints(self) -> None:
         self.assertIn("Keep `metric_hint` human-readable", DEFAULT_TARGET_RESOLUTION_PROMPT_TEMPLATE)
@@ -512,6 +950,325 @@ class PlannerStructuredFactSchemaTests(unittest.TestCase):
 
         self.assertEqual(normalized["route"], "kb")
         self.assertEqual(normalized["structured_fact_requests"], [])
+
+    def test_normalize_resolution_output_keeps_supported_subset_in_hybrid_fallback(self) -> None:
+        normalized = _normalize_resolution_output(
+            {
+                "retrieval_needed": False,
+                "route": "structured_fact",
+                "structured_fact_requests": [
+                    {
+                        "subquestion": "What was Apple's revenue in FY2025?",
+                        "metric_hint": "revenue",
+                        "entity_hint": "Apple",
+                        "fiscal_year": 2025,
+                    },
+                    {
+                        "subquestion": "What was Apple's return on equity in FY2025?",
+                        "metric_hint": "ROE",
+                        "entity_hint": "Apple",
+                        "fiscal_year": 2025,
+                    },
+                ],
+                "task_class": "single_target_fact",
+                "targets": [
+                    {
+                        "target_id": 1,
+                        "target_key": "AAPL_FY2025",
+                        "company_name": "Apple",
+                        "ticker": "AAPL",
+                        "fiscal_year": 2025,
+                        "form_type": "10-K",
+                    }
+                ],
+                "retrieval_plan": None,
+                "needs_clarification": False,
+                "clarification_reason": None,
+                "clarification_questions": [],
+                "open_issues": [],
+            }
+        )
+
+        self.assertEqual(normalized["route"], "hybrid")
+        self.assertTrue(normalized["retrieval_needed"])
+        self.assertEqual(
+            [request["metric_hint"] for request in normalized["structured_fact_requests"]],
+            ["revenue"],
+        )
+        fallback_job = normalized["retrieval_plan"]["jobs"][0]
+        self.assertIn("return on equity", fallback_job["goal"])
+        self.assertNotIn("Apple", fallback_job["goal"])
+        self.assertNotIn("2025", fallback_job["goal"])
+        issue = normalized["open_issues"][0]
+        self.assertEqual(issue["code"], "STRUCTURED_FACT_CAPABILITY_REJECTED")
+        self.assertEqual(issue["metadata"]["question_class"], "unsupported_ratio")
+        self.assertEqual(issue["metadata"]["metric_hint"], "ROE")
+        self.assertEqual(issue["metadata"]["effective_route"], "hybrid")
+        self.assertEqual(issue["metadata"]["outcome"], "partial_kb_fallback")
+
+    def test_normalize_resolution_output_uses_rejected_subquestion_for_fallback_goal(self) -> None:
+        normalized = _normalize_resolution_output(
+            {
+                "retrieval_needed": False,
+                "route": "structured_fact",
+                "structured_fact_requests": [
+                    {
+                        "subquestion": "Calculate Apple's return on equity in FY2025.",
+                        "metric_hint": "revenue",
+                        "entity_hint": "Apple",
+                        "fiscal_year": 2025,
+                    }
+                ],
+                "task_class": "single_target_fact",
+                "targets": [
+                    {
+                        "target_id": 1,
+                        "target_key": "AAPL_FY2025",
+                        "company_name": "Apple",
+                        "ticker": "AAPL",
+                        "fiscal_year": 2025,
+                        "form_type": "10-K",
+                    }
+                ],
+                "retrieval_plan": None,
+                "needs_clarification": False,
+                "clarification_reason": None,
+                "clarification_questions": [],
+                "open_issues": [],
+            }
+        )
+
+        self.assertEqual(normalized["route"], "kb")
+        goal = normalized["retrieval_plan"]["jobs"][0]["goal"]
+        self.assertIn("return on equity", goal)
+        self.assertNotIn("revenue", goal)
+        self.assertNotIn("Apple", goal)
+        self.assertNotIn("2025", goal)
+
+    def test_rewritten_metric_falls_back_to_original_single_clause(self) -> None:
+        normalized = _normalize_resolution_output(
+            {
+                "retrieval_needed": False,
+                "route": "structured_fact",
+                "structured_fact_requests": [
+                    {
+                        "subquestion": "What were total assets?",
+                        "metric_hint": "total assets",
+                    }
+                ],
+                "task_class": "single_target_fact",
+                "targets": [
+                    {
+                        "target_id": 1,
+                        "company_name": "Apple",
+                        "ticker": "AAPL",
+                        "fiscal_year": 2024,
+                        "form_type": "10-K",
+                    }
+                ],
+                "retrieval_plan": None,
+                "needs_clarification": False,
+                "clarification_reason": None,
+                "clarification_questions": [],
+                "open_issues": [],
+            },
+            original_user_query="What was revenue?",
+        )
+
+        self.assertEqual(normalized["route"], "kb")
+        self.assertEqual(normalized["structured_fact_requests"], [])
+        goal = normalized["retrieval_plan"]["jobs"][0]["goal"]
+        self.assertIn("revenue", goal)
+        self.assertNotIn("total assets", goal)
+
+    def test_rejected_request_fallback_is_scoped_to_its_fiscal_year(self) -> None:
+        normalized = _normalize_resolution_output(
+            {
+                "retrieval_needed": False,
+                "route": "structured_fact",
+                "structured_fact_requests": [
+                    {
+                        "subquestion": "What was Apple's revenue in FY2024?",
+                        "metric_hint": "revenue",
+                        "entity_hint": "Apple",
+                        "fiscal_year": 2024,
+                    },
+                    {
+                        "subquestion": "What were Apple's bookings in FY2023?",
+                        "metric_hint": "bookings",
+                        "entity_hint": "Apple",
+                        "fiscal_year": 2023,
+                    },
+                ],
+                "task_class": "single_target_fact",
+                "targets": [
+                    {
+                        "target_id": 1,
+                        "company_name": "Apple",
+                        "ticker": "AAPL",
+                        "fiscal_year": 2024,
+                        "form_type": "10-K",
+                    },
+                    {
+                        "target_id": 2,
+                        "company_name": "Apple",
+                        "ticker": "AAPL",
+                        "fiscal_year": 2023,
+                        "form_type": "10-K",
+                    },
+                    {
+                        "target_id": 3,
+                        "company_name": "Microsoft",
+                        "ticker": "MSFT",
+                        "fiscal_year": 2023,
+                        "form_type": "10-K",
+                    },
+                ],
+                "retrieval_plan": None,
+                "needs_clarification": False,
+                "clarification_reason": None,
+                "clarification_questions": [],
+                "open_issues": [],
+            }
+        )
+
+        self.assertEqual(normalized["route"], "hybrid")
+        self.assertEqual(
+            normalized["retrieval_plan"]["jobs"][0]["applies_to_target_ids"],
+            [2],
+        )
+
+    def test_fallback_goal_removes_short_ticker_only_at_token_boundary(self) -> None:
+        normalized = _normalize_resolution_output(
+            {
+                "retrieval_needed": False,
+                "route": "structured_fact",
+                "structured_fact_requests": [
+                    {
+                        "subquestion": "What was Ford's free cash flow yield in FY2025?",
+                        "metric_hint": "free cash flow yield",
+                        "entity_hint": "Ford",
+                        "fiscal_year": 2025,
+                    }
+                ],
+                "task_class": "single_target_fact",
+                "targets": [
+                    {
+                        "target_id": 1,
+                        "target_key": "F_FY2025",
+                        "company_name": "Ford",
+                        "ticker": "F",
+                        "fiscal_year": 2025,
+                        "form_type": "10-K",
+                    }
+                ],
+                "retrieval_plan": None,
+                "needs_clarification": False,
+                "clarification_reason": None,
+                "clarification_questions": [],
+                "open_issues": [],
+            }
+        )
+
+        goal = normalized["retrieval_plan"]["jobs"][0]["goal"]
+        self.assertIn("free cash flow yield", goal)
+        self.assertNotIn("Ford", goal)
+        self.assertNotIn("FY2025", goal)
+
+    def test_normalize_resolution_output_clarifies_material_metric_ambiguity(self) -> None:
+        normalized = _normalize_resolution_output(
+            {
+                "retrieval_needed": False,
+                "route": "structured_fact",
+                "structured_fact_requests": [
+                    {
+                        "subquestion": "What was Apple's cash in FY2025?",
+                        "metric_hint": "cash",
+                        "entity_hint": "Apple",
+                        "fiscal_year": 2025,
+                    }
+                ],
+                "task_class": "single_target_fact",
+                "targets": [
+                    {
+                        "target_id": 1,
+                        "target_key": "AAPL_FY2025",
+                        "company_name": "Apple",
+                        "ticker": "AAPL",
+                        "fiscal_year": 2025,
+                        "form_type": "10-K",
+                    }
+                ],
+                "retrieval_plan": None,
+                "needs_clarification": False,
+                "clarification_reason": None,
+                "clarification_questions": [],
+                "open_issues": [],
+            }
+        )
+
+        self.assertEqual(normalized["route"], "kb")
+        self.assertTrue(normalized["needs_clarification"])
+        self.assertFalse(normalized["retrieval_needed"])
+        self.assertEqual(normalized["structured_fact_requests"], [])
+        self.assertEqual(normalized["targets"], [])
+        self.assertIsNone(normalized["retrieval_plan"])
+        self.assertIn("cash and cash equivalents", normalized["clarification_questions"][0])
+        self.assertEqual(
+            normalized["open_issues"][0]["metadata"]["candidate_metric_ids"],
+            ["cash_and_cash_equivalents", "operating_cash_flow"],
+        )
+
+    def test_normalize_resolution_output_rejects_ratio_component_decomposition(self) -> None:
+        normalized = _normalize_resolution_output(
+            {
+                "retrieval_needed": True,
+                "route": "hybrid",
+                "structured_fact_requests": [
+                    {
+                        "subquestion": "What was Apple's total debt in FY2024?",
+                        "metric_hint": "total debt",
+                    },
+                    {
+                        "subquestion": "What was Apple's stockholders equity in FY2024?",
+                        "metric_hint": "stockholders equity",
+                    },
+                ],
+                "task_class": "single_target_fact",
+                "targets": [
+                    {
+                        "target_id": 1,
+                        "target_key": "AAPL_FY2024",
+                        "company_name": "Apple",
+                        "ticker": "AAPL",
+                        "fiscal_year": 2024,
+                        "form_type": "10-K",
+                    }
+                ],
+                "retrieval_plan": {
+                    "fanout_mode": "single_target",
+                    "jobs": [
+                        {
+                            "applies_to_target_ids": [1],
+                            "goal": "extract debt and equity evidence",
+                            "job_type": "metric_extract",
+                        }
+                    ],
+                },
+                "needs_clarification": False,
+                "clarification_reason": None,
+                "clarification_questions": [],
+                "open_issues": [],
+            },
+            original_user_query="What was Apple's debt-to-equity ratio in FY2024?",
+        )
+
+        self.assertEqual(normalized["route"], "kb")
+        self.assertEqual(normalized["structured_fact_requests"], [])
+        self.assertEqual(
+            {issue["metadata"]["question_class"] for issue in normalized["open_issues"]},
+            {"unsupported_ratio"},
+        )
 
 
 if __name__ == "__main__":
