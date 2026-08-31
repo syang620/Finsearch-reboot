@@ -218,6 +218,27 @@ class StructuredFactCapabilityPolicy:
                 "The metric hint does not agree with the structured subquestion.",
             )
 
+        if metric_text:
+            if len(hint_metric_ids) == 1:
+                return self._supported(
+                    hint_metric_ids[0],
+                    "Matched a direct supported metric hint.",
+                )
+            if len(hint_metric_ids) > 1:
+                return self._ambiguous(
+                    hint_metric_ids,
+                    "The metric hint maps to multiple supported metrics.",
+                )
+            if metric_text in _AMBIGUOUS_GENERIC_TERMS:
+                return self._ambiguous(
+                    self._ambiguous_candidate_ids(metric_text),
+                    "The metric phrase is too broad for deterministic structured execution.",
+                )
+            return self._rejected(
+                StructuredFactQuestionClass.UNKNOWN,
+                "The metric hint is not a direct structured-fact capability.",
+            )
+
         exact_matches = self._matching_metric_ids(combined_text, use_aliases=False)
         if len(exact_matches) == 1:
             return self._supported(exact_matches[0], "Matched an exact supported metric phrase.")

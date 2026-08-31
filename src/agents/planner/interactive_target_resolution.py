@@ -1125,7 +1125,12 @@ def _sanitize_retrieval_goal_fragment(
     for removal in removals:
         token = str(removal or "").strip()
         if token:
-            text = re.sub(re.escape(token), " ", text, flags=re.IGNORECASE)
+            text = re.sub(
+                rf"(?<![A-Za-z0-9]){re.escape(token)}(?![A-Za-z0-9])",
+                " ",
+                text,
+                flags=re.IGNORECASE,
+            )
     text = re.sub(r"\bFY(?:\s*\d{2,4})?\b", " ", text, flags=re.IGNORECASE)
     text = re.sub(r"\b(?:19|20)\d{2}\b", " ", text)
     text = re.sub(r"(?:'s|’s)\b", " ", text)

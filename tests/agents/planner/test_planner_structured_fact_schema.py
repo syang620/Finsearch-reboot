@@ -614,6 +614,43 @@ class PlannerStructuredFactSchemaTests(unittest.TestCase):
         self.assertNotIn("Apple", goal)
         self.assertNotIn("2025", goal)
 
+    def test_fallback_goal_removes_short_ticker_only_at_token_boundary(self) -> None:
+        normalized = _normalize_resolution_output(
+            {
+                "retrieval_needed": False,
+                "route": "structured_fact",
+                "structured_fact_requests": [
+                    {
+                        "subquestion": "What was Ford's free cash flow yield in FY2025?",
+                        "metric_hint": "free cash flow yield",
+                        "entity_hint": "Ford",
+                        "fiscal_year": 2025,
+                    }
+                ],
+                "task_class": "single_target_fact",
+                "targets": [
+                    {
+                        "target_id": 1,
+                        "target_key": "F_FY2025",
+                        "company_name": "Ford",
+                        "ticker": "F",
+                        "fiscal_year": 2025,
+                        "form_type": "10-K",
+                    }
+                ],
+                "retrieval_plan": None,
+                "needs_clarification": False,
+                "clarification_reason": None,
+                "clarification_questions": [],
+                "open_issues": [],
+            }
+        )
+
+        goal = normalized["retrieval_plan"]["jobs"][0]["goal"]
+        self.assertIn("free cash flow yield", goal)
+        self.assertNotIn("Ford", goal)
+        self.assertNotIn("FY2025", goal)
+
     def test_normalize_resolution_output_clarifies_material_metric_ambiguity(self) -> None:
         normalized = _normalize_resolution_output(
             {

@@ -88,6 +88,14 @@ def test_supported_hint_does_not_override_unknown_subquestion() -> None:
     assert decision.matched_metric_ids == ()
 
 
+def test_supported_phrase_does_not_match_inside_modified_metric_name() -> None:
+    decision = _classify("deferred revenue", "What was deferred revenue?")
+
+    assert not decision.permitted
+    assert decision.question_class == StructuredFactQuestionClass.UNKNOWN
+    assert decision.matched_metric_ids == ()
+
+
 def test_unknown_metric_is_not_permitted() -> None:
     decision = _classify("bookings")
 
