@@ -69,6 +69,48 @@ def test_explanatory_capability_fallback_uses_narrative_job() -> None:
     assert normalized["retrieval_plan"]["jobs"][0]["job_type"] == "narrative_extract"
 
 
+def test_partial_structured_proposal_preserves_unknown_sibling_for_retrieval() -> None:
+    normalized = _normalize_resolution_output(
+        {
+            "retrieval_needed": False,
+            "route": "structured_fact",
+            "structured_fact_requests": [
+                {
+                    "subquestion": "What was Apple's revenue in FY2025?",
+                    "metric_hint": "revenue",
+                    "entity_hint": "Apple",
+                    "fiscal_year": 2025,
+                    "fiscal_period": "FY",
+                }
+            ],
+            "task_class": "single_target_fact",
+            "targets": [
+                {
+                    "target_id": 1,
+                    "target_key": "AAPL_FY2025",
+                    "company_name": "Apple",
+                    "ticker": "AAPL",
+                    "fiscal_year": 2025,
+                    "form_type": "10-K",
+                }
+            ],
+            "retrieval_plan": None,
+            "needs_clarification": False,
+            "clarification_reason": None,
+            "clarification_questions": [],
+            "open_issues": [],
+        },
+        original_user_query="Give Apple revenue and bookings for FY2025.",
+    )
+
+    assert normalized["route"] == "hybrid"
+    assert [
+        request["metric_hint"] for request in normalized["structured_fact_requests"]
+    ] == ["revenue"]
+    assert "bookings" in normalized["retrieval_plan"]["jobs"][0]["goal"]
+    assert normalized["open_issues"][0]["metadata"]["question_class"] == "unknown"
+
+
 def _base_planner_output_payload() -> dict:
     return {
         "status": "completed",

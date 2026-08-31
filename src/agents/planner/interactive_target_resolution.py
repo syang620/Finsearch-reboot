@@ -1284,19 +1284,20 @@ def _apply_structured_fact_capability_policy(
             for _request in structured_fact_requests
         )
     else:
+        capability_entity_hints = tuple(
+            value
+            for target in targets
+            if isinstance(target, dict)
+            for value in (
+                target.get("company_name"),
+                target.get("ticker"),
+            )
+        )
         capability_decisions = (
             DEFAULT_STRUCTURED_FACT_CAPABILITY_POLICY.classify_requests(
                 structured_fact_requests,
                 original_user_query=original_user_query,
-                entity_hints=(
-                    value
-                    for target in targets
-                    if isinstance(target, dict)
-                    for value in (
-                        target.get("company_name"),
-                        target.get("ticker"),
-                    )
-                ),
+                entity_hints=capability_entity_hints,
             )
         )
     decisions = [
@@ -1305,6 +1306,25 @@ def _apply_structured_fact_capability_policy(
             zip(structured_fact_requests, capability_decisions)
         )
     ]
+    if (
+        not multi_company_query
+        and decisions
+        and all(decision.permitted for _index, _request, decision in decisions)
+    ):
+        uncovered_unknowns = (
+            DEFAULT_STRUCTURED_FACT_CAPABILITY_POLICY.classify_unknown_original_clauses(
+                original_user_query,
+                entity_hints=capability_entity_hints,
+            )
+        )
+        decisions.extend(
+            (
+                len(structured_fact_requests) + offset,
+                {"subquestion": clause},
+                decision,
+            )
+            for offset, (clause, decision) in enumerate(uncovered_unknowns)
+        )
     supported = [item for item in decisions if item[2].permitted]
     rejected = [item for item in decisions if not item[2].permitted]
     ambiguous = [

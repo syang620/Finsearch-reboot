@@ -9,11 +9,13 @@ def _classify(
     metric_hint: str,
     subquestion: str = "",
     *,
+    fiscal_period=None,
     entity_hints=(),
 ):
     return DEFAULT_STRUCTURED_FACT_CAPABILITY_POLICY.classify_request(
         metric_hint=metric_hint,
         subquestion=subquestion,
+        fiscal_period=fiscal_period,
         entity_hints=entity_hints,
     )
 
@@ -217,6 +219,20 @@ def test_original_unsupported_semantics_block_supported_looking_decomposition() 
         StructuredFactQuestionClass.UNSUPPORTED_RATIO
     }
 
+    debt_to_assets = DEFAULT_STRUCTURED_FACT_CAPABILITY_POLICY.classify_requests(
+        [
+            {"metric_hint": "total debt", "subquestion": "What was total debt?"},
+            {"metric_hint": "total assets", "subquestion": "What were total assets?"},
+        ],
+        original_user_query="What was Apple's debt-to-assets?",
+    )
+    assert {decision.question_class for decision in debt_to_assets} == {
+        StructuredFactQuestionClass.UNSUPPORTED_RATIO
+    }
+
+    asset_turnover = _classify("total assets", "Calculate asset turnover.")
+    assert asset_turnover.question_class == StructuredFactQuestionClass.UNSUPPORTED_RATIO
+
 
 def test_comparison_operand_conjunction_does_not_look_independent() -> None:
     decisions = DEFAULT_STRUCTURED_FACT_CAPABILITY_POLICY.classify_requests(
@@ -277,6 +293,18 @@ def test_quarterly_periods_are_rejected_from_annual_structured_execution() -> No
         original_user_query="What was revenue for Q1 2024?",
     )
     assert not guarded[0].permitted
+
+    metadata_guarded = DEFAULT_STRUCTURED_FACT_CAPABILITY_POLICY.classify_requests(
+        [
+            {
+                "metric_hint": "revenue",
+                "subquestion": "What was revenue?",
+                "fiscal_period": "Q1",
+            }
+        ],
+        original_user_query="Revenue for the three months ended March 31, 2024.",
+    )
+    assert not metadata_guarded[0].permitted
 
 
 def test_arithmetic_request_blocks_supported_looking_decomposition() -> None:

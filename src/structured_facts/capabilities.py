@@ -118,6 +118,8 @@ _PER_SHARE_PATTERNS = (
 _QUARTERLY_PERIOD_PATTERNS = (
     re.compile(r"\bq\s*[1-4](?:\s+\d{4})?\b"),
     re.compile(r"\bquarter(?:ly)?\b"),
+    re.compile(r"\b(?:three|six|nine|3|6|9) months?\b"),
+    re.compile(r"\binterim\b"),
 )
 _RATIO_PATTERNS = (
     re.compile(r"\bmargin\b"),
@@ -126,6 +128,11 @@ _RATIO_PATTERNS = (
     re.compile(r"\breturn on (?:equity|assets|investment|capital)\b"),
     re.compile(r"\b(?:roe|roa|roic)\b"),
     re.compile(r"\bdebt to equity\b"),
+    re.compile(r"\bdebt to (?:assets?|capital)\b"),
+    re.compile(r"\b(?:asset|inventory|receivables?|accounts receivable) turnover\b"),
+    re.compile(r"\b(?:interest|debt service) coverage\b"),
+    re.compile(r"\bequity multiplier\b"),
+    re.compile(r"\bdividend payout\b"),
     re.compile(r"\bev\s+ebitda\b"),
     re.compile(r"\bpercentage of\b"),
 )
@@ -212,6 +219,7 @@ class StructuredFactCapabilityPolicy:
         *,
         metric_hint: Any,
         subquestion: Any,
+        fiscal_period: Any = None,
         entity_hints: Iterable[Any] = (),
     ) -> StructuredFactCapabilityDecision:
         metric_text = _normalize_lookup_text(metric_hint)
@@ -220,6 +228,16 @@ class StructuredFactCapabilityPolicy:
         raw_text = " ".join(
             part for part in (str(metric_hint or ""), str(subquestion or "")) if part
         )
+        period_text = _normalize_lookup_text(fiscal_period)
+
+        if period_text and not re.fullmatch(
+            r"(?:fy(?: ?\d{4})?|annual|year|year end|year ended|fiscal year)",
+            period_text,
+        ):
+            return self._rejected(
+                StructuredFactQuestionClass.UNSUPPORTED_DERIVED_METRIC,
+                "The requested fiscal period is not executable by the annual structured-fact lane.",
+            )
 
         if re.search(r"\S\s*[+*/]\s*\S", raw_text) or re.search(
             r"\S\s+-\s+\S",
@@ -342,6 +360,7 @@ class StructuredFactCapabilityPolicy:
             self.classify_request(
                 metric_hint=request.get("metric_hint"),
                 subquestion=request.get("subquestion"),
+                fiscal_period=request.get("fiscal_period"),
                 entity_hints=shared_entity_hints + (request.get("entity_hint"),),
             )
             for request in request_list
@@ -377,6 +396,48 @@ class StructuredFactCapabilityPolicy:
         if original_decision.question_class == StructuredFactQuestionClass.UNKNOWN:
             return decisions
         return tuple(original_decision for _request in request_list)
+
+    def classify_unknown_original_clauses(
+        self,
+        original_user_query: Any,
+        *,
+        entity_hints: Iterable[Any] = (),
+    ) -> tuple[tuple[str, StructuredFactCapabilityDecision], ...]:
+        original_source = str(original_user_query or "").replace(
+            ";", " clauseboundary "
+        )
+        original_text = _normalize_lookup_text(original_source)
+        if not original_text:
+            return ()
+        shared_entity_hints = tuple(entity_hints)
+        boundaries = self._independent_conjunctions(
+            original_text,
+            entity_hints=shared_entity_hints,
+        )
+        if not boundaries:
+            return ()
+        clauses: list[str] = []
+        start = 0
+        for boundary in boundaries:
+            clauses.append(original_text[start : boundary.start()].strip())
+            start = boundary.end()
+        clauses.append(original_text[start:].strip())
+        classified = (
+            (
+                clause,
+                self._classify_original_clause(
+                    clause,
+                    entity_hints=shared_entity_hints,
+                ),
+            )
+            for clause in clauses
+            if clause
+        )
+        return tuple(
+            (clause, decision)
+            for clause, decision in classified
+            if decision.question_class == StructuredFactQuestionClass.UNKNOWN
+        )
 
     def prompt_appendix(self) -> str:
         supported = ", ".join(
@@ -556,11 +617,15 @@ class StructuredFactCapabilityPolicy:
                 right_decision.question_class in _EXPLICIT_UNSUPPORTED_CLASSES
             )
             if left_decision.permitted and (
-                right_decision.permitted or right_explicitly_unsupported
+                right_decision.permitted
+                or right_explicitly_unsupported
+                or right_decision.question_class == StructuredFactQuestionClass.UNKNOWN
             ):
                 independent.append(conjunction)
             elif right_decision.permitted and (
-                left_decision.permitted or left_explicitly_unsupported
+                left_decision.permitted
+                or left_explicitly_unsupported
+                or left_decision.question_class == StructuredFactQuestionClass.UNKNOWN
             ):
                 independent.append(conjunction)
         return tuple(independent)
