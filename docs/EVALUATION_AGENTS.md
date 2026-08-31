@@ -29,8 +29,9 @@ The initial PR3 structured-fact capability baseline was evaluated independently 
 `3ef13f3599bab9552d698c6d2270eec05cc0bb45`, with clarification/adjacent-clause
 verification at `e7dae4662006a2e0cef0d9adc33c1b1857b7e93a`, against the same frozen dataset. The
 final semantic-context verification was recorded at
-`b1f9ebcbbcb004de1b7901c60ac88e7c641c12e0`, followed by final resumed-execution
-verification at `eb1bc4b3cea26640604cdd6b6f5dac02cce5fe20`.
+`b1f9ebcbbcb004de1b7901c60ac88e7c641c12e0`, followed by resumed-execution
+verification at `eb1bc4b3cea26640604cdd6b6f5dac02cce5fe20` and final annual-boundary
+verification at `95a0efa085a54a884c8d43442b914fe59c3502de`.
 The adversarial before/after artifacts, metric definitions, and planner P0 gate are recorded in
 `docs/EVALUATION_BASELINES.md` under “Structured-Fact Capability Policy v1 —
 2026-08-30.”
