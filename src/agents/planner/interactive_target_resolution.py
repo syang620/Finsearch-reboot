@@ -1276,6 +1276,15 @@ def _apply_structured_fact_capability_policy(
             DEFAULT_STRUCTURED_FACT_CAPABILITY_POLICY.classify_requests(
                 structured_fact_requests,
                 original_user_query=original_user_query,
+                entity_hints=(
+                    value
+                    for target in targets
+                    if isinstance(target, dict)
+                    for value in (
+                        target.get("company_name"),
+                        target.get("ticker"),
+                    )
+                ),
             )
         )
     decisions = [

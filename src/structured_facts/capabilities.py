@@ -136,6 +136,10 @@ _DERIVED_PATTERNS = (
     re.compile(r"\b(?:growth|growth rate|cagr)\b"),
     re.compile(r"\b(?:year over year|yoy|quarter over quarter|qoq)\b"),
     re.compile(r"\b(?:change|increase|increased|decrease|decreased)\b"),
+    re.compile(
+        r"\b(?:grow|grew|grown|decline|declined|fall|fell|fallen|"
+        r"rise|rose|risen|drop|dropped)\b"
+    ),
     re.compile(r"\bpercentage (?:increase|decrease|change)\b"),
     re.compile(r"\bfree cash flow\b"),
     re.compile(r"\bnet debt\b"),
@@ -149,22 +153,6 @@ _DERIVED_PATTERNS = (
     re.compile(r"\b(?:calculate|compute)\b.*\bplus\b"),
 )
 _AMBIGUOUS_GENERIC_TERMS = frozenset({"cash", "profit", "profitability"})
-_METRIC_CONCEPT_MODIFIERS = frozenset(
-    {
-        "adjusted",
-        "deferred",
-        "domestic",
-        "gaap",
-        "international",
-        "non",
-        "organic",
-        "product",
-        "recurring",
-        "segment",
-        "service",
-        "subscription",
-    }
-)
 _QUESTION_PREFIX_BOUNDARIES = frozenset(
     {
         "a",
@@ -218,10 +206,20 @@ class StructuredFactCapabilityPolicy:
         *,
         metric_hint: Any,
         subquestion: Any,
+        entity_hints: Iterable[Any] = (),
     ) -> StructuredFactCapabilityDecision:
         metric_text = _normalize_lookup_text(metric_hint)
         question_text = _normalize_lookup_text(subquestion)
         combined_text = " ".join(part for part in (metric_text, question_text) if part)
+        raw_text = " ".join(
+            part for part in (str(metric_hint or ""), str(subquestion or "")) if part
+        )
+
+        if re.search(r"\S\s*[+/]\s*\S", raw_text):
+            return self._rejected(
+                StructuredFactQuestionClass.UNSUPPORTED_DERIVED_METRIC,
+                "Symbolic arithmetic is not executable by the structured-fact lane.",
+            )
 
         if _matches_any(combined_text, _PER_SHARE_PATTERNS):
             return self._rejected(
@@ -245,7 +243,10 @@ class StructuredFactCapabilityPolicy:
             )
 
         hint_metric_ids = self._matching_hint_metric_ids(metric_text)
-        question_metric_ids = self._matching_question_metric_ids(question_text)
+        question_metric_ids = self._matching_question_metric_ids(
+            question_text,
+            entity_hints=entity_hints,
+        )
         if (
             metric_text
             and question_text
@@ -278,7 +279,10 @@ class StructuredFactCapabilityPolicy:
                 "The metric hint is not a direct structured-fact capability.",
             )
 
-        question_metric_ids = self._matching_question_metric_ids(question_text)
+        question_metric_ids = self._matching_question_metric_ids(
+            question_text,
+            entity_hints=entity_hints,
+        )
         if len(question_metric_ids) == 1:
             return self._supported(
                 question_metric_ids[0],
@@ -313,33 +317,46 @@ class StructuredFactCapabilityPolicy:
         requests: Iterable[dict[str, Any]],
         *,
         original_user_query: Any = None,
+        entity_hints: Iterable[Any] = (),
     ) -> tuple[StructuredFactCapabilityDecision, ...]:
         request_list = list(requests)
+        shared_entity_hints = tuple(entity_hints)
+        all_entity_hints = shared_entity_hints + tuple(
+            request.get("entity_hint") for request in request_list
+        )
         decisions = tuple(
             self.classify_request(
                 metric_hint=request.get("metric_hint"),
                 subquestion=request.get("subquestion"),
+                entity_hints=shared_entity_hints + (request.get("entity_hint"),),
             )
             for request in request_list
         )
         if not decisions:
             return decisions
 
-        original_text = _normalize_lookup_text(
-            str(original_user_query or "").replace(";", " clauseboundary ")
+        original_source = str(original_user_query or "").replace(
+            ";", " clauseboundary "
         )
+        original_text = _normalize_lookup_text(original_source)
         if not original_text:
             return decisions
         original_decision = self.classify_request(
             metric_hint=None,
-            subquestion=original_text,
+            subquestion=original_source,
+            entity_hints=all_entity_hints,
         )
         if original_decision.permitted:
             return decisions
-        if self._has_independent_conjoined_requests(original_text):
+        if self._has_independent_conjoined_requests(
+            original_text,
+            entity_hints=all_entity_hints,
+        ):
             return self._apply_explicit_clause_rejections(
                 original_text,
+                request_list,
                 decisions,
+                entity_hints=all_entity_hints,
             )
         if original_decision.question_class == StructuredFactQuestionClass.UNKNOWN:
             return decisions
@@ -377,7 +394,17 @@ class StructuredFactCapabilityPolicy:
         ]
         return tuple(sorted(set(matches)))
 
-    def _matching_question_metric_ids(self, text: str) -> tuple[str, ...]:
+    def _matching_question_metric_ids(
+        self,
+        text: str,
+        *,
+        entity_hints: Iterable[Any] = (),
+    ) -> tuple[str, ...]:
+        entity_token_sequences = tuple(
+            tuple(_normalize_lookup_text(value).split())
+            for value in entity_hints
+            if _normalize_lookup_text(value)
+        )
         matches: list[str] = []
         for capability in self.capabilities:
             for phrase in (*capability.exact_phrases, *capability.aliases):
@@ -387,17 +414,26 @@ class StructuredFactCapabilityPolicy:
                     flags=re.IGNORECASE,
                 ):
                     prefix_tokens = text[: match.start()].split()
-                    if not self._is_question_metric_prefix(prefix_tokens):
+                    if not self._is_question_metric_prefix(
+                        prefix_tokens,
+                        entity_token_sequences,
+                    ):
                         continue
                     suffix_tokens = text[match.end() :].split()
-                    if not self._is_question_metric_suffix(suffix_tokens):
+                    if not self._is_question_metric_suffix(
+                        suffix_tokens,
+                        entity_token_sequences,
+                    ):
                         continue
                     matches.append(capability.metric_id)
                     break
         return tuple(sorted(set(matches)))
 
     @staticmethod
-    def _is_question_metric_prefix(tokens: list[str]) -> bool:
+    def _is_question_metric_prefix(
+        tokens: list[str],
+        entity_token_sequences: tuple[tuple[str, ...], ...],
+    ) -> bool:
         boundary = max(
             (
                 index
@@ -406,13 +442,14 @@ class StructuredFactCapabilityPolicy:
             ),
             default=-1,
         )
-        return not any(
-            token.lower().rstrip("s") in _METRIC_CONCEPT_MODIFIERS
-            for token in tokens[boundary + 1 :]
-        )
+        metric_prefix = tuple(token.lower() for token in tokens[boundary + 1 :])
+        return not metric_prefix or metric_prefix in entity_token_sequences
 
     @staticmethod
-    def _is_question_metric_suffix(tokens: list[str]) -> bool:
+    def _is_question_metric_suffix(
+        tokens: list[str],
+        entity_token_sequences: tuple[tuple[str, ...], ...],
+    ) -> bool:
         if not tokens:
             return True
         first = tokens[0].lower()
@@ -422,15 +459,16 @@ class StructuredFactCapabilityPolicy:
                 return True
             first = tokens[0].lower()
         if first in {"did", "does", "reported"}:
-            normalized_tokens = [token.lower().rstrip("s") for token in tokens]
-            return not any(
-                token in _METRIC_CONCEPT_MODIFIERS
-                and index > 0
-                and normalized_tokens[index - 1] in {"by", "for", "from", "of"}
-                for index, token in enumerate(normalized_tokens)
-            )
-        if first.rstrip("s") in _METRIC_CONCEPT_MODIFIERS:
-            return False
+            tokens = tokens[1:]
+            for entity_tokens in entity_token_sequences:
+                if tuple(token.lower() for token in tokens[: len(entity_tokens)]) == entity_tokens:
+                    tokens = tokens[len(entity_tokens) :]
+                    break
+            if tokens and tokens[0].lower() in {"report", "reported"}:
+                tokens = tokens[1:]
+            if not tokens:
+                return True
+            first = tokens[0].lower()
         if first in {"by", "of"}:
             return False
         if first == "as" and len(tokens) > 1 and tokens[1].lower() == "of":
@@ -451,7 +489,12 @@ class StructuredFactCapabilityPolicy:
             or bool(re.fullmatch(r"(?:fy|q)\d+", temporal))
         )
 
-    def _has_independent_conjoined_requests(self, text: str) -> bool:
+    def _has_independent_conjoined_requests(
+        self,
+        text: str,
+        *,
+        entity_hints: Iterable[Any] = (),
+    ) -> bool:
         for conjunction in re.finditer(
             r"\bas well as\b|\bclauseboundary\b|\bplus\b|\band\b",
             text,
@@ -468,8 +511,14 @@ class StructuredFactCapabilityPolicy:
                 )
             ):
                 continue
-            left_decision = self._classify_original_clause(left)
-            right_decision = self._classify_original_clause(right)
+            left_decision = self._classify_original_clause(
+                left,
+                entity_hints=entity_hints,
+            )
+            right_decision = self._classify_original_clause(
+                right,
+                entity_hints=entity_hints,
+            )
             left_explicitly_unsupported = (
                 left_decision.question_class in _EXPLICIT_UNSUPPORTED_CLASSES
             )
@@ -502,44 +551,90 @@ class StructuredFactCapabilityPolicy:
     def _apply_explicit_clause_rejections(
         self,
         text: str,
+        requests: list[dict[str, Any]],
         decisions: tuple[StructuredFactCapabilityDecision, ...],
+        *,
+        entity_hints: Iterable[Any] = (),
     ) -> tuple[StructuredFactCapabilityDecision, ...]:
         if "clauseboundary" not in text:
             return decisions
         updated = list(decisions)
+        claimed_request_indices: set[int] = set()
         for clause in text.split("clauseboundary"):
             clause_decision = self.classify_request(
                 metric_hint=None,
                 subquestion=clause,
+                entity_hints=entity_hints,
             )
-            if clause_decision.question_class not in _EXPLICIT_UNSUPPORTED_CLASSES:
-                continue
             clause_metric_ids = self._metric_ids_in_text(clause)
-            for index, decision in enumerate(updated):
-                if decision.permitted and set(decision.matched_metric_ids).intersection(
-                    clause_metric_ids
+            for metric_id in clause_metric_ids:
+                index = next(
+                    (
+                        candidate_index
+                        for candidate_index, decision in enumerate(decisions)
+                        if candidate_index not in claimed_request_indices
+                        and metric_id
+                        in (
+                            decision.matched_metric_ids
+                            or self._matching_hint_metric_ids(
+                                _normalize_lookup_text(
+                                    requests[candidate_index].get("metric_hint")
+                                )
+                            )
+                        )
+                    ),
+                    None,
+                )
+                if index is None:
+                    continue
+                claimed_request_indices.add(index)
+                if (
+                    clause_decision.question_class in _EXPLICIT_UNSUPPORTED_CLASSES
+                    and updated[index].permitted
                 ):
                     updated[index] = clause_decision
         return tuple(updated)
 
-    def _metric_ids_in_text(self, text: str) -> set[str]:
-        return {
-            capability.metric_id
-            for capability in self.capabilities
-            if any(
-                _contains_phrase(text, phrase)
-                for phrase in (*capability.exact_phrases, *capability.aliases)
+    def _metric_ids_in_text(self, text: str) -> tuple[str, ...]:
+        matches = sorted(
+            (
+                match.start(),
+                capability.metric_id,
             )
-        }
+            for capability in self.capabilities
+            for phrase in (*capability.exact_phrases, *capability.aliases)
+            for match in [
+                re.search(
+                    rf"(?<![a-z0-9]){re.escape(phrase)}(?![a-z0-9])",
+                    text,
+                )
+            ]
+            if match is not None
+        )
+        return tuple(
+            dict.fromkeys(
+                metric_id
+                for _position, metric_id in matches
+            )
+        )
 
     def _classify_original_clause(
         self,
         text: str,
+        *,
+        entity_hints: Iterable[Any] = (),
     ) -> StructuredFactCapabilityDecision:
-        decision = self.classify_request(metric_hint=None, subquestion=text)
+        decision = self.classify_request(
+            metric_hint=None,
+            subquestion=text,
+            entity_hints=entity_hints,
+        )
         if decision.question_class != StructuredFactQuestionClass.UNKNOWN:
             return decision
-        matches = self._matching_question_metric_ids(text)
+        matches = self._matching_question_metric_ids(
+            text,
+            entity_hints=entity_hints,
+        )
         if len(matches) == 1:
             return self._supported(
                 matches[0],

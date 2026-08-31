@@ -5,10 +5,16 @@ from structured_facts.capabilities import (
 )
 
 
-def _classify(metric_hint: str, subquestion: str = ""):
+def _classify(
+    metric_hint: str,
+    subquestion: str = "",
+    *,
+    entity_hints=(),
+):
     return DEFAULT_STRUCTURED_FACT_CAPABILITY_POLICY.classify_request(
         metric_hint=metric_hint,
         subquestion=subquestion,
+        entity_hints=entity_hints,
     )
 
 
@@ -32,6 +38,7 @@ def test_exact_supported_phrases_precede_generic_ambiguity() -> None:
     cash_amount_question = _classify(
         "cash and cash equivalents",
         "How much cash and cash equivalents did Apple report at FY2025 year end?",
+        entity_hints=("Apple",),
     )
     profit_question = _classify("", "What was Apple's gross profit?")
     assert cash_question.permitted
@@ -138,9 +145,25 @@ def test_supported_phrase_does_not_match_inside_modified_metric_name() -> None:
     assert not copular.permitted
     assert copular.question_class == StructuredFactQuestionClass.UNKNOWN
 
+    for subquestion in (
+        "What was Microsoft's cloud revenue?",
+        "What was advertising revenue?",
+    ):
+        component = _classify(
+            "revenue",
+            subquestion,
+            entity_hints=("Microsoft",),
+        )
+        assert not component.permitted
+        assert component.question_class == StructuredFactQuestionClass.UNKNOWN
+
 
 def test_lowercase_entity_prefix_does_not_change_supported_classification() -> None:
-    decision = _classify("revenue", "what was apple revenue in 2024?")
+    decision = _classify(
+        "revenue",
+        "what was apple revenue in 2024?",
+        entity_hints=("apple",),
+    )
 
     assert decision.permitted
     assert decision.matched_metric_ids == ("revenue",)
@@ -148,6 +171,7 @@ def test_lowercase_entity_prefix_does_not_change_supported_classification() -> N
     issuer_name = _classify(
         "revenue",
         "What was International Paper's revenue in 2025?",
+        entity_hints=("International Paper",),
     )
     assert issuer_name.permitted
     assert issuer_name.matched_metric_ids == ("revenue",)
@@ -281,6 +305,43 @@ def test_completed_expression_preserves_later_independent_request() -> None:
     assert decisions[2].permitted
 
 
+def test_symbolic_arithmetic_blocks_supported_looking_decomposition() -> None:
+    requests = [
+        {"metric_hint": "total assets", "subquestion": "What were total assets?"},
+        {
+            "metric_hint": "total liabilities",
+            "subquestion": "What were total liabilities?",
+        },
+    ]
+    for operator in ("+", "/"):
+        decisions = DEFAULT_STRUCTURED_FACT_CAPABILITY_POLICY.classify_requests(
+            requests,
+            original_user_query=(
+                f"Calculate total assets {operator} total liabilities."
+            ),
+        )
+        assert {decision.question_class for decision in decisions} == {
+            StructuredFactQuestionClass.UNSUPPORTED_DERIVED_METRIC
+        }
+        assert not any(decision.permitted for decision in decisions)
+
+
+def test_explicit_clauses_map_repeated_metrics_in_order() -> None:
+    decisions = DEFAULT_STRUCTURED_FACT_CAPABILITY_POLICY.classify_requests(
+        [
+            {"metric_hint": "revenue", "subquestion": "Why did revenue increase?"},
+            {"metric_hint": "revenue", "subquestion": "What was revenue?"},
+        ],
+        original_user_query="Why did revenue increase; also give revenue.",
+    )
+
+    assert (
+        decisions[0].question_class
+        == StructuredFactQuestionClass.UNSUPPORTED_DERIVED_METRIC
+    )
+    assert decisions[1].permitted
+
+
 def test_mixed_supported_and_rejected_requests_remain_independent() -> None:
     decisions = DEFAULT_STRUCTURED_FACT_CAPABILITY_POLICY.classify_requests(
         [
@@ -302,6 +363,16 @@ def test_narrative_change_question_blocks_numeric_component_decomposition() -> N
 
     assert decisions[0].question_class == StructuredFactQuestionClass.UNSUPPORTED_DERIVED_METRIC
     assert not decisions[0].permitted
+
+    for verb in ("grow", "grew", "decline", "fell", "rose"):
+        variant = DEFAULT_STRUCTURED_FACT_CAPABILITY_POLICY.classify_requests(
+            [{"metric_hint": "revenue", "subquestion": "What was revenue?"}],
+            original_user_query=f"Why did revenue {verb}?",
+        )
+        assert (
+            variant[0].question_class
+            == StructuredFactQuestionClass.UNSUPPORTED_DERIVED_METRIC
+        )
 
 
 def test_original_unsupported_semantics_override_partially_rejected_decomposition() -> None:
