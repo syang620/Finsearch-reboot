@@ -248,7 +248,8 @@ does not measure RAGAS semantic quality.
 | Thirteenth review-fix evaluated commit | `eb1bc4b3cea26640604cdd6b6f5dac02cce5fe20` |
 | Fourteenth review-fix evaluated commit | `95a0efa085a54a884c8d43442b914fe59c3502de` |
 | Fifteenth review-fix evaluated commit | `011eb6ae5c6f16f6d5a8662c4a3c4d3f96bfc10c` |
-| Final review-fix evaluated commit | `992e715c85b7cbb8ba0f5bd772c5d6974135eb76` |
+| Sixteenth review-fix evaluated commit | `992e715c85b7cbb8ba0f5bd772c5d6974135eb76` |
+| Final review-fix evaluated commit | `8b9f8ec4a32b22976a2a9ccd0de09d0b2674712d` |
 | PR3 evidence commit | This documentation/artifact-only follow-up commit |
 | Dataset | `data/evals/agents/planner/structured_fact_capability_adversarial.v1.jsonl` |
 | Dataset SHA-256 | `cb683920ac5f4f99ce6ec603c11f80be8c2e2b36598536e480781e28d8133273` |
@@ -310,6 +311,7 @@ PYTHONPATH=src <EVAL_VENV>/bin/python scripts/evals/agents/eval_planner_routes.p
 | `artifacts/evals/agents/planner/structured_fact_capability_adversarial.v1/runs/95a0efa_post_review_14.json` | `95aaff2fa134e752c09bc70ea8f74813b2375a29f27fbfcaee3085e90066a0b9` |
 | `artifacts/evals/agents/planner/structured_fact_capability_adversarial.v1/runs/011eb6a_post_review_15.json` | `cc2b509e5bfacf9f9b6f71da29cbec44121700020129bc607b1af56f0398fad6` |
 | `artifacts/evals/agents/planner/structured_fact_capability_adversarial.v1/runs/992e715_post_review_16.json` | `ab5e83e8f4bef6a67b8b2188ad1dbd583bddcb79d90a3c979fc90b4edeafa623` |
+| `artifacts/evals/agents/planner/structured_fact_capability_adversarial.v1/runs/8b9f8ec_post_review_17.json` | `14e140d2c6249daafd5f0ea1548ce3bd94ce0af9fb40b658a02b0a61346a4fb0` |
 | `artifacts/evals/agents/planner/planner_routing_core.v1.1/runs/6b6b617_p0_ollama_qwen2.5_14b-instruct.json` | `e3cc95fe8a56db9596a4bcfa27ad0d99267352b732d56b176932df49da1c31a7` |
 
 ### Before / after result
@@ -380,6 +382,11 @@ unknown sibling concepts omitted from structured proposals. Commit
 `011eb6ae5c6f16f6d5a8662c4a3c4d3f96bfc10c` was rerun against the unchanged
 dataset and evaluator and again preserved all six metrics.
 
+The final concept-clause review rejected percentage-symbol ratios and preserved
+conjunctions inside unknown financial concepts while building KB fallbacks. Commit
+`8b9f8ec4a32b22976a2a9ccd0de09d0b2674712d` was rerun against the unchanged
+dataset and evaluator and again preserved all six metrics.
+
 The final semantic-coverage review added percent-of ratios and trend language,
 retained omitted unknown clauses in mixed rejected proposals, accepted annual
 year-ended wording, and preserved leading-article issuer names. Commit
@@ -417,8 +424,9 @@ verification at `eb1bc4b3cea26640604cdd6b6f5dac02cce5fe20`, followed by final
 annual-boundary verification at `95a0efa085a54a884c8d43442b914fe59c3502de`,
 followed by final metadata and omitted-sibling verification at
 `011eb6ae5c6f16f6d5a8662c4a3c4d3f96bfc10c` and final semantic-coverage
-verification at `992e715c85b7cbb8ba0f5bd772c5d6974135eb76`, are measured separately
-by their post-review artifacts. Changes after the final SHA are limited to evaluation
+verification at `992e715c85b7cbb8ba0f5bd772c5d6974135eb76` and final concept-clause
+verification at `8b9f8ec4a32b22976a2a9ccd0de09d0b2674712d`, are measured separately by
+their post-review artifacts. Changes after the final SHA are limited to evaluation
 artifacts and documentation; any later source, test, prompt, policy, evaluator, or
 dataset change invalidates the final post-review measurement and requires a rerun.
 

@@ -33,7 +33,8 @@ final semantic-context verification was recorded at
 verification at `eb1bc4b3cea26640604cdd6b6f5dac02cce5fe20` and final annual-boundary
 verification at `95a0efa085a54a884c8d43442b914fe59c3502de`, followed by final metadata and
 omitted-sibling verification at `011eb6ae5c6f16f6d5a8662c4a3c4d3f96bfc10c` and final semantic-coverage
-verification at `992e715c85b7cbb8ba0f5bd772c5d6974135eb76`.
+verification at `992e715c85b7cbb8ba0f5bd772c5d6974135eb76`, followed by final concept-clause
+verification at `8b9f8ec4a32b22976a2a9ccd0de09d0b2674712d`.
 The adversarial before/after artifacts, metric definitions, and planner P0 gate are recorded in
 `docs/EVALUATION_BASELINES.md` under “Structured-Fact Capability Policy v1 —
 2026-08-30.”
