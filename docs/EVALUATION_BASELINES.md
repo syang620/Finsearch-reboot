@@ -243,7 +243,8 @@ does not measure RAGAS semantic quality.
 | Eighth review-fix evaluated commit | `f9a07e8b02ba3dabfd881bcada14139077e22614` |
 | Ninth review-fix evaluated commit | `5d0dc4647efff81e07d576d430ac45a8b6c910c9` |
 | Tenth review-fix evaluated commit | `3ef13f3599bab9552d698c6d2270eec05cc0bb45` |
-| Final review-fix evaluated commit | `e7dae4662006a2e0cef0d9adc33c1b1857b7e93a` |
+| Eleventh review-fix evaluated commit | `e7dae4662006a2e0cef0d9adc33c1b1857b7e93a` |
+| Final review-fix evaluated commit | `b1f9ebcbbcb004de1b7901c60ac88e7c641c12e0` |
 | PR3 evidence commit | This documentation/artifact-only follow-up commit |
 | Dataset | `data/evals/agents/planner/structured_fact_capability_adversarial.v1.jsonl` |
 | Dataset SHA-256 | `cb683920ac5f4f99ce6ec603c11f80be8c2e2b36598536e480781e28d8133273` |
@@ -300,6 +301,7 @@ PYTHONPATH=src <EVAL_VENV>/bin/python scripts/evals/agents/eval_planner_routes.p
 | `artifacts/evals/agents/planner/structured_fact_capability_adversarial.v1/runs/5d0dc46_post_review_9.json` | `7c9f41f27cba1f6ee4f2f71565cef5e56df6d8699e87b0b9b4850f409d7244b9` |
 | `artifacts/evals/agents/planner/structured_fact_capability_adversarial.v1/runs/3ef13f3_post_review_10.json` | `df411f1b2e740b8eaadf36144cdf813d019474d8c334c54534ac18d452f3603e` |
 | `artifacts/evals/agents/planner/structured_fact_capability_adversarial.v1/runs/e7dae46_post_review_11.json` | `1a12199a979f5d104417a6810c35965589525a0eb7f13a03ba35bc7db1324589` |
+| `artifacts/evals/agents/planner/structured_fact_capability_adversarial.v1/runs/b1f9ebc_post_review_12.json` | `c54bd9ba6ffcc345078a402500e3b91cbad107e2fc96a59387bde1b6e1045975` |
 | `artifacts/evals/agents/planner/planner_routing_core.v1.1/runs/6b6b617_p0_ollama_qwen2.5_14b-instruct.json` | `e3cc95fe8a56db9596a4bcfa27ad0d99267352b732d56b176932df49da1c31a7` |
 
 ### Before / after result
