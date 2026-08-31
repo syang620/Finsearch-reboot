@@ -237,6 +237,27 @@ def test_comparison_operand_conjunction_does_not_look_independent() -> None:
     }
     assert not any(decision.permitted for decision in decisions)
 
+    compared = DEFAULT_STRUCTURED_FACT_CAPABILITY_POLICY.classify_requests(
+        [
+            {"metric_hint": "total assets", "subquestion": "What were total assets?"},
+            {
+                "metric_hint": "total liabilities",
+                "subquestion": "What were total liabilities?",
+            },
+        ],
+        original_user_query="Total assets compared to total liabilities.",
+    )
+    assert {decision.question_class for decision in compared} == {
+        StructuredFactQuestionClass.UNSUPPORTED_COMPARISON
+    }
+
+
+def test_spaced_fiscal_period_suffixes_are_supported() -> None:
+    for suffix in ("FY 2024", "Q1 2024"):
+        decision = _classify("revenue", f"What was revenue for {suffix}?")
+        assert decision.permitted
+        assert decision.matched_metric_ids == ("revenue",)
+
 
 def test_arithmetic_request_blocks_supported_looking_decomposition() -> None:
     decisions = DEFAULT_STRUCTURED_FACT_CAPABILITY_POLICY.classify_requests(

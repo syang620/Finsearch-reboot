@@ -127,6 +127,7 @@ _RATIO_PATTERNS = (
 )
 _COMPARISON_PATTERNS = (
     re.compile(r"\bcompare\b"),
+    re.compile(r"\bcompared (?:to|with)\b"),
     re.compile(r"\bcomparison\b"),
     re.compile(r"\bversus\b"),
     re.compile(r"\bvs\b"),
@@ -491,8 +492,8 @@ class StructuredFactCapabilityPolicy:
         return bool(
             re.fullmatch(
                 r"(?:"
-                r"(?:\d{4}|(?:fy|q)\d+)(?: (?:year|quarter) end)?|"
-                r"fiscal(?: year)? (?:\d{4}|(?:fy|q)\d+)|"
+                r"(?:\d{4}|(?:fy|q) ?\d+(?: \d{4})?)(?: (?:year|quarter) end)?|"
+                r"fiscal(?: year)? (?:\d{4}|(?:fy|q) ?\d+)|"
                 r"(?:date|period|quarter|year)(?: end)?(?: \d{4})?"
                 r")",
                 temporal_text,

@@ -32,11 +32,41 @@ from agents.orchestrator.agent_orchestrator import (
     _planner_error_node,
     _resolve_metric_id_for_structured_fact_request,
     _route_after_planner_turn,
+    _structured_fact_capability_decisions,
     _structured_facts_node,
     _invoke_orchestrator,
     aclose_orchestrator_runtime,
 )
 from tests.snapshot_utils import assert_graph_snapshot_jsonable
+
+
+def test_orchestrator_capability_guard_uses_metric_clarification_answer() -> None:
+    decisions = _structured_fact_capability_decisions(
+        plan_obj={
+            "original_user_query": "What was Apple's cash?",
+            "effective_user_query": (
+                "What was Apple's cash?\n\nAnswer: cash and cash equivalents"
+            ),
+            "clarification_history": [
+                {
+                    "question": "Which precise financial metric did you mean?",
+                    "answer": "cash and cash equivalents",
+                }
+            ],
+            "targets": [
+                {"company_name": "Apple", "ticker": "AAPL"},
+            ],
+        },
+        requests=[
+            {
+                "metric_hint": "cash and cash equivalents",
+                "subquestion": "What were Apple's cash and cash equivalents?",
+                "entity_hint": "Apple",
+            }
+        ],
+    )
+
+    assert decisions[0].permitted
 
 
 def _runtime_output(

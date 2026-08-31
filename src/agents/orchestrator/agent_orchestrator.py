@@ -34,6 +34,7 @@ from agents.contracts import (
 )
 from agents.planner import InteractivePlannerAgent
 from agents.planner.interactive_target_resolution import (
+    _capability_guard_query,
     _dedupe_ints,
     _normalize_clarification_turns,
 )
@@ -1621,7 +1622,14 @@ def _structured_fact_capability_decisions(
 ) -> tuple[StructuredFactCapabilityDecision, ...]:
     return DEFAULT_STRUCTURED_FACT_CAPABILITY_POLICY.classify_requests(
         requests,
-        original_user_query=plan_obj.get("original_user_query"),
+        original_user_query=_capability_guard_query(
+            str(
+                plan_obj.get("effective_user_query")
+                or plan_obj.get("original_user_query")
+                or ""
+            ),
+            _normalize_clarification_turns(plan_obj.get("clarification_history")),
+        ),
         entity_hints=(
             value
             for target in plan_obj.get("targets") or []
