@@ -122,6 +122,21 @@ def test_supported_phrase_does_not_match_inside_modified_metric_name() -> None:
     assert not subscription.permitted
     assert subscription.question_class == StructuredFactQuestionClass.UNKNOWN
 
+    for subquestion in (
+        "What was revenue from subscriptions?",
+        "What was revenue by segment?",
+    ):
+        qualified = _classify("revenue", subquestion)
+        assert not qualified.permitted
+        assert qualified.question_class == StructuredFactQuestionClass.UNKNOWN
+
+
+def test_lowercase_entity_prefix_does_not_change_supported_classification() -> None:
+    decision = _classify("revenue", "what was apple revenue in 2024?")
+
+    assert decision.permitted
+    assert decision.matched_metric_ids == ("revenue",)
+
 
 def test_unknown_metric_is_not_permitted() -> None:
     decision = _classify("bookings")
@@ -166,6 +181,32 @@ def test_comparison_operand_conjunction_does_not_look_independent() -> None:
         StructuredFactQuestionClass.UNSUPPORTED_COMPARISON
     }
     assert not any(decision.permitted for decision in decisions)
+
+
+def test_arithmetic_request_blocks_supported_looking_decomposition() -> None:
+    decisions = DEFAULT_STRUCTURED_FACT_CAPABILITY_POLICY.classify_requests(
+        [
+            {"metric_hint": "total assets", "subquestion": "What were total assets?"},
+            {
+                "metric_hint": "total liabilities",
+                "subquestion": "What were total liabilities?",
+            },
+        ],
+        original_user_query="Calculate total assets minus total liabilities.",
+    )
+
+    assert {decision.question_class for decision in decisions} == {
+        StructuredFactQuestionClass.UNSUPPORTED_DERIVED_METRIC
+    }
+    assert not any(decision.permitted for decision in decisions)
+
+    for question in ("What was average revenue?", "What was the sum of revenue?"):
+        decision = _classify("revenue", question)
+        assert not decision.permitted
+        assert (
+            decision.question_class
+            == StructuredFactQuestionClass.UNSUPPORTED_DERIVED_METRIC
+        )
 
 
 def test_mixed_supported_and_rejected_requests_remain_independent() -> None:
