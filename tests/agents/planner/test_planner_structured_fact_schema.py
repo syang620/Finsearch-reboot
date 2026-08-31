@@ -213,6 +213,65 @@ def test_unknown_sibling_survives_sentence_boundary_normalization() -> None:
     assert "bookings" in result["retrieval_plan"]["jobs"][0]["goal"]
 
 
+def test_omitted_narrative_sibling_is_retained_for_retrieval() -> None:
+    result = _apply_structured_fact_capability_policy(
+        route="structured_fact",
+        structured_fact_requests=[
+            {"subquestion": "What was revenue?", "metric_hint": "revenue"}
+        ],
+        targets=[{"target_id": 1, "ticker": "AAPL", "fiscal_year": 2025}],
+        retrieval_plan=None,
+        needs_clarification=False,
+        clarification_reason=None,
+        clarification_questions=[],
+        open_issues=[],
+        original_user_query="Give revenue and explain bookings.",
+    )
+
+    assert result["route"] == "hybrid"
+    assert result["retrieval_plan"]["jobs"][0]["job_type"] == "narrative_extract"
+    assert "bookings" in result["retrieval_plan"]["jobs"][0]["goal"]
+
+
+def test_uncovered_compound_concept_keeps_supported_word() -> None:
+    result = _apply_structured_fact_capability_policy(
+        route="structured_fact",
+        structured_fact_requests=[
+            {"subquestion": "What was revenue?", "metric_hint": "revenue"}
+        ],
+        targets=[{"target_id": 1, "ticker": "AAPL", "fiscal_year": 2025}],
+        retrieval_plan=None,
+        needs_clarification=False,
+        clarification_reason=None,
+        clarification_questions=[],
+        open_issues=[],
+        original_user_query="Give cost of revenue and revenue.",
+    )
+
+    assert result["route"] == "hybrid"
+    assert "cost of revenue" in result["retrieval_plan"]["jobs"][0]["goal"]
+
+
+def test_ambiguous_sibling_clarification_names_ambiguous_clause() -> None:
+    result = _apply_structured_fact_capability_policy(
+        route="structured_fact",
+        structured_fact_requests=[
+            {"subquestion": "What was revenue?", "metric_hint": "revenue"}
+        ],
+        targets=[{"target_id": 1, "ticker": "AAPL", "fiscal_year": 2025}],
+        retrieval_plan=None,
+        needs_clarification=False,
+        clarification_reason=None,
+        clarification_questions=[],
+        open_issues=[],
+        original_user_query="Give revenue and cash.",
+    )
+
+    assert result["needs_clarification"]
+    assert "'cash'" in result["clarification_questions"][0]
+    assert "'revenue'" not in result["clarification_questions"][0]
+
+
 def _base_planner_output_payload() -> dict:
     return {
         "status": "completed",

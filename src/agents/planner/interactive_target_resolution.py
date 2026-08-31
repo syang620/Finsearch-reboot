@@ -1307,8 +1307,8 @@ def _apply_structured_fact_capability_policy(
         )
     ]
     if not multi_company_query and decisions:
-        uncovered_unknowns = (
-            DEFAULT_STRUCTURED_FACT_CAPABILITY_POLICY.classify_unknown_original_clauses(
+        uncovered_clauses = (
+            DEFAULT_STRUCTURED_FACT_CAPABILITY_POLICY.classify_uncovered_original_clauses(
                 original_user_query,
                 covered_requests=structured_fact_requests,
                 entity_hints=capability_entity_hints,
@@ -1320,7 +1320,7 @@ def _apply_structured_fact_capability_policy(
                 {"subquestion": clause},
                 decision,
             )
-            for offset, (clause, decision) in enumerate(uncovered_unknowns)
+            for offset, (clause, decision) in enumerate(uncovered_clauses)
         )
     supported = [item for item in decisions if item[2].permitted]
     rejected = [item for item in decisions if not item[2].permitted]

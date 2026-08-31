@@ -117,6 +117,7 @@ _PER_SHARE_PATTERNS = (
 )
 _QUARTERLY_PERIOD_PATTERNS = (
     re.compile(r"\bq\s*[1-4](?:\s+\d{4})?\b"),
+    re.compile(r"\b[1-4]q(?:\s*(?:\d{2}|\d{4}))?\b"),
     re.compile(r"\bquarter(?:ly)?\b"),
     re.compile(r"\b(?:three|six|nine|3|6|9) months?\b"),
     re.compile(r"\binterim\b"),
@@ -443,7 +444,7 @@ class StructuredFactCapabilityPolicy:
             return decisions
         return tuple(original_decision for _request in request_list)
 
-    def classify_unknown_original_clauses(
+    def classify_uncovered_original_clauses(
         self,
         original_user_query: Any,
         *,
@@ -477,8 +478,8 @@ class StructuredFactCapabilityPolicy:
             clauses.append(original_text[start : boundary.start()].strip())
             start = boundary.end()
         clauses.append(original_text[start:].strip())
-        covered_phrases = tuple(
-            phrase
+        covered_request_phrases = tuple(
+            (request, phrase)
             for request in covered_requests
             if isinstance(request, dict)
             for phrase in (_normalize_lookup_text(request.get("metric_hint")),)
@@ -490,10 +491,23 @@ class StructuredFactCapabilityPolicy:
             for phrase in (_normalize_lookup_text(value),)
             if phrase
         )
-        unknown_clauses: list[tuple[str, StructuredFactCapabilityDecision]] = []
+        uncovered_clauses: list[tuple[str, StructuredFactCapabilityDecision]] = []
         for clause in clauses:
             residual = clause
-            for phrase in (*covered_phrases, *entity_phrases):
+            for request, phrase in covered_request_phrases:
+                if not self._covered_request_represents_clause(
+                    clause,
+                    request=request,
+                    phrase=phrase,
+                    entity_hints=shared_entity_hints,
+                ):
+                    continue
+                residual = re.sub(
+                    rf"(?<![a-z0-9]){re.escape(phrase)}(?![a-z0-9])",
+                    " ",
+                    residual,
+                )
+            for phrase in entity_phrases:
                 residual = re.sub(
                     rf"(?<![a-z0-9]){re.escape(phrase)}(?![a-z0-9])",
                     " ",
@@ -527,9 +541,64 @@ class StructuredFactCapabilityPolicy:
                 residual,
                 entity_hints=shared_entity_hints,
             )
-            if decision.question_class == StructuredFactQuestionClass.UNKNOWN:
-                unknown_clauses.append((residual, decision))
-        return tuple(unknown_clauses)
+            if not decision.permitted:
+                uncovered_clauses.append((residual, decision))
+        return tuple(uncovered_clauses)
+
+    def _covered_request_represents_clause(
+        self,
+        clause: str,
+        *,
+        request: dict[str, Any],
+        phrase: str,
+        entity_hints: tuple[Any, ...],
+    ) -> bool:
+        request_decision = self.classify_request(
+            metric_hint=request.get("metric_hint"),
+            subquestion=request.get("subquestion"),
+            fiscal_period=request.get("fiscal_period"),
+            entity_hints=entity_hints + (request.get("entity_hint"),),
+        )
+        connectors = tuple(
+            re.finditer(
+                r"\bas well as\b|\bclauseboundary\b|\bplus\b|\band\b",
+                clause,
+            )
+        )
+        for match in re.finditer(
+            rf"(?<![a-z0-9]){re.escape(phrase)}(?![a-z0-9])",
+            clause,
+        ):
+            segment_start = max(
+                (
+                    connector.end()
+                    for connector in connectors
+                    if connector.end() <= match.start()
+                ),
+                default=0,
+            )
+            segment_end = min(
+                (
+                    connector.start()
+                    for connector in connectors
+                    if connector.start() >= match.end()
+                ),
+                default=len(clause),
+            )
+            segment_decision = self.classify_request(
+                metric_hint=request.get("metric_hint"),
+                subquestion=clause[segment_start:segment_end],
+                fiscal_period=request.get("fiscal_period"),
+                entity_hints=entity_hints + (request.get("entity_hint"),),
+            )
+            if (
+                segment_decision.question_class == request_decision.question_class
+                and segment_decision.permitted == request_decision.permitted
+                and segment_decision.matched_metric_ids
+                == request_decision.matched_metric_ids
+            ):
+                return True
+        return False
 
     def prompt_appendix(self) -> str:
         supported = ", ".join(
@@ -701,6 +770,8 @@ class StructuredFactCapabilityPolicy:
             right = text[conjunction.end() : right_end].strip()
             if not left or not right:
                 continue
+            if self._conjunction_inside_supported_phrase(text, conjunction):
+                continue
             if conjunction.group() in {"and", "plus"} and (
                 self._expression_needs_operand(left)
                 or (
@@ -727,15 +798,34 @@ class StructuredFactCapabilityPolicy:
                 right_decision.permitted
                 or right_explicitly_unsupported
                 or right_decision.question_class == StructuredFactQuestionClass.UNKNOWN
+                or right_decision.question_class == StructuredFactQuestionClass.AMBIGUOUS
             ):
                 independent.append(conjunction)
             elif right_decision.permitted and (
                 left_decision.permitted
                 or left_explicitly_unsupported
                 or left_decision.question_class == StructuredFactQuestionClass.UNKNOWN
+                or left_decision.question_class == StructuredFactQuestionClass.AMBIGUOUS
             ):
                 independent.append(conjunction)
         return tuple(independent)
+
+    def _conjunction_inside_supported_phrase(
+        self,
+        text: str,
+        conjunction: re.Match[str],
+    ) -> bool:
+        return any(
+            phrase_match.start() < conjunction.start()
+            and phrase_match.end() > conjunction.end()
+            for capability in self.capabilities
+            for phrase in (*capability.exact_phrases, *capability.aliases)
+            if " and " in phrase
+            for phrase_match in re.finditer(
+                rf"(?<![a-z0-9]){re.escape(phrase)}(?![a-z0-9])",
+                text,
+            )
+        )
 
     @staticmethod
     def _expression_needs_operand(left: str) -> bool:
