@@ -516,3 +516,156 @@ numeric correctness, filing-specific metric resolution, retrieval relevance,
 analyst synthesis, citations, latency, load, or production distribution shift. Its
 40 cases intentionally emphasize known boundary classes and hostile proposals; it
 is not a frequency-weighted sample of user traffic.
+
+## Retrieval Ablation Baseline — 2026-08-31
+
+### Run identity and integrity
+
+- Evaluated implementation SHA: `5c9ed8ff19255a4f07f93410ea1723f5aa57b501`.
+- Frozen definition: `data/evals/retrieval/retrieval_ablation_v1.json`.
+- Table dataset: 12 unique cases at
+  `data/evals/retrieval/table/table_eval_v1.jsonl`, SHA-256
+  `e20c375fef3bd88553e22e6210849c9127b1cfb3d13ca2dd1ae866754f4b592e`.
+- Candidate text dataset: 75 unique cases at
+  `data/evals/retrieval/text/aapl_2024_10k_text_retrieval_eval_split_with_uids.jsonl`,
+  SHA-256 `a44b51bc2cf733e757116a3ca79c4ef0fca7dc5c3ea2e7e6a7f320be78a1b888`.
+  It was frozen but excluded before results because IDs 99 and 100 are absent
+  from the PR2 collection, its stable `chunk_uid` labels are not stored in that
+  collection, and its chunk numbering is from a different lineage. No label was
+  remapped or regenerated; text metrics are therefore not available.
+- Qdrant 1.16.2 collection `sec_docs_dense_bm25_pr2_63dcec0`: 582 points.
+  The full payload/vector fingerprint was
+  `103a1131b373fb651727048b6a875e4bd96b64754ebafd41c42dc6dcccfc5df8`
+  both before and after the run.
+- Corpus provenance reused the PR2 AAPL FY2024 10-K corpus: tracked HTML SHA-256
+  `24a830a0f1256e371d36a1f7f72e5e85a38037d1de2f6f966eb8457db42ff6d6`;
+  101-row text SHA-256
+  `a2035e3048c9d69945a6851e9f92b6eb64d97ea15ef1ab8fe1812b25e8cd08e0`;
+  48-row table SHA-256
+  `a60a91dd358656c3667b9700a4e3a2fde5558a67900f62c0a22893fdaf2a6b1d`;
+  and 107-row split-text SHA-256
+  `856f6aec30636750141a695d864eb08da182160e25143b393b49bc7769436f71`.
+  The unpreserved original ingestion command was not reconstructed.
+- Embedding model: `qwen3-embedding:8b`, Ollama digest
+  `64b933495768fbd3b87c20583d379728a07471e0c66733a9df87cd1901b3c44b`.
+- Reranker: `Qwen/Qwen3-Reranker-8B` through the Qwen3 API backend. The hosted
+  service exposes no immutable model digest, which limits exact reranker
+  reproducibility. All full-stack rows recorded `qwen3_api` with no fallback.
+- RAGAS was disabled. Dataset hashes, case IDs, component traces, raw JSONL
+  parsing, zero-byte error files, and the collection fingerprint were verified.
+
+The executed command was:
+
+```bash
+QDRANT_HOST=localhost QDRANT_PORT=6333 \
+QDRANT_COLLECTION_NAME=sec_docs_dense_bm25_pr2_63dcec0 \
+QWEN3_EMBED_API_URL=http://localhost:11434/api/embed \
+QWEN3_EMBED_MODEL=qwen3-embedding:8b \
+SEC_RETRIEVAL_TOP_K=50 SEC_RERANK_CANDIDATE_LIMIT=10 \
+SEC_RERANK_TOP_K=10 SEC_RERANK_MODEL=Qwen/Qwen3-Reranker-8B \
+PYTHONPATH=src <EVAL_PYTHON> \
+scripts/evals/retrieval/run_retrieval_ablation_v1.py \
+  --evaluated-sha 5c9ed8ff19255a4f07f93410ea1723f5aa57b501 \
+  --out-root artifacts/evals/retrieval/ablations/5c9ed8ff19255a4f07f93410ea1723f5aa57b501 \
+  --collection sec_docs_dense_bm25_pr2_63dcec0 \
+  --expected-points 582 \
+  --expected-qdrant-version 1.16.2 \
+  --expected-embedding-digest 64b933495768fbd3b87c20583d379728a07471e0c66733a9df87cd1901b3c44b
+```
+
+`<EVAL_PYTHON>` replaces only the temporary virtualenv interpreter path. The
+reranker credential was inherited from the environment and was neither printed
+nor preserved.
+
+### Frozen configurations
+
+All modes used identical queries, binary relevance labels, AAPL/2024/10-K/table
+filters, top 10 scoring, K = 1/3/5/10, collection, embedding model, and evaluator.
+Dense and BM25 branch depths were 500; candidate top K was 50; table-parent
+deduplication retained 10. Hybrid fusion used RRF K = 60 with 1.0/1.0 weights.
+
+- BM25 only: BM25 vector `bm25`; dense and reranker disabled.
+- Dense only: dense vector `dense`; BM25 and reranker disabled.
+- Hybrid: both branches and RRF; reranker disabled.
+- Hybrid + reranker: unchanged production candidate generation, table-summary
+  enrichment, and Qwen3 reranking of the 10 deduplicated candidates.
+
+### Table retrieval results
+
+Metrics are macro averages over all 12 cases. nDCG uses the complete number of
+gold labels for IDCG; a retrieved table row is grouped with its parent table.
+
+| Metric | BM25 only | Dense only | Hybrid | Hybrid + reranker |
+| --- | ---: | ---: | ---: | ---: |
+| hit@1 | 0.9167 | 0.7500 | 0.9167 | 0.8333 |
+| hit@3 | 0.9167 | 1.0000 | 0.9167 | 0.9167 |
+| hit@5 | 0.9167 | 1.0000 | 0.9167 | 0.9167 |
+| hit@10 | 0.9167 | 1.0000 | 0.9167 | 0.9167 |
+| recall@1 | 0.4333 | 0.3778 | 0.4333 | 0.3917 |
+| recall@3 | 0.8556 | 0.8139 | 0.8139 | 0.7444 |
+| recall@5 | 0.9000 | 0.8861 | 0.8583 | 0.9167 |
+| recall@10 | 0.9167 | 0.9583 | 0.9167 | 0.9167 |
+| mrr@1 | 0.9167 | 0.7500 | 0.9167 | 0.8333 |
+| mrr@3 | 0.9167 | 0.8611 | 0.9167 | 0.8611 |
+| mrr@5 | 0.9167 | 0.8611 | 0.9167 | 0.8611 |
+| mrr@10 | 0.9167 | 0.8611 | 0.9167 | 0.8611 |
+| ndcg@1 | 0.9167 | 0.7500 | 0.9167 | 0.8333 |
+| ndcg@3 | 0.8837 | 0.7954 | 0.8582 | 0.7808 |
+| ndcg@5 | 0.8884 | 0.8164 | 0.8624 | 0.8546 |
+| ndcg@10 | 0.8985 | 0.8500 | 0.8906 | 0.8546 |
+
+### Headline deltas
+
+Absolute values are score-point changes; relative values divide that change by
+the source score.
+
+| Comparison | Metric | Absolute | Relative |
+| --- | --- | ---: | ---: |
+| Dense → hybrid | recall@5 | -0.0278 | -3.13% |
+| Dense → hybrid | recall@10 | -0.0417 | -4.35% |
+| Dense → hybrid | mrr@10 | +0.0556 | +6.45% |
+| Dense → hybrid | ndcg@5 | +0.0459 | +5.63% |
+| Dense → hybrid | ndcg@10 | +0.0407 | +4.79% |
+| Hybrid → full | recall@5 | +0.0583 | +6.80% |
+| Hybrid → full | recall@10 | +0.0000 | +0.00% |
+| Hybrid → full | mrr@10 | -0.0556 | -6.06% |
+| Hybrid → full | ndcg@5 | -0.0078 | -0.90% |
+| Hybrid → full | ndcg@10 | -0.0361 | -4.05% |
+| Dense → full | recall@5 | +0.0306 | +3.45% |
+| Dense → full | recall@10 | -0.0417 | -4.35% |
+| Dense → full | mrr@10 | +0.0000 | +0.00% |
+| Dense → full | ndcg@5 | +0.0382 | +4.67% |
+| Dense → full | ndcg@10 | +0.0046 | +0.54% |
+
+### Latency
+
+Times are per-query, serial, single-pass observations in milliseconds. Candidate
+time includes embedding, search/fusion, dedupe, and (for full stack) enrichment;
+reranking is isolated. These are not concurrent-load measurements.
+
+| Mode | Candidate mean / p50 / p95 | Rerank mean / p50 / p95 | Total mean / p50 / p95 |
+| --- | ---: | ---: | ---: |
+| BM25 only | 7.2 / 6.5 / 15 | 0 / 0 / 0 | 7.2 / 6.5 / 15 |
+| Dense only | 245.0 / 244.5 / 255 | 0 / 0 / 0 | 245.0 / 244.5 / 255 |
+| Hybrid | 246.4 / 244.5 / 262 | 0 / 0 / 0 | 246.4 / 244.5 / 262 |
+| Hybrid + reranker | 260.7 / 263.5 / 268 | 2195.0 / 1750.0 / 5463 | 2455.7 / 2016.0 / 5728 |
+
+### Artifacts and conclusion
+
+Canonical artifacts are under
+`artifacts/evals/retrieval/ablations/5c9ed8ff19255a4f07f93410ea1723f5aa57b501/`.
+`comparison.json` SHA-256 is
+`56db437d05a08de2a3bb78d54ef3b54c63db532c156dc52fd8c7dc5d4544adf9`;
+`manifest.sha256` SHA-256 is
+`574ee0edd2d14cc5a8486916c9bc37d9737566d47f5408425a5e4876fe72d896`.
+The manifest records each raw summary, per-query file, empty error file, and the
+comparison artifact.
+
+This benchmark does not support the proposed resume statement. Dense → full
+improved Recall@5 by 0.0306 absolute (3.45% relative) and nDCG@10 by only 0.0046
+absolute (0.54% relative), while Recall@10 regressed by 0.0417 absolute (4.35%
+relative). Hybrid without reranking also regressed Recall@5 and Recall@10 versus
+dense-only, and reranking traded higher Recall@5 for lower MRR@10 and nDCG@10
+versus hybrid. With only 12 AAPL table queries and no compatible text measurement,
+no broad retrieval-quality or resume claim is technically defensible. The result
+is a baseline for future dataset repair and tuning, not evidence of improvement.

@@ -3,6 +3,13 @@
 This evaluator measures retrieval quality only (no planner/analyst scoring).
 It supports both table-label and text-label datasets.
 
+For controlled comparisons, `--retrieval-mode` selects one of:
+
+- `bm25_only`: BM25 candidate retrieval; dense and reranking disabled.
+- `dense_only`: dense candidate retrieval; BM25 and reranking disabled.
+- `hybrid`: dense and BM25 retrieval with RRF; reranking disabled.
+- `hybrid_reranker`: the current production dense + BM25 + RRF + Qwen3 reranker stack (default).
+
 ## What it computes
 
 Deterministic metrics (primary):
@@ -62,6 +69,32 @@ PYTHONPATH=src python scripts/evals/retrieval/eval_retrieval_v0.py \
   --k-values 1,3,5,10 \
   --out-dir artifacts/evals/retrieval/v0
 ```
+
+The frozen text dataset is not compatible with the PR2 Qdrant collection used by
+the 2026-08-31 ablation baseline. Its split IDs and `chunk_uid` labels come from a
+different chunk lineage, while that collection does not preserve `chunk_uid`.
+That baseline therefore excludes text metrics rather than remapping labels.
+
+## Controlled ablation
+
+The frozen definition is
+`data/evals/retrieval/retrieval_ablation_v1.json`. Run all enabled datasets and
+all four modes with:
+
+```bash
+QDRANT_COLLECTION_NAME=<FROZEN_COLLECTION> \
+PYTHONPATH=src <PYTHON> scripts/evals/retrieval/run_retrieval_ablation_v1.py \
+  --evaluated-sha <IMPLEMENTATION_SHA> \
+  --out-root artifacts/evals/retrieval/ablations/<IMPLEMENTATION_SHA> \
+  --collection <FROZEN_COLLECTION> \
+  --expected-points <POINT_COUNT> \
+  --expected-qdrant-version <QDRANT_VERSION> \
+  --expected-embedding-digest <OLLAMA_MODEL_DIGEST>
+```
+
+The runner refuses existing output, verifies dataset and corpus identity before
+and after the run, uses a fresh embedding cache per mode, disables RAGAS, checks
+component traces, and writes `comparison.json` plus `manifest.sha256`.
 
 Disable RAGAS if Ollama judge is unavailable:
 
