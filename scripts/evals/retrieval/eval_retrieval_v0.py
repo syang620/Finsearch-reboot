@@ -35,6 +35,11 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--eval-path", default="data/evals/retrieval/table/table_eval_v1.jsonl")
     p.add_argument("--out-dir", default="artifacts/evals/retrieval/v0")
     p.add_argument("--eval-mode", choices=["auto", "table", "text"], default="auto")
+    p.add_argument(
+        "--retrieval-mode",
+        choices=["bm25_only", "dense_only", "hybrid", "hybrid_reranker"],
+        default="hybrid_reranker",
+    )
 
     p.add_argument("--top-k", type=int, default=10)
     p.add_argument("--k-values", default="1,3,5,10")
@@ -90,6 +95,7 @@ def main() -> None:
         default_doc_types=doc_types or None,
         min_total_score=int(args.min_total_score),
         enable_ragas=enable_ragas,
+        retrieval_mode=args.retrieval_mode,
         ragas_config=ragas_config,
         fail_fast=bool(args.fail_fast),
     )
