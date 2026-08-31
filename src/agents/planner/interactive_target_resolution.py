@@ -19,6 +19,7 @@ from pydantic import BaseModel, Field
 from llm_client import build_chat_model
 from structured_facts.capabilities import (
     DEFAULT_STRUCTURED_FACT_CAPABILITY_POLICY,
+    _ORIGINAL_QUERY_MISMATCH_REASON,
     StructuredFactCapabilityDecision,
     StructuredFactQuestionClass,
     sanitize_capability_text,
@@ -1150,6 +1151,7 @@ def _append_capability_fallback_jobs(
     *,
     rejected: Sequence[tuple[int, Dict[str, Any], StructuredFactCapabilityDecision]],
     targets: Sequence[Dict[str, Any]],
+    original_user_query: Any = None,
 ) -> Optional[Dict[str, Any]]:
     target_ids: List[int] = []
     for target in targets:
@@ -1174,13 +1176,22 @@ def _append_capability_fallback_jobs(
         )
         for job in jobs
     }
-    for _index, request, _decision in rejected:
-        request_target_ids = _capability_fallback_target_ids(request, targets)
+    for _index, request, decision in rejected:
+        fallback_request = (
+            {"subquestion": original_user_query}
+            if decision.reason == _ORIGINAL_QUERY_MISMATCH_REASON
+            and _normalize_text(original_user_query)
+            else request
+        )
+        request_target_ids = _capability_fallback_target_ids(
+            fallback_request,
+            targets,
+        )
         if not request_target_ids:
             continue
         fragment = _sanitize_retrieval_goal_fragment(
-            request.get("subquestion") or request.get("metric_hint"),
-            request=request,
+            fallback_request.get("subquestion") or fallback_request.get("metric_hint"),
+            request=fallback_request,
             targets=targets,
         )
         goal = f"retrieve filing evidence needed for the requested {fragment}"
@@ -1458,6 +1469,7 @@ def _apply_structured_fact_capability_policy(
             retrieval_plan,
             rejected=rejected,
             targets=targets,
+            original_user_query=original_user_query,
         )
         targets_for_result = targets
     elif supported:
@@ -1474,6 +1486,7 @@ def _apply_structured_fact_capability_policy(
             retrieval_plan,
             rejected=rejected,
             targets=targets,
+            original_user_query=original_user_query,
         )
         targets_for_result = targets
 

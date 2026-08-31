@@ -112,6 +112,22 @@ def test_supported_hint_does_not_override_unknown_subquestion() -> None:
     assert decision.matched_metric_ids == ()
 
 
+def test_original_single_clause_rejects_rewritten_supported_metric() -> None:
+    for original_query in ("What was revenue?", "What were bookings?"):
+        decisions = DEFAULT_STRUCTURED_FACT_CAPABILITY_POLICY.classify_requests(
+            [
+                {
+                    "metric_hint": "total assets",
+                    "subquestion": "What were total assets?",
+                }
+            ],
+            original_user_query=original_query,
+        )
+
+        assert not decisions[0].permitted
+        assert decisions[0].question_class == StructuredFactQuestionClass.UNKNOWN
+
+
 def test_supported_phrase_does_not_match_inside_modified_metric_name() -> None:
     decision = _classify("deferred revenue", "What was deferred revenue?")
 

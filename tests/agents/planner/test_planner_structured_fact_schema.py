@@ -997,6 +997,42 @@ class PlannerStructuredFactSchemaTests(unittest.TestCase):
         self.assertNotIn("Apple", goal)
         self.assertNotIn("2025", goal)
 
+    def test_rewritten_metric_falls_back_to_original_single_clause(self) -> None:
+        normalized = _normalize_resolution_output(
+            {
+                "retrieval_needed": False,
+                "route": "structured_fact",
+                "structured_fact_requests": [
+                    {
+                        "subquestion": "What were total assets?",
+                        "metric_hint": "total assets",
+                    }
+                ],
+                "task_class": "single_target_fact",
+                "targets": [
+                    {
+                        "target_id": 1,
+                        "company_name": "Apple",
+                        "ticker": "AAPL",
+                        "fiscal_year": 2024,
+                        "form_type": "10-K",
+                    }
+                ],
+                "retrieval_plan": None,
+                "needs_clarification": False,
+                "clarification_reason": None,
+                "clarification_questions": [],
+                "open_issues": [],
+            },
+            original_user_query="What was revenue?",
+        )
+
+        self.assertEqual(normalized["route"], "kb")
+        self.assertEqual(normalized["structured_fact_requests"], [])
+        goal = normalized["retrieval_plan"]["jobs"][0]["goal"]
+        self.assertIn("revenue", goal)
+        self.assertNotIn("total assets", goal)
+
     def test_rejected_request_fallback_is_scoped_to_its_fiscal_year(self) -> None:
         normalized = _normalize_resolution_output(
             {

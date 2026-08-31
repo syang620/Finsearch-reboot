@@ -35,6 +35,11 @@ class StructuredFactCapabilityDecision:
     reason: str
 
 
+_ORIGINAL_QUERY_MISMATCH_REASON = (
+    "The proposed structured metric does not agree with the original single-clause request."
+)
+
+
 def _normalize_lookup_text(value: Any) -> str:
     text = str(value or "").replace("_", " ").replace("-", " ")
     text = re.sub(r"[^a-z0-9\s]", " ", text.lower())
@@ -435,8 +440,6 @@ class StructuredFactCapabilityPolicy:
             subquestion=original_decision_source,
             entity_hints=all_entity_hints,
         )
-        if original_decision.permitted:
-            return decisions
         independent_boundaries = self._independent_conjunctions(
             original_text,
             entity_hints=all_entity_hints,
@@ -449,8 +452,26 @@ class StructuredFactCapabilityPolicy:
                 independent_boundaries=independent_boundaries,
                 entity_hints=all_entity_hints,
             )
+        if original_decision.permitted:
+            original_metric_ids = set(original_decision.matched_metric_ids)
+            return tuple(
+                decision
+                if decision.permitted
+                and original_metric_ids.intersection(decision.matched_metric_ids)
+                else self._rejected(
+                    StructuredFactQuestionClass.UNKNOWN,
+                    _ORIGINAL_QUERY_MISMATCH_REASON,
+                )
+                for decision in decisions
+            )
         if original_decision.question_class == StructuredFactQuestionClass.UNKNOWN:
-            return decisions
+            return tuple(
+                self._rejected(
+                    StructuredFactQuestionClass.UNKNOWN,
+                    _ORIGINAL_QUERY_MISMATCH_REASON,
+                )
+                for _decision in decisions
+            )
         return tuple(original_decision for _request in request_list)
 
     def classify_uncovered_original_clauses(
