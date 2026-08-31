@@ -95,6 +95,10 @@ def test_supported_phrase_does_not_match_inside_modified_metric_name() -> None:
     assert decision.question_class == StructuredFactQuestionClass.UNKNOWN
     assert decision.matched_metric_ids == ()
 
+    without_hint = _classify("", "What was deferred revenue?")
+    assert not without_hint.permitted
+    assert without_hint.question_class == StructuredFactQuestionClass.UNKNOWN
+
 
 def test_unknown_metric_is_not_permitted() -> None:
     decision = _classify("bookings")
@@ -178,3 +182,25 @@ def test_noun_phrase_conjunction_preserves_independent_mixed_requests() -> None:
         decisions[1].question_class
         == StructuredFactQuestionClass.UNSUPPORTED_DERIVED_METRIC
     )
+
+
+def test_alternate_clause_separators_preserve_independent_mixed_requests() -> None:
+    for separator in ("as well as", "plus", ";"):
+        decisions = DEFAULT_STRUCTURED_FACT_CAPABILITY_POLICY.classify_requests(
+            [
+                {"metric_hint": "revenue", "subquestion": "What was revenue?"},
+                {
+                    "metric_hint": "explanation",
+                    "subquestion": "Explain why revenue increased.",
+                },
+            ],
+            original_user_query=(
+                f"Give me Apple's revenue {separator} an explanation of why it increased."
+            ),
+        )
+
+        assert decisions[0].permitted
+        assert (
+            decisions[1].question_class
+            == StructuredFactQuestionClass.UNSUPPORTED_DERIVED_METRIC
+        )

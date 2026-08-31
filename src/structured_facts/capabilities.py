@@ -239,43 +239,22 @@ class StructuredFactCapabilityPolicy:
                 "The metric hint is not a direct structured-fact capability.",
             )
 
-        exact_matches = self._matching_metric_ids(combined_text, use_aliases=False)
-        if len(exact_matches) == 1:
-            return self._supported(exact_matches[0], "Matched an exact supported metric phrase.")
-        if len(exact_matches) > 1:
-            return self._ambiguous(exact_matches, "The request names multiple supported metrics.")
-
-        ambiguous_term = None
-        if metric_text in _AMBIGUOUS_GENERIC_TERMS:
-            ambiguous_term = metric_text
-        elif not metric_text:
-            ambiguous_term = next(
-                (
-                    term
-                    for term in _AMBIGUOUS_GENERIC_TERMS
-                    if _contains_phrase(question_text, term)
-                ),
-                None,
-            )
+        ambiguous_term = next(
+            (
+                term
+                for term in _AMBIGUOUS_GENERIC_TERMS
+                if _contains_phrase(question_text, term)
+            ),
+            None,
+        )
         if ambiguous_term is not None:
-            candidates = self._ambiguous_candidate_ids(ambiguous_term)
             return self._ambiguous(
-                candidates,
+                self._ambiguous_candidate_ids(ambiguous_term),
                 "The metric phrase is too broad for deterministic structured execution.",
             )
-
-        alias_matches = self._matching_alias_metric_ids(
-            metric_text=metric_text,
-            question_text=question_text,
-        )
-        if len(alias_matches) == 1:
-            return self._supported(alias_matches[0], "Matched a supported metric alias.")
-        if len(alias_matches) > 1:
-            return self._ambiguous(alias_matches, "The metric alias maps to multiple supported metrics.")
-
         return self._rejected(
             StructuredFactQuestionClass.UNKNOWN,
-            "The request does not match an explicit structured-fact capability.",
+            "A direct metric hint is required for structured execution.",
         )
 
     def classify_requests(
@@ -295,7 +274,9 @@ class StructuredFactCapabilityPolicy:
         if not decisions:
             return decisions
 
-        original_text = _normalize_lookup_text(original_user_query)
+        original_text = _normalize_lookup_text(
+            str(original_user_query or "").replace(";", " and ")
+        )
         if not original_text:
             return decisions
         original_decision = self.classify_request(
@@ -342,25 +323,6 @@ class StructuredFactCapabilityPolicy:
                 matches.append(capability.metric_id)
         return tuple(sorted(set(matches)))
 
-    def _matching_alias_metric_ids(
-        self,
-        *,
-        metric_text: str,
-        question_text: str,
-    ) -> tuple[str, ...]:
-        matches: list[str] = []
-        for capability in self.capabilities:
-            if metric_text:
-                matched = any(metric_text == alias for alias in capability.aliases)
-            else:
-                matched = any(
-                    _contains_phrase(question_text, alias)
-                    for alias in capability.aliases
-                )
-            if matched:
-                matches.append(capability.metric_id)
-        return tuple(sorted(set(matches)))
-
     def _matching_hint_metric_ids(self, metric_text: str) -> tuple[str, ...]:
         matches = [
             capability.metric_id
@@ -370,13 +332,16 @@ class StructuredFactCapabilityPolicy:
         return tuple(sorted(set(matches)))
 
     def _has_independent_conjoined_requests(self, text: str) -> bool:
-        for conjunction in re.finditer(r"\band\b", text):
+        for conjunction in re.finditer(
+            r"\bas well as\b|\bplus\b|;|\band\b",
+            text,
+        ):
             left = text[: conjunction.start()].strip()
             right = text[conjunction.end() :].strip()
             if not left or not right:
                 continue
-            left_decision = self.classify_request(metric_hint=None, subquestion=left)
-            right_decision = self.classify_request(metric_hint=None, subquestion=right)
+            left_decision = self._classify_original_clause(left)
+            right_decision = self._classify_original_clause(right)
             left_explicitly_unsupported = (
                 left_decision.question_class in _EXPLICIT_UNSUPPORTED_CLASSES
             )
@@ -392,6 +357,21 @@ class StructuredFactCapabilityPolicy:
             ):
                 return True
         return False
+
+    def _classify_original_clause(
+        self,
+        text: str,
+    ) -> StructuredFactCapabilityDecision:
+        decision = self.classify_request(metric_hint=None, subquestion=text)
+        if decision.question_class != StructuredFactQuestionClass.UNKNOWN:
+            return decision
+        matches = self._matching_metric_ids(text, use_aliases=False)
+        if len(matches) == 1:
+            return self._supported(
+                matches[0],
+                "Detected a supported metric only for original-query clause handling.",
+            )
+        return decision
 
     def _ambiguous_candidate_ids(self, text: str) -> tuple[str, ...]:
         if text == "cash":
