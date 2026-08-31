@@ -612,6 +612,37 @@ def test_conjoined_clauses_reject_only_unsupported_request() -> None:
     assert decisions[1].permitted
 
 
+def test_independent_clauses_reject_unclaimed_metric_and_period_rewrites() -> None:
+    rewritten = DEFAULT_STRUCTURED_FACT_CAPABILITY_POLICY.classify_requests(
+        [
+            {"metric_hint": "gross profit", "subquestion": "What was gross profit?"},
+            {
+                "metric_hint": "total liabilities",
+                "subquestion": "What were total liabilities?",
+            },
+        ],
+        original_user_query="Give revenue and total assets.",
+    )
+    assert not any(decision.permitted for decision in rewritten)
+
+    wrong_period = DEFAULT_STRUCTURED_FACT_CAPABILITY_POLICY.classify_requests(
+        [
+            {
+                "metric_hint": "revenue",
+                "subquestion": "What was revenue in 2023?",
+                "fiscal_year": 2023,
+            },
+            {
+                "metric_hint": "total assets",
+                "subquestion": "What were total assets?",
+            },
+        ],
+        original_user_query="Give revenue in 2024 and total assets.",
+    )
+    assert not wrong_period[0].permitted
+    assert wrong_period[1].permitted
+
+
 def test_three_conjoined_clauses_preserve_supported_middle_request() -> None:
     decisions = DEFAULT_STRUCTURED_FACT_CAPABILITY_POLICY.classify_requests(
         [

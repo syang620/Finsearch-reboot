@@ -936,14 +936,12 @@ class StructuredFactCapabilityPolicy:
                     )
                 ]
                 if occurrence_year is not None:
-                    year_matched_indices = [
+                    matching_indices = [
                         candidate_index
                         for candidate_index in matching_indices
                         if self._request_fiscal_year(requests[candidate_index])
                         == occurrence_year
                     ]
-                    if year_matched_indices:
-                        matching_indices = year_matched_indices
                 index = next(
                     iter(matching_indices),
                     None,
@@ -956,6 +954,12 @@ class StructuredFactCapabilityPolicy:
                     and updated[index].permitted
                 ):
                     updated[index] = clause_decision
+        for index, decision in enumerate(updated):
+            if decision.permitted and index not in claimed_request_indices:
+                updated[index] = self._rejected(
+                    StructuredFactQuestionClass.UNKNOWN,
+                    _ORIGINAL_QUERY_MISMATCH_REASON,
+                )
         return tuple(updated)
 
     @staticmethod

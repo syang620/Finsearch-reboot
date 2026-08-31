@@ -151,6 +151,54 @@ def test_nonannual_target_rejects_structured_execution() -> None:
     assert normalized["structured_fact_requests"] == []
 
 
+def test_deterministic_nonannual_metadata_precedes_capability_routing() -> None:
+    normalized = _normalize_resolution_output(
+        {
+            "retrieval_needed": False,
+            "route": "structured_fact",
+            "structured_fact_requests": [
+                {"subquestion": "What was revenue?", "metric_hint": "revenue"}
+            ],
+            "task_class": "single_target_fact",
+            "targets": [
+                {
+                    "target_id": 1,
+                    "company_name": "Apple",
+                    "ticker": "AAPL",
+                    "fiscal_year": 2024,
+                }
+            ],
+            "retrieval_plan": None,
+            "needs_clarification": False,
+            "clarification_reason": None,
+            "clarification_questions": [],
+            "open_issues": [],
+        },
+        original_user_query="What revenue did Apple report in its 2024 10-Q?",
+        deterministic_targets=[
+            {
+                "target_id": 1,
+                "company_name": "Apple",
+                "ticker": "AAPL",
+                "fiscal_year": 2024,
+                "form_type": "10-Q",
+            }
+        ],
+        deterministic_open_issues=[
+            {
+                "code": "FORM_NOT_10K_DATASET",
+                "message": "The deterministic resolver identified a 10-Q request.",
+                "severity": "warning",
+            }
+        ],
+    )
+
+    assert normalized["route"] == "kb"
+    assert normalized["structured_fact_requests"] == []
+    assert normalized["targets"][0]["form_type"] == "10-Q"
+    assert normalized["retrieval_plan"] is not None
+
+
 def test_partial_structured_proposal_preserves_unknown_sibling_for_retrieval() -> None:
     normalized = _normalize_resolution_output(
         {

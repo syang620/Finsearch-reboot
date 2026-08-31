@@ -1834,6 +1834,8 @@ def _normalize_resolution_output(
     parsed_output: Any,
     *,
     original_user_query: Any = None,
+    deterministic_targets: Sequence[Dict[str, Any]] = (),
+    deterministic_open_issues: Sequence[Dict[str, Any]] = (),
 ) -> Dict[str, Any]:
     if not isinstance(parsed_output, dict):
         raise ValueError("Parsed output must be a JSON object.")
@@ -1854,6 +1856,23 @@ def _normalize_resolution_output(
         normalized = _normalize_target(target, index=index)
         if normalized is not None:
             targets.append(normalized)
+    normalized_deterministic_targets = [
+        normalized
+        for index, target in enumerate(deterministic_targets, start=1)
+        for normalized in (_normalize_target(target, index=index),)
+        if normalized is not None
+    ]
+    if not targets:
+        targets = normalized_deterministic_targets
+    elif len(targets) == 1 and len(normalized_deterministic_targets) == 1:
+        deterministic_form_type = _normalize_form_type(
+            normalized_deterministic_targets[0].get("form_type")
+        )
+        if (
+            deterministic_form_type is not None
+            and _normalize_form_type(targets[0].get("form_type")) is None
+        ):
+            targets[0]["form_type"] = deterministic_form_type
 
     clarification_questions = [
         question
@@ -1875,11 +1894,10 @@ def _normalize_resolution_output(
         needs_clarification=needs_clarification,
     )
 
-    open_issues = [
-        issue
-        for issue in (_normalize_open_issue(issue) for issue in (parsed_output.get("open_issues") or []))
-        if issue is not None
-    ]
+    open_issues = _merge_open_issues(
+        deterministic_open_issues,
+        parsed_output.get("open_issues") or [],
+    )
 
     policy_result = _apply_structured_fact_capability_policy(
         route=route,
@@ -2452,6 +2470,13 @@ async def run_target_resolution_prompt_async(
                     pre_llm["effective_user_query"],
                     pre_llm["clarification_history"],
                 ),
+                deterministic_targets=pre_llm["planner_state"].get(
+                    "deterministic_targets"
+                )
+                or [],
+                deterministic_open_issues=[
+                    issue.model_dump(mode="json") for issue in pre_llm["issues"]
+                ],
             )
             final_resolution = _apply_anchored_filing_comparison(
                 final_resolution,
