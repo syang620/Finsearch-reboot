@@ -252,11 +252,31 @@ def test_comparison_operand_conjunction_does_not_look_independent() -> None:
     }
 
 
-def test_spaced_fiscal_period_suffixes_are_supported() -> None:
-    for suffix in ("FY 2024", "Q1 2024"):
-        decision = _classify("revenue", f"What was revenue for {suffix}?")
-        assert decision.permitted
-        assert decision.matched_metric_ids == ("revenue",)
+def test_spaced_annual_fiscal_period_suffix_is_supported() -> None:
+    decision = _classify("revenue", "What was revenue for FY 2024?")
+    assert decision.permitted
+    assert decision.matched_metric_ids == ("revenue",)
+
+
+def test_quarterly_periods_are_rejected_from_annual_structured_execution() -> None:
+    for question in (
+        "What was revenue for Q1 2024?",
+        "What was revenue for Q 1 2024?",
+        "What was quarterly revenue?",
+        "What was revenue for the first quarter?",
+    ):
+        decision = _classify("revenue", question)
+        assert not decision.permitted
+        assert (
+            decision.question_class
+            == StructuredFactQuestionClass.UNSUPPORTED_DERIVED_METRIC
+        )
+
+    guarded = DEFAULT_STRUCTURED_FACT_CAPABILITY_POLICY.classify_requests(
+        [{"metric_hint": "revenue", "subquestion": "What was revenue?"}],
+        original_user_query="What was revenue for Q1 2024?",
+    )
+    assert not guarded[0].permitted
 
 
 def test_arithmetic_request_blocks_supported_looking_decomposition() -> None:
@@ -343,8 +363,8 @@ def test_completed_expression_preserves_later_independent_request() -> None:
 
     repeated = DEFAULT_STRUCTURED_FACT_CAPABILITY_POLICY.classify_requests(
         [
-            {"metric_hint": "revenue", "subquestion": "What was 2024 revenue?"},
-            {"metric_hint": "revenue", "subquestion": "What was 2023 revenue?"},
+            {"metric_hint": "revenue", "subquestion": "What was revenue in 2024?"},
+            {"metric_hint": "revenue", "subquestion": "What was revenue in 2023?"},
             {"metric_hint": "total assets", "subquestion": "What were total assets?"},
         ],
         original_user_query=(

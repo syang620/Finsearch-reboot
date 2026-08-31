@@ -115,6 +115,10 @@ _PER_SHARE_PATTERNS = (
     re.compile(r"\b(?:basic|diluted)?\s*eps\b"),
     re.compile(r"\bearnings per share\b"),
 )
+_QUARTERLY_PERIOD_PATTERNS = (
+    re.compile(r"\bq\s*[1-4](?:\s+\d{4})?\b"),
+    re.compile(r"\bquarter(?:ly)?\b"),
+)
 _RATIO_PATTERNS = (
     re.compile(r"\bmargin\b"),
     re.compile(r"\byield\b"),
@@ -230,6 +234,11 @@ class StructuredFactCapabilityPolicy:
             return self._rejected(
                 StructuredFactQuestionClass.UNSUPPORTED_PER_SHARE,
                 "Per-share metrics are not executable by the structured-fact lane.",
+            )
+        if _matches_any(combined_text, _QUARTERLY_PERIOD_PATTERNS):
+            return self._rejected(
+                StructuredFactQuestionClass.UNSUPPORTED_DERIVED_METRIC,
+                "Quarterly periods are not executable by the annual structured-fact lane.",
             )
         if _matches_any(combined_text, _RATIO_PATTERNS):
             return self._rejected(
@@ -492,9 +501,9 @@ class StructuredFactCapabilityPolicy:
         return bool(
             re.fullmatch(
                 r"(?:"
-                r"(?:\d{4}|(?:fy|q) ?\d+(?: \d{4})?)(?: (?:year|quarter) end)?|"
-                r"fiscal(?: year)? (?:\d{4}|(?:fy|q) ?\d+)|"
-                r"(?:date|period|quarter|year)(?: end)?(?: \d{4})?"
+                r"(?:\d{4}|fy ?\d+(?: \d{4})?)(?: year end)?|"
+                r"fiscal(?: year)? (?:\d{4}|fy ?\d+)|"
+                r"(?:date|period|year)(?: end)?(?: \d{4})?"
                 r")",
                 temporal_text,
             )
@@ -631,13 +640,10 @@ class StructuredFactCapabilityPolicy:
                 )
                 for capability in self.capabilities
                 for phrase in (*capability.exact_phrases, *capability.aliases)
-                for match in [
-                    re.search(
-                        rf"(?<![a-z0-9]){re.escape(phrase)}(?![a-z0-9])",
-                        text,
-                    )
-                ]
-                if match is not None
+                for match in re.finditer(
+                    rf"(?<![a-z0-9]){re.escape(phrase)}(?![a-z0-9])",
+                    text,
+                )
             ],
             key=lambda item: (item[0], -(item[1] - item[0])),
         )
