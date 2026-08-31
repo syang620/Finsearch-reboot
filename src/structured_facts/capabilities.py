@@ -121,6 +121,7 @@ _PER_SHARE_PATTERNS = (
     re.compile(r"\bearnings per share\b"),
 )
 _QUARTERLY_PERIOD_PATTERNS = (
+    re.compile(r"\b(?:ytd|year to date|ttm|trailing (?:twelve|12) months)\b"),
     re.compile(r"\bq\s*[1-4](?:\s+\d{4})?\b"),
     re.compile(r"\b[1-4]q(?:\s*(?:\d{2}|\d{4}))?\b"),
     re.compile(r"\bh\s*[12](?:\s+\d{4})?\b"),
@@ -266,7 +267,9 @@ class StructuredFactCapabilityPolicy:
         period_text = _normalize_lookup_text(fiscal_period)
 
         if period_text and not re.fullmatch(
-            r"(?:fy(?: ?\d{4})?|annual|year|year end|year ended|fiscal year)",
+            r"(?:fy(?: ?(?:\d{2}|\d{4}))?|annual(?: \d{4})?|"
+            r"year(?: end(?:ed)?)?(?: \d{4})?|"
+            r"fiscal year(?: end(?:ed)?)?(?: \d{4})?)",
             period_text,
         ):
             return self._rejected(
@@ -423,6 +426,11 @@ class StructuredFactCapabilityPolicy:
         )
         original_text = _normalize_lookup_text(original_source)
         original_text = re.sub(
+            r"\bclauseboundary\s+(?:and|plus|as well as)\b",
+            " clauseboundary ",
+            original_text,
+        )
+        original_text = re.sub(
             r"^(?:clauseboundary )+|(?: clauseboundary)+$",
             "",
             original_text,
@@ -488,6 +496,11 @@ class StructuredFactCapabilityPolicy:
             flags=re.IGNORECASE,
         )
         original_text = _normalize_lookup_text(original_source)
+        original_text = re.sub(
+            r"\bclauseboundary\s+(?:and|plus|as well as)\b",
+            " clauseboundary ",
+            original_text,
+        )
         original_text = re.sub(
             r"^(?:clauseboundary )+|(?: clauseboundary)+$",
             "",

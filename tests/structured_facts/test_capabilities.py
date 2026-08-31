@@ -367,6 +367,14 @@ def test_spaced_annual_fiscal_period_suffix_is_supported() -> None:
     )
     assert fiscal_year_ended.permitted
 
+    for fiscal_period in ("year ended 2024", "fiscal year ended 2024", "FY25"):
+        metadata_annual = _classify(
+            "revenue",
+            "What was revenue?",
+            fiscal_period=fiscal_period,
+        )
+        assert metadata_annual.permitted
+
 
 def test_quarterly_periods_are_rejected_from_annual_structured_execution() -> None:
     for question in (
@@ -413,6 +421,17 @@ def test_quarterly_periods_are_rejected_from_annual_structured_execution() -> No
             original_user_query=f"What was revenue for {notation}?",
         )
         assert not half_year[0].permitted
+
+    for notation in ("YTD", "year-to-date", "trailing twelve months", "TTM"):
+        nonannual = DEFAULT_STRUCTURED_FACT_CAPABILITY_POLICY.classify_requests(
+            [
+                {"metric_hint": "total assets", "subquestion": "What were total assets?"},
+                {"metric_hint": "revenue", "subquestion": "What was revenue?"},
+            ],
+            original_user_query=f"Give total assets and {notation} revenue for 2024.",
+        )
+        assert nonannual[0].permitted
+        assert not nonannual[1].permitted
 
 
 def test_arithmetic_request_blocks_supported_looking_decomposition() -> None:
@@ -641,6 +660,26 @@ def test_independent_clauses_reject_unclaimed_metric_and_period_rewrites() -> No
     )
     assert not wrong_period[0].permitted
     assert wrong_period[1].permitted
+
+
+def test_comma_plus_conjunction_preserves_independent_clause_matching() -> None:
+    decisions = DEFAULT_STRUCTURED_FACT_CAPABILITY_POLICY.classify_requests(
+        [
+            {
+                "metric_hint": "revenue",
+                "subquestion": "What was revenue in 2024?",
+                "fiscal_year": 2024,
+            },
+            {
+                "metric_hint": "total assets",
+                "subquestion": "What were total assets in 2023?",
+                "fiscal_year": 2023,
+            },
+        ],
+        original_user_query="Give revenue in 2024, and total assets in 2023.",
+    )
+
+    assert all(decision.permitted for decision in decisions)
 
 
 def test_three_conjoined_clauses_preserve_supported_middle_request() -> None:
