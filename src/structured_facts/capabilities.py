@@ -202,6 +202,22 @@ class StructuredFactCapabilityPolicy:
                 "The requested calculated metric is not a supported registry capability.",
             )
 
+        hint_metric_ids = self._matching_hint_metric_ids(metric_text)
+        question_metric_ids = self._matching_metric_ids(
+            question_text,
+            use_aliases=False,
+        ) + self._matching_metric_ids(question_text, use_aliases=True)
+        if (
+            metric_text
+            and question_text
+            and hint_metric_ids
+            and not set(hint_metric_ids).intersection(question_metric_ids)
+        ):
+            return self._rejected(
+                StructuredFactQuestionClass.UNKNOWN,
+                "The metric hint does not agree with the structured subquestion.",
+            )
+
         exact_matches = self._matching_metric_ids(combined_text, use_aliases=False)
         if len(exact_matches) == 1:
             return self._supported(exact_matches[0], "Matched an exact supported metric phrase.")
@@ -322,6 +338,14 @@ class StructuredFactCapabilityPolicy:
                 )
             if matched:
                 matches.append(capability.metric_id)
+        return tuple(sorted(set(matches)))
+
+    def _matching_hint_metric_ids(self, metric_text: str) -> tuple[str, ...]:
+        matches = [
+            capability.metric_id
+            for capability in self.capabilities
+            if metric_text in {*capability.exact_phrases, *capability.aliases}
+        ]
         return tuple(sorted(set(matches)))
 
     def _has_independent_conjoined_requests(self, text: str) -> bool:

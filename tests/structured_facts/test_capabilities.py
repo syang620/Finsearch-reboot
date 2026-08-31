@@ -80,6 +80,14 @@ def test_alias_does_not_match_inside_unrelated_metric_name() -> None:
     assert _classify("sales").matched_metric_ids == ("revenue",)
 
 
+def test_supported_hint_does_not_override_unknown_subquestion() -> None:
+    decision = _classify("revenue", "What were Apple's bookings?")
+
+    assert not decision.permitted
+    assert decision.question_class == StructuredFactQuestionClass.UNKNOWN
+    assert decision.matched_metric_ids == ()
+
+
 def test_unknown_metric_is_not_permitted() -> None:
     decision = _classify("bookings")
 
