@@ -134,12 +134,23 @@ def test_supported_phrase_does_not_match_inside_modified_metric_name() -> None:
     assert not non_gaap.permitted
     assert non_gaap.question_class == StructuredFactQuestionClass.UNKNOWN
 
+    copular = _classify("revenue", "How much revenue was from subscriptions?")
+    assert not copular.permitted
+    assert copular.question_class == StructuredFactQuestionClass.UNKNOWN
+
 
 def test_lowercase_entity_prefix_does_not_change_supported_classification() -> None:
     decision = _classify("revenue", "what was apple revenue in 2024?")
 
     assert decision.permitted
     assert decision.matched_metric_ids == ("revenue",)
+
+    issuer_name = _classify(
+        "revenue",
+        "What was International Paper's revenue in 2025?",
+    )
+    assert issuer_name.permitted
+    assert issuer_name.matched_metric_ids == ("revenue",)
 
 
 def test_unknown_metric_is_not_permitted() -> None:
@@ -226,6 +237,48 @@ def test_arithmetic_request_blocks_supported_looking_decomposition() -> None:
         StructuredFactQuestionClass.UNSUPPORTED_DERIVED_METRIC
     }
     assert not any(decision.permitted for decision in sum_decisions)
+
+    plus_decisions = DEFAULT_STRUCTURED_FACT_CAPABILITY_POLICY.classify_requests(
+        [
+            {"metric_hint": "total assets", "subquestion": "What were total assets?"},
+            {
+                "metric_hint": "total liabilities",
+                "subquestion": "What were total liabilities?",
+            },
+        ],
+        original_user_query="Calculate total assets plus total liabilities.",
+    )
+    assert {decision.question_class for decision in plus_decisions} == {
+        StructuredFactQuestionClass.UNSUPPORTED_DERIVED_METRIC
+    }
+    assert not any(decision.permitted for decision in plus_decisions)
+
+
+def test_completed_expression_preserves_later_independent_request() -> None:
+    decisions = DEFAULT_STRUCTURED_FACT_CAPABILITY_POLICY.classify_requests(
+        [
+            {"metric_hint": "total assets", "subquestion": "What were total assets?"},
+            {
+                "metric_hint": "total liabilities",
+                "subquestion": "What were total liabilities?",
+            },
+            {"metric_hint": "revenue", "subquestion": "What was revenue?"},
+        ],
+        original_user_query=(
+            "Calculate the difference between total assets and total liabilities; "
+            "also give revenue."
+        ),
+    )
+
+    assert (
+        decisions[0].question_class
+        == StructuredFactQuestionClass.UNSUPPORTED_COMPARISON
+    )
+    assert (
+        decisions[1].question_class
+        == StructuredFactQuestionClass.UNSUPPORTED_COMPARISON
+    )
+    assert decisions[2].permitted
 
 
 def test_mixed_supported_and_rejected_requests_remain_independent() -> None:

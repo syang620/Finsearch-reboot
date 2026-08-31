@@ -143,7 +143,10 @@ _DERIVED_PATTERNS = (
     re.compile(r"\b(?:balance sheet|financial|financial position) summary\b"),
     re.compile(r"\bkey financial metrics\b"),
     re.compile(r"\b(?:sum|average|mean|median)\b"),
-    re.compile(r"\b(?:add|subtract|minus|multiplied by|divided by)\b"),
+    re.compile(
+        r"\b(?:add|subtract|minus|multiply|multiplied by|divide|divided by)\b"
+    ),
+    re.compile(r"\b(?:calculate|compute)\b.*\bplus\b"),
 )
 _AMBIGUOUS_GENERIC_TERMS = frozenset({"cash", "profit", "profitability"})
 _METRIC_CONCEPT_MODIFIERS = frozenset(
@@ -160,6 +163,27 @@ _METRIC_CONCEPT_MODIFIERS = frozenset(
         "segment",
         "service",
         "subscription",
+    }
+)
+_QUESTION_PREFIX_BOUNDARIES = frozenset(
+    {
+        "a",
+        "an",
+        "are",
+        "did",
+        "does",
+        "give",
+        "how",
+        "is",
+        "me",
+        "much",
+        "reported",
+        "s",
+        "show",
+        "the",
+        "was",
+        "were",
+        "what",
     }
 )
 _EXPLICIT_UNSUPPORTED_CLASSES = frozenset(
@@ -302,7 +326,7 @@ class StructuredFactCapabilityPolicy:
             return decisions
 
         original_text = _normalize_lookup_text(
-            str(original_user_query or "").replace(";", " and ")
+            str(original_user_query or "").replace(";", " clauseboundary ")
         )
         if not original_text:
             return decisions
@@ -310,10 +334,13 @@ class StructuredFactCapabilityPolicy:
             metric_hint=None,
             subquestion=original_text,
         )
-        if original_decision.permitted or self._has_independent_conjoined_requests(
-            original_text
-        ):
+        if original_decision.permitted:
             return decisions
+        if self._has_independent_conjoined_requests(original_text):
+            return self._apply_explicit_clause_rejections(
+                original_text,
+                decisions,
+            )
         if original_decision.question_class == StructuredFactQuestionClass.UNKNOWN:
             return decisions
         return tuple(original_decision for _request in request_list)
@@ -371,9 +398,17 @@ class StructuredFactCapabilityPolicy:
 
     @staticmethod
     def _is_question_metric_prefix(tokens: list[str]) -> bool:
+        boundary = max(
+            (
+                index
+                for index, token in enumerate(tokens)
+                if token.lower() in _QUESTION_PREFIX_BOUNDARIES
+            ),
+            default=-1,
+        )
         return not any(
             token.lower().rstrip("s") in _METRIC_CONCEPT_MODIFIERS
-            for token in tokens
+            for token in tokens[boundary + 1 :]
         )
 
     @staticmethod
@@ -381,8 +416,23 @@ class StructuredFactCapabilityPolicy:
         if not tokens:
             return True
         first = tokens[0].lower()
-        if first in {"did", "does", "is", "reported", "was", "were"}:
-            return True
+        if first in {"is", "was", "were"}:
+            tokens = tokens[1:]
+            if not tokens:
+                return True
+            first = tokens[0].lower()
+        if first in {"did", "does", "reported"}:
+            normalized_tokens = [token.lower().rstrip("s") for token in tokens]
+            return not any(
+                token in _METRIC_CONCEPT_MODIFIERS
+                and index > 0
+                and normalized_tokens[index - 1] in {"by", "for", "from", "of"}
+                for index, token in enumerate(normalized_tokens)
+            )
+        if first.rstrip("s") in _METRIC_CONCEPT_MODIFIERS:
+            return False
+        if first in {"by", "of"}:
+            return False
         if first == "as" and len(tokens) > 1 and tokens[1].lower() == "of":
             tokens = tokens[2:]
         elif first in {"at", "during", "for", "from", "in"}:
@@ -403,14 +453,20 @@ class StructuredFactCapabilityPolicy:
 
     def _has_independent_conjoined_requests(self, text: str) -> bool:
         for conjunction in re.finditer(
-            r"\bas well as\b|\bplus\b|;|\band\b",
+            r"\bas well as\b|\bclauseboundary\b|\bplus\b|\band\b",
             text,
         ):
             left = text[: conjunction.start()].strip()
             right = text[conjunction.end() :].strip()
             if not left or not right:
                 continue
-            if conjunction.group() == "and" and self._expression_needs_operand(left):
+            if conjunction.group() in {"and", "plus"} and (
+                self._expression_needs_operand(left)
+                or (
+                    conjunction.group() == "plus"
+                    and re.search(r"\b(?:calculate|compute)\b", left)
+                )
+            ):
                 continue
             left_decision = self._classify_original_clause(left)
             right_decision = self._classify_original_clause(right)
@@ -434,13 +490,47 @@ class StructuredFactCapabilityPolicy:
     def _expression_needs_operand(left: str) -> bool:
         expression_start = re.search(
             r"\b(?:compare|comparison between|difference between|"
-            r"sum(?: of)?|average(?: of)?|mean(?: of)?|median(?: of)?|add)\b",
+            r"sum(?: of)?|average(?: of)?|mean(?: of)?|median(?: of)?|"
+            r"add|subtract|multiply|divide)\b",
             left,
         )
         if expression_start is None:
             return False
         expression_text = left[expression_start.end() :]
-        return not re.search(r"\b(?:to|versus|vs)\b", expression_text)
+        return not re.search(r"\b(?:and|to|versus|vs)\b", expression_text)
+
+    def _apply_explicit_clause_rejections(
+        self,
+        text: str,
+        decisions: tuple[StructuredFactCapabilityDecision, ...],
+    ) -> tuple[StructuredFactCapabilityDecision, ...]:
+        if "clauseboundary" not in text:
+            return decisions
+        updated = list(decisions)
+        for clause in text.split("clauseboundary"):
+            clause_decision = self.classify_request(
+                metric_hint=None,
+                subquestion=clause,
+            )
+            if clause_decision.question_class not in _EXPLICIT_UNSUPPORTED_CLASSES:
+                continue
+            clause_metric_ids = self._metric_ids_in_text(clause)
+            for index, decision in enumerate(updated):
+                if decision.permitted and set(decision.matched_metric_ids).intersection(
+                    clause_metric_ids
+                ):
+                    updated[index] = clause_decision
+        return tuple(updated)
+
+    def _metric_ids_in_text(self, text: str) -> set[str]:
+        return {
+            capability.metric_id
+            for capability in self.capabilities
+            if any(
+                _contains_phrase(text, phrase)
+                for phrase in (*capability.exact_phrases, *capability.aliases)
+            )
+        }
 
     def _classify_original_clause(
         self,
