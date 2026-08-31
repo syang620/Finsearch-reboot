@@ -24,8 +24,44 @@ def test_capability_guard_uses_latest_clarification_answer() -> None:
                 }
             ],
         )
-        == "cash and cash equivalents"
+        == "What was Apple's cash and cash equivalents?"
     )
+
+    resumed_guard = _capability_guard_query(
+            "Give revenue and cash for Apple.\n\nClarification answers:\nAnswer: cash and cash equivalents",
+            [
+                {
+                    "question": "Which precise financial metric did you mean by cash?",
+                    "answer": "cash and cash equivalents",
+                }
+            ],
+    )
+    assert resumed_guard == "Give revenue and cash and cash equivalents for Apple."
+    resumed = _apply_structured_fact_capability_policy(
+        route="structured_fact",
+        structured_fact_requests=[
+            {
+                "subquestion": "What were cash and cash equivalents?",
+                "metric_hint": "cash and cash equivalents",
+            }
+        ],
+        targets=[
+            {
+                "target_id": 1,
+                "company_name": "Apple",
+                "ticker": "AAPL",
+                "fiscal_year": 2025,
+            }
+        ],
+        retrieval_plan=None,
+        needs_clarification=False,
+        clarification_reason=None,
+        clarification_questions=[],
+        open_issues=[],
+        original_user_query=resumed_guard,
+    )
+    assert resumed["route"] == "hybrid"
+    assert "revenue" in resumed["retrieval_plan"]["jobs"][0]["goal"]
     original = "Why did revenue increase?\n\nAnswer: Apple"
     assert (
         _capability_guard_query(
@@ -68,6 +104,38 @@ def test_explanatory_capability_fallback_uses_narrative_job() -> None:
     )
 
     assert normalized["retrieval_plan"]["jobs"][0]["job_type"] == "narrative_extract"
+
+
+def test_nonannual_target_rejects_structured_execution() -> None:
+    normalized = _normalize_resolution_output(
+        {
+            "retrieval_needed": False,
+            "route": "structured_fact",
+            "structured_fact_requests": [
+                {"subquestion": "What was revenue?", "metric_hint": "revenue"}
+            ],
+            "task_class": "single_target_fact",
+            "targets": [
+                {
+                    "target_id": 1,
+                    "target_key": "AAPL_FY2024",
+                    "company_name": "Apple",
+                    "ticker": "AAPL",
+                    "fiscal_year": 2024,
+                    "form_type": "10-Q",
+                }
+            ],
+            "retrieval_plan": None,
+            "needs_clarification": False,
+            "clarification_reason": None,
+            "clarification_questions": [],
+            "open_issues": [],
+        },
+        original_user_query="What revenue did Apple report in its 2024 10-Q?",
+    )
+
+    assert normalized["route"] == "kb"
+    assert normalized["structured_fact_requests"] == []
 
 
 def test_partial_structured_proposal_preserves_unknown_sibling_for_retrieval() -> None:

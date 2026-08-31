@@ -69,6 +69,19 @@ def test_orchestrator_capability_guard_uses_metric_clarification_answer() -> Non
     assert decisions[0].permitted
 
 
+def test_orchestrator_capability_guard_rejects_nonannual_target() -> None:
+    decisions = _structured_fact_capability_decisions(
+        plan_obj={
+            "original_user_query": "What revenue did Apple report in its 2024 10-Q?",
+            "targets": [{"ticker": "AAPL", "fiscal_year": 2024, "form_type": "10-Q"}],
+        },
+        requests=[{"metric_hint": "revenue", "subquestion": "What was revenue?"}],
+    )
+
+    assert not decisions[0].permitted
+    assert decisions[0].question_class.value == "unsupported_derived_metric"
+
+
 def _runtime_output(
     *,
     query: str,

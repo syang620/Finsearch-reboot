@@ -1270,29 +1270,42 @@ def _apply_structured_fact_capability_policy(
         if isinstance(issue, dict)
     }
     multi_company_query = "MULTI_COMPANY_QUERY" in issue_codes
-    if multi_company_query:
+    capability_entity_hints = tuple(
+        value
+        for target in targets
+        if isinstance(target, dict)
+        for value in (
+            target.get("company_name"),
+            target.get("ticker"),
+        )
+    )
+    nonannual_form_query = "FORM_NOT_10K_DATASET" in issue_codes or any(
+        _normalize_form_type(target.get("form_type")) == FormType.TEN_Q.value
+        for target in targets
+        if isinstance(target, dict)
+    )
+    if multi_company_query or nonannual_form_query:
+        rejection_reason = (
+            "Nonannual filing targets are not executable by the annual "
+            "structured-fact lane."
+            if nonannual_form_query
+            else "Multi-company comparisons are not executable by the current "
+            "structured-fact lane."
+        )
         capability_decisions = tuple(
             StructuredFactCapabilityDecision(
-                question_class=StructuredFactQuestionClass.UNSUPPORTED_COMPARISON,
+                question_class=(
+                    StructuredFactQuestionClass.UNSUPPORTED_DERIVED_METRIC
+                    if nonannual_form_query
+                    else StructuredFactQuestionClass.UNSUPPORTED_COMPARISON
+                ),
                 permitted=False,
                 matched_metric_ids=(),
-                reason=(
-                    "Multi-company comparisons are not executable by the current "
-                    "structured-fact lane."
-                ),
+                reason=rejection_reason,
             )
             for _request in structured_fact_requests
         )
     else:
-        capability_entity_hints = tuple(
-            value
-            for target in targets
-            if isinstance(target, dict)
-            for value in (
-                target.get("company_name"),
-                target.get("ticker"),
-            )
-        )
         capability_decisions = (
             DEFAULT_STRUCTURED_FACT_CAPABILITY_POLICY.classify_requests(
                 structured_fact_requests,
@@ -1306,7 +1319,7 @@ def _apply_structured_fact_capability_policy(
             zip(structured_fact_requests, capability_decisions)
         )
     ]
-    if not multi_company_query and decisions:
+    if not multi_company_query and not nonannual_form_query and decisions:
         uncovered_clauses = (
             DEFAULT_STRUCTURED_FACT_CAPABILITY_POLICY.classify_uncovered_original_clauses(
                 original_user_query,
@@ -1443,6 +1456,12 @@ def _capability_guard_query(
     effective_user_query: str,
     clarification_history: Sequence[Dict[str, str]],
 ) -> str:
+    base_query = re.split(
+        r"\n\n(?:Clarification answers:|Answer:)",
+        effective_user_query,
+        maxsplit=1,
+        flags=re.IGNORECASE,
+    )[0]
     for turn in reversed(clarification_history):
         answer = _normalize_text(turn.get("answer"))
         question = (_normalize_text(turn.get("question")) or "").lower()
@@ -1450,6 +1469,24 @@ def _capability_guard_query(
             "which" in question or "mean" in question
         )
         if answer and is_metric_clarification:
+            generic_terms = [
+                term
+                for term in ("cash", "profit", "profitability")
+                if re.search(rf"(?<![a-z0-9]){term}(?![a-z0-9])", base_query, re.I)
+            ]
+            question_terms = [
+                term
+                for term in generic_terms
+                if re.search(rf"(?<![a-z0-9]){term}(?![a-z0-9])", question, re.I)
+            ]
+            replace_terms = question_terms or generic_terms
+            if len(replace_terms) == 1:
+                return re.sub(
+                    rf"(?<![a-z0-9]){replace_terms[0]}(?![a-z0-9])",
+                    lambda _match: answer,
+                    base_query,
+                    flags=re.IGNORECASE,
+                )
             return answer
     return effective_user_query
 

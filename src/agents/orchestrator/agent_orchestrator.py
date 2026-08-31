@@ -1620,6 +1620,30 @@ def _structured_fact_capability_decisions(
     plan_obj: Dict[str, Any],
     requests: Sequence[Dict[str, Any]],
 ) -> tuple[StructuredFactCapabilityDecision, ...]:
+    issue_codes = {
+        (_normalize_text(issue.get("code")) or "").upper()
+        for issue in plan_obj.get("open_issues") or []
+        if isinstance(issue, dict)
+    }
+    nonannual_form_query = "FORM_NOT_10K_DATASET" in issue_codes or any(
+        (_normalize_text(target.get("form_type")) or "").upper()
+        == FormType.TEN_Q.value
+        for target in plan_obj.get("targets") or []
+        if isinstance(target, dict)
+    )
+    if nonannual_form_query:
+        return tuple(
+            StructuredFactCapabilityDecision(
+                question_class=StructuredFactQuestionClass.UNSUPPORTED_DERIVED_METRIC,
+                permitted=False,
+                matched_metric_ids=(),
+                reason=(
+                    "Nonannual filing targets are not executable by the annual "
+                    "structured-fact lane."
+                ),
+            )
+            for _request in requests
+        )
     return DEFAULT_STRUCTURED_FACT_CAPABILITY_POLICY.classify_requests(
         requests,
         original_user_query=_capability_guard_query(

@@ -422,11 +422,17 @@ class StructuredFactCapabilityPolicy:
             "",
             original_text,
         )
+        original_decision_source = re.sub(
+            r"(?:\s*clauseboundary\s*)+$",
+            "",
+            original_source,
+            flags=re.IGNORECASE,
+        )
         if not original_text:
             return decisions
         original_decision = self.classify_request(
             metric_hint=None,
-            subquestion=original_source,
+            subquestion=original_decision_source,
             entity_hints=all_entity_hints,
         )
         if original_decision.permitted:
@@ -497,9 +503,21 @@ class StructuredFactCapabilityPolicy:
         uncovered_clauses: list[tuple[str, StructuredFactCapabilityDecision]] = []
         for clause in clauses:
             residual = clause
+            representation_clause = clause
+            for phrase in entity_phrases:
+                representation_clause = re.sub(
+                    rf"(?<![a-z0-9]){re.escape(phrase)}(?![a-z0-9])",
+                    " ",
+                    representation_clause,
+                )
+            representation_clause = re.sub(
+                r"\b(?:at|for|from|in|of)\s*$",
+                "",
+                representation_clause,
+            ).strip()
             for request, phrase in covered_request_phrases:
                 if not self._covered_request_represents_clause(
-                    clause,
+                    representation_clause,
                     request=request,
                     phrase=phrase,
                     entity_hints=shared_entity_hints,
