@@ -244,7 +244,8 @@ does not measure RAGAS semantic quality.
 | Ninth review-fix evaluated commit | `5d0dc4647efff81e07d576d430ac45a8b6c910c9` |
 | Tenth review-fix evaluated commit | `3ef13f3599bab9552d698c6d2270eec05cc0bb45` |
 | Eleventh review-fix evaluated commit | `e7dae4662006a2e0cef0d9adc33c1b1857b7e93a` |
-| Final review-fix evaluated commit | `b1f9ebcbbcb004de1b7901c60ac88e7c641c12e0` |
+| Twelfth review-fix evaluated commit | `b1f9ebcbbcb004de1b7901c60ac88e7c641c12e0` |
+| Final review-fix evaluated commit | `eb1bc4b3cea26640604cdd6b6f5dac02cce5fe20` |
 | PR3 evidence commit | This documentation/artifact-only follow-up commit |
 | Dataset | `data/evals/agents/planner/structured_fact_capability_adversarial.v1.jsonl` |
 | Dataset SHA-256 | `cb683920ac5f4f99ce6ec603c11f80be8c2e2b36598536e480781e28d8133273` |
@@ -302,6 +303,7 @@ PYTHONPATH=src <EVAL_VENV>/bin/python scripts/evals/agents/eval_planner_routes.p
 | `artifacts/evals/agents/planner/structured_fact_capability_adversarial.v1/runs/3ef13f3_post_review_10.json` | `df411f1b2e740b8eaadf36144cdf813d019474d8c334c54534ac18d452f3603e` |
 | `artifacts/evals/agents/planner/structured_fact_capability_adversarial.v1/runs/e7dae46_post_review_11.json` | `1a12199a979f5d104417a6810c35965589525a0eb7f13a03ba35bc7db1324589` |
 | `artifacts/evals/agents/planner/structured_fact_capability_adversarial.v1/runs/b1f9ebc_post_review_12.json` | `c54bd9ba6ffcc345078a402500e3b91cbad107e2fc96a59387bde1b6e1045975` |
+| `artifacts/evals/agents/planner/structured_fact_capability_adversarial.v1/runs/eb1bc4b_post_review_13.json` | `11312d471f14f306abd3ff948be4258576d2b1cf231b8066fc5c5bf0af60d7cd` |
 | `artifacts/evals/agents/planner/planner_routing_core.v1.1/runs/6b6b617_p0_ollama_qwen2.5_14b-instruct.json` | `e3cc95fe8a56db9596a4bcfa27ad0d99267352b732d56b176932df49da1c31a7` |
 
 ### Before / after result
@@ -355,6 +357,12 @@ recognized independent clauses separated by `as well as`, `plus`, or semicolons.
 Commit `4c94cffbb8fda68196ce9a0101cc07c9b0876c9d` was rerun against the same
 unchanged dataset and evaluator and preserved all six metrics.
 
+The final resumed-execution review aligned orchestrator validation with the
+planner's clarified metric query and recognized `compared to` comparisons and
+spaced fiscal periods. Commit `eb1bc4b3cea26640604cdd6b6f5dac02cce5fe20` was
+rerun against the unchanged dataset and evaluator. All 40 cases and 44 requests
+again preserved the six post-PR3 metrics recorded above.
+
 ### Route-aware live-gate diagnostic
 
 A 15-case route-aware v1 run against the sealed PR3 implementation completed all
@@ -381,8 +389,9 @@ implementation measured by the original artifacts. The review-fix implementation
 at `5a93171562dce106d1dd45cfe0c80aa5c01628ac` and the final review fix at
 `af15c3c0acc301790d74187dcfacdc11c3dabe98`, and the final review fix at
 `a3af6f08cf1b28c6a53ca52f4c58747ad62c4a99`, followed by final verification at
-`4c94cffbb8fda68196ce9a0101cc07c9b0876c9d`, are measured separately by their
-post-review artifacts. Changes after the final SHA are limited to evaluation
+`4c94cffbb8fda68196ce9a0101cc07c9b0876c9d`, and final resumed-execution
+verification at `eb1bc4b3cea26640604cdd6b6f5dac02cce5fe20`, are measured
+separately by their post-review artifacts. Changes after the final SHA are limited to evaluation
 artifacts and documentation; any later source, test, prompt, policy, evaluator, or
 dataset change invalidates the final post-review measurement and requires a rerun.
 
