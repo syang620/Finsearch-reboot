@@ -1667,6 +1667,45 @@ class OrchestratorRuntimeTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn("return on equity", issue["metadata"]["subquestion"])
         self.assertEqual(issue["metadata"]["candidate_metric_ids"], [])
 
+    async def test_structured_facts_node_rejects_alias_inside_unrelated_metric_name(self) -> None:
+        get_client = mock.AsyncMock()
+        with mock.patch(
+            "agents.orchestrator.agent_orchestrator._get_orchestrator_mcp_client",
+            new=get_client,
+        ):
+            result = await _structured_facts_node(
+                {
+                    "plan_obj": {
+                        "route": "structured_fact",
+                        "metadata": {
+                            "ticker": "MSFT",
+                            "fiscal_year": 2025,
+                            "form_type": "10-K",
+                        },
+                        "structured_fact_requests": [
+                            {
+                                "subquestion": (
+                                    "What were Microsoft's sales and marketing expenses "
+                                    "in FY2025?"
+                                ),
+                                "metric_hint": "sales and marketing expense",
+                                "entity_hint": "Microsoft",
+                                "fiscal_year": 2025,
+                            }
+                        ],
+                    }
+                }
+            )
+
+        get_client.assert_not_awaited()
+        rejected = result["structured_fact_results"][0]
+        self.assertEqual(rejected["resolver_status"], "unresolved")
+        self.assertIsNone(rejected["resolved_metric_id"])
+        self.assertIsNone(rejected["tool_result"])
+        issue = result["open_issues"][0]
+        self.assertEqual(issue["code"], "STRUCTURED_FACT_CAPABILITY_REJECTED")
+        self.assertEqual(issue["metadata"]["question_class"], "unknown")
+
     async def test_structured_facts_node_preserves_non_ok_tool_result(self) -> None:
         client = _FakeStructuredFactClient(
             tool_result={

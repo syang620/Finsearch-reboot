@@ -144,6 +144,14 @@ _DERIVED_PATTERNS = (
     re.compile(r"\bkey financial metrics\b"),
 )
 _AMBIGUOUS_GENERIC_TERMS = frozenset({"cash", "profit", "profitability"})
+_EXPLICIT_UNSUPPORTED_CLASSES = frozenset(
+    {
+        StructuredFactQuestionClass.UNSUPPORTED_DERIVED_METRIC,
+        StructuredFactQuestionClass.UNSUPPORTED_RATIO,
+        StructuredFactQuestionClass.UNSUPPORTED_PER_SHARE,
+        StructuredFactQuestionClass.UNSUPPORTED_COMPARISON,
+    }
+)
 
 
 def _contains_phrase(text: str, phrase: str) -> bool:
@@ -219,7 +227,10 @@ class StructuredFactCapabilityPolicy:
                 "The metric phrase is too broad for deterministic structured execution.",
             )
 
-        alias_matches = self._matching_metric_ids(combined_text, use_aliases=True)
+        alias_matches = self._matching_alias_metric_ids(
+            metric_text=metric_text,
+            question_text=question_text,
+        )
         if len(alias_matches) == 1:
             return self._supported(alias_matches[0], "Matched a supported metric alias.")
         if len(alias_matches) > 1:
@@ -244,35 +255,21 @@ class StructuredFactCapabilityPolicy:
             )
             for request in request_list
         )
-        if not decisions or not all(decision.permitted for decision in decisions):
+        if not decisions:
             return decisions
 
         original_text = _normalize_lookup_text(original_user_query)
         if not original_text:
             return decisions
-        clauses = [
-            clause.strip()
-            for clause in re.split(
-                r"\band\s+(?=(?:what|why|how|explain|describe)\b)",
-                original_text,
-            )
-            if clause.strip()
-        ]
-        if len(clauses) > 1:
-            clause_decisions = [
-                self.classify_request(metric_hint=None, subquestion=clause)
-                for clause in clauses
-            ]
-            if (
-                any(decision.permitted for decision in clause_decisions)
-                and any(not decision.permitted for decision in clause_decisions)
-            ):
-                return decisions
         original_decision = self.classify_request(
             metric_hint=None,
             subquestion=original_text,
         )
-        if original_decision.permitted:
+        if original_decision.permitted or self._has_independent_conjoined_requests(
+            original_text
+        ):
+            return decisions
+        if original_decision.question_class == StructuredFactQuestionClass.UNKNOWN:
             return decisions
         return tuple(original_decision for _request in request_list)
 
@@ -307,6 +304,49 @@ class StructuredFactCapabilityPolicy:
             if any(_contains_phrase(text, phrase) for phrase in phrases):
                 matches.append(capability.metric_id)
         return tuple(sorted(set(matches)))
+
+    def _matching_alias_metric_ids(
+        self,
+        *,
+        metric_text: str,
+        question_text: str,
+    ) -> tuple[str, ...]:
+        matches: list[str] = []
+        for capability in self.capabilities:
+            if metric_text:
+                matched = any(metric_text == alias for alias in capability.aliases)
+            else:
+                matched = any(
+                    _contains_phrase(question_text, alias)
+                    for alias in capability.aliases
+                )
+            if matched:
+                matches.append(capability.metric_id)
+        return tuple(sorted(set(matches)))
+
+    def _has_independent_conjoined_requests(self, text: str) -> bool:
+        for conjunction in re.finditer(r"\band\b", text):
+            left = text[: conjunction.start()].strip()
+            right = text[conjunction.end() :].strip()
+            if not left or not right:
+                continue
+            left_decision = self.classify_request(metric_hint=None, subquestion=left)
+            right_decision = self.classify_request(metric_hint=None, subquestion=right)
+            left_explicitly_unsupported = (
+                left_decision.question_class in _EXPLICIT_UNSUPPORTED_CLASSES
+            )
+            right_explicitly_unsupported = (
+                right_decision.question_class in _EXPLICIT_UNSUPPORTED_CLASSES
+            )
+            if left_decision.permitted and (
+                right_decision.permitted or right_explicitly_unsupported
+            ):
+                return True
+            if right_decision.permitted and (
+                left_decision.permitted or left_explicitly_unsupported
+            ):
+                return True
+        return False
 
     def _ambiguous_candidate_ids(self, text: str) -> tuple[str, ...]:
         if text == "cash":

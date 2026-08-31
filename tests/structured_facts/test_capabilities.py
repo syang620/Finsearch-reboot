@@ -69,6 +69,17 @@ def test_supported_aliases_and_registry_derived_metrics_are_permitted() -> None:
         assert decision.matched_metric_ids == (metric_id,)
 
 
+def test_alias_does_not_match_inside_unrelated_metric_name() -> None:
+    decision = _classify(
+        "sales and marketing expense",
+        "What were sales and marketing expenses?",
+    )
+
+    assert not decision.permitted
+    assert decision.question_class == StructuredFactQuestionClass.UNKNOWN
+    assert _classify("sales").matched_metric_ids == ("revenue",)
+
+
 def test_unknown_metric_is_not_permitted() -> None:
     decision = _classify("bookings")
 
@@ -115,3 +126,39 @@ def test_narrative_change_question_blocks_numeric_component_decomposition() -> N
 
     assert decisions[0].question_class == StructuredFactQuestionClass.UNSUPPORTED_DERIVED_METRIC
     assert not decisions[0].permitted
+
+
+def test_original_unsupported_semantics_override_partially_rejected_decomposition() -> None:
+    decisions = DEFAULT_STRUCTURED_FACT_CAPABILITY_POLICY.classify_requests(
+        [
+            {"metric_hint": "revenue", "subquestion": "What was revenue?"},
+            {"metric_hint": "bookings", "subquestion": "What were bookings?"},
+        ],
+        original_user_query="Why did revenue increase?",
+    )
+
+    assert {decision.question_class for decision in decisions} == {
+        StructuredFactQuestionClass.UNSUPPORTED_DERIVED_METRIC
+    }
+    assert not any(decision.permitted for decision in decisions)
+
+
+def test_noun_phrase_conjunction_preserves_independent_mixed_requests() -> None:
+    decisions = DEFAULT_STRUCTURED_FACT_CAPABILITY_POLICY.classify_requests(
+        [
+            {"metric_hint": "revenue", "subquestion": "What was revenue?"},
+            {
+                "metric_hint": "explanation",
+                "subquestion": "Explain why revenue increased.",
+            },
+        ],
+        original_user_query=(
+            "Give me Apple's revenue and an explanation of why it increased."
+        ),
+    )
+
+    assert decisions[0].permitted
+    assert (
+        decisions[1].question_class
+        == StructuredFactQuestionClass.UNSUPPORTED_DERIVED_METRIC
+    )

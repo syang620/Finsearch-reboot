@@ -565,7 +565,7 @@ class PlannerStructuredFactSchemaTests(unittest.TestCase):
             ["revenue"],
         )
         fallback_job = normalized["retrieval_plan"]["jobs"][0]
-        self.assertIn("ROE", fallback_job["goal"])
+        self.assertIn("return on equity", fallback_job["goal"])
         self.assertNotIn("Apple", fallback_job["goal"])
         self.assertNotIn("2025", fallback_job["goal"])
         issue = normalized["open_issues"][0]
@@ -574,6 +574,45 @@ class PlannerStructuredFactSchemaTests(unittest.TestCase):
         self.assertEqual(issue["metadata"]["metric_hint"], "ROE")
         self.assertEqual(issue["metadata"]["effective_route"], "hybrid")
         self.assertEqual(issue["metadata"]["outcome"], "partial_kb_fallback")
+
+    def test_normalize_resolution_output_uses_rejected_subquestion_for_fallback_goal(self) -> None:
+        normalized = _normalize_resolution_output(
+            {
+                "retrieval_needed": False,
+                "route": "structured_fact",
+                "structured_fact_requests": [
+                    {
+                        "subquestion": "Calculate Apple's return on equity in FY2025.",
+                        "metric_hint": "revenue",
+                        "entity_hint": "Apple",
+                        "fiscal_year": 2025,
+                    }
+                ],
+                "task_class": "single_target_fact",
+                "targets": [
+                    {
+                        "target_id": 1,
+                        "target_key": "AAPL_FY2025",
+                        "company_name": "Apple",
+                        "ticker": "AAPL",
+                        "fiscal_year": 2025,
+                        "form_type": "10-K",
+                    }
+                ],
+                "retrieval_plan": None,
+                "needs_clarification": False,
+                "clarification_reason": None,
+                "clarification_questions": [],
+                "open_issues": [],
+            }
+        )
+
+        self.assertEqual(normalized["route"], "kb")
+        goal = normalized["retrieval_plan"]["jobs"][0]["goal"]
+        self.assertIn("return on equity", goal)
+        self.assertNotIn("revenue", goal)
+        self.assertNotIn("Apple", goal)
+        self.assertNotIn("2025", goal)
 
     def test_normalize_resolution_output_clarifies_material_metric_ambiguity(self) -> None:
         normalized = _normalize_resolution_output(

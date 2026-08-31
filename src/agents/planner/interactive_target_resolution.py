@@ -1126,8 +1126,16 @@ def _sanitize_retrieval_goal_fragment(
         token = str(removal or "").strip()
         if token:
             text = re.sub(re.escape(token), " ", text, flags=re.IGNORECASE)
-    text = re.sub(r"\bFY\s*\d{2,4}\b", " ", text, flags=re.IGNORECASE)
+    text = re.sub(r"\bFY(?:\s*\d{2,4})?\b", " ", text, flags=re.IGNORECASE)
     text = re.sub(r"\b(?:19|20)\d{2}\b", " ", text)
+    text = re.sub(r"(?:'s|’s)\b", " ", text)
+    text = re.sub(
+        r"^(?:what\s+(?:was|were|is|are)|calculate|compute)\s+",
+        "",
+        text,
+        flags=re.IGNORECASE,
+    )
+    text = re.sub(r"\b(?:in|for|during)\s*[?.]*$", " ", text, flags=re.IGNORECASE)
     text = re.sub(r"\s+", " ", text).strip(" ,.;:-")
     return text or "requested financial concept"
 
@@ -1163,7 +1171,7 @@ def _append_capability_fallback_jobs(
     }
     for _index, request, _decision in rejected:
         fragment = _sanitize_retrieval_goal_fragment(
-            request.get("metric_hint") or request.get("subquestion"),
+            request.get("subquestion") or request.get("metric_hint"),
             request=request,
             targets=targets,
         )
