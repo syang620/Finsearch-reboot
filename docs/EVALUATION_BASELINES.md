@@ -255,7 +255,8 @@ does not measure RAGAS semantic quality.
 | Twentieth review-fix evaluated commit | `089763d702020fda627303a09004b937dbfdbbbe` |
 | Twenty-first review-fix evaluated commit | `21dd490e287f208bff92c8d4613db0009a93d8c0` |
 | Twenty-second review-fix evaluated commit | `dfd3ffe997fbdb55173ff5878ddd7cd8f0160f2a` |
-| Final review-fix evaluated commit | `7791e64c586a4bacfb6e3a46e8f7b4c8aac31ae1` |
+| Twenty-third review-fix evaluated commit | `7791e64c586a4bacfb6e3a46e8f7b4c8aac31ae1` |
+| Final review-fix evaluated commit | `efb5e4251dd97af5165b24850aee06a4b18c542b` |
 | PR3 evidence commit | This documentation/artifact-only follow-up commit |
 | Dataset | `data/evals/agents/planner/structured_fact_capability_adversarial.v1.jsonl` |
 | Dataset SHA-256 | `cb683920ac5f4f99ce6ec603c11f80be8c2e2b36598536e480781e28d8133273` |
@@ -324,6 +325,7 @@ PYTHONPATH=src <EVAL_VENV>/bin/python scripts/evals/agents/eval_planner_routes.p
 | `artifacts/evals/agents/planner/structured_fact_capability_adversarial.v1/runs/21dd490_post_review_21.json` | `e8d2b525ed4ee63de1e1feb21a8d5cf8b5d6ac0d2b435ba6438aa5bf270377f6` |
 | `artifacts/evals/agents/planner/structured_fact_capability_adversarial.v1/runs/dfd3ffe_post_review_22.json` | `571c88669134a75b31a6636d9cd97dce1de034613c3b9a6cc288ddb935fbfc72` |
 | `artifacts/evals/agents/planner/structured_fact_capability_adversarial.v1/runs/7791e64_post_review_23.json` | `dba0a1d06ae0a3b38cb6db03a27dadba1560adc55e9f271adb85b77c4e36579f` |
+| `artifacts/evals/agents/planner/structured_fact_capability_adversarial.v1/runs/efb5e42_post_review_24.json` | `b928783350627d8aa04c150ed73509c420e7bed7f09af49012eb78c9c1441ac4` |
 | `artifacts/evals/agents/planner/planner_routing_core.v1.1/runs/6b6b617_p0_ollama_qwen2.5_14b-instruct.json` | `e3cc95fe8a56db9596a4bcfa27ad0d99267352b732d56b176932df49da1c31a7` |
 
 ### Before / after result
@@ -412,6 +414,12 @@ to the applicable target year and entity. Commit
 `7791e64c586a4bacfb6e3a46e8f7b4c8aac31ae1` was rerun against the unchanged
 dataset and evaluator and again preserved all six metrics.
 
+The final original-query agreement review rejected structured proposals that
+rewrote a single supported or unknown request to a different metric, and based the
+KB fallback on the original request. Commit
+`efb5e4251dd97af5165b24850aee06a4b18c542b` was rerun against the unchanged
+dataset and evaluator and again preserved all six metrics.
+
 The final omitted-supported-clause review routed supported clauses missing complete
 structured inputs to KB fallback and rejected half-year period notation. Commit
 `089763d702020fda627303a09004b937dbfdbbbe` was rerun against the unchanged
@@ -479,7 +487,8 @@ omitted-supported-clause verification at `089763d702020fda627303a09004b937dbfdbb
 followed by final clarified-sibling verification at
 `21dd490e287f208bff92c8d4613db0009a93d8c0` and final occurrence/period
 verification at `dfd3ffe997fbdb55173ff5878ddd7cd8f0160f2a`, followed by final scoped-fallback
-verification at `7791e64c586a4bacfb6e3a46e8f7b4c8aac31ae1`, are measured separately by their
+verification at `7791e64c586a4bacfb6e3a46e8f7b4c8aac31ae1` and final original-query agreement
+verification at `efb5e4251dd97af5165b24850aee06a4b18c542b`, are measured separately by their
 post-review artifacts. Changes after the final SHA are limited to evaluation
 artifacts and documentation; any later source, test, prompt, policy, evaluator, or
 dataset change invalidates the final post-review measurement and requires a rerun.
