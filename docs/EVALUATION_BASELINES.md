@@ -246,7 +246,8 @@ does not measure RAGAS semantic quality.
 | Eleventh review-fix evaluated commit | `e7dae4662006a2e0cef0d9adc33c1b1857b7e93a` |
 | Twelfth review-fix evaluated commit | `b1f9ebcbbcb004de1b7901c60ac88e7c641c12e0` |
 | Thirteenth review-fix evaluated commit | `eb1bc4b3cea26640604cdd6b6f5dac02cce5fe20` |
-| Final review-fix evaluated commit | `95a0efa085a54a884c8d43442b914fe59c3502de` |
+| Fourteenth review-fix evaluated commit | `95a0efa085a54a884c8d43442b914fe59c3502de` |
+| Final review-fix evaluated commit | `011eb6ae5c6f16f6d5a8662c4a3c4d3f96bfc10c` |
 | PR3 evidence commit | This documentation/artifact-only follow-up commit |
 | Dataset | `data/evals/agents/planner/structured_fact_capability_adversarial.v1.jsonl` |
 | Dataset SHA-256 | `cb683920ac5f4f99ce6ec603c11f80be8c2e2b36598536e480781e28d8133273` |
@@ -306,6 +307,7 @@ PYTHONPATH=src <EVAL_VENV>/bin/python scripts/evals/agents/eval_planner_routes.p
 | `artifacts/evals/agents/planner/structured_fact_capability_adversarial.v1/runs/b1f9ebc_post_review_12.json` | `c54bd9ba6ffcc345078a402500e3b91cbad107e2fc96a59387bde1b6e1045975` |
 | `artifacts/evals/agents/planner/structured_fact_capability_adversarial.v1/runs/eb1bc4b_post_review_13.json` | `11312d471f14f306abd3ff948be4258576d2b1cf231b8066fc5c5bf0af60d7cd` |
 | `artifacts/evals/agents/planner/structured_fact_capability_adversarial.v1/runs/95a0efa_post_review_14.json` | `95aaff2fa134e752c09bc70ea8f74813b2375a29f27fbfcaee3085e90066a0b9` |
+| `artifacts/evals/agents/planner/structured_fact_capability_adversarial.v1/runs/011eb6a_post_review_15.json` | `cc2b509e5bfacf9f9b6f71da29cbec44121700020129bc607b1af56f0398fad6` |
 | `artifacts/evals/agents/planner/planner_routing_core.v1.1/runs/6b6b617_p0_ollama_qwen2.5_14b-instruct.json` | `e3cc95fe8a56db9596a4bcfa27ad0d99267352b732d56b176932df49da1c31a7` |
 
 ### Before / after result
@@ -370,6 +372,12 @@ clause mapping and rejected quarterly periods from the annual-only structured
 executor. Commit `95a0efa085a54a884c8d43442b914fe59c3502de` was rerun against the
 unchanged dataset and evaluator and again preserved all six metrics.
 
+The final metadata and omitted-sibling review rejected nonannual fiscal-period
+metadata, covered additional named ratios, and retained retrieval for independently
+unknown sibling concepts omitted from structured proposals. Commit
+`011eb6ae5c6f16f6d5a8662c4a3c4d3f96bfc10c` was rerun against the unchanged
+dataset and evaluator and again preserved all six metrics.
+
 ### Route-aware live-gate diagnostic
 
 A 15-case route-aware v1 run against the sealed PR3 implementation completed all
@@ -399,7 +407,9 @@ at `5a93171562dce106d1dd45cfe0c80aa5c01628ac` and the final review fix at
 `4c94cffbb8fda68196ce9a0101cc07c9b0876c9d`, and final resumed-execution
 verification at `eb1bc4b3cea26640604cdd6b6f5dac02cce5fe20`, followed by final
 annual-boundary verification at `95a0efa085a54a884c8d43442b914fe59c3502de`,
-are measured separately by their post-review artifacts. Changes after the final SHA are limited to evaluation
+followed by final metadata and omitted-sibling verification at
+`011eb6ae5c6f16f6d5a8662c4a3c4d3f96bfc10c`, are measured separately by their
+post-review artifacts. Changes after the final SHA are limited to evaluation
 artifacts and documentation; any later source, test, prompt, policy, evaluator, or
 dataset change invalidates the final post-review measurement and requires a rerun.
 
