@@ -132,6 +132,8 @@ def test_supported_phrase_does_not_match_inside_modified_metric_name() -> None:
     for subquestion in (
         "What was revenue from subscriptions?",
         "What was revenue by segment?",
+        "What was revenue in 2024 by segment?",
+        "What was revenue in fiscal 2024 from cloud?",
     ):
         qualified = _classify("revenue", subquestion)
         assert not qualified.permitted
@@ -313,7 +315,7 @@ def test_symbolic_arithmetic_blocks_supported_looking_decomposition() -> None:
             "subquestion": "What were total liabilities?",
         },
     ]
-    for operator in ("+", "/"):
+    for operator in ("+", "/", "*", "-"):
         decisions = DEFAULT_STRUCTURED_FACT_CAPABILITY_POLICY.classify_requests(
             requests,
             original_user_query=(
@@ -333,6 +335,22 @@ def test_explicit_clauses_map_repeated_metrics_in_order() -> None:
             {"metric_hint": "revenue", "subquestion": "What was revenue?"},
         ],
         original_user_query="Why did revenue increase; also give revenue.",
+    )
+
+    assert (
+        decisions[0].question_class
+        == StructuredFactQuestionClass.UNSUPPORTED_DERIVED_METRIC
+    )
+    assert decisions[1].permitted
+
+
+def test_conjoined_clauses_reject_only_unsupported_request() -> None:
+    decisions = DEFAULT_STRUCTURED_FACT_CAPABILITY_POLICY.classify_requests(
+        [
+            {"metric_hint": "revenue", "subquestion": "What was revenue?"},
+            {"metric_hint": "total assets", "subquestion": "What were total assets?"},
+        ],
+        original_user_query="Why did revenue increase and give me total assets?",
     )
 
     assert (

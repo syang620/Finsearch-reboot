@@ -215,7 +215,10 @@ class StructuredFactCapabilityPolicy:
             part for part in (str(metric_hint or ""), str(subquestion or "")) if part
         )
 
-        if re.search(r"\S\s*[+/]\s*\S", raw_text):
+        if re.search(r"\S\s*[+*/]\s*\S", raw_text) or re.search(
+            r"\S\s+-\s+\S",
+            raw_text,
+        ):
             return self._rejected(
                 StructuredFactQuestionClass.UNSUPPORTED_DERIVED_METRIC,
                 "Symbolic arithmetic is not executable by the structured-fact lane.",
@@ -348,14 +351,16 @@ class StructuredFactCapabilityPolicy:
         )
         if original_decision.permitted:
             return decisions
-        if self._has_independent_conjoined_requests(
+        independent_boundaries = self._independent_conjunctions(
             original_text,
             entity_hints=all_entity_hints,
-        ):
+        )
+        if independent_boundaries:
             return self._apply_explicit_clause_rejections(
                 original_text,
                 request_list,
                 decisions,
+                independent_boundaries=independent_boundaries,
                 entity_hints=all_entity_hints,
             )
         if original_decision.question_class == StructuredFactQuestionClass.UNKNOWN:
@@ -481,20 +486,25 @@ class StructuredFactCapabilityPolicy:
             tokens = tokens[1:]
         if not tokens:
             return False
-        temporal = tokens[0].lower()
-        return (
-            temporal.isdigit()
-            or temporal
-            in {"date", "fiscal", "fy", "period", "q", "quarter", "year"}
-            or bool(re.fullmatch(r"(?:fy|q)\d+", temporal))
+        temporal_text = " ".join(token.lower() for token in tokens)
+        return bool(
+            re.fullmatch(
+                r"(?:"
+                r"(?:\d{4}|(?:fy|q)\d+)(?: (?:year|quarter) end)?|"
+                r"fiscal(?: year)? (?:\d{4}|(?:fy|q)\d+)|"
+                r"(?:date|period|quarter|year)(?: end)?(?: \d{4})?"
+                r")",
+                temporal_text,
+            )
         )
 
-    def _has_independent_conjoined_requests(
+    def _independent_conjunctions(
         self,
         text: str,
         *,
         entity_hints: Iterable[Any] = (),
-    ) -> bool:
+    ) -> tuple[re.Match[str], ...]:
+        independent: list[re.Match[str]] = []
         for conjunction in re.finditer(
             r"\bas well as\b|\bclauseboundary\b|\bplus\b|\band\b",
             text,
@@ -528,12 +538,12 @@ class StructuredFactCapabilityPolicy:
             if left_decision.permitted and (
                 right_decision.permitted or right_explicitly_unsupported
             ):
-                return True
-            if right_decision.permitted and (
+                independent.append(conjunction)
+            elif right_decision.permitted and (
                 left_decision.permitted or left_explicitly_unsupported
             ):
-                return True
-        return False
+                independent.append(conjunction)
+        return tuple(independent)
 
     @staticmethod
     def _expression_needs_operand(left: str) -> bool:
@@ -554,13 +564,18 @@ class StructuredFactCapabilityPolicy:
         requests: list[dict[str, Any]],
         decisions: tuple[StructuredFactCapabilityDecision, ...],
         *,
+        independent_boundaries: tuple[re.Match[str], ...],
         entity_hints: Iterable[Any] = (),
     ) -> tuple[StructuredFactCapabilityDecision, ...]:
-        if "clauseboundary" not in text:
-            return decisions
+        clauses: list[str] = []
+        start = 0
+        for boundary in independent_boundaries:
+            clauses.append(text[start : boundary.start()])
+            start = boundary.end()
+        clauses.append(text[start:])
         updated = list(decisions)
         claimed_request_indices: set[int] = set()
-        for clause in text.split("clauseboundary"):
+        for clause in clauses:
             clause_decision = self.classify_request(
                 metric_hint=None,
                 subquestion=clause,
