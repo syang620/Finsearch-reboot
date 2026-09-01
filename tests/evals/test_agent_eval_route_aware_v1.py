@@ -442,6 +442,24 @@ def test_typed_structured_evidence_is_visible_and_measured() -> None:
     assert summary["structured_synthetic_text_contexts"] == 0.0
 
 
+def test_conflicting_tool_metric_is_not_counted_as_successful_execution() -> None:
+    output = _run_output("structured_fact")
+    output["structured_fact_results"][0]["tool_result"].update(
+        {
+            "metric_id": "total_debt",
+            "value": 391_000_000_000.0,
+        }
+    )
+
+    row, errors, _sample = evaluate_run_output(
+        _example("structured_fact"),
+        output,
+    )
+
+    assert errors == []
+    assert row.structured_evidence["successful_execution_results"] == 0
+
+
 def test_interrupted_run_does_not_require_analyst_or_packet() -> None:
     planner = _planner_payload("kb")
     planner.update(

@@ -262,10 +262,17 @@ def _structured_evidence_diagnostics(
             continue
         tool_result = result.get("tool_result") or {}
         value = tool_result.get("value") if isinstance(tool_result, dict) else None
+        resolved_metric_id = _normalize_text(result.get("resolved_metric_id"))
+        tool_metric_id = (
+            _normalize_text(tool_result.get("metric_id"))
+            if isinstance(tool_result, dict)
+            else None
+        )
         if (
             _normalize_lower(result.get("resolver_status")) == "resolved"
-            and _normalize_text(result.get("resolved_metric_id")) is not None
+            and resolved_metric_id is not None
             and isinstance(tool_result, dict)
+            and (tool_metric_id is None or tool_metric_id == resolved_metric_id)
             and tool_result.get("ok") is True
             and _normalize_lower(tool_result.get("status")) == "ok"
             and not isinstance(value, bool)

@@ -150,6 +150,26 @@ def test_structured_fact_evidence_rejects_malformed_success_values(value) -> Non
     assert issue.code == "STRUCTURED_FACT_INVALID_EVIDENCE"
 
 
+def test_structured_fact_evidence_rejects_conflicting_tool_metric_id() -> None:
+    evidence, issue = _structured_fact_evidence_from_result(
+        packet=_structured_evidence_packet(),
+        result={
+            "resolved_metric_id": "revenue",
+            "resolver_status": "resolved",
+            "tool_result": {
+                "ok": True,
+                "status": "ok",
+                "metric_id": "total_debt",
+                "value": 391_000_000_000.0,
+            },
+        },
+    )
+
+    assert evidence is None
+    assert issue is not None
+    assert issue.code == "STRUCTURED_FACT_INVALID_EVIDENCE"
+
+
 def _runtime_output(
     *,
     query: str,
