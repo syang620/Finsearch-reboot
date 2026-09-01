@@ -28,9 +28,12 @@ from agents.contracts import (
     AnalystPacket,
     AnalysisTask,
     ContextItem,
+    ContextItemKind,
     FilingMetadata,
+    FormType,
     PlannerIntent,
     SourceRef,
+    StructuredFactEvidence,
 )
 
 
@@ -154,6 +157,44 @@ class AnalystParsingTests(unittest.TestCase):
         lines = rendered.splitlines()
         marker_index = lines.index("... [truncated] ...")
         self.assertTrue(lines[marker_index - 1].endswith("|"))
+
+    def test_typed_structured_fact_renders_native_value_and_provenance(self) -> None:
+        item = ContextItem(
+            context_id="ctx_1",
+            kind=ContextItemKind.STRUCTURED_FACT,
+            source=SourceRef(
+                ticker="AAPL",
+                fiscal_year=2024,
+                form_type=FormType.TEN_K,
+                accession_no="0000320193-24-000123",
+                report_date="2024-09-28",
+                filing_date="2024-11-01",
+                source_url="https://www.sec.gov/example",
+            ),
+            structured_fact=StructuredFactEvidence(
+                metric_id="revenue",
+                metric_label="Revenue",
+                value=391_000_000_000.0,
+                unit="USD",
+                ticker="AAPL",
+                fiscal_year=2024,
+                form_type=FormType.TEN_K,
+                accession_number="0000320193-24-000123",
+                report_date="2024-09-28",
+                filed_date="2024-11-01",
+                source_url="https://www.sec.gov/example",
+            ),
+        )
+
+        rendered = _context_item_to_text(item, 1)
+
+        self.assertIn("structured_fact:", rendered)
+        self.assertIn('"metric_id":"revenue"', rendered)
+        self.assertIn('"metric_label":"Revenue"', rendered)
+        self.assertIn('"value":391000000000.0', rendered)
+        self.assertIn('"accession_number":"0000320193-24-000123"', rendered)
+        self.assertIn('"source_url":"https://www.sec.gov/example"', rendered)
+        self.assertNotIn("content:\nStructured fact:", rendered)
 
     def test_build_analyst_prompt_surfaces_definition_notes(self) -> None:
         packet = _build_compute_packet("extract")
