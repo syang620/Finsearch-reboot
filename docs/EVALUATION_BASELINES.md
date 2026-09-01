@@ -517,11 +517,19 @@ analyst synthesis, citations, latency, load, or production distribution shift. I
 40 cases intentionally emphasize known boundary classes and hostile proposals; it
 is not a frequency-weighted sample of user traffic.
 
-## Retrieval Ablation Baseline — 2026-08-31
+## Retrieval Ablation Baseline — 2026-08-31 (canonical rerun)
+
+The original run at evaluated SHA
+`5c9ed8ff19255a4f07f93410ea1723f5aa57b501` is superseded and non-canonical.
+Its harness could fingerprint a different Qdrant endpoint from the runtime client,
+verify a different embedding endpoint from the one used by dense modes, and run
+from a dirty tracked checkout. Its artifacts remain only in Git history and must
+not be used as baseline evidence.
 
 ### Run identity and integrity
 
-- Evaluated implementation SHA: `5c9ed8ff19255a4f07f93410ea1723f5aa57b501`.
+- Evaluated implementation SHA: `b61200968f62537af85c8812376b9790a45dfb5f`.
+- Evidence commit SHA: `c31bc00b8e591de15690c8f8445fb5b54a106229`.
 - Frozen definition: `data/evals/retrieval/retrieval_ablation_v1.json`.
 - Table dataset: 12 unique cases at
   `data/evals/retrieval/table/table_eval_v1.jsonl`, SHA-256
@@ -533,10 +541,11 @@ is not a frequency-weighted sample of user traffic.
   from the PR2 collection, its stable `chunk_uid` labels are not stored in that
   collection, and its chunk numbering is from a different lineage. No label was
   remapped or regenerated; text metrics are therefore not available.
-- Qdrant 1.16.2 collection `sec_docs_dense_bm25_pr2_63dcec0`: 582 points.
+- Qdrant endpoint `http://localhost:6333`, version 1.16.2, collection
+  `sec_docs_dense_bm25_pr2_63dcec0`: 582 points.
   The full payload/vector fingerprint was
   `103a1131b373fb651727048b6a875e4bd96b64754ebafd41c42dc6dcccfc5df8`
-  both before and after the run.
+  in the frozen definition and both before and after the run.
 - Corpus provenance reused the PR2 AAPL FY2024 10-K corpus: tracked HTML SHA-256
   `24a830a0f1256e371d36a1f7f72e5e85a38037d1de2f6f966eb8457db42ff6d6`;
   101-row text SHA-256
@@ -546,13 +555,20 @@ is not a frequency-weighted sample of user traffic.
   and 107-row split-text SHA-256
   `856f6aec30636750141a695d864eb08da182160e25143b393b49bc7769436f71`.
   The unpreserved original ingestion command was not reconstructed.
-- Embedding model: `qwen3-embedding:8b`, Ollama digest
+- Embedding endpoint `http://localhost:11434/api/embed`, model
+  `qwen3-embedding:8b`, Ollama digest
   `64b933495768fbd3b87c20583d379728a07471e0c66733a9df87cd1901b3c44b`.
 - Reranker: `Qwen/Qwen3-Reranker-8B` through the Qwen3 API backend. The hosted
   service exposes no immutable model digest, which limits exact reranker
   reproducibility. All full-stack rows recorded `qwen3_api` with no fallback.
-- RAGAS was disabled. Dataset hashes, case IDs, component traces, raw JSONL
-  parsing, zero-byte error files, and the collection fingerprint were verified.
+- RAGAS was disabled. The harness required `HEAD` to equal the evaluated SHA,
+  rejected staged or unstaged tracked changes and runtime-affecting untracked
+  files, and threaded the verified Qdrant client and embedding endpoint through
+  every enabled mode. Conflicting runtime environment configuration fails closed.
+  Nonzero `min_total_score` is rejected because BM25, dense, fused, and reranked
+  scores are not comparable. Dataset hashes, case IDs, component traces, raw
+  JSONL parsing, zero-byte error files, and the frozen collection fingerprint
+  were verified.
 
 The executed command was:
 
@@ -565,8 +581,8 @@ SEC_RETRIEVAL_TOP_K=50 SEC_RERANK_CANDIDATE_LIMIT=10 \
 SEC_RERANK_TOP_K=10 SEC_RERANK_MODEL=Qwen/Qwen3-Reranker-8B \
 PYTHONPATH=src <EVAL_PYTHON> \
 scripts/evals/retrieval/run_retrieval_ablation_v1.py \
-  --evaluated-sha 5c9ed8ff19255a4f07f93410ea1723f5aa57b501 \
-  --out-root artifacts/evals/retrieval/ablations/5c9ed8ff19255a4f07f93410ea1723f5aa57b501 \
+  --evaluated-sha b61200968f62537af85c8812376b9790a45dfb5f \
+  --out-root artifacts/evals/retrieval/ablations/b61200968f62537af85c8812376b9790a45dfb5f \
   --collection sec_docs_dense_bm25_pr2_63dcec0 \
   --expected-points 582 \
   --expected-qdrant-version 1.16.2 \
@@ -645,21 +661,26 @@ reranking is isolated. These are not concurrent-load measurements.
 
 | Mode | Candidate mean / p50 / p95 | Rerank mean / p50 / p95 | Total mean / p50 / p95 |
 | --- | ---: | ---: | ---: |
-| BM25 only | 7.2 / 6.5 / 15 | 0 / 0 / 0 | 7.2 / 6.5 / 15 |
-| Dense only | 245.0 / 244.5 / 255 | 0 / 0 / 0 | 245.0 / 244.5 / 255 |
-| Hybrid | 246.4 / 244.5 / 262 | 0 / 0 / 0 | 246.4 / 244.5 / 262 |
-| Hybrid + reranker | 260.7 / 263.5 / 268 | 2195.0 / 1750.0 / 5463 | 2455.7 / 2016.0 / 5728 |
+| BM25 only | 9.5 / 5.5 / 53 | 0 / 0 / 0 | 9.5 / 5.5 / 53 |
+| Dense only | 364.2 / 225.5 / 1314 | 0 / 0 / 0 | 364.2 / 225.5 / 1314 |
+| Hybrid | 224.6 / 221.5 / 246 | 0 / 0 / 0 | 224.6 / 221.5 / 246 |
+| Hybrid + reranker | 252.9 / 251.0 / 274 | 1110.1 / 902.5 / 2941 | 1363.0 / 1161.0 / 3191 |
 
 ### Artifacts and conclusion
 
 Canonical artifacts are under
-`artifacts/evals/retrieval/ablations/5c9ed8ff19255a4f07f93410ea1723f5aa57b501/`.
+`artifacts/evals/retrieval/ablations/b61200968f62537af85c8812376b9790a45dfb5f/`.
 `comparison.json` SHA-256 is
-`56db437d05a08de2a3bb78d54ef3b54c63db532c156dc52fd8c7dc5d4544adf9`;
+`2292fca3436ee757236f4d8cc0cd7a88241f8c06a3104e2ef41c09bfd0c79a21`;
 `manifest.sha256` SHA-256 is
-`574ee0edd2d14cc5a8486916c9bc37d9737566d47f5408425a5e4876fe72d896`.
+`1585a47a1e85fbdee5c7caa7b79ff929fb6a6bc2205d76ad36b4dcf1b21875a8`.
 The manifest records each raw summary, per-query file, empty error file, and the
 comparison artifact.
+
+The canonical rerun reproduced the superseded diagnostic run's deterministic
+quality metrics exactly. Latency observations changed, as expected for a
+single-pass local/service measurement; only the provenance-hardened rerun is
+canonical.
 
 This benchmark does not support the proposed resume statement. Dense → full
 improved Recall@5 by 0.0306 absolute (3.45% relative) and nDCG@10 by only 0.0046

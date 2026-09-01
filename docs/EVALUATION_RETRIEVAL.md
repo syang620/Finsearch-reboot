@@ -82,7 +82,10 @@ The frozen definition is
 all four modes with:
 
 ```bash
+QDRANT_HOST=<VERIFIED_HOST> QDRANT_PORT=<VERIFIED_PORT> \
 QDRANT_COLLECTION_NAME=<FROZEN_COLLECTION> \
+QWEN3_EMBED_API_URL=<VERIFIED_OLLAMA_BASE_URL>/api/embed \
+QWEN3_EMBED_MODEL=qwen3-embedding:8b \
 PYTHONPATH=src <PYTHON> scripts/evals/retrieval/run_retrieval_ablation_v1.py \
   --evaluated-sha <IMPLEMENTATION_SHA> \
   --out-root artifacts/evals/retrieval/ablations/<IMPLEMENTATION_SHA> \
@@ -92,9 +95,21 @@ PYTHONPATH=src <PYTHON> scripts/evals/retrieval/run_retrieval_ablation_v1.py \
   --expected-embedding-digest <OLLAMA_MODEL_DIGEST>
 ```
 
-The runner refuses existing output, verifies dataset and corpus identity before
-and after the run, uses a fresh embedding cache per mode, disables RAGAS, checks
-component traces, and writes `comparison.json` plus `manifest.sha256`.
+The runner refuses existing output and requires a clean tracked checkout whose
+`HEAD` equals `--evaluated-sha`; untracked files are allowed only under
+`artifacts/`. It checks the collection against the frozen payload/vector
+fingerprint before evaluation and again after evaluation. The verified Qdrant
+client, collection, embedding endpoint, and embedding model are passed explicitly
+to every applicable mode; conflicting environment configuration fails closed.
+It uses a fresh embedding cache per mode, disables RAGAS, checks component and
+runtime-provenance traces, and writes `comparison.json` plus `manifest.sha256`.
+
+The controlled modes require `min_total_score = 0`; nonzero thresholds are
+rejected because their semantics are not comparable across lexical, vector,
+fused, and reranked scores. Evaluation depth is capped at the frozen 10-candidate
+deduplication limit. Standalone evaluations can select the embedding service with
+`--text-embed-api-url` and `--text-embed-model`; their defaults follow the
+`QWEN3_EMBED_API_URL` and `QWEN3_EMBED_MODEL` environment settings.
 
 Disable RAGAS if Ollama judge is unavailable:
 
