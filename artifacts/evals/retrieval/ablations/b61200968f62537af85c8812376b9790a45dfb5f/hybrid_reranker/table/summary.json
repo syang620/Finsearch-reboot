@@ -1,0 +1,56 @@
+{
+  "num_queries": 12,
+  "num_valid_queries": 12,
+  "num_failures": 0,
+  "deterministic": {
+    "hit@1": 0.8333333333333334,
+    "hit@10": 0.9166666666666666,
+    "hit@3": 0.9166666666666666,
+    "hit@5": 0.9166666666666666,
+    "mrr@1": 0.8333333333333334,
+    "mrr@10": 0.8611111111111112,
+    "mrr@3": 0.8611111111111112,
+    "mrr@5": 0.8611111111111112,
+    "ndcg@1": 0.8333333333333334,
+    "ndcg@10": 0.8545898188877837,
+    "ndcg@3": 0.7808469043561349,
+    "ndcg@5": 0.8545898188877837,
+    "recall@1": 0.39166666666666666,
+    "recall@10": 0.9166666666666666,
+    "recall@3": 0.7444444444444445,
+    "recall@5": 0.9166666666666666
+  },
+  "ragas": {},
+  "config": {
+    "eval_path": "data/evals/retrieval/table/table_eval_v1.jsonl",
+    "top_k": 10,
+    "k_values": [
+      1,
+      3,
+      5,
+      10
+    ],
+    "eval_mode": "table",
+    "default_ticker": "AAPL",
+    "default_fiscal_year": 2024,
+    "default_form_type": "10-K",
+    "default_doc_types_table": [
+      "table"
+    ],
+    "default_doc_types_text": [
+      "table"
+    ],
+    "min_total_score": 0.0,
+    "enable_ragas": false,
+    "retrieval_mode": "hybrid_reranker",
+    "text_dense_only": false,
+    "text_embed_api_url": "http://localhost:11434/api/embed",
+    "text_embed_model": "qwen3-embedding:8b",
+    "qdrant_host": "localhost",
+    "qdrant_port": 6333,
+    "qdrant_collection_name": "sec_docs_dense_bm25_pr2_63dcec0",
+    "timing_ms": {
+      "total": 16383
+    }
+  }
+}

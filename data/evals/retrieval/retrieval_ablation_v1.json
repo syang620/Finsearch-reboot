@@ -1,0 +1,76 @@
+{
+  "benchmark_id": "retrieval_ablation_v1",
+  "datasets": {
+    "table": {
+      "enabled": true,
+      "path": "data/evals/retrieval/table/table_eval_v1.jsonl",
+      "sha256": "e20c375fef3bd88553e22e6210849c9127b1cfb3d13ca2dd1ae866754f4b592e",
+      "case_count": 12,
+      "doc_types": ["table"]
+    },
+    "text": {
+      "enabled": false,
+      "path": "data/evals/retrieval/text/aapl_2024_10k_text_retrieval_eval_split_with_uids.jsonl",
+      "sha256": "a44b51bc2cf733e757116a3ca79c4ef0fca7dc5c3ea2e7e6a7f320be78a1b888",
+      "case_count": 75,
+      "doc_types": ["text_chunk"],
+      "exclusion_reason": "Incompatible with the frozen PR2 collection: labeled split IDs 99 and 100 are absent, collection payloads do not preserve relevant_chunk_uids, and the dataset evidence uses a different chunk numbering lineage. Labels were not remapped or regenerated."
+    }
+  },
+  "common": {
+    "ticker": "AAPL",
+    "fiscal_year": 2024,
+    "form_type": "10-K",
+    "top_k": 10,
+    "min_total_score": 0.0,
+    "k_values": [1, 3, 5, 10],
+    "candidate_top_k": 50,
+    "branch_limit": 500,
+    "dedupe_limit": 10,
+    "dense_vector": "dense",
+    "bm25_vector": "bm25",
+    "rrf_k": 60,
+    "dense_weight": 1.0,
+    "bm25_weight": 1.0,
+    "embedding_model": "qwen3-embedding:8b",
+    "reranker_model": "Qwen/Qwen3-Reranker-8B",
+    "ragas_enabled": false
+  },
+  "supersedes": {
+    "evaluated_sha": "5c9ed8ff19255a4f07f93410ea1723f5aa57b501",
+    "reason": "Superseded because the original harness did not enforce Qdrant and embedding endpoint provenance or a clean tracked checkout."
+  },
+  "modes": {
+    "bm25_only": {
+      "dense_enabled": false,
+      "bm25_enabled": true,
+      "reranker_enabled": false
+    },
+    "dense_only": {
+      "dense_enabled": true,
+      "bm25_enabled": false,
+      "reranker_enabled": false
+    },
+    "hybrid": {
+      "dense_enabled": true,
+      "bm25_enabled": true,
+      "reranker_enabled": false
+    },
+    "hybrid_reranker": {
+      "dense_enabled": true,
+      "bm25_enabled": true,
+      "reranker_enabled": true
+    }
+  },
+  "corpus_provenance": {
+    "collection_fingerprint_sha256": "103a1131b373fb651727048b6a875e4bd96b64754ebafd41c42dc6dcccfc5df8",
+    "source_html": "data/html_filings/AAPL/10-K/10-K_2024.html",
+    "source_html_sha256": "24a830a0f1256e371d36a1f7f72e5e85a38037d1de2f6f966eb8457db42ff6d6",
+    "text_rows": 101,
+    "text_sha256": "a2035e3048c9d69945a6851e9f92b6eb64d97ea15ef1ab8fe1812b25e8cd08e0",
+    "table_rows": 48,
+    "tables_sha256": "a60a91dd358656c3667b9700a4e3a2fde5558a67900f62c0a22893fdaf2a6b1d",
+    "text_split_rows": 107,
+    "text_split_sha256": "856f6aec30636750141a695d864eb08da182160e25143b393b49bc7769436f71"
+  }
+}

@@ -14,9 +14,13 @@ from evals.retrieval_eval_contracts import (
     load_retrieval_eval_examples,
 )
 from evals.retrieval_metrics import hit_at_k, mrr_at_k, ndcg_at_k, recall_at_k
-from mcp_server.tools.sec_retrieval import retrieve_scored_points, sec_retrieve_tables
+from evals.retrieval_ablation import RETRIEVAL_MODES, retrieve_ablation_points
+from mcp_server.tools.sec_retrieval import (
+    QWEN3_EMBED_API_URL,
+    QWEN3_EMBED_MODEL,
+    RERANK_CANDIDATE_LIMIT,
+)
 from qdrant_client import QdrantClient, models
-from retrieval.evaluator import dense_search_sec_docs, embed_query_qwen3
 
 _TABLE_INDEX_RE = re.compile(r"::table::(\d+)")
 _TEXT_DOC_ID_RE = re.compile(r"(?P<base>.+?::text::.+?)(?::+split::\d+)?$")
@@ -32,38 +36,6 @@ def _parse_table_index_from_doc_id(doc_id: str) -> Optional[int]:
         return int(m.group(1))
     except ValueError:
         return None
-
-
-def _extract_payload(top_table: Dict[str, Any]) -> Dict[str, Any]:
-    if any(key in top_table for key in ("doc_id", "content", "match_text", "section_path", "table_index")):
-        return top_table
-
-    table_obj = top_table.get("table")
-    if isinstance(table_obj, dict):
-        payload = table_obj.get("payload")
-        if isinstance(payload, dict):
-            return payload
-    # sec_retrieve_tables currently returns `table` as a qdrant ScoredPoint object.
-    payload_obj = getattr(table_obj, "payload", None)
-    if isinstance(payload_obj, dict):
-        return payload_obj
-    if hasattr(table_obj, "model_dump"):
-        try:
-            dumped = table_obj.model_dump()
-            payload = dumped.get("payload")
-            if isinstance(payload, dict):
-                return payload
-        except Exception:
-            pass
-    if hasattr(table_obj, "dict"):
-        try:
-            dumped = table_obj.dict()
-            payload = dumped.get("payload")
-            if isinstance(payload, dict):
-                return payload
-        except Exception:
-            pass
-    return {}
 
 
 def _extract_context(payload: Dict[str, Any]) -> str:
@@ -88,12 +60,6 @@ def _recall_at_k_doc_ids(retrieved_doc_ids: Sequence[str], relevant_doc_ids: Seq
         return 0.0
     hits = {str(x).strip() for x in retrieved_doc_ids[:k] if str(x).strip() in relevant}
     return float(len(hits)) / float(len(relevant))
-
-
-def _build_text_dense_client() -> QdrantClient:
-    host = os.getenv("QDRANT_HOST", "localhost")
-    port = int(os.getenv("QDRANT_PORT", "6333"))
-    return QdrantClient(host=host, port=port)
 
 
 def _extract_payload_from_scored_point(point: models.ScoredPoint) -> Dict[str, Any]:
@@ -145,29 +111,60 @@ def run_retrieval_eval(
     default_fiscal_year: int = 2024,
     default_form_type: str = "10-K",
     default_doc_types: Optional[List[str]] = None,
-    min_total_score: int = 0,
+    min_total_score: float = 0.0,
     enable_ragas: bool = True,
+    retrieval_mode: str = "hybrid_reranker",
     text_dense_only: bool = False,
-    text_embed_api_url: str = "http://localhost:11434/api/embed",
-    text_embed_model: str = "qwen3-embedding:8b",
+    text_embed_api_url: Optional[str] = None,
+    text_embed_model: Optional[str] = None,
+    retrieval_client: Optional[QdrantClient] = None,
+    qdrant_host: Optional[str] = None,
+    qdrant_port: Optional[int] = None,
+    qdrant_collection_name: Optional[str] = None,
     ragas_config: Optional[RagasRetrievalConfig] = None,
     allow_empty_labels: bool = False,
     fail_fast: bool = False,
 ) -> Tuple[RetrievalEvalSummary, List[RetrievalEvalRow], List[Dict[str, Any]]]:
+    if float(min_total_score or 0.0) != 0.0:
+        raise ValueError(
+            "min_total_score must be 0 for retrieval ablations because BM25, dense, "
+            "RRF, and reranker scores are not comparable."
+        )
+    ks = sorted({int(k) for k in k_values if int(k) > 0})
+    if not ks:
+        ks = [1, 3, 5, 10]
+    max_k = max(top_k, max(ks))
+    if max_k > RERANK_CANDIDATE_LIMIT:
+        raise ValueError(
+            f"Retrieval evaluation depth must not exceed {RERANK_CANDIDATE_LIMIT}; "
+            "larger depths are not comparable across ablation modes."
+        )
+
+    resolved_embed_api_url = text_embed_api_url or os.getenv(
+        "QWEN3_EMBED_API_URL", QWEN3_EMBED_API_URL
+    )
+    resolved_embed_model = text_embed_model or os.getenv(
+        "QWEN3_EMBED_MODEL", QWEN3_EMBED_MODEL
+    )
     examples = load_retrieval_eval_examples(eval_path)
     out_path = Path(out_dir)
     out_path.mkdir(parents=True, exist_ok=True)
-    collection = os.getenv("QDRANT_COLLECTION_NAME", "sec_docs_dense_bm25")
+    collection = qdrant_collection_name or os.getenv(
+        "QDRANT_COLLECTION_NAME", "sec_docs_dense_bm25"
+    )
+
+    retrieval_mode = str(retrieval_mode or "hybrid_reranker").strip().lower()
+    if text_dense_only:
+        retrieval_mode = "dense_only"
+    if retrieval_mode not in RETRIEVAL_MODES:
+        raise ValueError(
+            f"Unsupported retrieval_mode={retrieval_mode!r}. Expected one of: {', '.join(RETRIEVAL_MODES)}."
+        )
 
     eval_mode = str(eval_mode or "auto").strip().lower()
     if eval_mode not in {"auto", "table", "text"}:
         raise ValueError(f"Unsupported eval_mode='{eval_mode}'. Expected one of: auto, table, text.")
 
-    ks = sorted({int(k) for k in k_values if int(k) > 0})
-    if not ks:
-        ks = [1, 3, 5, 10]
-
-    max_k = max(top_k, max(ks))
     table_doc_types = default_doc_types or ["table"]
     text_doc_types = default_doc_types or ["text_chunk"]
 
@@ -176,8 +173,6 @@ def run_retrieval_eval(
     ragas_samples: List[Dict[str, Any]] = []
 
     total_start = time.perf_counter()
-    text_client: Optional[QdrantClient] = None
-
     for ex in examples:
         ex_id = ex.example_id
 
@@ -251,24 +246,35 @@ def run_retrieval_eval(
                     break
                 continue
 
+            retrieval_error: Optional[str] = None
+            retrieval_timing: Dict[str, Any] = {}
+            fused: List[models.ScoredPoint] = []
+            ranked: List[models.ScoredPoint] = []
             t0 = time.perf_counter()
-            retrieval = sec_retrieve_tables(
-                queries=[ex.query],
-                ticker=ticker,
-                fiscal_year=fiscal_year,
-                form_type=form_type,
-                doc_types=per_row_doc_types,
-                top_k=max_k,
-                min_total_score=min_total_score,
-            )
+            try:
+                _rerank_query, fused, ranked, retrieval_timing = retrieve_ablation_points(
+                    retrieval_mode=retrieval_mode,
+                    query=ex.query,
+                    ticker=ticker,
+                    fiscal_year=fiscal_year,
+                    form_type=form_type,
+                    doc_types=per_row_doc_types,
+                    client=retrieval_client,
+                    qdrant_host=qdrant_host,
+                    qdrant_port=qdrant_port,
+                    collection_name=collection,
+                    embed_api_url=resolved_embed_api_url,
+                    embed_model=resolved_embed_model,
+                )
+            except Exception as exc:
+                retrieval_error = str(exc)
             elapsed_ms = int((time.perf_counter() - t0) * 1000)
 
-            row.retrieval_ok = bool(retrieval.ok)
-            row.retrieval_error = retrieval.error
+            row.retrieval_ok = retrieval_error is None
+            row.retrieval_error = retrieval_error
 
-            top_tables = getattr(retrieval, "top_tables", None) or getattr(retrieval, "results", None) or []
-            for item in top_tables[:max_k]:
-                payload = _extract_payload(item)
+            for item in ranked[:max_k]:
+                payload = _extract_payload_from_scored_point(item)
                 doc_id = str(payload.get("doc_id") or "")
                 table_index = payload.get("table_index")
                 if table_index is None:
@@ -297,15 +303,29 @@ def run_retrieval_eval(
                 metrics[f"hit@{k}"] = hit_at_k(relevant_flags, k)
                 metrics[f"recall@{k}"] = recall_at_k(retrieved_indices, relevant_set, k)
                 metrics[f"mrr@{k}"] = mrr_at_k(relevant_flags, k)
-                metrics[f"ndcg@{k}"] = ndcg_at_k(relevant_flags, k)
+                metrics[f"ndcg@{k}"] = ndcg_at_k(
+                    relevant_flags,
+                    k,
+                    num_relevant=len(relevant_set),
+                )
             row.metrics = metrics
 
+            timing_trace = {
+                key: value
+                for key, value in retrieval_timing.items()
+                if key not in {"components", "counts", "provenance"}
+            }
             row.trace = {
                 "timing_ms": {
                     "retrieve": elapsed_ms,
-                    "tool_total": ((retrieval.trace or {}).get("timing_ms") or {}).get("total"),
+                    **timing_trace,
                 },
-                "counts": ((retrieval.trace or {}).get("counts") or {}),
+                "counts": {
+                    "fused_candidates": len(fused),
+                    "ranked": len(ranked),
+                },
+                "components": dict(retrieval_timing.get("components") or {}),
+                "provenance": dict(retrieval_timing.get("provenance") or {}),
             }
         else:
             if not relevant_text_doc_ids:
@@ -330,36 +350,22 @@ def run_retrieval_eval(
             fused: List[models.ScoredPoint] = []
             reranked: List[models.ScoredPoint] = []
             retrieval_error: Optional[str] = None
+            retrieval_timing: Dict[str, Any] = {}
             try:
-                if text_dense_only:
-                    if text_client is None:
-                        text_client = _build_text_dense_client()
-                    reranked = dense_search_sec_docs(
-                        ex.query,
-                        client=text_client,
-                        embed_fn=lambda query: embed_query_qwen3(
-                            query,
-                            api_url=text_embed_api_url,
-                            model=text_embed_model,
-                        ),
-                        collection_name=collection,
-                        using_dense="dense",
-                        top_k=max_k,
-                        doc_types=per_row_doc_types,
-                        ticker=ticker,
-                        fiscal_year=fiscal_year,
-                        form_type=form_type,
-                    )
-                    rerank_query = str(ex.query)
-                    fused = []
-                else:
-                    rerank_query, fused, reranked, _retrieval_timing = retrieve_scored_points(
-                        queries=[ex.query],
-                        ticker=ticker,
-                        fiscal_year=fiscal_year,
-                        form_type=form_type,
-                        doc_types=per_row_doc_types,
-                    )
+                rerank_query, fused, reranked, retrieval_timing = retrieve_ablation_points(
+                    retrieval_mode=retrieval_mode,
+                    query=ex.query,
+                    ticker=ticker,
+                    fiscal_year=fiscal_year,
+                    form_type=form_type,
+                    doc_types=per_row_doc_types,
+                    client=retrieval_client,
+                    qdrant_host=qdrant_host,
+                    qdrant_port=qdrant_port,
+                    collection_name=collection,
+                    embed_api_url=resolved_embed_api_url,
+                    embed_model=resolved_embed_model,
+                )
             except Exception as exc:
                 retrieval_error = str(exc)
             elapsed_ms = int((time.perf_counter() - t0) * 1000)
@@ -367,13 +373,16 @@ def run_retrieval_eval(
             row.retrieval_ok = retrieval_error is None
             row.retrieval_error = retrieval_error
 
-            for point in reranked[:max_k]:
+            for point in reranked:
                 payload = _extract_payload_from_scored_point(point)
                 doc_id = _normalize_text_doc_id(str(payload.get("doc_id") or ""))
-                retrieved_doc_ids.append(doc_id)
+                if doc_id and doc_id not in retrieved_doc_ids:
+                    retrieved_doc_ids.append(doc_id)
                 context = _extract_context(payload)
                 if context:
                     contexts.append(context)
+                if len(retrieved_doc_ids) >= max_k:
+                    break
 
             row.retrieved_doc_ids = retrieved_doc_ids
             row.retrieved_table_indices = []
@@ -386,19 +395,31 @@ def run_retrieval_eval(
                     metrics[f"hit@{k}"] = hit_at_k(relevant_flags, k)
                     metrics[f"recall@{k}"] = _recall_at_k_doc_ids(retrieved_doc_ids, relevant_text_doc_ids, k)
                     metrics[f"mrr@{k}"] = mrr_at_k(relevant_flags, k)
-                    metrics[f"ndcg@{k}"] = ndcg_at_k(relevant_flags, k)
+                    metrics[f"ndcg@{k}"] = ndcg_at_k(
+                        relevant_flags,
+                        k,
+                        num_relevant=len(relevant_set),
+                    )
             row.metrics = metrics
 
+            timing_trace = {
+                key: value
+                for key, value in retrieval_timing.items()
+                if key not in {"components", "counts", "provenance"}
+            }
             row.trace = {
                 "timing_ms": {
                     "retrieve": elapsed_ms,
+                    **timing_trace,
                 },
                 "counts": {
-                    "fused_candidates": len(fused) if not text_dense_only else 0,
+                    "fused_candidates": len(fused),
                     "reranked": len(reranked),
                     "scored": len(reranked[:max_k]),
                 },
                 "rerank_query": rerank_query,
+                "components": dict(retrieval_timing.get("components") or {}),
+                "provenance": dict(retrieval_timing.get("provenance") or {}),
             }
 
         rows.append(row)
@@ -459,11 +480,15 @@ def run_retrieval_eval(
             "default_form_type": default_form_type,
             "default_doc_types_table": table_doc_types,
             "default_doc_types_text": text_doc_types,
-            "min_total_score": int(min_total_score),
+            "min_total_score": float(min_total_score),
             "enable_ragas": bool(enable_ragas),
+            "retrieval_mode": retrieval_mode,
             "text_dense_only": bool(text_dense_only),
-            "text_embed_api_url": text_embed_api_url,
-            "text_embed_model": text_embed_model,
+            "text_embed_api_url": resolved_embed_api_url,
+            "text_embed_model": resolved_embed_model,
+            "qdrant_host": qdrant_host,
+            "qdrant_port": qdrant_port,
+            "qdrant_collection_name": collection,
             "timing_ms": {"total": total_ms},
         },
     )

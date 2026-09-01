@@ -41,7 +41,7 @@ def recall_at_k(
     return float(len(hits)) / float(len(relevant_set))
 
 
-def ndcg_at_k(relevant_flags: Sequence[bool], k: int) -> float:
+def ndcg_at_k(relevant_flags: Sequence[bool], k: int, *, num_relevant: Optional[int] = None) -> float:
     if k <= 0:
         return 0.0
 
@@ -55,7 +55,8 @@ def ndcg_at_k(relevant_flags: Sequence[bool], k: int) -> float:
             continue
         dcg += r / math.log2(i + 1)
 
-    ideal = sorted(rel, reverse=True)
+    ideal_relevant = sum(1 for value in rel if value) if num_relevant is None else max(int(num_relevant), 0)
+    ideal = [1.0] * min(ideal_relevant, k)
     idcg = 0.0
     for i, r in enumerate(ideal, start=1):
         if r <= 0.0:
