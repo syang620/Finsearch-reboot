@@ -2002,17 +2002,40 @@ def _structured_fact_evidence_from_result(
 
     value = tool_result.get("value")
     tool_metric_id = _normalize_text(tool_result.get("metric_id"))
+    resolved_ticker = _normalize_text(result.get("resolved_ticker"))
+    tool_ticker = _normalize_text(tool_result.get("ticker"))
+    resolved_year = _normalize_int(result.get("resolved_fiscal_year"))
+    tool_year = _normalize_int(tool_result.get("fiscal_year"))
+    raw_components = tool_result.get("components")
     if (
         not resolved_metric_id
         or (tool_metric_id is not None and tool_metric_id != resolved_metric_id)
+        or (
+            resolved_ticker is not None
+            and tool_ticker is not None
+            and resolved_ticker.upper() != tool_ticker.upper()
+        )
+        or (
+            resolved_year is not None
+            and tool_year is not None
+            and resolved_year != tool_year
+        )
         or isinstance(value, bool)
         or not isinstance(value, (int, float))
         or not math.isfinite(float(value))
+        or (raw_components is not None and not isinstance(raw_components, list))
+        or (
+            isinstance(raw_components, list)
+            and any(not isinstance(component, dict) for component in raw_components)
+        )
     ):
         return None, _structured_fact_issue(
             result=result,
             code="STRUCTURED_FACT_INVALID_EVIDENCE",
-            message="Successful structured fact result did not contain a finite numeric value and metric ID.",
+            message=(
+                "Successful structured fact result contained invalid execution "
+                "identity, numeric value, or component data."
+            ),
             severity=Severity.ERROR,
         )
 
@@ -2024,11 +2047,7 @@ def _structured_fact_evidence_from_result(
         if tool_form_raw is not None
         else packet.metadata.form_type
     )
-    components = [
-        dict(component)
-        for component in (tool_result.get("components") or [])
-        if isinstance(component, dict)
-    ]
+    components = [dict(component) for component in (raw_components or [])]
     try:
         evidence = StructuredFactEvidence(
             metric_id=resolved_metric_id,
@@ -2038,12 +2057,12 @@ def _structured_fact_evidence_from_result(
             unit=_normalize_text(tool_result.get("unit")),
             ticker=(
                 _normalize_text(tool_result.get("ticker"))
-                or _normalize_text(result.get("resolved_ticker"))
+                or resolved_ticker
                 or packet.metadata.ticker
             ),
             fiscal_year=(
                 _normalize_int(tool_result.get("fiscal_year"))
-                or _normalize_int(result.get("resolved_fiscal_year"))
+                or resolved_year
                 or packet.metadata.fiscal_year
             ),
             form_type=form_type,

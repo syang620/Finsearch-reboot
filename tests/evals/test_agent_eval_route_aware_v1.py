@@ -460,6 +460,38 @@ def test_conflicting_tool_metric_is_not_counted_as_successful_execution() -> Non
     assert row.structured_evidence["successful_execution_results"] == 0
 
 
+@pytest.mark.parametrize(
+    "tool_overrides",
+    [
+        {"ticker": "MSFT"},
+        {"fiscal_year": 2023},
+        {"components": 1},
+        {"components": ["not-a-component"]},
+    ],
+)
+def test_invalid_provenance_is_not_counted_as_successful_execution(
+    tool_overrides,
+) -> None:
+    output = _run_output("structured_fact")
+    output["structured_fact_results"][0]["tool_result"].update(
+        {
+            "metric_id": "revenue",
+            "value": 391_000_000_000.0,
+            "ticker": "AAPL",
+            "fiscal_year": 2024,
+            **tool_overrides,
+        }
+    )
+
+    row, errors, _sample = evaluate_run_output(
+        _example("structured_fact"),
+        output,
+    )
+
+    assert errors == []
+    assert row.structured_evidence["successful_execution_results"] == 0
+
+
 def test_interrupted_run_does_not_require_analyst_or_packet() -> None:
     planner = _planner_payload("kb")
     planner.update(

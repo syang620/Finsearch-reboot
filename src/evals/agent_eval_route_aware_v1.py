@@ -48,6 +48,15 @@ def _normalize_lower(value: Any) -> Optional[str]:
     return normalized.lower() if normalized else None
 
 
+def _normalize_int(value: Any) -> Optional[int]:
+    if value is None or isinstance(value, bool):
+        return None
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
+
 def _normalize_form_type(value: Any) -> Optional[str]:
     normalized = _normalize_text(getattr(value, "value", value))
     return normalized.upper() if normalized else None
@@ -268,11 +277,48 @@ def _structured_evidence_diagnostics(
             if isinstance(tool_result, dict)
             else None
         )
+        resolved_ticker = _normalize_text(result.get("resolved_ticker"))
+        tool_ticker = (
+            _normalize_text(tool_result.get("ticker"))
+            if isinstance(tool_result, dict)
+            else None
+        )
+        resolved_year = _normalize_int(result.get("resolved_fiscal_year"))
+        tool_year = (
+            _normalize_int(tool_result.get("fiscal_year"))
+            if isinstance(tool_result, dict)
+            else None
+        )
+        raw_components = (
+            tool_result.get("components")
+            if isinstance(tool_result, dict)
+            else None
+        )
         if (
             _normalize_lower(result.get("resolver_status")) == "resolved"
             and resolved_metric_id is not None
             and isinstance(tool_result, dict)
             and (tool_metric_id is None or tool_metric_id == resolved_metric_id)
+            and (
+                resolved_ticker is None
+                or tool_ticker is None
+                or resolved_ticker.upper() == tool_ticker.upper()
+            )
+            and (
+                resolved_year is None
+                or tool_year is None
+                or resolved_year == tool_year
+            )
+            and (
+                raw_components is None
+                or (
+                    isinstance(raw_components, list)
+                    and all(
+                        isinstance(component, dict)
+                        for component in raw_components
+                    )
+                )
+            )
             and tool_result.get("ok") is True
             and _normalize_lower(tool_result.get("status")) == "ok"
             and not isinstance(value, bool)

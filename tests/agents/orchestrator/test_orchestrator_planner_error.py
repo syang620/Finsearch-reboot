@@ -170,6 +170,43 @@ def test_structured_fact_evidence_rejects_conflicting_tool_metric_id() -> None:
     assert issue.code == "STRUCTURED_FACT_INVALID_EVIDENCE"
 
 
+@pytest.mark.parametrize(
+    "tool_overrides",
+    [
+        {"ticker": "MSFT"},
+        {"fiscal_year": 2023},
+        {"components": 1},
+        {"components": ["not-a-component"]},
+    ],
+)
+def test_structured_fact_evidence_rejects_conflicting_or_malformed_provenance(
+    tool_overrides,
+) -> None:
+    tool_result = {
+        "ok": True,
+        "status": "ok",
+        "metric_id": "revenue",
+        "value": 391_000_000_000.0,
+        "ticker": "AAPL",
+        "fiscal_year": 2024,
+    }
+    tool_result.update(tool_overrides)
+    evidence, issue = _structured_fact_evidence_from_result(
+        packet=_structured_evidence_packet(),
+        result={
+            "resolved_metric_id": "revenue",
+            "resolved_ticker": "AAPL",
+            "resolved_fiscal_year": 2024,
+            "resolver_status": "resolved",
+            "tool_result": tool_result,
+        },
+    )
+
+    assert evidence is None
+    assert issue is not None
+    assert issue.code == "STRUCTURED_FACT_INVALID_EVIDENCE"
+
+
 def _runtime_output(
     *,
     query: str,
