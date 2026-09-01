@@ -216,6 +216,62 @@ def test_retrieval_ablation_rejects_nonzero_minimum_score(tmp_path: Path, value:
     assert not (tmp_path / "out").exists()
 
 
+@pytest.mark.parametrize(
+    ("top_k", "k_values"),
+    [
+        (11, (1, 3, 5, 10)),
+        (10, (1, 3, 5, 11)),
+    ],
+)
+def test_retrieval_ablation_rejects_depth_above_comparable_limit(
+    tmp_path: Path,
+    top_k: int,
+    k_values: tuple[int, ...],
+) -> None:
+    with pytest.raises(ValueError, match="depth must not exceed 10"):
+        run_retrieval_eval(
+            eval_path=str(tmp_path / "missing.jsonl"),
+            out_dir=str(tmp_path / "out"),
+            top_k=top_k,
+            k_values=k_values,
+            enable_ragas=False,
+        )
+    assert not (tmp_path / "out").exists()
+
+
+def test_standalone_evaluator_uses_environment_embedding_defaults(tmp_path: Path) -> None:
+    eval_path = tmp_path / "eval.jsonl"
+    eval_path.write_text(
+        json.dumps({"query_id": "q1", "query": "query", "relevant_doc_ids": [1]}) + "\n",
+        encoding="utf-8",
+    )
+    point = _point("00000000-0000-0000-0000-000000000001", "AAPL_10-K_2024::text::1")
+    with (
+        patch.dict(
+            os.environ,
+            {
+                "QWEN3_EMBED_API_URL": "http://environment.example/api/embed",
+                "QWEN3_EMBED_MODEL": "environment-model",
+            },
+            clear=False,
+        ),
+        patch(
+            "evals.retrieval_eval_runner.retrieve_ablation_points",
+            return_value=("query", [point], [point], {"components": ABLATION_CONFIGS["dense_only"]}),
+        ) as retrieval,
+    ):
+        run_retrieval_eval(
+            eval_path=str(eval_path),
+            out_dir=str(tmp_path / "out"),
+            eval_mode="text",
+            retrieval_mode="dense_only",
+            enable_ragas=False,
+        )
+
+    assert retrieval.call_args.kwargs["embed_api_url"] == "http://environment.example/api/embed"
+    assert retrieval.call_args.kwargs["embed_model"] == "environment-model"
+
+
 def _init_git_repo(path: Path) -> str:
     subprocess.run(["git", "init", "-q"], cwd=path, check=True)
     subprocess.run(["git", "config", "user.name", "Test"], cwd=path, check=True)

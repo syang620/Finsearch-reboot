@@ -15,6 +15,11 @@ from evals.retrieval_eval_contracts import (
 )
 from evals.retrieval_metrics import hit_at_k, mrr_at_k, ndcg_at_k, recall_at_k
 from evals.retrieval_ablation import RETRIEVAL_MODES, retrieve_ablation_points
+from mcp_server.tools.sec_retrieval import (
+    QWEN3_EMBED_API_URL,
+    QWEN3_EMBED_MODEL,
+    RERANK_CANDIDATE_LIMIT,
+)
 from qdrant_client import QdrantClient, models
 
 _TABLE_INDEX_RE = re.compile(r"::table::(\d+)")
@@ -110,8 +115,8 @@ def run_retrieval_eval(
     enable_ragas: bool = True,
     retrieval_mode: str = "hybrid_reranker",
     text_dense_only: bool = False,
-    text_embed_api_url: str = "http://localhost:11434/api/embed",
-    text_embed_model: str = "qwen3-embedding:8b",
+    text_embed_api_url: Optional[str] = None,
+    text_embed_model: Optional[str] = None,
     retrieval_client: Optional[QdrantClient] = None,
     qdrant_host: Optional[str] = None,
     qdrant_port: Optional[int] = None,
@@ -125,6 +130,22 @@ def run_retrieval_eval(
             "min_total_score must be 0 for retrieval ablations because BM25, dense, "
             "RRF, and reranker scores are not comparable."
         )
+    ks = sorted({int(k) for k in k_values if int(k) > 0})
+    if not ks:
+        ks = [1, 3, 5, 10]
+    max_k = max(top_k, max(ks))
+    if max_k > RERANK_CANDIDATE_LIMIT:
+        raise ValueError(
+            f"Retrieval evaluation depth must not exceed {RERANK_CANDIDATE_LIMIT}; "
+            "larger depths are not comparable across ablation modes."
+        )
+
+    resolved_embed_api_url = text_embed_api_url or os.getenv(
+        "QWEN3_EMBED_API_URL", QWEN3_EMBED_API_URL
+    )
+    resolved_embed_model = text_embed_model or os.getenv(
+        "QWEN3_EMBED_MODEL", QWEN3_EMBED_MODEL
+    )
     examples = load_retrieval_eval_examples(eval_path)
     out_path = Path(out_dir)
     out_path.mkdir(parents=True, exist_ok=True)
@@ -144,11 +165,6 @@ def run_retrieval_eval(
     if eval_mode not in {"auto", "table", "text"}:
         raise ValueError(f"Unsupported eval_mode='{eval_mode}'. Expected one of: auto, table, text.")
 
-    ks = sorted({int(k) for k in k_values if int(k) > 0})
-    if not ks:
-        ks = [1, 3, 5, 10]
-
-    max_k = max(top_k, max(ks))
     table_doc_types = default_doc_types or ["table"]
     text_doc_types = default_doc_types or ["text_chunk"]
 
@@ -247,8 +263,8 @@ def run_retrieval_eval(
                     qdrant_host=qdrant_host,
                     qdrant_port=qdrant_port,
                     collection_name=collection,
-                    embed_api_url=text_embed_api_url,
-                    embed_model=text_embed_model,
+                    embed_api_url=resolved_embed_api_url,
+                    embed_model=resolved_embed_model,
                 )
             except Exception as exc:
                 retrieval_error = str(exc)
@@ -347,8 +363,8 @@ def run_retrieval_eval(
                     qdrant_host=qdrant_host,
                     qdrant_port=qdrant_port,
                     collection_name=collection,
-                    embed_api_url=text_embed_api_url,
-                    embed_model=text_embed_model,
+                    embed_api_url=resolved_embed_api_url,
+                    embed_model=resolved_embed_model,
                 )
             except Exception as exc:
                 retrieval_error = str(exc)
@@ -466,8 +482,8 @@ def run_retrieval_eval(
             "enable_ragas": bool(enable_ragas),
             "retrieval_mode": retrieval_mode,
             "text_dense_only": bool(text_dense_only),
-            "text_embed_api_url": text_embed_api_url,
-            "text_embed_model": text_embed_model,
+            "text_embed_api_url": resolved_embed_api_url,
+            "text_embed_model": resolved_embed_model,
             "qdrant_host": qdrant_host,
             "qdrant_port": qdrant_port,
             "qdrant_collection_name": collection,

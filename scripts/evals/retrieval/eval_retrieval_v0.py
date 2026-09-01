@@ -49,6 +49,14 @@ def build_parser() -> argparse.ArgumentParser:
         help="Optional override doc_types (CSV). Leave empty to use mode defaults.",
     )
     p.add_argument("--min-total-score", type=float, default=0.0)
+    p.add_argument(
+        "--text-embed-api-url",
+        default=os.getenv("QWEN3_EMBED_API_URL", "http://localhost:11434/api/embed"),
+    )
+    p.add_argument(
+        "--text-embed-model",
+        default=os.getenv("QWEN3_EMBED_MODEL", "qwen3-embedding:8b"),
+    )
 
     p.add_argument("--default-ticker", default="AAPL")
     p.add_argument("--default-fiscal-year", type=int, default=2024)
@@ -96,6 +104,8 @@ def main() -> None:
         min_total_score=float(args.min_total_score),
         enable_ragas=enable_ragas,
         retrieval_mode=args.retrieval_mode,
+        text_embed_api_url=args.text_embed_api_url,
+        text_embed_model=args.text_embed_model,
         ragas_config=ragas_config,
         fail_fast=bool(args.fail_fast),
     )
