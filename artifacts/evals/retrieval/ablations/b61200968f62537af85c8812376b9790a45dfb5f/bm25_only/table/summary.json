@@ -12,13 +12,13 @@
     "mrr@3": 0.9166666666666666,
     "mrr@5": 0.9166666666666666,
     "ndcg@1": 0.9166666666666666,
-    "ndcg@10": 0.8906486727870782,
-    "ndcg@3": 0.8581857182418556,
-    "ndcg@5": 0.8623804444939399,
+    "ndcg@10": 0.898471042886861,
+    "ndcg@3": 0.8837335179404163,
+    "ndcg@5": 0.8884034343285698,
     "recall@1": 0.43333333333333335,
     "recall@10": 0.9166666666666666,
-    "recall@3": 0.8138888888888888,
-    "recall@5": 0.8583333333333334
+    "recall@3": 0.8555555555555555,
+    "recall@5": 0.9
   },
   "ragas": {},
   "config": {
@@ -40,14 +40,17 @@
     "default_doc_types_text": [
       "table"
     ],
-    "min_total_score": 0,
+    "min_total_score": 0.0,
     "enable_ragas": false,
-    "retrieval_mode": "hybrid",
+    "retrieval_mode": "bm25_only",
     "text_dense_only": false,
     "text_embed_api_url": "http://localhost:11434/api/embed",
     "text_embed_model": "qwen3-embedding:8b",
+    "qdrant_host": "localhost",
+    "qdrant_port": 6333,
+    "qdrant_collection_name": "sec_docs_dense_bm25_pr2_63dcec0",
     "timing_ms": {
-      "total": 3335
+      "total": 126
     }
   }
 }

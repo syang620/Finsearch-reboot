@@ -40,14 +40,17 @@
     "default_doc_types_text": [
       "table"
     ],
-    "min_total_score": 0,
+    "min_total_score": 0.0,
     "enable_ragas": false,
     "retrieval_mode": "dense_only",
     "text_dense_only": false,
     "text_embed_api_url": "http://localhost:11434/api/embed",
     "text_embed_model": "qwen3-embedding:8b",
+    "qdrant_host": "localhost",
+    "qdrant_port": 6333,
+    "qdrant_collection_name": "sec_docs_dense_bm25_pr2_63dcec0",
     "timing_ms": {
-      "total": 3303
+      "total": 4381
     }
   }
 }

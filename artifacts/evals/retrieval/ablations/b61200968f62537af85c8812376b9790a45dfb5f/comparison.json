@@ -99,6 +99,7 @@
       5,
       10
     ],
+    "min_total_score": 0.0,
     "ragas_enabled": false,
     "reranker_model": "Qwen/Qwen3-Reranker-8B",
     "rrf_k": 60,
@@ -129,10 +130,16 @@
   },
   "corpus": {
     "collection": "sec_docs_dense_bm25_pr2_63dcec0",
+    "endpoint": {
+      "host": "localhost",
+      "port": 6333
+    },
+    "expected_fingerprint": "103a1131b373fb651727048b6a875e4bd96b64754ebafd41c42dc6dcccfc5df8",
     "fingerprint_after": "103a1131b373fb651727048b6a875e4bd96b64754ebafd41c42dc6dcccfc5df8",
     "fingerprint_before": "103a1131b373fb651727048b6a875e4bd96b64754ebafd41c42dc6dcccfc5df8",
     "points": 582,
     "provenance": {
+      "collection_fingerprint_sha256": "103a1131b373fb651727048b6a875e4bd96b64754ebafd41c42dc6dcccfc5df8",
       "source_html": "data/html_filings/AAPL/10-K/10-K_2024.html",
       "source_html_sha256": "24a830a0f1256e371d36a1f7f72e5e85a38037d1de2f6f966eb8457db42ff6d6",
       "table_rows": 48,
@@ -471,7 +478,7 @@
       "table": 0
     }
   },
-  "evaluated_sha": "5c9ed8ff19255a4f07f93410ea1723f5aa57b501",
+  "evaluated_sha": "b61200968f62537af85c8812376b9790a45dfb5f",
   "excluded_datasets": {
     "text": {
       "case_count": 75,
@@ -484,9 +491,9 @@
     "bm25_only": {
       "table": {
         "candidate_retrieval_ms": {
-          "mean_ms": 7.166666666666667,
-          "p50_ms": 6.5,
-          "p95_ms": 15.0
+          "mean_ms": 9.5,
+          "p50_ms": 5.5,
+          "p95_ms": 53.0
         },
         "rerank_ms": {
           "mean_ms": 0.0,
@@ -494,18 +501,18 @@
           "p95_ms": 0.0
         },
         "total_retrieval_ms": {
-          "mean_ms": 7.166666666666667,
-          "p50_ms": 6.5,
-          "p95_ms": 15.0
+          "mean_ms": 9.5,
+          "p50_ms": 5.5,
+          "p95_ms": 53.0
         }
       }
     },
     "dense_only": {
       "table": {
         "candidate_retrieval_ms": {
-          "mean_ms": 245.0,
-          "p50_ms": 244.5,
-          "p95_ms": 255.0
+          "mean_ms": 364.1666666666667,
+          "p50_ms": 225.5,
+          "p95_ms": 1314.0
         },
         "rerank_ms": {
           "mean_ms": 0.0,
@@ -513,18 +520,18 @@
           "p95_ms": 0.0
         },
         "total_retrieval_ms": {
-          "mean_ms": 245.0,
-          "p50_ms": 244.5,
-          "p95_ms": 255.0
+          "mean_ms": 364.1666666666667,
+          "p50_ms": 225.5,
+          "p95_ms": 1314.0
         }
       }
     },
     "hybrid": {
       "table": {
         "candidate_retrieval_ms": {
-          "mean_ms": 246.41666666666666,
-          "p50_ms": 244.5,
-          "p95_ms": 262.0
+          "mean_ms": 224.58333333333334,
+          "p50_ms": 221.5,
+          "p95_ms": 246.0
         },
         "rerank_ms": {
           "mean_ms": 0.0,
@@ -532,34 +539,35 @@
           "p95_ms": 0.0
         },
         "total_retrieval_ms": {
-          "mean_ms": 246.41666666666666,
-          "p50_ms": 244.5,
-          "p95_ms": 262.0
+          "mean_ms": 224.58333333333334,
+          "p50_ms": 221.5,
+          "p95_ms": 246.0
         }
       }
     },
     "hybrid_reranker": {
       "table": {
         "candidate_retrieval_ms": {
-          "mean_ms": 260.6666666666667,
-          "p50_ms": 263.5,
-          "p95_ms": 268.0
+          "mean_ms": 252.91666666666666,
+          "p50_ms": 251.0,
+          "p95_ms": 274.0
         },
         "rerank_ms": {
-          "mean_ms": 2195.0,
-          "p50_ms": 1750.0,
-          "p95_ms": 5463.0
+          "mean_ms": 1110.0833333333333,
+          "p50_ms": 902.5,
+          "p95_ms": 2941.0
         },
         "total_retrieval_ms": {
-          "mean_ms": 2455.6666666666665,
-          "p50_ms": 2016.0,
-          "p95_ms": 5728.0
+          "mean_ms": 1363.0,
+          "p50_ms": 1161.0,
+          "p95_ms": 3191.0
         }
       }
     }
   },
   "models": {
     "embedding_api_url": "http://localhost:11434/api/embed",
+    "embedding_base_url": "http://localhost:11434",
     "embedding_digest": "64b933495768fbd3b87c20583d379728a07471e0c66733a9df87cd1901b3c44b",
     "embedding_model": "qwen3-embedding:8b",
     "reranker_api_url": "https://dashscope.aliyuncs.com/api/v1/services/rerank/text-rerank/text-rerank",
@@ -569,16 +577,20 @@
   },
   "raw_artifact_sha256": {
     "bm25_only/table/errors.jsonl": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-    "bm25_only/table/per_query.jsonl": "b034868ded8614f708eac1b8ea8d864f1e1bac5e16270aa3c927c30b8f1334ba",
-    "bm25_only/table/summary.json": "48f76a8ca2c93197208a3a4f3a416df8959f3c527fb7a8ec3aabae517d64fe8b",
+    "bm25_only/table/per_query.jsonl": "3e17d5364ad4c19378336ede0ef5a6e14375feaabd55dc2450662f21c4f1bc49",
+    "bm25_only/table/summary.json": "039fbb93f1e126b5f57cc77602fe4add7842fb111122ebff6a8f9ff14c506273",
     "dense_only/table/errors.jsonl": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-    "dense_only/table/per_query.jsonl": "c949aa3b66ac84dd0b23f4eae6d17caaefe792377b7a4999825e2b30e9e2edfd",
-    "dense_only/table/summary.json": "bea50eef8538f57c6154f6147d75b100ca520208008f407b3190426417c9b300",
+    "dense_only/table/per_query.jsonl": "7d6a0a558d03c1b0b87f23bcd975616d035ef6d03eb268a8cd4fcbc08b6f9868",
+    "dense_only/table/summary.json": "fe7acc494834a038c43cf5e552efe57dc9abfba3d32e7c1723543c715bbf7553",
     "hybrid/table/errors.jsonl": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-    "hybrid/table/per_query.jsonl": "56e4d740500ed7df37429b1e9d8ec6c00ea0b80f68a4429e2f29dd190d94cd3a",
-    "hybrid/table/summary.json": "165b068abd4fa3cc64d4323576c2a4747aa54020103bff03aa7ff3d3fc2ac143",
+    "hybrid/table/per_query.jsonl": "9438fc019d53a3d6a6474a02174ae197d0ade3341f1b36a0dd83697660c7a2c2",
+    "hybrid/table/summary.json": "85b98588d1ea60bb19fa55b33e3cfdee245a4af2f8aea534f7355092c3edfa07",
     "hybrid_reranker/table/errors.jsonl": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-    "hybrid_reranker/table/per_query.jsonl": "66a869b17664cdd27114691b19b973818ee5511558df0c3a807d4779c95dc187",
-    "hybrid_reranker/table/summary.json": "c102625d04ca696c09823b0e8db320cea9caecb842aa3538b96421da34e78b9e"
+    "hybrid_reranker/table/per_query.jsonl": "4f31803799c2a2a9cd1b524e88f0a5e9c0e4ce2685dd724ef0e82bfafffc56bb",
+    "hybrid_reranker/table/summary.json": "c2549563ff6b85bc8b0e5dc610f96d6d5d2989d4d1bfe33507bfd243f859acb4"
+  },
+  "supersedes": {
+    "evaluated_sha": "5c9ed8ff19255a4f07f93410ea1723f5aa57b501",
+    "reason": "Superseded because the original harness did not enforce Qdrant and embedding endpoint provenance or a clean tracked checkout."
   }
 }
