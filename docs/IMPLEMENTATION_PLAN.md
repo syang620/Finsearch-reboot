@@ -11,7 +11,10 @@
 - PR1 — complete: planner/orchestrator runtime contracts.
 - PR2 — complete: canonical route-aware gate passed at `6aae2651518e4495c947e393ed78978b515bd482`.
 - PR3 — complete: centralized capability policy post-review verified at `8ee0d1e0c7e3ec840ff7ccf149a535433d6ca9d4`.
-- PR4 — next: native structured evidence and SEC provenance.
+- PR4 — complete: native structured evidence and SEC provenance evaluated at
+  `523ade1a17dce890a35f20acdd0b5ead537aed89`; the live diagnostic gate and
+  provenance-coverage results are recorded in `docs/EVALUATION_BASELINES.md`.
+- PR5 — next: first-class per-lane status and degradation semantics.
 
 ---
 
@@ -759,10 +762,10 @@ Add typed payload model:
 
 ```python
 class StructuredFactEvidence(BaseModel):
-    metric_id: str | None
-    metric_label: str | None
-    status: str
-    value: float | None
+    metric_id: str
+    metric_label: str
+    status: Literal["ok"]
+    value: float
     unit: str | None
 
     ticker: str | None
@@ -787,7 +790,12 @@ report_date
 
 ## 7.3 Packet behavior
 
-Only successful or meaningfully usable structured evidence should become evidence context.
+Only successful, strictly validated structured evidence becomes evidence context.
+Admission requires a resolved resolver result, `tool_result.ok == true`, tool status
+`ok`, a non-empty resolved metric ID, and a finite numeric value that is not a
+Boolean. Metric identity comes from resolver/tool output; the descriptive label
+comes from registry metadata and falls back to the metric ID. Planner free text is
+not authoritative for either field.
 
 For:
 
@@ -796,6 +804,7 @@ unsupported_metric
 unresolved
 ambiguous
 missing_inputs
+partial
 hard error
 ```
 
@@ -805,9 +814,16 @@ prefer:
 open_issues
 ```
 
-over pretending the failure message is evidentiary context.
+over pretending the failure message is evidentiary context. Partial results remain
+available as execution results and issues but do not enter analyst evidence; PR5
+owns any future degradation contract for incomplete evidence.
 
-`partial` may become context only when the analyst prompt explicitly understands that it is incomplete.
+The structured tool result is authoritative for accession number, report date,
+filed date, source URL, and returned form. Packet metadata may fill only missing
+ticker, fiscal year, and requested form; it must not fabricate filing provenance.
+Hybrid packets order successful structured facts deterministically ahead of KB
+evidence so facts required by the task remain inside the analyst's five-context
+budget.
 
 ## 7.4 Analyst prompt rendering
 
@@ -843,6 +859,14 @@ source_url
 - Structured values remain numeric.
 - SEC source URLs survive through final citations.
 - Failed structured requests do not improve context quality merely by existing.
+- Every analyst-visible successful structured fact uses the typed representation;
+  no successful fact is flattened into synthetic text.
+- Successful structured evidence required by the task cannot be silently excluded
+  by the analyst context limit.
+- Metric ID, numeric value, accession number, report date, filed date, and source
+  URL coverage are measured over successful structured evidence.
+- Non-finite, Boolean, or otherwise malformed successful values fail evidence
+  admission.
 - Analyst behavior remains backward compatible for KB evidence.
 - Hybrid evaluation can identify structured versus narrative evidence.
 

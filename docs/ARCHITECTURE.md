@@ -201,20 +201,26 @@ Primary implementations:
 - `src/mcp_server/tools/sec_metric.py`
 - `src/mcp_server/tools/sec_metric_client.py`
 
-## 7. Analyst Packet and Synthetic Structured Context
+## 7. Analyst Packet and Native Structured Evidence
 
 The orchestrator normalizes available evidence into `AnalystPacket`. KB results are
 represented as analyst-visible context items with stable context IDs and available
 filing provenance.
 
-Structured facts currently pass through a compatibility adapter. Each resolver/tool
-result is rendered into synthetic prose and stored as a `TEXT` context item. The
-synthetic item includes the requested metric, resolution status, tool status, value,
-unit, filing metadata, and components when available.
+Successful SEC metric results are represented as native `STRUCTURED_FACT` context
+items with a validated `StructuredFactEvidence` payload. Admission requires a
+resolved metric identity, a successful tool result, and a finite numeric value that
+is not a Boolean. Malformed, partial, ambiguous, unsupported, unresolved, or failed
+results remain execution results and open issues; they do not become analyst
+evidence.
 
-This means KB and structured evidence are siblings in the packet, but structured
-facts are not yet a native context kind. The original structured result remains
-available separately in the orchestrator's `structured_fact_results` output.
+The SEC tool result is authoritative for accession number, report date, filed date,
+source URL, and returned form. Packet metadata may fill only missing ticker, fiscal
+year, and requested form. The metric label comes from registry metadata, falling
+back to the authoritative metric ID. Structured facts are ordered ahead of KB
+contexts so successful facts remain inside the analyst's bounded five-context
+window. The analyst and evaluator use the same deterministic typed renderer; no
+successful structured fact is flattened into synthetic text.
 
 Shared packet models live in:
 

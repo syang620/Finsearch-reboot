@@ -690,3 +690,139 @@ dense-only, and reranking traded higher Recall@5 for lower MRR@10 and nDCG@10
 versus hybrid. With only 12 AAPL table queries and no compatible text measurement,
 no broad retrieval-quality or resume claim is technically defensible. The result
 is a baseline for future dataset repair and tuning, not evidence of improvement.
+
+## Native Structured Evidence and Provenance — 2026-09-01
+
+PR4 replaces synthetic structured-fact text with typed analyst evidence. The
+implementation was frozen before measurement; the evidence commit contains only
+raw evaluator output and documentation.
+
+### Run identity and provenance
+
+- Evaluated implementation SHA:
+  `523ade1a17dce890a35f20acdd0b5ead537aed89`.
+- Evidence artifact commit SHA: `EVIDENCE_COMMIT_SHA`.
+- Dataset: 15 cases at
+  `data/evals/agents/v1/agent_eval_routing_v1.jsonl`, SHA-256
+  `c0fbdd097d7fa1b3eb22953a3ba4e8c0e84aa70a8786e08ba78a3b305cabe6cd`.
+- Planner and analyst: `qwen2.5:14b-instruct`, Ollama digest
+  `7cdf5a0187d5c58cc5d369b255592f7841d1c4696d45a8c8a9489440385b22f6`.
+- Dense embedding: `qwen3-embedding:8b` at the local Ollama embed endpoint,
+  digest
+  `64b933495768fbd3b87c20583d379728a07471e0c66733a9df87cd1901b3c44b`.
+- Reranker: `Qwen/Qwen3-Reranker-8B` through the configured Qwen3 API backend.
+- Qdrant endpoint: `http://127.0.0.1:6334`, version 1.16.2; collection
+  `sec_docs_dense_bm25_pr2_63dcec0`, 582 green points. The full collection
+  fingerprint was
+  `103a1131b373fb651727048b6a875e4bd96b64754ebafd41c42dc6dcccfc5df8`
+  after the run.
+- Corpus provenance is the pinned PR2 AAPL FY2024 10-K corpus: tracked HTML
+  SHA-256
+  `24a830a0f1256e371d36a1f7f72e5e85a38037d1de2f6f966eb8457db42ff6d6`;
+  101-row text SHA-256
+  `a2035e3048c9d69945a6851e9f92b6eb64d97ea15ef1ab8fe1812b25e8cd08e0`;
+  48-row table SHA-256
+  `a60a91dd358656c3667b9700a4e3a2fde5558a67900f62c0a22893fdaf2a6b1d`;
+  107-row split-text SHA-256
+  `856f6aec30636750141a695d864eb08da182160e25143b393b49bc7769436f71`.
+  Corpus construction used `sec-parser==0.58.1`; the original ingestion command
+  remains unpreserved and was not reconstructed.
+- Runtime: Python 3.12.12. RAGAS was disabled.
+
+The executed command was:
+
+```bash
+QWEN3_RERANK_MODEL=Qwen/Qwen3-Reranker-8B \
+SEC_RERANK_MODEL=Qwen/Qwen3-Reranker-8B \
+QWEN3_EMBED_API_URL=http://127.0.0.1:11434/api/embed \
+QWEN3_EMBED_MODEL=qwen3-embedding:8b \
+QDRANT_URL=http://127.0.0.1:6334 \
+QDRANT_HOST=127.0.0.1 QDRANT_PORT=6334 \
+QDRANT_COLLECTION_NAME=sec_docs_dense_bm25_pr2_63dcec0 \
+SEC_USER_AGENT='<SEC_CONTACT>' \
+FINSEARCH_ORCHESTRATOR_CHECKPOINTER_PATH='<CHECKPOINTER_DB>' \
+PYTHONPATH=src <EVAL_PYTHON> scripts/evals/agents/eval_agents_v1.py \
+  --eval-path data/evals/agents/v1/agent_eval_routing_v1.jsonl \
+  --out-dir artifacts/evals/agents/v1/baselines/523ade1 \
+  --analyst-model ollama/qwen2.5:14b-instruct \
+  --planner-model ollama/qwen2.5:14b-instruct \
+  --deterministic-threshold 0.90 \
+  --max-critical-failure-rate 0
+```
+
+`<SEC_CONTACT>` replaces the SEC contact value, `<CHECKPOINTER_DB>` replaces the
+temporary SQLite path, and `<EVAL_PYTHON>` replaces the temporary virtualenv
+interpreter. Reranker credentials and endpoint were inherited from the environment
+and were neither printed nor preserved. An earlier configuration diagnostic used
+an invalid placeholder-style SEC contact and received SEC 403 responses. It was
+discarded outside the repository and is not canonical because it did not exercise
+successful structured execution.
+
+### Results
+
+The evaluator parsed all 15 cases, produced 15 valid rows and zero evaluator errors.
+The deterministic score mean was 0.950549. The strict release gate did not pass:
+two cases were critical, for a 0.133333 critical-failure rate against the required
+zero; `deterministic_gate_pass=false` and `overall_pass=false`. The empty RAGAS
+object and `ragas_gate_pass=true` mean only that RAGAS was disabled, not that an
+LLM-judge gate ran.
+
+| Diagnostic | Result |
+| --- | ---: |
+| Successful structured execution results | 7 |
+| Typed structured-fact contexts | 7 |
+| Analyst-visible typed contexts | 7 |
+| Synthetic structured-text contexts | 0 |
+| Typed representation rate | 100% |
+| Analyst visibility rate | 100% |
+| Metric ID coverage | 100% |
+| Finite numeric-value coverage | 100% |
+| Accession coverage | 100% |
+| Report-date coverage | 100% |
+| Filed-date coverage | 100% |
+| Source-URL coverage | 100% |
+
+Route, intent, metadata, KB-lane, structured-lane, structured-metric, and
+structured-status match rates were all 100%. Reported-status, effective-status,
+and failure-stage match rates were 86.67%; analyst-status match was 84.62%; citation
+match was 83.33%; tool-use match was 100%; compute match was 0%.
+
+The two critical rows were:
+
+- `AGENT_V1_HYBRID_001`, score 0.642857: the local analyst returned a schema-invalid
+  final answer and the run failed at the analyst stage. Its successful structured
+  fact was nevertheless typed, visible, and fully provenanced.
+- `AGENT_V1_ANALYST_001`, score 0.615385: the analyst returned
+  `insufficient_data`, did not produce the required computation, and did not meet
+  the citation minimum. The same case had already exposed local-model/calculator
+  instability in the PR3 baseline.
+
+These failures are preserved rather than tuned away. The PR4 evidence-contract
+claim is narrow: every admitted structured fact was typed, analyst-visible, finite,
+and fully covered by the measured filing provenance fields. This run is not evidence
+that the overall route-aware release gate passed.
+
+Mean stage timings were 35,925 ms planner, 59,082 ms retrieval, 250 ms structured
+execution, 50,618 ms analyst, and 145,943 ms total per query. The complete serial
+run took 2,189,750 ms. These are single-run local/service observations, not a
+concurrency benchmark.
+
+### Artifacts and limitations
+
+Canonical raw artifacts are under
+`artifacts/evals/agents/v1/baselines/523ade1/`:
+
+- `summary.json` SHA-256
+  `39aac83ea13328a5e89e729ac092a2efdbdbaaf51bda59c9f1b8a820ca5b8b10`.
+- `per_query.jsonl` SHA-256
+  `84238d212d250d9b1006b473d1f0855cd5d830b59f41433a235a9be85b81660b`.
+- zero-byte `errors.jsonl` SHA-256
+  `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`.
+
+The raw per-query trace is preserved byte-for-byte. Two analyst table-hydration
+diagnostics include the ephemeral absolute evaluator worktree path in an
+`attempted_file` field; no credential, SEC contact, authorization header,
+environment snapshot, user-home path, or API-key value is present. The missing table
+sidecar also limits interpretation of the two analyst-oriented cases. Post-run
+AnyIO/MCP async-generator shutdown warnings remain the non-gating cleanup tracked
+in issue #17; PR4 does not address them.
