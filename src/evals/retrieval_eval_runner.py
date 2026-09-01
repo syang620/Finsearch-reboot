@@ -373,7 +373,7 @@ def run_retrieval_eval(
             row.retrieval_ok = retrieval_error is None
             row.retrieval_error = retrieval_error
 
-            for point in reranked[:max_k]:
+            for point in reranked:
                 payload = _extract_payload_from_scored_point(point)
                 doc_id = _normalize_text_doc_id(str(payload.get("doc_id") or ""))
                 if doc_id and doc_id not in retrieved_doc_ids:
@@ -381,6 +381,8 @@ def run_retrieval_eval(
                 context = _extract_context(payload)
                 if context:
                     contexts.append(context)
+                if len(retrieved_doc_ids) >= max_k:
+                    break
 
             row.retrieved_doc_ids = retrieved_doc_ids
             row.retrieved_table_indices = []

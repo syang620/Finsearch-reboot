@@ -180,6 +180,8 @@ def test_text_scoring_deduplicates_normalized_split_ids(tmp_path: Path) -> None:
             out_dir=str(tmp_path / "out"),
             eval_mode="text",
             retrieval_mode="hybrid",
+            top_k=2,
+            k_values=(1, 2),
             enable_ragas=False,
         )
 
@@ -188,7 +190,7 @@ def test_text_scoring_deduplicates_normalized_split_ids(tmp_path: Path) -> None:
         "AAPL_10-K_2024::text::0",
         "AAPL_10-K_2024::text::1",
     ]
-    assert rows[0].metrics["mrr@3"] == 0.5
+    assert rows[0].metrics["mrr@2"] == 0.5
 
 
 def test_default_eval_mode_keeps_full_production_stack() -> None:
