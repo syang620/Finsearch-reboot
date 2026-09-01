@@ -63,6 +63,7 @@
     }
   },
   "corpus_provenance": {
+    "collection_fingerprint_sha256": "103a1131b373fb651727048b6a875e4bd96b64754ebafd41c42dc6dcccfc5df8",
     "source_html": "data/html_filings/AAPL/10-K/10-K_2024.html",
     "source_html_sha256": "24a830a0f1256e371d36a1f7f72e5e85a38037d1de2f6f966eb8457db42ff6d6",
     "text_rows": 101,

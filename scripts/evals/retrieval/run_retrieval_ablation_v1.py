@@ -117,6 +117,11 @@ def _collection_fingerprint(records: Sequence[Dict[str, Any]]) -> str:
     return digest.hexdigest()
 
 
+def _verify_collection_fingerprint(actual: str, expected: str) -> None:
+    if actual != expected:
+        raise ValueError(f"Collection fingerprint mismatch: {actual} != {expected}")
+
+
 def _available_labels(records: Sequence[Dict[str, Any]]) -> tuple[set[int], set[str]]:
     table_indices: set[int] = set()
     text_doc_ids: set[str] = set()
@@ -431,6 +436,10 @@ def main() -> None:
     if len(records_before) != args.expected_points:
         raise ValueError(f"Scrolled point count mismatch: {len(records_before)} != {args.expected_points}")
     corpus_fingerprint_before = _collection_fingerprint(records_before)
+    expected_corpus_fingerprint = config["corpus_provenance"][
+        "collection_fingerprint_sha256"
+    ]
+    _verify_collection_fingerprint(corpus_fingerprint_before, expected_corpus_fingerprint)
     _verify_gold_labels(config, records_before)
 
     embedding_digest = _ollama_digest(embedding_base_url, embedding_model)
@@ -576,6 +585,7 @@ def main() -> None:
             "qdrant_version": qdrant_version,
             "fingerprint_before": corpus_fingerprint_before,
             "fingerprint_after": corpus_fingerprint_after,
+            "expected_fingerprint": expected_corpus_fingerprint,
             "provenance": config["corpus_provenance"],
         },
         "models": {

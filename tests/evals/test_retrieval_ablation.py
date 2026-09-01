@@ -206,6 +206,12 @@ def test_frozen_mode_definitions_match_evaluator() -> None:
     assert config["common"]["min_total_score"] == 0.0
 
 
+def test_collection_fingerprint_must_match_frozen_value() -> None:
+    ABLATION_RUNNER._verify_collection_fingerprint("frozen", "frozen")
+    with pytest.raises(ValueError, match="Collection fingerprint mismatch"):
+        ABLATION_RUNNER._verify_collection_fingerprint("other", "frozen")
+
+
 @pytest.mark.parametrize("value", [-1.0, 0.01, 1.0])
 def test_retrieval_ablation_rejects_nonzero_minimum_score(tmp_path: Path, value: float) -> None:
     with pytest.raises(ValueError, match="min_total_score must be 0"):
