@@ -1898,6 +1898,17 @@ def _coerce_form_type_value(value: Any) -> Optional[FormType]:
         return None
 
 
+def _structured_fact_form_matches(
+    expected: Optional[FormType],
+    returned: Optional[FormType],
+) -> bool:
+    if returned is None or expected is None:
+        return True
+    if expected == FormType.TEN_K:
+        return returned in {FormType.TEN_K, FormType.TEN_K_A}
+    return returned == expected
+
+
 def _structured_fact_issue(
     *,
     result: Dict[str, Any],
@@ -2007,6 +2018,8 @@ def _structured_fact_evidence_from_result(
     resolved_year = _normalize_int(result.get("resolved_fiscal_year"))
     tool_year = _normalize_int(tool_result.get("fiscal_year"))
     raw_components = tool_result.get("components")
+    tool_form_raw = _normalize_text(tool_result.get("form_type"))
+    tool_form = _coerce_form_type_value(tool_form_raw)
     if (
         not resolved_metric_id
         or (tool_metric_id is not None and tool_metric_id != resolved_metric_id)
@@ -2020,6 +2033,8 @@ def _structured_fact_evidence_from_result(
             and tool_year is not None
             and resolved_year != tool_year
         )
+        or (tool_form_raw is not None and tool_form is None)
+        or not _structured_fact_form_matches(packet.metadata.form_type, tool_form)
         or isinstance(value, bool)
         or not isinstance(value, (int, float))
         or not math.isfinite(float(value))
@@ -2041,9 +2056,8 @@ def _structured_fact_evidence_from_result(
 
     definition = METRIC_REGISTRY.get(resolved_metric_id)
     metric_label = _normalize_text(getattr(definition, "label", None)) or resolved_metric_id
-    tool_form_raw = _normalize_text(tool_result.get("form_type"))
     form_type = (
-        _coerce_form_type_value(tool_form_raw)
+        tool_form
         if tool_form_raw is not None
         else packet.metadata.form_type
     )

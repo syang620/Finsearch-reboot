@@ -8,7 +8,7 @@ from agents.analyst import (
     AnalystRunResult,
     render_structured_fact_evidence,
 )
-from agents.contracts import AnalystPacket, ContextItemKind, PlannerRuntimeOutput
+from agents.contracts import AnalystPacket, ContextItemKind, FormType, PlannerRuntimeOutput
 from evals.agent_eval_v1_contracts import (
     AgentDeterministicChecksV1,
     AgentEvalExampleV1,
@@ -60,6 +60,24 @@ def _normalize_int(value: Any) -> Optional[int]:
 def _normalize_form_type(value: Any) -> Optional[str]:
     normalized = _normalize_text(getattr(value, "value", value))
     return normalized.upper() if normalized else None
+
+
+def _structured_form_matches(
+    expected: Optional[FormType],
+    returned_value: Any,
+) -> bool:
+    returned_text = _normalize_form_type(returned_value)
+    if returned_text is None:
+        return True
+    try:
+        returned = FormType(returned_text)
+    except ValueError:
+        return False
+    if expected is None:
+        return True
+    if expected == FormType.TEN_K:
+        return returned in {FormType.TEN_K, FormType.TEN_K_A}
+    return returned == expected
 
 
 def _metadata_match(
@@ -308,6 +326,10 @@ def _structured_evidence_diagnostics(
                 resolved_year is None
                 or tool_year is None
                 or resolved_year == tool_year
+            )
+            and _structured_form_matches(
+                packet.metadata.form_type if packet is not None else None,
+                tool_result.get("form_type"),
             )
             and (
                 raw_components is None

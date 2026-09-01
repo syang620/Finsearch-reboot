@@ -208,6 +208,7 @@ def test_structured_fact_evidence_rejects_conflicting_tool_metric_id() -> None:
     [
         {"ticker": "MSFT"},
         {"fiscal_year": 2023},
+        {"form_type": "10-Q"},
         {"components": 1},
         {"components": ["not-a-component"]},
     ],

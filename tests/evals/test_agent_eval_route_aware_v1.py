@@ -465,6 +465,7 @@ def test_conflicting_tool_metric_is_not_counted_as_successful_execution() -> Non
     [
         {"ticker": "MSFT"},
         {"fiscal_year": 2023},
+        {"form_type": "10-Q"},
         {"components": 1},
         {"components": ["not-a-component"]},
     ],
