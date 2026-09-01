@@ -15,7 +15,7 @@ from evals.retrieval_eval_contracts import (
 )
 from evals.retrieval_metrics import hit_at_k, mrr_at_k, ndcg_at_k, recall_at_k
 from evals.retrieval_ablation import RETRIEVAL_MODES, retrieve_ablation_points
-from qdrant_client import models
+from qdrant_client import QdrantClient, models
 
 _TABLE_INDEX_RE = re.compile(r"::table::(\d+)")
 _TEXT_DOC_ID_RE = re.compile(r"(?P<base>.+?::text::.+?)(?::+split::\d+)?$")
@@ -106,20 +106,31 @@ def run_retrieval_eval(
     default_fiscal_year: int = 2024,
     default_form_type: str = "10-K",
     default_doc_types: Optional[List[str]] = None,
-    min_total_score: int = 0,
+    min_total_score: float = 0.0,
     enable_ragas: bool = True,
     retrieval_mode: str = "hybrid_reranker",
     text_dense_only: bool = False,
     text_embed_api_url: str = "http://localhost:11434/api/embed",
     text_embed_model: str = "qwen3-embedding:8b",
+    retrieval_client: Optional[QdrantClient] = None,
+    qdrant_host: Optional[str] = None,
+    qdrant_port: Optional[int] = None,
+    qdrant_collection_name: Optional[str] = None,
     ragas_config: Optional[RagasRetrievalConfig] = None,
     allow_empty_labels: bool = False,
     fail_fast: bool = False,
 ) -> Tuple[RetrievalEvalSummary, List[RetrievalEvalRow], List[Dict[str, Any]]]:
+    if float(min_total_score or 0.0) != 0.0:
+        raise ValueError(
+            "min_total_score must be 0 for retrieval ablations because BM25, dense, "
+            "RRF, and reranker scores are not comparable."
+        )
     examples = load_retrieval_eval_examples(eval_path)
     out_path = Path(out_dir)
     out_path.mkdir(parents=True, exist_ok=True)
-    collection = os.getenv("QDRANT_COLLECTION_NAME", "sec_docs_dense_bm25")
+    collection = qdrant_collection_name or os.getenv(
+        "QDRANT_COLLECTION_NAME", "sec_docs_dense_bm25"
+    )
 
     retrieval_mode = str(retrieval_mode or "hybrid_reranker").strip().lower()
     if text_dense_only:
@@ -232,6 +243,9 @@ def run_retrieval_eval(
                     fiscal_year=fiscal_year,
                     form_type=form_type,
                     doc_types=per_row_doc_types,
+                    client=retrieval_client,
+                    qdrant_host=qdrant_host,
+                    qdrant_port=qdrant_port,
                     collection_name=collection,
                     embed_api_url=text_embed_api_url,
                     embed_model=text_embed_model,
@@ -280,16 +294,22 @@ def run_retrieval_eval(
                 )
             row.metrics = metrics
 
+            timing_trace = {
+                key: value
+                for key, value in retrieval_timing.items()
+                if key not in {"components", "counts", "provenance"}
+            }
             row.trace = {
                 "timing_ms": {
                     "retrieve": elapsed_ms,
-                    **retrieval_timing,
+                    **timing_trace,
                 },
                 "counts": {
                     "fused_candidates": len(fused),
                     "ranked": len(ranked),
                 },
                 "components": dict(retrieval_timing.get("components") or {}),
+                "provenance": dict(retrieval_timing.get("provenance") or {}),
             }
         else:
             if not relevant_text_doc_ids:
@@ -323,6 +343,9 @@ def run_retrieval_eval(
                     fiscal_year=fiscal_year,
                     form_type=form_type,
                     doc_types=per_row_doc_types,
+                    client=retrieval_client,
+                    qdrant_host=qdrant_host,
+                    qdrant_port=qdrant_port,
                     collection_name=collection,
                     embed_api_url=text_embed_api_url,
                     embed_model=text_embed_model,
@@ -361,10 +384,15 @@ def run_retrieval_eval(
                     )
             row.metrics = metrics
 
+            timing_trace = {
+                key: value
+                for key, value in retrieval_timing.items()
+                if key not in {"components", "counts", "provenance"}
+            }
             row.trace = {
                 "timing_ms": {
                     "retrieve": elapsed_ms,
-                    **retrieval_timing,
+                    **timing_trace,
                 },
                 "counts": {
                     "fused_candidates": len(fused),
@@ -373,6 +401,7 @@ def run_retrieval_eval(
                 },
                 "rerank_query": rerank_query,
                 "components": dict(retrieval_timing.get("components") or {}),
+                "provenance": dict(retrieval_timing.get("provenance") or {}),
             }
 
         rows.append(row)
@@ -433,12 +462,15 @@ def run_retrieval_eval(
             "default_form_type": default_form_type,
             "default_doc_types_table": table_doc_types,
             "default_doc_types_text": text_doc_types,
-            "min_total_score": int(min_total_score),
+            "min_total_score": float(min_total_score),
             "enable_ragas": bool(enable_ragas),
             "retrieval_mode": retrieval_mode,
             "text_dense_only": bool(text_dense_only),
             "text_embed_api_url": text_embed_api_url,
             "text_embed_model": text_embed_model,
+            "qdrant_host": qdrant_host,
+            "qdrant_port": qdrant_port,
+            "qdrant_collection_name": collection,
             "timing_ms": {"total": total_ms},
         },
     )

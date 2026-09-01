@@ -91,9 +91,7 @@ def _fuse_ranked_lists(
     return [_with_score(by_id[point_id], fused_scores[point_id]) for point_id in ordered_ids]
 
 
-def _client() -> QdrantClient:
-    host = os.getenv("QDRANT_HOST", QDRANT_HOST)
-    port = int(os.getenv("QDRANT_PORT", str(QDRANT_PORT)))
+def _client(host: str, port: int) -> QdrantClient:
     return QdrantClient(host=host, port=port)
 
 
@@ -106,6 +104,8 @@ def retrieve_ablation_points(
     form_type: Optional[str],
     doc_types: List[str],
     client: Optional[QdrantClient] = None,
+    qdrant_host: Optional[str] = None,
+    qdrant_port: Optional[int] = None,
     collection_name: Optional[str] = None,
     embed_api_url: str = QWEN3_EMBED_API_URL,
     embed_model: str = QWEN3_EMBED_MODEL,
@@ -115,19 +115,36 @@ def retrieve_ablation_points(
     if mode not in RETRIEVAL_MODES:
         raise ValueError(f"Unsupported retrieval_mode={retrieval_mode!r}")
 
+    resolved_host = qdrant_host or os.getenv("QDRANT_HOST", QDRANT_HOST)
+    resolved_port = int(qdrant_port or os.getenv("QDRANT_PORT", str(QDRANT_PORT)))
     resolved_collection = collection_name or os.getenv("QDRANT_COLLECTION_NAME", COLLECTION_NAME)
+    qdrant = client or _client(resolved_host, resolved_port)
+    provenance = {
+        "qdrant": {
+            "host": resolved_host,
+            "port": resolved_port,
+            "collection": resolved_collection,
+        },
+        "embedding": (
+            {
+                "api_url": embed_api_url,
+                "model": embed_model,
+            }
+            if ABLATION_CONFIGS[mode]["dense_enabled"]
+            else None
+        ),
+    }
     if mode == "hybrid_reranker":
-        if resolved_collection != COLLECTION_NAME:
-            raise ValueError(
-                "hybrid_reranker must use the collection loaded by production retrieval: "
-                f"expected {COLLECTION_NAME!r}, got {resolved_collection!r}"
-            )
         rerank_query, fused, reranked, timing = retrieve_scored_points(
             queries=[query],
             ticker=ticker,
             fiscal_year=fiscal_year,
             form_type=form_type,
             doc_types=doc_types,
+            client=qdrant,
+            collection_name=resolved_collection,
+            embed_api_url=embed_api_url,
+            embed_model=embed_model,
         )
         candidate_ms = sum(
             int(timing.get(key) or 0)
@@ -144,9 +161,9 @@ def retrieve_ablation_points(
             "candidate_retrieval_ms": candidate_ms,
             "total_retrieval_ms": candidate_ms + rerank_ms,
             "components": dict(ABLATION_CONFIGS[mode]),
+            "provenance": provenance,
         }
 
-    qdrant = client or _client()
     qfilter = build_sec_filter(
         doc_types=doc_types,
         ticker=ticker,
@@ -223,6 +240,7 @@ def retrieve_ablation_points(
             "query_embedding_cache_hits": int(cache_stats.get("cache_hit") is True),
             "query_embedding_cache_misses": int(cache_stats.get("cache_hit") is False),
             "components": dict(ABLATION_CONFIGS[mode]),
+            "provenance": provenance,
             "counts": {
                 "dense_branch": len(dense_hits),
                 "bm25_branch": len(bm25_hits),

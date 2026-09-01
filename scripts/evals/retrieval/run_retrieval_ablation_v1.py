@@ -193,13 +193,86 @@ def _ollama_digest(base_url: str, model: str) -> str:
     raise ValueError(f"Ollama model not installed: {model}")
 
 
-def _git_head() -> str:
+def _git_head(repo_root: Path = Path(".")) -> str:
     return subprocess.run(
         ["git", "rev-parse", "HEAD"],
         check=True,
         capture_output=True,
         text=True,
+        cwd=repo_root,
     ).stdout.strip()
+
+
+def _git_has_changes(args: Sequence[str], repo_root: Path) -> bool:
+    result = subprocess.run(
+        ["git", *args],
+        capture_output=True,
+        text=True,
+        cwd=repo_root,
+    )
+    if result.returncode not in {0, 1}:
+        raise RuntimeError(result.stderr.strip() or f"git {' '.join(args)} failed")
+    return result.returncode == 1
+
+
+def _assert_clean_evaluated_checkout(
+    evaluated_sha: str,
+    *,
+    repo_root: Path = Path("."),
+) -> None:
+    head = _git_head(repo_root)
+    if head != evaluated_sha:
+        raise ValueError(f"HEAD does not match --evaluated-sha: {head} != {evaluated_sha}")
+    if _git_has_changes(["diff", "--quiet", "--ignore-submodules=none", "--"], repo_root):
+        raise ValueError("Canonical benchmark requires no unstaged tracked changes")
+    if _git_has_changes(
+        ["diff", "--cached", "--quiet", "--ignore-submodules=none", "--"],
+        repo_root,
+    ):
+        raise ValueError("Canonical benchmark requires no staged tracked changes")
+
+    untracked = subprocess.run(
+        ["git", "ls-files", "--others", "--exclude-standard"],
+        check=True,
+        capture_output=True,
+        text=True,
+        cwd=repo_root,
+    ).stdout.splitlines()
+    unsafe_untracked = sorted(
+        path for path in untracked if not Path(path).parts or Path(path).parts[0] != "artifacts"
+    )
+    if unsafe_untracked:
+        raise ValueError(
+            "Canonical benchmark rejects untracked files outside artifacts/: "
+            + ", ".join(unsafe_untracked)
+        )
+
+
+def _validate_runtime_environment(
+    *,
+    qdrant_host: str,
+    qdrant_port: int,
+    collection: str,
+    embedding_api_url: str,
+    embedding_model: str,
+) -> None:
+    expected = {
+        "QDRANT_HOST": str(qdrant_host),
+        "QDRANT_PORT": str(int(qdrant_port)),
+        "QDRANT_COLLECTION_NAME": str(collection),
+        "QWEN3_EMBED_API_URL": embedding_api_url.rstrip("/"),
+        "QWEN3_EMBED_MODEL": str(embedding_model),
+    }
+    for name, expected_value in expected.items():
+        raw_value = os.getenv(name)
+        if raw_value is None:
+            continue
+        actual_value = raw_value.strip().rstrip("/") if name.endswith("API_URL") else raw_value.strip()
+        if actual_value != expected_value:
+            raise ValueError(
+                f"Runtime configuration mismatch for {name}: "
+                f"environment={actual_value!r}, verified={expected_value!r}"
+            )
 
 
 def _validate_fixed_config(config: Dict[str, Any]) -> None:
@@ -208,6 +281,7 @@ def _validate_fixed_config(config: Dict[str, Any]) -> None:
     common = config["common"]
     expected = {
         "top_k": 10,
+        "min_total_score": 0.0,
         "k_values": [1, 3, 5, 10],
         "candidate_top_k": RETRIEVAL_TOP_K,
         "branch_limit": max(50, RETRIEVAL_TOP_K * 10),
@@ -230,6 +304,7 @@ def _validate_outputs(
     all_rows: Dict[str, Dict[str, List[Dict[str, Any]]]],
     output_root: Path,
     dataset_names: Sequence[str],
+    expected_provenance: Dict[str, Any],
 ) -> None:
     for dataset in dataset_names:
         expected_ids: List[str] | None = None
@@ -247,6 +322,17 @@ def _validate_outputs(
                 components = (row.get("trace") or {}).get("components") or {}
                 if components != expected_components:
                     raise ValueError(f"Component trace mismatch for {dataset}/{mode}/{row.get('id')}")
+                provenance = (row.get("trace") or {}).get("provenance") or {}
+                expected_row_provenance = dict(expected_provenance)
+                expected_row_provenance["embedding"] = (
+                    expected_provenance["embedding"]
+                    if expected_components["dense_enabled"]
+                    else None
+                )
+                if provenance != expected_row_provenance:
+                    raise ValueError(
+                        f"Runtime provenance mismatch for {dataset}/{mode}/{row.get('id')}"
+                    )
                 timing = (row.get("trace") or {}).get("timing_ms") or {}
                 if mode != "hybrid_reranker" and float(timing.get("rerank_ms") or 0) != 0.0:
                     raise ValueError(f"Unexpected reranker timing for {dataset}/{mode}/{row.get('id')}")
@@ -275,16 +361,37 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main() -> None:
     args = build_parser().parse_args()
+    repo_root = Path(
+        subprocess.run(
+            ["git", "rev-parse", "--show-toplevel"],
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+    )
+    _assert_clean_evaluated_checkout(args.evaluated_sha, repo_root=repo_root)
     output_root = Path(args.out_root)
     if output_root.exists():
         raise FileExistsError(f"Refusing to overwrite existing output: {output_root}")
-    if _git_head() != args.evaluated_sha:
-        raise ValueError(f"HEAD does not match --evaluated-sha: {_git_head()} != {args.evaluated_sha}")
 
     config = json.loads(CONFIG_PATH.read_text(encoding="utf-8"))
     _validate_fixed_config(config)
+    embedding_model = config["common"]["embedding_model"]
+    embedding_base_url = args.ollama_base_url.rstrip("/")
+    embedding_api_url = f"{embedding_base_url}/api/embed"
+    _validate_runtime_environment(
+        qdrant_host=args.qdrant_host,
+        qdrant_port=args.qdrant_port,
+        collection=args.collection,
+        embedding_api_url=embedding_api_url,
+        embedding_model=embedding_model,
+    )
     if COLLECTION_NAME != args.collection:
         raise ValueError(f"Production collection mismatch: {COLLECTION_NAME} != {args.collection}")
+    if QWEN3_EMBED_API_URL.rstrip("/") != embedding_api_url:
+        raise ValueError(
+            f"Production embedding API URL mismatch: {QWEN3_EMBED_API_URL} != {embedding_api_url}"
+        )
     if QWEN3_EMBED_MODEL != config["common"]["embedding_model"]:
         raise ValueError(f"Production embedding model mismatch: {QWEN3_EMBED_MODEL}")
     if RERANK_MODEL != config["common"]["reranker_model"]:
@@ -326,12 +433,11 @@ def main() -> None:
     corpus_fingerprint_before = _collection_fingerprint(records_before)
     _verify_gold_labels(config, records_before)
 
-    embedding_model = config["common"]["embedding_model"]
-    embedding_digest = _ollama_digest(args.ollama_base_url, embedding_model)
+    embedding_digest = _ollama_digest(embedding_base_url, embedding_model)
     if embedding_digest != args.expected_embedding_digest:
         raise ValueError(f"Embedding digest mismatch: {embedding_digest}")
     requests.post(
-        f"{args.ollama_base_url.rstrip('/')}/api/embed",
+        embedding_api_url,
         json={"model": embedding_model, "input": ["retrieval ablation warmup probe"]},
         timeout=120,
     ).raise_for_status()
@@ -360,7 +466,14 @@ def main() -> None:
                 default_fiscal_year=int(config["common"]["fiscal_year"]),
                 default_form_type=config["common"]["form_type"],
                 default_doc_types=dataset["doc_types"],
+                min_total_score=float(config["common"]["min_total_score"]),
                 enable_ragas=False,
+                text_embed_api_url=embedding_api_url,
+                text_embed_model=embedding_model,
+                retrieval_client=client,
+                qdrant_host=args.qdrant_host,
+                qdrant_port=args.qdrant_port,
+                qdrant_collection_name=args.collection,
                 fail_fast=True,
             )
             if errors:
@@ -370,7 +483,23 @@ def main() -> None:
     for cache_root in cache_roots:
         cache_root.cleanup()
 
-    _validate_outputs(all_rows, output_root, list(active_datasets))
+    expected_provenance = {
+        "qdrant": {
+            "host": args.qdrant_host,
+            "port": args.qdrant_port,
+            "collection": args.collection,
+        },
+        "embedding": {
+            "api_url": embedding_api_url,
+            "model": embedding_model,
+        },
+    }
+    _validate_outputs(
+        all_rows,
+        output_root,
+        list(active_datasets),
+        expected_provenance,
+    )
     dataset_hashes_after = {
         name: _sha256(Path(dataset["path"])) for name, dataset in config["datasets"].items()
     }
@@ -438,6 +567,10 @@ def main() -> None:
             if not dataset.get("enabled")
         },
         "corpus": {
+            "endpoint": {
+                "host": args.qdrant_host,
+                "port": args.qdrant_port,
+            },
             "collection": args.collection,
             "points": args.expected_points,
             "qdrant_version": qdrant_version,
@@ -448,13 +581,15 @@ def main() -> None:
         "models": {
             "embedding_model": embedding_model,
             "embedding_digest": embedding_digest,
-            "embedding_api_url": QWEN3_EMBED_API_URL,
+            "embedding_base_url": embedding_base_url,
+            "embedding_api_url": embedding_api_url,
             "reranker_model": config["common"]["reranker_model"],
             "reranker_backend": "qwen3_api",
             "reranker_api_url": _current_qwen3_rerank_api_url(),
             "reranker_service_digest": None,
         },
         "common_config": config["common"],
+        "supersedes": config["supersedes"],
         "configurations": config["modes"],
         "absolute_metrics": absolute_metrics,
         "deltas": deltas,

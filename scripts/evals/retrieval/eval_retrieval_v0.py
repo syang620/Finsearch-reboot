@@ -48,7 +48,7 @@ def build_parser() -> argparse.ArgumentParser:
         default="",
         help="Optional override doc_types (CSV). Leave empty to use mode defaults.",
     )
-    p.add_argument("--min-total-score", type=int, default=0)
+    p.add_argument("--min-total-score", type=float, default=0.0)
 
     p.add_argument("--default-ticker", default="AAPL")
     p.add_argument("--default-fiscal-year", type=int, default=2024)
@@ -93,7 +93,7 @@ def main() -> None:
         default_fiscal_year=int(args.default_fiscal_year),
         default_form_type=args.default_form_type,
         default_doc_types=doc_types or None,
-        min_total_score=int(args.min_total_score),
+        min_total_score=float(args.min_total_score),
         enable_ragas=enable_ragas,
         retrieval_mode=args.retrieval_mode,
         ragas_config=ragas_config,

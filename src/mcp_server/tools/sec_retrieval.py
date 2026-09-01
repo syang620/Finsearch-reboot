@@ -186,6 +186,9 @@ def _run_dense_bm25_retrieval(
     fiscal_year: int,
     form_type: Optional[str],
     doc_types: List[str],
+    collection_name: str = COLLECTION_NAME,
+    embed_api_url: str = QWEN3_EMBED_API_URL,
+    embed_model: str = QWEN3_EMBED_MODEL,
 ) -> tuple[str, List[models.ScoredPoint], List[models.ScoredPoint], Dict[str, Any]]:
     hits_by_query: Dict[str, List[models.ScoredPoint]] = {}
     per_query_timings: List[Dict[str, Any]] = []
@@ -206,8 +209,8 @@ def _run_dense_bm25_retrieval(
             embed_t0 = time.perf_counter()
             out = embed_query_qwen3(
                 value,
-                api_url=QWEN3_EMBED_API_URL,
-                model=QWEN3_EMBED_MODEL,
+                api_url=embed_api_url,
+                model=embed_model,
                 cache_stats=cache_stats,
             )
             query_embed_ms += (time.perf_counter() - embed_t0) * 1000.0
@@ -222,7 +225,7 @@ def _run_dense_bm25_retrieval(
             query,
             client=client,
             embed_fn=_timed_embed,
-            collection_name=COLLECTION_NAME,
+            collection_name=collection_name,
             using_dense="dense",
             using_bm25="bm25",
             top_k=RETRIEVAL_TOP_K,
@@ -277,7 +280,7 @@ def _run_dense_bm25_retrieval(
     enriched = enrich_candidates_with_table_summaries(
         deduped,
         client=client,
-        collection_name=COLLECTION_NAME,
+        collection_name=collection_name,
     )
     enrichment_ms = (time.perf_counter() - enrich_t0) * 1000.0
 
@@ -335,18 +338,28 @@ def retrieve_scored_points(
     fiscal_year: int,
     form_type: Optional[str] = None,
     doc_types: Optional[List[str]] = None,
+    client: Optional[QdrantClient] = None,
+    collection_name: Optional[str] = None,
+    embed_api_url: Optional[str] = None,
+    embed_model: Optional[str] = None,
 ) -> tuple[str, List[models.ScoredPoint], List[models.ScoredPoint], Dict[str, Any]]:
-    client = _get_client()
+    resolved_client = client or _get_client()
+    resolved_collection = collection_name or COLLECTION_NAME
+    resolved_embed_api_url = embed_api_url or QWEN3_EMBED_API_URL
+    resolved_embed_model = embed_model or QWEN3_EMBED_MODEL
     resolved_doc_types = doc_types or DEFAULT_DOC_TYPES
     resolved_form_type = (form_type or "").strip() or None
     validated_queries = RetrievalQueries(queries=queries).queries
     return _run_dense_bm25_retrieval(
-        client=client,
+        client=resolved_client,
         queries=validated_queries,
         ticker=ticker,
         fiscal_year=fiscal_year,
         form_type=resolved_form_type,
         doc_types=resolved_doc_types,
+        collection_name=resolved_collection,
+        embed_api_url=resolved_embed_api_url,
+        embed_model=resolved_embed_model,
     )
 
 
