@@ -19,6 +19,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 
 class FormType(str, Enum):
     TEN_K = "10-K"
+    TEN_K_A = "10-K/A"
     TEN_Q = "10-Q"
 
 

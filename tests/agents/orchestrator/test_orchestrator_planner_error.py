@@ -25,6 +25,7 @@ from agents.contracts import (
 )
 from agents.orchestrator.agent_orchestrator import (
     _build_runtime_contract_error_plan,
+    _build_structured_fact_context_items,
     _format_run_output,
     _format_runtime_contract_validation_error,
     _get_pooled_analyst,
@@ -132,6 +133,38 @@ def test_structured_fact_evidence_uses_registry_label_and_tool_provenance() -> N
     assert evidence.report_date == "2024-09-28"
     assert evidence.filed_date == "2024-11-01"
     assert evidence.source_url == "https://www.sec.gov/example"
+
+
+def test_structured_fact_evidence_preserves_amended_annual_form() -> None:
+    result = {
+        "resolved_metric_id": "revenue",
+        "resolved_ticker": "AAPL",
+        "resolved_fiscal_year": 2024,
+        "resolver_status": "resolved",
+        "tool_result": {
+            "ok": True,
+            "status": "ok",
+            "metric_id": "revenue",
+            "value": 391_000_000_000.0,
+            "ticker": "AAPL",
+            "fiscal_year": 2024,
+            "form_type": "10-K/A",
+        },
+    }
+    evidence, issue = _structured_fact_evidence_from_result(
+        packet=_structured_evidence_packet(),
+        result=result,
+    )
+    items, issues = _build_structured_fact_context_items(
+        packet=_structured_evidence_packet(),
+        structured_fact_results=[result],
+    )
+
+    assert issue is None
+    assert evidence is not None
+    assert evidence.form_type == FormType.TEN_K_A
+    assert issues == []
+    assert items[0].source.form_type == FormType.TEN_K_A
 
 
 @pytest.mark.parametrize("value", [True, float("nan"), float("inf"), float("-inf")])
