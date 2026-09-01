@@ -701,7 +701,7 @@ raw evaluator output and documentation.
 
 - Evaluated implementation SHA:
   `523ade1a17dce890a35f20acdd0b5ead537aed89`.
-- Evidence artifact commit SHA: `EVIDENCE_COMMIT_SHA`.
+- Evidence artifact commit SHA: `4e4dcc0f4b9c01528135c8edb1b5c101af828be7`.
 - Dataset: 15 cases at
   `data/evals/agents/v1/agent_eval_routing_v1.jsonl`, SHA-256
   `c0fbdd097d7fa1b3eb22953a3ba4e8c0e84aa70a8786e08ba78a3b305cabe6cd`.
