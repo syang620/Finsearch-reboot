@@ -167,6 +167,27 @@ def _run_output(
 ) -> dict:
     planner = _planner_payload(route)
     retrieval_requested = planner["retrieval_needed"]
+    packet = _packet(context_count if retrieval_requested and kb_ok else 0)
+    if route in {"structured_fact", "hybrid"} and structured_status == "ok":
+        structured_item = ContextItem(
+            context_id="ctx_1",
+            kind=ContextItemKind.STRUCTURED_FACT,
+            source=SourceRef(ticker="AAPL", fiscal_year=2024),
+            structured_fact=StructuredFactEvidence(
+                metric_id="revenue",
+                metric_label="Revenue",
+                value=391_000_000_000.0,
+                ticker="AAPL",
+                fiscal_year=2024,
+            ),
+        )
+        packet.context_items = [
+            structured_item,
+            *[
+                item.model_copy(update={"context_id": f"ctx_{index}"})
+                for index, item in enumerate(packet.context_items, start=2)
+            ],
+        ]
     retrieval = {
         "type": "retrieval",
         "ok": bool(kb_ok and retrieval_requested),
@@ -187,7 +208,7 @@ def _run_output(
         "run_id": "run-1",
         "route": route,
         "status": reported_status,
-        "ok": reported_status == "completed",
+        "ok": reported_status in {"completed", "degraded"},
         "failure_stage": "none" if reported_status in {"completed", "degraded"} else "retrieval",
         "planner": planner,
         "retrieval": retrieval,
@@ -198,7 +219,7 @@ def _run_output(
         ),
         "analyst": _analyst_result() if include_analyst else None,
         "evaluation_trace": {
-            "analyst_packet": _packet(context_count).model_dump(mode="json")
+            "analyst_packet": packet.model_dump(mode="json")
             if include_analyst
             else None
         },
@@ -209,6 +230,10 @@ def _run_output(
             "structured_fact_timing_ms": {"structured_facts_ms": 4},
         },
     }
+
+
+def _clear_packet_context(output: dict) -> None:
+    output["evaluation_trace"]["analyst_packet"]["context_items"] = []
 
 
 def _example(route: str, **expected_overrides) -> AgentEvalExampleV1:
@@ -254,12 +279,18 @@ def test_structured_route_passes_without_kb_retrieval() -> None:
 
 
 @pytest.mark.parametrize(
-    ("kb_ok", "structured_status", "kb_status", "structured_lane_status"),
+    (
+        "kb_ok",
+        "structured_status",
+        "kb_status",
+        "structured_lane_status",
+        "effective_status",
+    ),
     [
-        (False, "ok", "failed", "ok"),
-        (True, "error", "ok", "error"),
-        (False, "error", "failed", "error"),
-        (True, "partial", "ok", "partial"),
+        (False, "ok", "failed", "ok", "degraded"),
+        (True, "error", "ok", "failed", "degraded"),
+        (False, "error", "failed", "failed", "failed"),
+        (True, "partial", "ok", "partial", "degraded"),
     ],
 )
 def test_degradation_truth_table(
@@ -267,6 +298,7 @@ def test_degradation_truth_table(
     structured_status: str,
     kb_status: str,
     structured_lane_status: str,
+    effective_status: str,
 ) -> None:
     output = _run_output(
         "hybrid",
@@ -282,7 +314,7 @@ def test_degradation_truth_table(
     row, _errors, _sample = evaluate_run_output(example, output)
 
     assert row.reported_status == "completed"
-    assert row.effective_status == "degraded"
+    assert row.effective_status == effective_status
     assert row.effective_status_source == "evaluator_derived"
     assert row.lane_status.kb.status == kb_status
     assert row.lane_status.structured_fact.status == structured_lane_status
@@ -315,6 +347,11 @@ def test_runtime_lanes_are_authoritative_and_shadow_checked() -> None:
             "status": "ok",
         },
     }
+    output["degradation"] = {
+        "active": True,
+        "affected_lanes": ["structured_fact"],
+        "notice": "Evidence coverage is degraded (structured_fact=partial).",
+    }
     example = _example(
         "hybrid",
         expected_reported_status=None,
@@ -341,6 +378,11 @@ def test_consistent_runtime_lanes_are_authoritative() -> None:
             "attempted": True,
             "status": "ok",
         },
+    }
+    output["degradation"] = {
+        "active": False,
+        "affected_lanes": [],
+        "notice": "",
     }
 
     row, errors, _sample = evaluate_run_output(_example("hybrid"), output)
@@ -514,6 +556,7 @@ def test_missing_group_admission_matches_runtime_and_evaluator(
 
 def test_malformed_missing_groups_do_not_increase_evidence_coverage() -> None:
     output = _run_output("structured_fact")
+    _clear_packet_context(output)
     output["structured_fact_results"][0]["tool_result"].update(
         {
             "value": 391_000_000_000.0,
@@ -639,9 +682,16 @@ def test_route_mismatch_is_critical() -> None:
     assert "ROUTE_MISMATCH" in row.deterministic.critical_failures
 
 
-@pytest.mark.parametrize("resolver_status", ["ambiguous", "unresolved", "missing_inputs"])
-def test_non_resolved_structured_statuses_are_preserved(resolver_status: str) -> None:
+@pytest.mark.parametrize(
+    ("resolver_status", "expected_lane_status"),
+    [("ambiguous", "ambiguous"), ("unresolved", "failed"), ("missing_inputs", "failed")],
+)
+def test_non_resolved_structured_statuses_are_normalized(
+    resolver_status: str,
+    expected_lane_status: str,
+) -> None:
     output = _run_output("structured_fact")
+    _clear_packet_context(output)
     output["structured_fact_results"][0].update(
         {
             "resolver_status": resolver_status,
@@ -652,7 +702,7 @@ def test_non_resolved_structured_statuses_are_preserved(resolver_status: str) ->
 
     lanes, metric_ids, statuses = derive_lane_status(output)
 
-    assert lanes.structured_fact.status == resolver_status
+    assert lanes.structured_fact.status == expected_lane_status
     assert metric_ids == []
     assert statuses == [resolver_status]
 

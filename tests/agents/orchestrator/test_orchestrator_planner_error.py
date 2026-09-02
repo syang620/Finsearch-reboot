@@ -585,6 +585,20 @@ class OrchestratorPlannerErrorTests(unittest.TestCase):
             },
             "retrieval_state": {"targets": [{"ticker": "AAPL", "fiscal_year": 2024}]},
             "retrieval_output": {"ok": True},
+            "packet": AnalystPacket(
+                plan_id="run-id",
+                user_query="What is the price-to-earnings ratio?",
+                intent=PlannerIntent.FILING_CALC,
+                metadata=FilingMetadata(ticker="AAPL", fiscal_year=2024),
+                analysis_task=AnalysisTask(metric="price-to-earnings ratio"),
+                context_items=[
+                    ContextItem(
+                        context_id="ctx_1",
+                        kind=ContextItemKind.TEXT,
+                        payload={"content": "Filing evidence."},
+                    )
+                ],
+            ),
             "analyst_result": AnalystRunResult(
                 ok=True,
                 status="insufficient_data",
@@ -1799,7 +1813,7 @@ class OrchestratorRuntimeTests(unittest.IsolatedAsyncioTestCase):
             )
 
         self.assertEqual(output["route"], "hybrid")
-        self.assertEqual(output["status"], "completed")
+        self.assertEqual(output["status"], "degraded")
         self.assertFalse(output["retrieval"]["ok"])
         self.assertEqual(len(output["structured_fact_results"]), 1)
         self.assertTrue(output["structured_fact_results"][0]["tool_result"]["ok"])
@@ -1899,7 +1913,7 @@ class OrchestratorRuntimeTests(unittest.IsolatedAsyncioTestCase):
             )
 
         self.assertEqual(output["route"], "hybrid")
-        self.assertEqual(output["status"], "completed")
+        self.assertEqual(output["status"], "degraded")
         self.assertTrue(output["retrieval"]["ok"])
         self.assertEqual(len(output["structured_fact_results"]), 1)
         self.assertEqual(output["structured_fact_results"][0]["tool_result"]["status"], "partial")

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 from contextlib import AbstractAsyncContextManager
+from dataclasses import dataclass
 import json
 import logging
 import math
@@ -25,6 +26,10 @@ from agents.contracts import (
     ContextItem,
     ContextItemKind,
     ContextQuality,
+    DegradationSummary,
+    EvidenceLaneStatus,
+    EvidenceLaneStatusSet,
+    EvidenceLaneSummary,
     FilingMetadata,
     FormType,
     OpenIssue,
@@ -650,6 +655,197 @@ def _dedupe_open_issue_payloads(left: Any, right: Any) -> list[Dict[str, Any]]:
     return _coerce_open_issue_payloads(merged_issues)
 
 
+@dataclass(frozen=True)
+class _EvidenceLaneDerivation:
+    summary: EvidenceLaneSummary
+    usable: bool
+    usable_evidence_count: int
+
+
+def _lane_issues(
+    issues: Sequence[OpenIssue],
+    *,
+    lane: str,
+) -> list[OpenIssue]:
+    prefixes = (
+        ("RETRIEVAL_", "TABLE_HYDRATION_")
+        if lane == "kb"
+        else ("STRUCTURED_FACT_",)
+    )
+    return [
+        issue
+        for issue in issues
+        if any(issue.code.upper().startswith(prefix) for prefix in prefixes)
+    ]
+
+
+def _structured_operation_status(result: Dict[str, Any]) -> str:
+    resolver_status = (_normalize_text(result.get("resolver_status")) or "unresolved").lower()
+    if resolver_status != "resolved":
+        return resolver_status
+    tool_result = result.get("tool_result")
+    if not isinstance(tool_result, dict):
+        return "failed"
+    return (
+        (_normalize_text(tool_result.get("status")) or "").lower()
+        or ("ok" if tool_result.get("ok") is True else "failed")
+    )
+
+
+def _derive_evidence_lanes(
+    *,
+    plan_obj: Dict[str, Any],
+    retrieval_output: Any,
+    structured_fact_results: Sequence[Dict[str, Any]],
+    packet: Optional[AnalystPacket],
+    issues: Sequence[OpenIssue],
+) -> tuple[_EvidenceLaneDerivation, _EvidenceLaneDerivation]:
+    route = _coerce_plan_route(plan_obj)
+    context_items = list(packet.context_items) if packet is not None else []
+    kb_count = sum(
+        1 for item in context_items if item.kind != ContextItemKind.STRUCTURED_FACT
+    )
+    structured_count = sum(
+        1 for item in context_items if item.kind == ContextItemKind.STRUCTURED_FACT
+    )
+
+    kb_requested = route in {"kb", "hybrid"} and bool(
+        plan_obj.get("retrieval_needed")
+    )
+    kb_attempted = kb_requested and isinstance(retrieval_output, dict)
+    kb_issues = _lane_issues(issues, lane="kb")
+    if not kb_requested:
+        kb_status = EvidenceLaneStatus.NOT_REQUESTED
+    elif not kb_attempted:
+        kb_status = EvidenceLaneStatus.SKIPPED
+    elif kb_count:
+        partial_failures = list(retrieval_output.get("partial_failures") or [])
+        targets = [
+            target
+            for target in retrieval_output.get("targets") or []
+            if isinstance(target, dict)
+        ]
+        has_failed_operation = bool(partial_failures) or any(
+            int(target.get("failed_runs") or 0) > 0 for target in targets
+        )
+        kb_status = (
+            EvidenceLaneStatus.PARTIAL
+            if has_failed_operation or retrieval_output.get("ok") is False
+            else EvidenceLaneStatus.OK
+        )
+    else:
+        kb_status = EvidenceLaneStatus.FAILED
+    kb = _EvidenceLaneDerivation(
+        summary=EvidenceLaneSummary(
+            requested=kb_requested,
+            attempted=kb_attempted,
+            status=kb_status,
+            issues=kb_issues,
+        ),
+        usable=bool(kb_count),
+        usable_evidence_count=kb_count,
+    )
+
+    structured_requested = route in {"structured_fact", "hybrid"} and bool(
+        plan_obj.get("structured_fact_requests")
+    )
+    results = [
+        result for result in structured_fact_results or [] if isinstance(result, dict)
+    ]
+    structured_attempted = structured_requested and bool(results)
+    structured_issues = _lane_issues(issues, lane="structured_fact")
+    operation_statuses = [_structured_operation_status(result) for result in results]
+    defensive_rejections = [
+        issue
+        for issue in structured_issues
+        if issue.code == "STRUCTURED_FACT_CAPABILITY_REJECTED"
+        and (issue.metadata or {}).get("outcome") == "defensive_rejection"
+    ]
+    if not structured_requested:
+        structured_status = EvidenceLaneStatus.NOT_REQUESTED
+    elif not structured_attempted:
+        structured_status = EvidenceLaneStatus.SKIPPED
+    elif structured_count:
+        structured_status = (
+            EvidenceLaneStatus.OK
+            if operation_statuses and all(status == "ok" for status in operation_statuses)
+            else EvidenceLaneStatus.PARTIAL
+        )
+    elif "partial" in operation_statuses:
+        structured_status = EvidenceLaneStatus.PARTIAL
+    elif defensive_rejections and len(defensive_rejections) == len(results):
+        question_classes = {
+            str((issue.metadata or {}).get("question_class") or "")
+            for issue in defensive_rejections
+        }
+        structured_status = (
+            EvidenceLaneStatus.AMBIGUOUS
+            if question_classes == {"ambiguous"}
+            else EvidenceLaneStatus.UNSUPPORTED
+        )
+    elif operation_statuses and all(status == "ambiguous" for status in operation_statuses):
+        structured_status = EvidenceLaneStatus.AMBIGUOUS
+    elif operation_statuses and all(
+        status in {"unsupported", "unsupported_metric"}
+        for status in operation_statuses
+    ):
+        structured_status = EvidenceLaneStatus.UNSUPPORTED
+    else:
+        structured_status = EvidenceLaneStatus.FAILED
+    structured = _EvidenceLaneDerivation(
+        summary=EvidenceLaneSummary(
+            requested=structured_requested,
+            attempted=structured_attempted,
+            status=structured_status,
+            issues=structured_issues,
+        ),
+        usable=bool(structured_count),
+        usable_evidence_count=structured_count,
+    )
+    return kb, structured
+
+
+def _degradation_summary(lanes: EvidenceLaneStatusSet) -> DegradationSummary:
+    affected = [
+        lane_name
+        for lane_name in ("kb", "structured_fact")
+        if (lane := getattr(lanes, lane_name)).requested
+        and lane.status != EvidenceLaneStatus.OK
+    ]
+    if not affected:
+        return DegradationSummary()
+    statuses = "; ".join(
+        f"{lane_name}={getattr(lanes, lane_name).status.value}"
+        for lane_name in affected
+    )
+    return DegradationSummary(
+        active=True,
+        affected_lanes=affected,
+        notice=(
+            f"Evidence coverage is degraded ({statuses}). Do not claim coverage "
+            "from unavailable or incomplete evidence lanes."
+        ),
+    )
+
+
+def _packet_with_evidence_status(
+    *,
+    state: OrchestratorState,
+    packet: AnalystPacket,
+) -> AnalystPacket:
+    kb, structured = _derive_evidence_lanes(
+        plan_obj=dict(state.get("plan_obj") or {}),
+        retrieval_output=state.get("retrieval_output"),
+        structured_fact_results=state.get("structured_fact_results") or [],
+        packet=packet,
+        issues=list(packet.open_issues),
+    )
+    lanes = EvidenceLaneStatusSet(kb=kb.summary, structured_fact=structured.summary)
+    return packet.model_copy(
+        update={"lanes": lanes, "degradation": _degradation_summary(lanes)}
+    )
+
+
 def _build_packet_without_retrieval(*, user_query: str, plan_obj: Dict[str, Any], plan_id: str) -> AnalystPacket:
     return AnalystPacket(
         plan_id=plan_id,
@@ -1244,9 +1440,8 @@ def _attach_open_issues_node(state: OrchestratorState) -> Dict[str, Any]:
     packet_issues = list(packet.open_issues)
     state_issues = _coerce_open_issues({"open_issues": state.get("open_issues")})
     merged_issues = _dedupe_open_issues(packet_issues + state_issues)
-    if list(packet.open_issues) == merged_issues:
-        return {}
-    return {"packet": packet.model_copy(update={"open_issues": merged_issues})}
+    packet = packet.model_copy(update={"open_issues": merged_issues})
+    return {"packet": _packet_with_evidence_status(state=state, packet=packet)}
 
 
 def _validate_retrieval_plan_targets(
@@ -2215,22 +2410,20 @@ def _append_structured_fact_context_items(
 
 def _route_after_retrieval_attach_open_issues(state: OrchestratorState) -> str:
     plan_obj = dict(state.get("plan_obj") or {})
-    route = _coerce_plan_route(plan_obj)
-    retrieval_state = state.get("retrieval_state") or {}
-    retrieval_output = state.get("retrieval_output")
-    skipped_reason = _normalize_text(state.get("retrieval_skipped_reason"))
+    packet = state.get("packet")
     if (
-        route == "kb"
-        and plan_obj.get("retrieval_needed")
-        and skipped_reason in {
-            "MISSING_METADATA",
-            "MISSING_TARGET_METADATA",
-            "MISSING_RETRIEVAL_PLAN",
-            "INVALID_RETRIEVAL_PLAN",
-        }
+        isinstance(packet, AnalystPacket)
+        and _coerce_intent(plan_obj)
+        in {PlannerIntent.FILING_FACT, PlannerIntent.FILING_CALC}
+        and not any(
+            item.kind != ContextItemKind.STRUCTURED_FACT
+            for item in packet.context_items
+        )
+        and not any(
+            item.kind == ContextItemKind.STRUCTURED_FACT
+            for item in packet.context_items
+        )
     ):
-        return "finalize"
-    if route == "kb" and retrieval_state and isinstance(retrieval_output, dict) and retrieval_output.get("ok") is False:
         return "finalize"
     return "analyst"
 
@@ -2350,6 +2543,35 @@ def _coerce_analyst_ok(result: Any) -> bool:
     return True
 
 
+def _runtime_evidence_status(
+    state_values: Dict[str, Any],
+) -> tuple[
+    _EvidenceLaneDerivation,
+    _EvidenceLaneDerivation,
+    EvidenceLaneStatusSet,
+    DegradationSummary,
+]:
+    packet = state_values.get("packet")
+    typed_packet = packet if isinstance(packet, AnalystPacket) else None
+    issues = _coerce_open_issues(
+        {
+            "open_issues": _dedupe_open_issue_payloads(
+                state_values.get("open_issues"),
+                getattr(typed_packet, "open_issues", []),
+            )
+        }
+    )
+    kb, structured = _derive_evidence_lanes(
+        plan_obj=dict(state_values.get("plan_obj") or {}),
+        retrieval_output=state_values.get("retrieval_output"),
+        structured_fact_results=state_values.get("structured_fact_results") or [],
+        packet=typed_packet,
+        issues=issues,
+    )
+    lanes = EvidenceLaneStatusSet(kb=kb.summary, structured_fact=structured.summary)
+    return kb, structured, lanes, _degradation_summary(lanes)
+
+
 def _derive_failure_stage(
     *,
     interrupted: bool,
@@ -2359,34 +2581,25 @@ def _derive_failure_stage(
         return "interrupted"
 
     plan_obj = dict(state_values.get("plan_obj") or {})
-    retrieval_output = dict(state_values.get("retrieval_output") or {})
-    retrieval_skipped_reason = _normalize_text(state_values.get("retrieval_skipped_reason"))
-    retrieval_state = dict(state_values.get("retrieval_state") or {})
-    route = _coerce_plan_route(plan_obj)
     planner_status = str(plan_obj.get("status") or "").strip().lower()
     if planner_status and planner_status != "completed":
         return "planner"
 
-    if (
-        route == "kb"
-        and plan_obj.get("retrieval_needed")
-        and not bool(retrieval_state)
-        and retrieval_skipped_reason in {
-            "MISSING_METADATA",
-            "MISSING_TARGET_METADATA",
-            "MISSING_RETRIEVAL_PLAN",
-            "INVALID_RETRIEVAL_PLAN",
-        }
-    ):
-        return "retrieval"
-
-    if route == "kb" and plan_obj.get("retrieval_needed") and (
-        isinstance(retrieval_output, dict) and retrieval_output.get("ok") is False
-    ):
-        return "retrieval"
-
     if not _coerce_analyst_ok(state_values.get("analyst_result")):
         return "analyst"
+
+    intent = _coerce_intent(plan_obj)
+    if intent in {PlannerIntent.FILING_FACT, PlannerIntent.FILING_CALC}:
+        kb, structured, _lanes, _degradation = _runtime_evidence_status(
+            state_values
+        )
+        requested = [lane for lane in (kb, structured) if lane.summary.requested]
+        if not any(lane.usable for lane in requested):
+            if structured.summary.attempted:
+                return "structured_fact"
+            if kb.summary.attempted:
+                return "retrieval"
+            return "planner"
 
     return "none"
 
@@ -2481,8 +2694,17 @@ def _format_run_output(
         interrupted=interrupted,
         state_values=state_values,
     )
-    ok = not interrupted and failure_stage == "none"
     packet = state_values.get("packet")
+    _kb, _structured, lanes, degradation = _runtime_evidence_status(state_values)
+    if interrupted:
+        status = "interrupted"
+    elif failure_stage != "none":
+        status = "failed"
+    elif degradation.active:
+        status = "degraded"
+    else:
+        status = "completed"
+    ok = status in {"completed", "degraded"}
     open_issues = _dedupe_open_issue_payloads(
         state_values.get("open_issues"),
         getattr(packet, "open_issues", []),
@@ -2490,13 +2712,11 @@ def _format_run_output(
     out = {
         "run_id": run_id,
         "route": _coerce_plan_route(state_values.get("plan_obj") or {}),
-        "status": (
-            "interrupted"
-            if interrupted
-            else ("failed" if failure_stage != "none" else "completed")
-        ),
+        "status": status,
         "ok": ok,
         "failure_stage": failure_stage,
+        "lanes": lanes.model_dump(mode="json"),
+        "degradation": degradation.model_dump(mode="json"),
         "open_issues": open_issues,
         "planner": state_values.get("planner_dump"),
         "planner_turn": state_values.get("planner_turn"),

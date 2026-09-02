@@ -708,6 +708,7 @@ def build_analyst_prompt(
         if tools_available
         else '- If arithmetic is required and financial_evaluator is unavailable, return status="tool_error" instead of inventing a calculation.\n'
     )
+    degradation_notice = packet.degradation.model_dump(mode="json")
     return (
         f"User query: {packet.user_query}\n"
         f"Intent: {packet.intent.value}\n"
@@ -716,11 +717,14 @@ def build_analyst_prompt(
         f"Analysis task: {analysis_task}\n\n"
         f"{definition_notes_block}"
         f"Context quality: {packet.context_quality.value}\n"
+        f"Evidence lanes: {packet.lanes.model_dump(mode='json')}\n"
+        f"Degradation: {degradation_notice}\n"
         f"Open issues: {[x.model_dump(mode='json') for x in packet.open_issues]}\n\n"
         f"Retrieved context:\n{context_text}\n\n"
         "Task:\n"
         "- Answer the user query grounded in the context above.\n"
         "- Typed structured facts are direct evidence; use their numeric value and SEC provenance as shown.\n"
+        "- Follow the typed degradation notice exactly; do not claim coverage from unavailable lanes.\n"
         "- For compare or table-style requests, fill compare_rows with one row per target/value.\n"
         f"{calculation_instruction}"
         "- Finish by calling FinalAnswer with the validated final result.\n"

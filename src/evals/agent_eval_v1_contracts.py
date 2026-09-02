@@ -10,7 +10,7 @@ from evals.agent_eval_contracts import PlannerIntentStr
 
 
 AgentRoute = Literal["kb", "structured_fact", "hybrid"]
-ReportedStatusExpectation = Literal["completed", "failed", "interrupted"]
+ReportedStatusExpectation = Literal["completed", "degraded", "failed", "interrupted"]
 EffectiveStatus = Literal["completed", "degraded", "failed", "interrupted"]
 StatusSource = Literal["runtime", "evaluator_derived"]
 LaneStatusSource = Literal["runtime", "evaluator_derived"]
@@ -125,6 +125,8 @@ class AgentLaneObservation(BaseModel):
     attempted: bool = False
     status: str = "not_requested"
     issues: List[Dict[str, Any]] = Field(default_factory=list)
+    usable: bool = False
+    usable_evidence_count: int = Field(default=0, ge=0)
 
     @field_validator("status")
     @classmethod
@@ -154,6 +156,8 @@ class AgentDeterministicChecksV1(BaseModel):
     degradation_match: Optional[bool] = None
     lane_status_consistent: Optional[bool] = None
     effective_status_consistent: Optional[bool] = None
+    failure_stage_consistent: Optional[bool] = None
+    degradation_consistent: Optional[bool] = None
     analyst_status_match: Optional[bool] = None
     tool_use_match: Optional[bool] = None
     compute_match: Optional[bool] = None
@@ -178,6 +182,10 @@ class AgentEvalRowV1(BaseModel):
     derived_effective_status: Optional[EffectiveStatus] = None
     effective_status_consistent: Optional[bool] = None
     failure_stage: Optional[str] = None
+    derived_failure_stage: Optional[str] = None
+    failure_stage_consistent: Optional[bool] = None
+    degradation: Dict[str, Any] = Field(default_factory=dict)
+    degradation_consistent: Optional[bool] = None
     route: Optional[str] = None
 
     lane_status_source: LaneStatusSource = "evaluator_derived"
