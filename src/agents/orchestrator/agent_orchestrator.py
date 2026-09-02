@@ -33,6 +33,7 @@ from agents.contracts import (
     Severity,
     SourceRef,
     StructuredFactEvidence,
+    normalize_missing_component_groups,
 )
 from agents.planner import InteractivePlannerAgent
 from agents.planner.interactive_target_resolution import (
@@ -1922,7 +1923,10 @@ def _structured_fact_issue(
         if isinstance(tool_result, dict)
         else []
     )
-    missing_groups = raw_missing_groups if isinstance(raw_missing_groups, list) else []
+    try:
+        missing_groups = normalize_missing_component_groups(raw_missing_groups)
+    except ValueError:
+        missing_groups = []
     return OpenIssue(
         code=code,
         message=message,
@@ -1939,9 +1943,7 @@ def _structured_fact_issue(
                 if isinstance(tool_result, dict)
                 else None
             ),
-            "missing_component_groups": [
-                str(group).strip() for group in missing_groups if str(group).strip()
-            ],
+            "missing_component_groups": missing_groups,
         },
     )
 
@@ -2018,6 +2020,15 @@ def _structured_fact_evidence_from_result(
     resolved_year = _normalize_int(result.get("resolved_fiscal_year"))
     tool_year = _normalize_int(tool_result.get("fiscal_year"))
     raw_components = tool_result.get("components")
+    raw_missing_groups = tool_result.get("missing_component_groups")
+    try:
+        missing_component_groups = normalize_missing_component_groups(
+            raw_missing_groups
+        )
+        missing_component_groups_valid = True
+    except ValueError:
+        missing_component_groups = []
+        missing_component_groups_valid = False
     tool_form_raw = _normalize_text(tool_result.get("form_type"))
     tool_form = _coerce_form_type_value(tool_form_raw)
     if (
@@ -2043,6 +2054,7 @@ def _structured_fact_evidence_from_result(
             isinstance(raw_components, list)
             and any(not isinstance(component, dict) for component in raw_components)
         )
+        or not missing_component_groups_valid
     ):
         return None, _structured_fact_issue(
             result=result,
@@ -2085,7 +2097,7 @@ def _structured_fact_evidence_from_result(
             filed_date=_normalize_text(tool_result.get("filed_date")),
             source_url=_normalize_text(tool_result.get("source_url")),
             components=components,
-            missing_component_groups=list(tool_result.get("missing_component_groups") or []),
+            missing_component_groups=missing_component_groups,
         )
     except Exception as exc:
         return None, _structured_fact_issue(

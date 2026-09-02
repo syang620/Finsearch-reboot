@@ -10,7 +10,7 @@ from langgraph.checkpoint.memory import InMemorySaver
 import pytest
 from pydantic import ValidationError
 
-from agents.analyst import AnalystRunResult
+from agents.analyst import AnalystRunResult, build_analyst_prompt
 from agents.contracts import (
     AnalystPacket,
     AnalysisTask,
@@ -121,6 +121,7 @@ def test_structured_fact_evidence_uses_registry_label_and_tool_provenance() -> N
                 "report_date": "2024-09-28",
                 "filed_date": "2024-11-01",
                 "source_url": "https://www.sec.gov/example",
+                "missing_component_groups": [],
             },
         },
     )
@@ -149,6 +150,7 @@ def test_structured_fact_evidence_preserves_amended_annual_form() -> None:
             "ticker": "AAPL",
             "fiscal_year": 2024,
             "form_type": "10-K/A",
+            "missing_component_groups": [],
         },
     }
     evidence, issue = _structured_fact_evidence_from_result(
@@ -181,6 +183,102 @@ def test_structured_fact_evidence_rejects_malformed_success_values(value) -> Non
     assert evidence is None
     assert issue is not None
     assert issue.code == "STRUCTURED_FACT_INVALID_EVIDENCE"
+
+
+@pytest.mark.parametrize(
+    ("raw_groups", "expected_groups"),
+    [
+        ([], []),
+        (["current_debt"], ["current_debt"]),
+        (
+            [" current_debt ", "noncurrent_debt"],
+            ["current_debt", "noncurrent_debt"],
+        ),
+    ],
+)
+def test_structured_fact_evidence_accepts_only_normalized_string_group_lists(
+    raw_groups,
+    expected_groups,
+) -> None:
+    evidence, issue = _structured_fact_evidence_from_result(
+        packet=_structured_evidence_packet(),
+        result={
+            "resolved_metric_id": "revenue",
+            "resolver_status": "resolved",
+            "tool_result": {
+                "ok": True,
+                "status": "ok",
+                "value": 391_000_000_000.0,
+                "missing_component_groups": raw_groups,
+            },
+        },
+    )
+
+    assert issue is None
+    assert evidence is not None
+    assert evidence.missing_component_groups == expected_groups
+
+
+@pytest.mark.parametrize(
+    "raw_groups",
+    [
+        "current_debt",
+        {"current_debt"},
+        ("current_debt",),
+        [123],
+        [None],
+        ["current_debt", 123],
+        ["   "],
+        None,
+    ],
+)
+def test_structured_fact_evidence_rejects_malformed_missing_group_collections(
+    raw_groups,
+) -> None:
+    evidence, issue = _structured_fact_evidence_from_result(
+        packet=_structured_evidence_packet(),
+        result={
+            "resolved_metric_id": "revenue",
+            "resolver_status": "resolved",
+            "tool_result": {
+                "ok": True,
+                "status": "ok",
+                "value": 391_000_000_000.0,
+                "missing_component_groups": raw_groups,
+            },
+        },
+    )
+
+    assert evidence is None
+    assert issue is not None
+    assert issue.code == "STRUCTURED_FACT_INVALID_EVIDENCE"
+
+
+def test_malformed_missing_groups_do_not_reach_analyst_prompt() -> None:
+    packet = _structured_evidence_packet()
+    items, issues = _build_structured_fact_context_items(
+        packet=packet,
+        structured_fact_results=[
+            {
+                "resolved_metric_id": "revenue",
+                "resolver_status": "resolved",
+                "tool_result": {
+                    "ok": True,
+                    "status": "ok",
+                    "value": 391_000_000_000.0,
+                    "missing_component_groups": "current_debt",
+                },
+            }
+        ],
+    )
+    prompt = build_analyst_prompt(
+        packet.model_copy(update={"context_items": items, "open_issues": issues})
+    )
+
+    assert items == []
+    assert [issue.code for issue in issues] == ["STRUCTURED_FACT_INVALID_EVIDENCE"]
+    assert "structured_fact:" not in prompt
+    assert "current_debt" not in prompt
 
 
 def test_structured_fact_evidence_rejects_conflicting_tool_metric_id() -> None:
@@ -223,6 +321,7 @@ def test_structured_fact_evidence_rejects_conflicting_or_malformed_provenance(
         "value": 391_000_000_000.0,
         "ticker": "AAPL",
         "fiscal_year": 2024,
+        "missing_component_groups": [],
     }
     tool_result.update(tool_overrides)
     evidence, issue = _structured_fact_evidence_from_result(
@@ -460,6 +559,7 @@ class _FakeStructuredFactClient:
             "report_date": "2025-09-27",
             "filed_date": "2025-10-31",
             "source_url": "https://www.sec.gov/example",
+            "missing_component_groups": [],
         }
         self.calls = []
 
@@ -1529,6 +1629,7 @@ class OrchestratorRuntimeTests(unittest.IsolatedAsyncioTestCase):
                 "report_date": "2024-09-28",
                 "filed_date": "2024-11-01",
                 "source_url": "https://www.sec.gov/example",
+                "missing_component_groups": [],
             }
         )
 
@@ -1647,6 +1748,7 @@ class OrchestratorRuntimeTests(unittest.IsolatedAsyncioTestCase):
                 "report_date": "2024-09-28",
                 "filed_date": "2024-11-01",
                 "source_url": "https://www.sec.gov/example",
+                "missing_component_groups": [],
             }
         )
 

@@ -8,7 +8,13 @@ from agents.analyst import (
     AnalystRunResult,
     render_structured_fact_evidence,
 )
-from agents.contracts import AnalystPacket, ContextItemKind, FormType, PlannerRuntimeOutput
+from agents.contracts import (
+    AnalystPacket,
+    ContextItemKind,
+    FormType,
+    PlannerRuntimeOutput,
+    normalize_missing_component_groups,
+)
 from evals.agent_eval_v1_contracts import (
     AgentDeterministicChecksV1,
     AgentEvalExampleV1,
@@ -312,6 +318,15 @@ def _structured_evidence_diagnostics(
             if isinstance(tool_result, dict)
             else None
         )
+        try:
+            normalize_missing_component_groups(
+                tool_result.get("missing_component_groups")
+                if isinstance(tool_result, dict)
+                else None
+            )
+            missing_component_groups_valid = True
+        except ValueError:
+            missing_component_groups_valid = False
         if (
             _normalize_lower(result.get("resolver_status")) == "resolved"
             and resolved_metric_id is not None
@@ -341,6 +356,7 @@ def _structured_evidence_diagnostics(
                     )
                 )
             )
+            and missing_component_groups_valid
             and tool_result.get("ok") is True
             and _normalize_lower(tool_result.get("status")) == "ok"
             and not isinstance(value, bool)

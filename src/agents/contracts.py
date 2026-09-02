@@ -573,6 +573,23 @@ class SourceRef(BaseModel):
     table_id: Optional[str] = None
 
 
+def normalize_missing_component_groups(value: Any) -> List[str]:
+    """Validate and normalize missing structured-metric component group IDs."""
+
+    if not isinstance(value, list):
+        raise ValueError("missing_component_groups must be a list of strings")
+
+    normalized_groups: List[str] = []
+    for item in value:
+        if not isinstance(item, str):
+            raise ValueError("missing_component_groups must contain only strings")
+        normalized = item.strip()
+        if not normalized:
+            raise ValueError("missing_component_groups must not contain blank strings")
+        normalized_groups.append(normalized)
+    return normalized_groups
+
+
 class StructuredFactEvidence(BaseModel):
     """Typed analyst-boundary representation of a successful SEC metric result."""
 
@@ -646,14 +663,10 @@ class StructuredFactEvidence(BaseModel):
             raise ValueError("value must be finite")
         return numeric
 
-    @field_validator("missing_component_groups")
+    @field_validator("missing_component_groups", mode="before")
     @classmethod
-    def _normalize_missing_groups(cls, value: List[str]) -> List[str]:
-        return [
-            normalized
-            for item in value or []
-            if (normalized := str(item).strip())
-        ]
+    def _normalize_missing_groups(cls, value: Any) -> List[str]:
+        return normalize_missing_component_groups(value)
 
 
 class ContextItem(BaseModel):

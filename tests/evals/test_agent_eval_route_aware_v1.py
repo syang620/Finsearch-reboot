@@ -18,7 +18,10 @@ from agents.contracts import (
     SourceRef,
     StructuredFactEvidence,
 )
-from agents.orchestrator.agent_orchestrator import _format_run_output
+from agents.orchestrator.agent_orchestrator import (
+    _format_run_output,
+    _structured_fact_evidence_from_result,
+)
 from evals.agent_eval_contracts import AgentEvalExample
 from evals.agent_eval_legacy_v0 import build_deterministic_checks as build_legacy_checks
 from evals.agent_eval_route_aware_v1 import (
@@ -148,6 +151,7 @@ def _structured_result(status: str = "ok") -> dict:
             "ok": status == "ok",
             "status": status,
             "metric_id": "revenue",
+            "missing_component_groups": [],
         },
     }
 
@@ -458,6 +462,82 @@ def test_conflicting_tool_metric_is_not_counted_as_successful_execution() -> Non
 
     assert errors == []
     assert row.structured_evidence["successful_execution_results"] == 0
+
+
+@pytest.mark.parametrize(
+    ("raw_groups", "expected_admitted"),
+    [
+        ([], True),
+        (["current_debt"], True),
+        ([" current_debt ", "noncurrent_debt"], True),
+        ("current_debt", False),
+        ({"current_debt"}, False),
+        (("current_debt",), False),
+        ([123], False),
+        ([None], False),
+        (["current_debt", 123], False),
+        (["   "], False),
+        (None, False),
+    ],
+)
+def test_missing_group_admission_matches_runtime_and_evaluator(
+    raw_groups,
+    expected_admitted,
+) -> None:
+    output = _run_output("structured_fact")
+    result = output["structured_fact_results"][0]
+    result["tool_result"].update(
+        {
+            "value": 391_000_000_000.0,
+            "missing_component_groups": raw_groups,
+        }
+    )
+    packet = AnalystPacket.model_validate(
+        output["evaluation_trace"]["analyst_packet"]
+    )
+    evidence, _issue = _structured_fact_evidence_from_result(
+        packet=packet,
+        result=result,
+    )
+
+    row, errors, _sample = evaluate_run_output(
+        _example("structured_fact"),
+        output,
+    )
+
+    assert errors == []
+    assert (evidence is not None) is expected_admitted
+    assert row.structured_evidence["successful_execution_results"] == int(
+        expected_admitted
+    )
+
+
+def test_malformed_missing_groups_do_not_increase_evidence_coverage() -> None:
+    output = _run_output("structured_fact")
+    output["structured_fact_results"][0]["tool_result"].update(
+        {
+            "value": 391_000_000_000.0,
+            "missing_component_groups": "current_debt",
+        }
+    )
+
+    row, errors, _sample = evaluate_run_output(
+        _example("structured_fact"),
+        output,
+    )
+    summary = deterministic_summary([row])
+
+    assert errors == []
+    assert row.structured_evidence["successful_execution_results"] == 0
+    assert row.structured_evidence["typed_structured_fact_contexts"] == 0
+    assert row.structured_evidence["synthetic_structured_text_contexts"] == 0
+    assert set(
+        row.structured_evidence["provenance_coverage_counts"].values()
+    ) == {0}
+    assert summary["structured_typed_representation_rate"] == 0.0
+    assert summary["structured_analyst_visibility_rate"] == 0.0
+    assert summary["structured_metric_id_coverage_rate"] == 0.0
+    assert summary["structured_source_url_coverage_rate"] == 0.0
 
 
 @pytest.mark.parametrize(
