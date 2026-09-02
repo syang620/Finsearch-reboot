@@ -1,0 +1,34 @@
+{
+  "evaluated_commit": "25e359d85776dc422e0d4d72b47152b407862d30",
+  "completed_at": "2026-09-02T11:09:56-04:00",
+  "timezone": "America/New_York",
+  "python": "3.12.12",
+  "degradation_evaluation": {
+    "dataset": "data/evals/agents/v1/agent_eval_degradation_v1.jsonl",
+    "dataset_sha256": "89bae38e5439a561a6241ee3d53ac96d1b19d43de81a8ffd7368890289999900",
+    "command": "PYTHONPATH=.:src python scripts/evals/agents/eval_agent_degradation_v1.py --eval-path data/evals/agents/v1/agent_eval_degradation_v1.jsonl --out-dir artifacts/evals/agents/v1/degradation/baselines/25e359d",
+    "summary": "artifacts/evals/agents/v1/degradation/baselines/25e359d/summary.json",
+    "summary_sha256": "811de3c7be68f72297202d0ece04015fe30d8013a6f58f22ee3d09524f51d743",
+    "per_case": "artifacts/evals/agents/v1/degradation/baselines/25e359d/per_case.jsonl",
+    "per_case_sha256": "c59984a087fcbf4113d7d7a9a8ceea65de97411ac4fadfffb755c669748f9a38"
+  },
+  "route_aware_live_gate": {
+    "dataset": "data/evals/agents/v1/agent_eval_routing_v1.jsonl",
+    "dataset_sha256": "c0fbdd097d7fa1b3eb22953a3ba4e8c0e84aa70a8786e08ba78a3b305cabe6cd",
+    "ragas_enabled": false,
+    "planner_model": "ollama/qwen2.5:14b-instruct",
+    "analyst_model": "ollama/qwen2.5:14b-instruct",
+    "ollama_model_digest": "7cdf5a0187d5",
+    "qdrant_version": "1.16.2",
+    "qdrant_collection": "sec_docs_dense_bm25_pr2_63dcec0",
+    "qdrant_points": 582,
+    "command": "PYTHONPATH=.:src python scripts/evals/agents/eval_agents_v1.py --eval-path data/evals/agents/v1/agent_eval_routing_v1.jsonl --out-dir artifacts/evals/agents/v1/baselines/25e359d --planner-model ollama/qwen2.5:14b-instruct --analyst-model ollama/qwen2.5:14b-instruct --deterministic-threshold 0.90 --max-critical-failure-rate 0",
+    "summary": "artifacts/evals/agents/v1/baselines/25e359d/summary.json",
+    "summary_sha256": "0823393a9d6279e5c0be6079bf08b13ce496100f5b9ed33d6dffb5ed546f3bcc",
+    "per_query": "artifacts/evals/agents/v1/baselines/25e359d/per_query.jsonl",
+    "per_query_sha256": "563b4ad95a3edb5ed7967e3c450dbd83a1804198d0a227e947d3b98d995a31bf",
+    "errors": "artifacts/evals/agents/v1/baselines/25e359d/errors.jsonl",
+    "errors_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "cleanup_note": "The known MCP/AnyIO cleanup hang occurred after all artifacts were written; the completed wrapper was terminated with SIGTERM."
+  }
+}

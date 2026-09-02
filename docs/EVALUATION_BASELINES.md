@@ -953,3 +953,122 @@ The 15 case IDs exactly match the frozen dataset; all successful tool results ca
 list-shaped string-only missing-component metadata, and all seven analyst evidence
 items satisfy the strict typed contract. Post-run AnyIO/MCP shutdown warnings remain
 tracked in issue #17 and are out of PR4 scope.
+
+## Per-Lane Status and Degradation — 2026-09-02
+
+### Run identity
+
+| Field | Value |
+|---|---|
+| Status | Canonical PR5 degradation baseline; live regression gate failed and was preserved |
+| Evaluated implementation SHA | `25e359d85776dc422e0d4d72b47152b407862d30` |
+| Dataset | `data/evals/agents/v1/agent_eval_degradation_v1.jsonl` |
+| Dataset SHA-256 | `89bae38e5439a561a6241ee3d53ac96d1b19d43de81a8ffd7368890289999900` |
+| Deterministic cases | 11 |
+| Live regression dataset | unchanged `data/evals/agents/v1/agent_eval_routing_v1.jsonl` |
+| Live dataset SHA-256 | `c0fbdd097d7fa1b3eb22953a3ba4e8c0e84aa70a8786e08ba78a3b305cabe6cd` |
+| Live cases | 15 |
+| Python | `3.12.12` |
+| Planner / analyst | `ollama/qwen2.5:14b-instruct`, digest `7cdf5a0187d5` |
+| Qdrant | `1.16.2`; collection `sec_docs_dense_bm25_pr2_63dcec0`; 582 points |
+| RAGAS | Disabled |
+
+The implementation commit contains runtime behavior, prompts, evaluator logic,
+tests, and the frozen degradation dataset. Only immutable artifacts and
+documentation were changed after that SHA.
+
+### Deterministic degradation matrix
+
+Command:
+
+```bash
+PYTHONPATH=.:src python scripts/evals/agents/eval_agent_degradation_v1.py \
+  --eval-path data/evals/agents/v1/agent_eval_degradation_v1.jsonl \
+  --out-dir artifacts/evals/agents/v1/degradation/baselines/25e359d
+```
+
+| Metric | Result |
+|---|---:|
+| Degradation classification accuracy | 100% |
+| Failure-containment rate | 100% |
+| All-lanes-unusable fail-closed rate | 100% |
+| Degradation-disclosure rate | 100% |
+| Runtime/evaluator consistency rate | 100% |
+| Overall graceful-degradation behavior accuracy | 100% |
+
+The matrix covers both lanes succeeding; either lane failing while the sibling
+succeeds; both failing; usable KB partial; unusable structured partial;
+structured-only and KB-only unusable execution; degraded evidence followed by an
+analyst failure; legitimate non-filing zero-lane execution; and filing-task
+zero-evidence rejection.
+
+Artifacts:
+
+- `artifacts/evals/agents/v1/degradation/baselines/25e359d/summary.json`, SHA-256
+  `811de3c7be68f72297202d0ece04015fe30d8013a6f58f22ee3d09524f51d743`.
+- `artifacts/evals/agents/v1/degradation/baselines/25e359d/per_case.jsonl`, SHA-256
+  `c59984a087fcbf4113d7d7a9a8ceea65de97411ac4fadfffb755c669748f9a38`.
+- `artifacts/evals/agents/v1/degradation/baselines/25e359d/manifest.json` records
+  both evaluation commands, identities, hashes, and cleanup limitation.
+
+### Unchanged route-aware live gate
+
+The 15-case RAGAS-disabled gate was run once after freezing the implementation.
+Environment values for the SEC contact and reranker credential were supplied but
+are not recorded. The effective command was:
+
+```bash
+QWEN3_RERANK_MODEL='Qwen/Qwen3-Reranker-8B' \
+SEC_RERANK_MODEL='Qwen/Qwen3-Reranker-8B' \
+QWEN3_EMBED_API_URL='http://127.0.0.1:11434/api/embed' \
+QWEN3_EMBED_MODEL='qwen3-embedding:8b' \
+QDRANT_URL='http://127.0.0.1:6333' \
+QDRANT_COLLECTION_NAME='sec_docs_dense_bm25_pr2_63dcec0' \
+SEC_USER_AGENT='<SEC_CONTACT>' \
+FINSEARCH_ORCHESTRATOR_CHECKPOINTER_PATH='<CHECKPOINTER_DB>' \
+PYTHONPATH=.:src python scripts/evals/agents/eval_agents_v1.py \
+  --eval-path data/evals/agents/v1/agent_eval_routing_v1.jsonl \
+  --out-dir artifacts/evals/agents/v1/baselines/25e359d \
+  --planner-model 'ollama/qwen2.5:14b-instruct' \
+  --analyst-model 'ollama/qwen2.5:14b-instruct' \
+  --deterministic-threshold 0.90 \
+  --max-critical-failure-rate 0
+```
+
+All 15 rows were valid and the evaluator recorded zero errors. The deterministic
+score was `0.926100`; five rows had critical failures, for a critical-failure rate
+of `0.333333`. The strict gate therefore failed (`overall_pass=false`). This result
+is preserved without case reruns or tuning.
+
+Runtime/evaluator lane-status, effective-status, failure-stage, and degradation
+consistency rates were all 100%. Seven successful structured executions produced
+seven typed, analyst-visible contexts with 100% coverage for metric ID, finite
+numeric value, accession, report date, filed date, and source URL. No synthetic
+structured-text contexts were observed.
+
+The five critical rows were:
+
+- `AGENT_V1_HYBRID_001` and `AGENT_V1_HYBRID_002`: runtime evidence degradation
+  was correctly disclosed, but the frozen dataset expects unqualified completion
+  and does not allow degradation.
+- `AGENT_V1_HYBRID_003`: analyst `insufficient_data` caused an analyst-stage
+  failure instead of the frozen successful expectation.
+- `AGENT_V1_ANALYST_001`: KB retrieval supplied no usable evidence, so PR5 failed
+  closed at retrieval and skipped the required computation and citation.
+- `AGENT_V1_ANALYST_002`: runtime evidence degradation was correctly disclosed,
+  while the frozen dataset expects unqualified completion.
+
+Artifacts:
+
+- `artifacts/evals/agents/v1/baselines/25e359d/summary.json`, SHA-256
+  `0823393a9d6279e5c0be6079bf08b13ce496100f5b9ed33d6dffb5ed546f3bcc`.
+- `artifacts/evals/agents/v1/baselines/25e359d/per_query.jsonl`, SHA-256
+  `563b4ad95a3edb5ed7967e3c450dbd83a1804198d0a227e947d3b98d995a31bf`.
+- zero-byte `artifacts/evals/agents/v1/baselines/25e359d/errors.jsonl`, SHA-256
+  `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`.
+
+The frozen live cases do not intentionally exercise degradation; their PR5 role is
+regression observation. The run took 2,431,747 ms (about 40m32s). After every
+artifact was written, the previously documented MCP/AnyIO asynchronous-generator
+cleanup hang recurred. The completed wrapper was terminated with SIGTERM; no case
+was rerun, and the original Qdrant container state was restored.

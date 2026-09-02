@@ -21,6 +21,12 @@ coverage, live-gate result, and limitations are recorded in
 `docs/EVALUATION_BASELINES.md` under “Native Structured Evidence and Provenance —
 2026-09-02.”
 
+The PR5 per-lane degradation implementation was evaluated at
+`25e359d85776dc422e0d4d72b47152b407862d30`. Its frozen deterministic matrix,
+immutable artifacts, and unchanged 15-case live-gate result are recorded in
+`docs/EVALUATION_BASELINES.md` under “Per-Lane Status and Degradation —
+2026-09-02.”
+
 The initial PR3 structured-fact capability baseline was evaluated independently at
 `6b6b6173bac9045b03ad2292910b5acfd51740c8`; review fixes were verified at
 `5a93171562dce106d1dd45cfe0c80aa5c01628ac` and
@@ -70,21 +76,20 @@ PYTHONPATH=src python scripts/evals/agents/eval_agents_v1.py \
   --enable-context-recall
 ```
 
-V1 checks the reported runtime status separately from the evaluation-only effective
-status:
+V1 treats reported runtime status and lane summaries as authoritative:
 
 ```json
 {
-  "reported_status": "completed",
+  "reported_status": "degraded",
   "effective_status": "degraded",
-  "effective_status_source": "evaluator_derived"
+  "effective_status_source": "runtime"
 }
 ```
 
-Until the runtime exposes first-class lane summaries, v1 derives KB and structured
-lane outcomes from the planner, retrieval result, structured-fact results, and
-analyst result. Once runtime lane summaries are available, they become authoritative
-while the evaluator continues deriving a shadow result and reports consistency.
+The evaluator independently derives shadow KB and structured status, admitted-
+evidence usability, effective status, and failure stage from execution artifacts and
+the final analyst packet. Any disagreement with runtime output is a critical
+inconsistency; evaluator values never replace runtime results.
 
 The v1 evaluator requests the opt-in orchestration evidence trace. Its only payload
 is the final serialized `AnalystPacket`; semantic contexts are derived from that
@@ -118,6 +123,29 @@ The live v1 dataset favors stable success, control-flow, and analyst-behavior ca
 Forced KB/structured degradation combinations are authoritative deterministic unit
 fixtures so SEC data and capability-policy changes do not make the release gate
 artificially brittle.
+
+## PR5 deterministic degradation matrix
+
+The frozen dataset is:
+
+- `data/evals/agents/v1/agent_eval_degradation_v1.jsonl`
+
+Run it without external services:
+
+```bash
+PYTHONPATH=.:src python scripts/evals/agents/eval_agent_degradation_v1.py
+```
+
+Its 11 fault-injected cases cover both-lane success, either- and both-lane failure,
+usable KB partial, unusable structured partial, single-lane unusable runs, degraded
+evidence followed by analyst failure, non-filing zero-lane success, and filing
+zero-evidence rejection. It reports degradation classification accuracy, failure
+containment, all-lanes-unusable fail-closed behavior, disclosure, runtime/evaluator
+consistency, and overall graceful-degradation accuracy.
+
+The unchanged 15-case route-aware live dataset does not intentionally inject
+degradation. Its PR5 role is regression detection for existing routing, retrieval,
+structured execution, and analyst behavior.
 
 ## Legacy v0
 
