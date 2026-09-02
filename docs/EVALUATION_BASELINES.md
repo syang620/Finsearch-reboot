@@ -691,7 +691,12 @@ versus hybrid. With only 12 AAPL table queries and no compatible text measuremen
 no broad retrieval-quality or resume claim is technically defensible. The result
 is a baseline for future dataset repair and tuning, not evidence of improvement.
 
-## Native Structured Evidence and Provenance — 2026-09-01
+## Native Structured Evidence and Provenance — 2026-09-01 (superseded)
+
+This baseline is superseded because its runtime and evaluator could silently coerce
+a malformed `missing_component_groups` string into individual characters. The raw
+artifacts and hashes below remain unchanged as historical evidence but are not the
+canonical PR4 baseline. The corrected rerun is recorded in the following section.
 
 PR4 replaces synthetic structured-fact text with typed analyst evidence. The
 implementation was frozen before measurement; the evidence commit contains only
@@ -826,3 +831,125 @@ environment snapshot, user-home path, or API-key value is present. The missing t
 sidecar also limits interpretation of the two analyst-oriented cases. Post-run
 AnyIO/MCP async-generator shutdown warnings remain the non-gating cleanup tracked
 in issue #17; PR4 does not address them.
+
+## Native Structured Evidence and Provenance — 2026-09-02
+
+This canonical rerun uses one strict shared predicate for structured-fact
+`missing_component_groups`: the raw value must be a list containing only non-empty
+strings, which are trimmed without container or element coercion. Runtime admission
+maps malformed metadata to `STRUCTURED_FACT_INVALID_EVIDENCE`, and evaluator
+diagnostics exclude the same result from successful-execution counts.
+
+### Run identity and unchanged inputs
+
+- Evaluated implementation SHA:
+  `b3d49134038adde61d160677cfc79d6bb8b06ea5`.
+- Evidence artifact commit SHA: `UPDATED_EVIDENCE_COMMIT_SHA`.
+- Dataset: the same 15 cases at
+  `data/evals/agents/v1/agent_eval_routing_v1.jsonl`, SHA-256
+  `c0fbdd097d7fa1b3eb22953a3ba4e8c0e84aa70a8786e08ba78a3b305cabe6cd`
+  before and after the run.
+- Planner and analyst: `qwen2.5:14b-instruct`, Ollama digest
+  `7cdf5a0187d5c58cc5d369b255592f7841d1c4696d45a8c8a9489440385b22f6`.
+- Dense embedding: `qwen3-embedding:8b` at the same local Ollama endpoint,
+  digest
+  `64b933495768fbd3b87c20583d379728a07471e0c66733a9df87cd1901b3c44b`.
+- Reranker: unchanged `Qwen/Qwen3-Reranker-8B` through the configured Qwen3 API
+  backend.
+- Qdrant endpoint: isolated `http://127.0.0.1:6334`, version 1.16.2;
+  collection `sec_docs_dense_bm25_pr2_63dcec0`, 582 green points. The full
+  collection fingerprint before and after the run was
+  `103a1131b373fb651727048b6a875e4bd96b64754ebafd41c42dc6dcccfc5df8`.
+- Corpus provenance, retrieval configuration, evaluator formulas, thresholds, and
+  SEC tool behavior were unchanged from the superseded run. RAGAS was disabled.
+
+The executed command was:
+
+```bash
+QWEN3_RERANK_MODEL=Qwen/Qwen3-Reranker-8B \
+SEC_RERANK_MODEL=Qwen/Qwen3-Reranker-8B \
+QWEN3_EMBED_API_URL=http://127.0.0.1:11434/api/embed \
+QWEN3_EMBED_MODEL=qwen3-embedding:8b \
+QDRANT_URL=http://127.0.0.1:6334 \
+QDRANT_HOST=127.0.0.1 QDRANT_PORT=6334 \
+QDRANT_COLLECTION_NAME=sec_docs_dense_bm25_pr2_63dcec0 \
+SEC_USER_AGENT='<SEC_CONTACT>' \
+FINSEARCH_ORCHESTRATOR_CHECKPOINTER_PATH='<CHECKPOINTER_DB>' \
+PYTHONPATH=src <EVAL_PYTHON> scripts/evals/agents/eval_agents_v1.py \
+  --eval-path data/evals/agents/v1/agent_eval_routing_v1.jsonl \
+  --out-dir artifacts/evals/agents/v1/baselines/b3d4913 \
+  --analyst-model ollama/qwen2.5:14b-instruct \
+  --planner-model ollama/qwen2.5:14b-instruct \
+  --deterministic-threshold 0.90 \
+  --max-critical-failure-rate 0
+```
+
+The placeholders have the same narrow meanings as in the superseded run. The
+implementation checkout was clean and exactly matched the evaluated SHA before the
+single complete run. No case was retried selectively and no result was tuned.
+
+### Results
+
+All 15 dataset rows parsed and produced valid evaluator rows, with zero evaluator
+errors. The deterministic score mean was 0.922772. The strict gate did not pass:
+three cases were critical, for a 0.20 critical-failure rate against the required
+zero; `deterministic_gate_pass=false` and `overall_pass=false`. RAGAS was disabled,
+so `ragas_gate_pass=true` does not represent an LLM-judge measurement.
+
+| Diagnostic | Result |
+| --- | ---: |
+| Successful structured execution results | 7 |
+| Typed structured-fact contexts | 7 |
+| Analyst-visible typed contexts | 7 |
+| Synthetic structured-text contexts | 0 |
+| Typed representation rate | 100% |
+| Analyst visibility rate | 100% |
+| Metric ID coverage | 100% |
+| Finite numeric-value coverage | 100% |
+| Accession coverage | 100% |
+| Report-date coverage | 100% |
+| Filed-date coverage | 100% |
+| Source-URL coverage | 100% |
+
+Route, intent, metadata, KB-lane, structured-lane, structured-metric, and
+structured-status match rates remained 100%. Reported-status, effective-status, and
+failure-stage match rates were 80%; analyst-status match was 76.92%; citation match
+was 75%; tool-use match was 100%; compute match was 0%.
+
+The two prior analyst-stage failures reproduced unchanged:
+
+- `AGENT_V1_HYBRID_001`, score 0.642857: analyst schema error, zero citations;
+  its structured fact remained typed, visible, and fully provenanced.
+- `AGENT_V1_ANALYST_001`, score 0.615385: `insufficient_data`, with the required
+  computation and citation minimum still unmet.
+
+One additional failure was preserved without rerunning:
+
+- `AGENT_V1_ANALYST_003`, score 0.583333: the Qwen3 hosted reranker endpoint failed
+  DNS resolution, so retrieval failed before analyst execution. This is an external
+  service failure, not a structured-evidence admission failure.
+
+The complete serial run took 1,889,040 ms. Mean measured stage times were 32,532 ms
+planner, 47,888 ms retrieval, 248 ms structured execution, and 45,172 ms analyst.
+Per-row total timings exceeded wall-clock duration for several rows and are not
+reliable for latency claims; the raw values are preserved unchanged.
+
+### Artifacts and limitations
+
+Canonical raw artifacts are under
+`artifacts/evals/agents/v1/baselines/b3d4913/`:
+
+- `summary.json` SHA-256
+  `610ea7b6df03bedfd7a193c47f3d2a68689204e06c424a2710ec90a82cc4f37c`.
+- `per_query.jsonl` SHA-256
+  `5c25ed820c886a2dfe594e5b9eefca3e903bfdf17b9924f87d36de29ce232e14`.
+- zero-byte `errors.jsonl` SHA-256
+  `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`.
+
+The raw artifacts preserve the hosted-reranker DNS failure and the same ephemeral
+worktree paths in table-hydration diagnostics as the superseded run. They contain no
+credential, SEC contact, authorization header, user-home path, or API-key value.
+The 15 case IDs exactly match the frozen dataset; all successful tool results carry
+list-shaped string-only missing-component metadata, and all seven analyst evidence
+items satisfy the strict typed contract. Post-run AnyIO/MCP shutdown warnings remain
+tracked in issue #17 and are out of PR4 scope.

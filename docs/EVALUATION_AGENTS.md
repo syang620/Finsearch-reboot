@@ -16,10 +16,10 @@ provenance are recorded in `docs/EVALUATION_BASELINES.md` under
 “Route-Aware Agent E2E v1 — 2026-08-26.”
 
 The PR4 native-structured-evidence diagnostic baseline was evaluated at
-`523ade1a17dce890a35f20acdd0b5ead537aed89`. Its immutable artifacts, typed-evidence
+`b3d49134038adde61d160677cfc79d6bb8b06ea5`. Its immutable artifacts, typed-evidence
 coverage, live-gate result, and limitations are recorded in
 `docs/EVALUATION_BASELINES.md` under “Native Structured Evidence and Provenance —
-2026-09-01.”
+2026-09-02.”
 
 The initial PR3 structured-fact capability baseline was evaluated independently at
 `6b6b6173bac9045b03ad2292910b5acfd51740c8`; review fixes were verified at

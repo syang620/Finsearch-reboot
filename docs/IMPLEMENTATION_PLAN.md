@@ -12,7 +12,7 @@
 - PR2 — complete: canonical route-aware gate passed at `6aae2651518e4495c947e393ed78978b515bd482`.
 - PR3 — complete: centralized capability policy post-review verified at `8ee0d1e0c7e3ec840ff7ccf149a535433d6ca9d4`.
 - PR4 — complete: native structured evidence and SEC provenance evaluated at
-  `523ade1a17dce890a35f20acdd0b5ead537aed89`; the live diagnostic gate and
+  `b3d49134038adde61d160677cfc79d6bb8b06ea5`; the live diagnostic gate and
   provenance-coverage results are recorded in `docs/EVALUATION_BASELINES.md`.
 - PR5 — next: first-class per-lane status and degradation semantics.
 
