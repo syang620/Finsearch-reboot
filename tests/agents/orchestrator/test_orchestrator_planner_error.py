@@ -7,10 +7,12 @@ from pathlib import Path
 from unittest import mock
 
 from langgraph.checkpoint.memory import InMemorySaver
+import pytest
 from pydantic import ValidationError
 
-from agents.analyst import AnalystRunResult
+from agents.analyst import AnalystRunResult, build_analyst_prompt
 from agents.contracts import (
+    AnalystPacket,
     AnalysisTask,
     ContextItem,
     ContextItemKind,
@@ -23,6 +25,7 @@ from agents.contracts import (
 )
 from agents.orchestrator.agent_orchestrator import (
     _build_runtime_contract_error_plan,
+    _build_structured_fact_context_items,
     _format_run_output,
     _format_runtime_contract_validation_error,
     _get_pooled_analyst,
@@ -33,6 +36,7 @@ from agents.orchestrator.agent_orchestrator import (
     _resolve_metric_id_for_structured_fact_request,
     _route_after_planner_turn,
     _structured_fact_capability_decisions,
+    _structured_fact_evidence_from_result,
     _structured_facts_node,
     _invoke_orchestrator,
     aclose_orchestrator_runtime,
@@ -80,6 +84,260 @@ def test_orchestrator_capability_guard_rejects_nonannual_target() -> None:
 
     assert not decisions[0].permitted
     assert decisions[0].question_class.value == "unsupported_derived_metric"
+
+
+def _structured_evidence_packet() -> AnalystPacket:
+    return AnalystPacket(
+        plan_id="structured-evidence",
+        user_query="What was revenue?",
+        intent=PlannerIntent.FILING_FACT,
+        metadata=FilingMetadata(
+            ticker="AAPL",
+            fiscal_year=2024,
+            form_type=FormType.TEN_K,
+        ),
+        analysis_task=AnalysisTask(metric="revenue"),
+    )
+
+
+def test_structured_fact_evidence_uses_registry_label_and_tool_provenance() -> None:
+    evidence, issue = _structured_fact_evidence_from_result(
+        packet=_structured_evidence_packet(),
+        result={
+            "metric_hint": "planner-authored wording",
+            "resolved_metric_id": "revenue",
+            "resolved_ticker": "AAPL",
+            "resolved_fiscal_year": 2024,
+            "resolver_status": "resolved",
+            "tool_result": {
+                "ok": True,
+                "status": "ok",
+                "value": 391_000_000_000.0,
+                "unit": "USD",
+                "ticker": "AAPL",
+                "fiscal_year": 2024,
+                "form_type": "10-K",
+                "accession_number": "0000320193-24-000123",
+                "report_date": "2024-09-28",
+                "filed_date": "2024-11-01",
+                "source_url": "https://www.sec.gov/example",
+                "missing_component_groups": [],
+            },
+        },
+    )
+
+    assert issue is None
+    assert evidence is not None
+    assert evidence.metric_id == "revenue"
+    assert evidence.metric_label == "Revenue"
+    assert evidence.accession_number == "0000320193-24-000123"
+    assert evidence.report_date == "2024-09-28"
+    assert evidence.filed_date == "2024-11-01"
+    assert evidence.source_url == "https://www.sec.gov/example"
+
+
+def test_structured_fact_evidence_preserves_amended_annual_form() -> None:
+    result = {
+        "resolved_metric_id": "revenue",
+        "resolved_ticker": "AAPL",
+        "resolved_fiscal_year": 2024,
+        "resolver_status": "resolved",
+        "tool_result": {
+            "ok": True,
+            "status": "ok",
+            "metric_id": "revenue",
+            "value": 391_000_000_000.0,
+            "ticker": "AAPL",
+            "fiscal_year": 2024,
+            "form_type": "10-K/A",
+            "missing_component_groups": [],
+        },
+    }
+    evidence, issue = _structured_fact_evidence_from_result(
+        packet=_structured_evidence_packet(),
+        result=result,
+    )
+    items, issues = _build_structured_fact_context_items(
+        packet=_structured_evidence_packet(),
+        structured_fact_results=[result],
+    )
+
+    assert issue is None
+    assert evidence is not None
+    assert evidence.form_type == FormType.TEN_K_A
+    assert issues == []
+    assert items[0].source.form_type == FormType.TEN_K_A
+
+
+@pytest.mark.parametrize("value", [True, float("nan"), float("inf"), float("-inf")])
+def test_structured_fact_evidence_rejects_malformed_success_values(value) -> None:
+    evidence, issue = _structured_fact_evidence_from_result(
+        packet=_structured_evidence_packet(),
+        result={
+            "resolved_metric_id": "revenue",
+            "resolver_status": "resolved",
+            "tool_result": {"ok": True, "status": "ok", "value": value},
+        },
+    )
+
+    assert evidence is None
+    assert issue is not None
+    assert issue.code == "STRUCTURED_FACT_INVALID_EVIDENCE"
+
+
+@pytest.mark.parametrize(
+    ("raw_groups", "expected_groups"),
+    [
+        ([], []),
+        (["current_debt"], ["current_debt"]),
+        (
+            [" current_debt ", "noncurrent_debt"],
+            ["current_debt", "noncurrent_debt"],
+        ),
+    ],
+)
+def test_structured_fact_evidence_accepts_only_normalized_string_group_lists(
+    raw_groups,
+    expected_groups,
+) -> None:
+    evidence, issue = _structured_fact_evidence_from_result(
+        packet=_structured_evidence_packet(),
+        result={
+            "resolved_metric_id": "revenue",
+            "resolver_status": "resolved",
+            "tool_result": {
+                "ok": True,
+                "status": "ok",
+                "value": 391_000_000_000.0,
+                "missing_component_groups": raw_groups,
+            },
+        },
+    )
+
+    assert issue is None
+    assert evidence is not None
+    assert evidence.missing_component_groups == expected_groups
+
+
+@pytest.mark.parametrize(
+    "raw_groups",
+    [
+        "current_debt",
+        {"current_debt"},
+        ("current_debt",),
+        [123],
+        [None],
+        ["current_debt", 123],
+        ["   "],
+        None,
+    ],
+)
+def test_structured_fact_evidence_rejects_malformed_missing_group_collections(
+    raw_groups,
+) -> None:
+    evidence, issue = _structured_fact_evidence_from_result(
+        packet=_structured_evidence_packet(),
+        result={
+            "resolved_metric_id": "revenue",
+            "resolver_status": "resolved",
+            "tool_result": {
+                "ok": True,
+                "status": "ok",
+                "value": 391_000_000_000.0,
+                "missing_component_groups": raw_groups,
+            },
+        },
+    )
+
+    assert evidence is None
+    assert issue is not None
+    assert issue.code == "STRUCTURED_FACT_INVALID_EVIDENCE"
+
+
+def test_malformed_missing_groups_do_not_reach_analyst_prompt() -> None:
+    packet = _structured_evidence_packet()
+    items, issues = _build_structured_fact_context_items(
+        packet=packet,
+        structured_fact_results=[
+            {
+                "resolved_metric_id": "revenue",
+                "resolver_status": "resolved",
+                "tool_result": {
+                    "ok": True,
+                    "status": "ok",
+                    "value": 391_000_000_000.0,
+                    "missing_component_groups": "current_debt",
+                },
+            }
+        ],
+    )
+    prompt = build_analyst_prompt(
+        packet.model_copy(update={"context_items": items, "open_issues": issues})
+    )
+
+    assert items == []
+    assert [issue.code for issue in issues] == ["STRUCTURED_FACT_INVALID_EVIDENCE"]
+    assert "structured_fact:" not in prompt
+    assert "current_debt" not in prompt
+
+
+def test_structured_fact_evidence_rejects_conflicting_tool_metric_id() -> None:
+    evidence, issue = _structured_fact_evidence_from_result(
+        packet=_structured_evidence_packet(),
+        result={
+            "resolved_metric_id": "revenue",
+            "resolver_status": "resolved",
+            "tool_result": {
+                "ok": True,
+                "status": "ok",
+                "metric_id": "total_debt",
+                "value": 391_000_000_000.0,
+            },
+        },
+    )
+
+    assert evidence is None
+    assert issue is not None
+    assert issue.code == "STRUCTURED_FACT_INVALID_EVIDENCE"
+
+
+@pytest.mark.parametrize(
+    "tool_overrides",
+    [
+        {"ticker": "MSFT"},
+        {"fiscal_year": 2023},
+        {"form_type": "10-Q"},
+        {"components": 1},
+        {"components": ["not-a-component"]},
+    ],
+)
+def test_structured_fact_evidence_rejects_conflicting_or_malformed_provenance(
+    tool_overrides,
+) -> None:
+    tool_result = {
+        "ok": True,
+        "status": "ok",
+        "metric_id": "revenue",
+        "value": 391_000_000_000.0,
+        "ticker": "AAPL",
+        "fiscal_year": 2024,
+        "missing_component_groups": [],
+    }
+    tool_result.update(tool_overrides)
+    evidence, issue = _structured_fact_evidence_from_result(
+        packet=_structured_evidence_packet(),
+        result={
+            "resolved_metric_id": "revenue",
+            "resolved_ticker": "AAPL",
+            "resolved_fiscal_year": 2024,
+            "resolver_status": "resolved",
+            "tool_result": tool_result,
+        },
+    )
+
+    assert evidence is None
+    assert issue is not None
+    assert issue.code == "STRUCTURED_FACT_INVALID_EVIDENCE"
 
 
 def _runtime_output(
@@ -301,6 +559,7 @@ class _FakeStructuredFactClient:
             "report_date": "2025-09-27",
             "filed_date": "2025-10-31",
             "source_url": "https://www.sec.gov/example",
+            "missing_component_groups": [],
         }
         self.calls = []
 
@@ -1344,7 +1603,14 @@ class OrchestratorRuntimeTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(values["structured_fact_results"][0]["resolved_metric_id"], "revenue")
         self.assertFalse(values.get("retrieval_output"))
         self.assertEqual(len(values["packet"].context_items), 1)
-        self.assertIn("Structured fact: revenue = 410000000000.0 USD", values["packet"].context_items[0].payload["content"])
+        context = values["packet"].context_items[0]
+        self.assertEqual(context.kind, ContextItemKind.STRUCTURED_FACT)
+        self.assertEqual(context.payload, {})
+        self.assertEqual(context.structured_fact.metric_id, "revenue")
+        self.assertEqual(context.structured_fact.metric_label, "Revenue")
+        self.assertEqual(context.structured_fact.value, 410000000000.0)
+        self.assertEqual(context.source.report_date, "2025-09-27")
+        self.assertEqual(context.source.source_url, "https://www.sec.gov/example")
         self.assertEqual(client.calls[0]["metric_id"], "revenue")
 
     async def test_invoke_orchestrator_hybrid_route_returns_retrieval_and_structured_fact_results(self) -> None:
@@ -1363,6 +1629,7 @@ class OrchestratorRuntimeTests(unittest.IsolatedAsyncioTestCase):
                 "report_date": "2024-09-28",
                 "filed_date": "2024-11-01",
                 "source_url": "https://www.sec.gov/example",
+                "missing_component_groups": [],
             }
         )
 
@@ -1399,18 +1666,20 @@ class OrchestratorRuntimeTests(unittest.IsolatedAsyncioTestCase):
                     "context_quality": ContextQuality.MEDIUM,
                     "context_items": [
                         ContextItem(
-                            context_id="ctx_1",
+                            context_id=f"ctx_{index}",
                             target_id="1",
                             kind=ContextItemKind.TEXT,
                             source=SourceRef(ticker="AAPL", fiscal_year=2024, form_type=FormType.TEN_K),
-                            payload={"content": "Revenue was supported by KB context."},
+                            payload={"content": f"KB evidence {index}."},
                         )
+                        for index in range(1, 6)
                     ],
                 }
             )
 
         class _FakeAnalyst:
             async def arun(self, packet, debug=False):
+                self.packet = packet
                 return AnalystRunResult(
                     ok=True,
                     status="ok",
@@ -1419,6 +1688,7 @@ class OrchestratorRuntimeTests(unittest.IsolatedAsyncioTestCase):
                     metric=packet.analysis_task.metric,
                 )
 
+        fake_analyst = _FakeAnalyst()
         await aclose_orchestrator_runtime()
         saver = InMemorySaver()
         with (
@@ -1427,7 +1697,7 @@ class OrchestratorRuntimeTests(unittest.IsolatedAsyncioTestCase):
             mock.patch("agents.orchestrator.agent_orchestrator._get_orchestrator_mcp_client", new=mock.AsyncMock(return_value=client)),
             mock.patch("agents.orchestrator.agent_orchestrator.retrieval_agent", new=_fake_retrieval_agent),
             mock.patch("agents.orchestrator.agent_orchestrator.build_packet_from_retrieval_output", new=_fake_packet_builder),
-            mock.patch("agents.orchestrator.agent_orchestrator._get_pooled_analyst", new=mock.AsyncMock(return_value=_FakeAnalyst())),
+            mock.patch("agents.orchestrator.agent_orchestrator._get_pooled_analyst", new=mock.AsyncMock(return_value=fake_analyst)),
         ):
             output = await _invoke_orchestrator(
                 {
@@ -1446,6 +1716,21 @@ class OrchestratorRuntimeTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(len(output["structured_fact_results"]), 1)
         self.assertEqual(output["structured_fact_results"][0]["resolved_metric_id"], "revenue")
         self.assertEqual(client.calls[0]["metric_id"], "revenue")
+        self.assertEqual(len(fake_analyst.packet.context_items), 6)
+        self.assertEqual(
+            fake_analyst.packet.context_items[0].kind,
+            ContextItemKind.STRUCTURED_FACT,
+        )
+        self.assertTrue(
+            all(
+                item.kind == ContextItemKind.TEXT
+                for item in fake_analyst.packet.context_items[1:]
+            )
+        )
+        self.assertEqual(
+            [item.context_id for item in fake_analyst.packet.context_items],
+            [f"ctx_{index}" for index in range(1, 7)],
+        )
 
     async def test_invoke_orchestrator_hybrid_route_preserves_structured_fact_when_kb_retrieval_fails(self) -> None:
         client = _FakeStructuredFactClient(
@@ -1463,6 +1748,7 @@ class OrchestratorRuntimeTests(unittest.IsolatedAsyncioTestCase):
                 "report_date": "2024-09-28",
                 "filed_date": "2024-11-01",
                 "source_url": "https://www.sec.gov/example",
+                "missing_component_groups": [],
             }
         )
 
@@ -1518,10 +1804,10 @@ class OrchestratorRuntimeTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(len(output["structured_fact_results"]), 1)
         self.assertTrue(output["structured_fact_results"][0]["tool_result"]["ok"])
         self.assertEqual(output["structured_fact_results"][0]["tool_result"]["status"], "ok")
-        self.assertIn(
-            "Structured fact: revenue = 391000000000.0 USD",
-            fake_analyst.packet.context_items[-1].payload["content"],
-        )
+        context = fake_analyst.packet.context_items[0]
+        self.assertEqual(context.kind, ContextItemKind.STRUCTURED_FACT)
+        self.assertEqual(context.structured_fact.metric_id, "revenue")
+        self.assertEqual(context.structured_fact.value, 391000000000.0)
 
     async def test_invoke_orchestrator_hybrid_route_preserves_kb_when_structured_fact_degrades(self) -> None:
         client = _FakeStructuredFactClient(
@@ -1617,11 +1903,10 @@ class OrchestratorRuntimeTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(output["retrieval"]["ok"])
         self.assertEqual(len(output["structured_fact_results"]), 1)
         self.assertEqual(output["structured_fact_results"][0]["tool_result"]["status"], "partial")
+        self.assertEqual(len(fake_analyst.packet.context_items), 1)
         self.assertIn("Revenue was supported by KB context.", fake_analyst.packet.context_items[0].payload["content"])
-        self.assertIn(
-            "Structured fact: revenue returned status partial.",
-            fake_analyst.packet.context_items[-1].payload["content"],
-        )
+        issue_codes = {issue.code for issue in fake_analyst.packet.open_issues}
+        self.assertIn("STRUCTURED_FACT_PARTIAL", issue_codes)
 
     async def test_structured_facts_node_returns_unresolved_without_tool_call(self) -> None:
         client = _FakeStructuredFactClient()
@@ -1638,7 +1923,7 @@ class OrchestratorRuntimeTests(unittest.IsolatedAsyncioTestCase):
                                 "fiscal_year": 2025,
                             }
                         ],
-                    }
+                    },
                 }
             )
 

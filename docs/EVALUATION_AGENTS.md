@@ -15,6 +15,12 @@ Canonical release baseline: evaluated commit
 provenance are recorded in `docs/EVALUATION_BASELINES.md` under
 “Route-Aware Agent E2E v1 — 2026-08-26.”
 
+The PR4 native-structured-evidence diagnostic baseline was evaluated at
+`b3d49134038adde61d160677cfc79d6bb8b06ea5`. Its immutable artifacts, typed-evidence
+coverage, live-gate result, and limitations are recorded in
+`docs/EVALUATION_BASELINES.md` under “Native Structured Evidence and Provenance —
+2026-09-02.”
+
 The initial PR3 structured-fact capability baseline was evaluated independently at
 `6b6b6173bac9045b03ad2292910b5acfd51740c8`; review fixes were verified at
 `5a93171562dce106d1dd45cfe0c80aa5c01628ac` and
@@ -83,7 +89,15 @@ while the evaluator continues deriving a shadow result and reports consistency.
 The v1 evaluator requests the opt-in orchestration evidence trace. Its only payload
 is the final serialized `AnalystPacket`; semantic contexts are derived from that
 packet in analyst-visible order. The analyst and evaluator share the same current
-five-context visibility limit.
+five-context visibility limit and the same deterministic renderer for native
+structured facts. Semantic context kinds distinguish `structured_fact` from KB
+`table` and `text` evidence.
+
+PR4 diagnostics count successful structured executions, typed and analyst-visible
+typed contexts, synthetic structured-text contexts, and coverage of metric ID,
+finite numeric value, accession number, report date, filed date, and source URL.
+These are evidence-contract diagnostics; they do not change the deterministic score
+formula or release thresholds.
 
 V1 outputs:
 

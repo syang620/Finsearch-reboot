@@ -63,6 +63,7 @@ from agents.contracts import (
     RetrieveTablesResponse,
     Severity,
     SourceRef,
+    StructuredFactEvidence,
 )
 
 
@@ -611,7 +612,47 @@ def _target_id_from_values(
     return fallback
 
 
+def render_structured_fact_evidence(evidence: StructuredFactEvidence) -> str:
+    """Render typed structured evidence without flattening it into KB payload text."""
+
+    fields = {
+        "metric_id": evidence.metric_id,
+        "metric_label": evidence.metric_label,
+        "status": evidence.status,
+        "value": evidence.value,
+        "unit": evidence.unit,
+        "ticker": evidence.ticker,
+        "fiscal_year": evidence.fiscal_year,
+        "form_type": evidence.form_type.value if evidence.form_type is not None else None,
+        "accession_number": evidence.accession_number,
+        "report_date": evidence.report_date,
+        "filed_date": evidence.filed_date,
+        "source_url": evidence.source_url,
+        "components": evidence.components,
+        "missing_component_groups": evidence.missing_component_groups,
+    }
+    return "structured_fact:\n" + json.dumps(
+        fields,
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+
+
 def _context_item_to_text(item: ContextItem, idx: int) -> str:
+    src = item.source.model_dump(exclude_none=True, mode="json")
+    target_id = item.target_id or _target_id_from_values(
+        item.source.ticker,
+        item.source.fiscal_year,
+        item.source.form_type.value if item.source.form_type is not None else None,
+    )
+    if item.kind == ContextItemKind.STRUCTURED_FACT:
+        return (
+            f"[Context {idx} | id={item.context_id} | target_id={target_id or 'unknown'}]\n"
+            f"source: {src}\n"
+            f"{render_structured_fact_evidence(item.structured_fact)}\n"
+        )
+
     payload = item.payload or {}
     table_name = (
         payload.get("table_name")
@@ -627,12 +668,6 @@ def _context_item_to_text(item: ContextItem, idx: int) -> str:
     content = payload.get("table_markdown") or payload.get("content") or payload.get("text") or ""
     content = _truncate_lines(str(content), max_chars=12000)
 
-    src = item.source.model_dump(exclude_none=True)
-    target_id = item.target_id or _target_id_from_values(
-        item.source.ticker,
-        item.source.fiscal_year,
-        item.source.form_type.value if item.source.form_type is not None else None,
-    )
     return (
         f"[Context {idx} | id={item.context_id} | target_id={target_id or 'unknown'}]\n"
         f"table_name: {table_name}\n"
@@ -685,6 +720,7 @@ def build_analyst_prompt(
         f"Retrieved context:\n{context_text}\n\n"
         "Task:\n"
         "- Answer the user query grounded in the context above.\n"
+        "- Typed structured facts are direct evidence; use their numeric value and SEC provenance as shown.\n"
         "- For compare or table-style requests, fill compare_rows with one row per target/value.\n"
         f"{calculation_instruction}"
         "- Finish by calling FinalAnswer with the validated final result.\n"

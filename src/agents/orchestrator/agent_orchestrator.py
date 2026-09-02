@@ -6,6 +6,7 @@ import asyncio
 from contextlib import AbstractAsyncContextManager
 import json
 import logging
+import math
 import os
 import re
 import sys
@@ -31,6 +32,8 @@ from agents.contracts import (
     PlannerRuntimeOutput,
     Severity,
     SourceRef,
+    StructuredFactEvidence,
+    normalize_missing_component_groups,
 )
 from agents.planner import InteractivePlannerAgent
 from agents.planner.interactive_target_resolution import (
@@ -1896,63 +1899,267 @@ def _coerce_form_type_value(value: Any) -> Optional[FormType]:
         return None
 
 
-def _structured_fact_context_text(result: Dict[str, Any]) -> str:
-    metric_label = (
-        _normalize_text((result.get("tool_result") or {}).get("metric_id"))
-        or _normalize_text(result.get("resolved_metric_id"))
-        or _normalize_text(result.get("metric_hint"))
-        or "structured metric"
-    )
+def _structured_fact_form_matches(
+    expected: Optional[FormType],
+    returned: Optional[FormType],
+) -> bool:
+    if returned is None or expected is None:
+        return True
+    if expected == FormType.TEN_K:
+        return returned in {FormType.TEN_K, FormType.TEN_K_A}
+    return returned == expected
+
+
+def _structured_fact_issue(
+    *,
+    result: Dict[str, Any],
+    code: str,
+    message: str,
+    severity: Severity = Severity.WARNING,
+) -> OpenIssue:
     tool_result = result.get("tool_result") or {}
-    if isinstance(tool_result, dict) and tool_result.get("ok"):
-        value = tool_result.get("value")
-        unit = _normalize_text(tool_result.get("unit")) or ""
-        form_type = _normalize_text(tool_result.get("form_type")) or ""
-        report_date = _normalize_text(tool_result.get("report_date")) or ""
-        accession_number = _normalize_text(tool_result.get("accession_number")) or ""
-        anchor_bits = [bit for bit in [form_type, report_date, accession_number] if bit]
-        anchor_text = f" ({', '.join(anchor_bits)})" if anchor_bits else ""
-        return f"Structured fact: {metric_label} = {value} {unit}".strip() + anchor_text + "."
+    raw_missing_groups = (
+        tool_result.get("missing_component_groups")
+        if isinstance(tool_result, dict)
+        else []
+    )
+    try:
+        missing_groups = normalize_missing_component_groups(raw_missing_groups)
+    except ValueError:
+        missing_groups = []
+    return OpenIssue(
+        code=code,
+        message=message,
+        severity=severity,
+        metadata={
+            "metric_id": _normalize_text(result.get("resolved_metric_id")),
+            "metric_hint": _normalize_text(result.get("metric_hint")),
+            "subquestion": _normalize_text(result.get("subquestion")),
+            "ticker": _normalize_text(result.get("resolved_ticker")),
+            "fiscal_year": _normalize_int(result.get("resolved_fiscal_year")),
+            "resolver_status": _normalize_text(result.get("resolver_status")),
+            "tool_status": (
+                _normalize_text(tool_result.get("status"))
+                if isinstance(tool_result, dict)
+                else None
+            ),
+            "missing_component_groups": missing_groups,
+        },
+    )
 
-    if isinstance(tool_result, dict) and tool_result:
-        status = _normalize_text(tool_result.get("status")) or "error"
-        reason = _normalize_text(tool_result.get("error")) or _normalize_text(result.get("resolver_reason")) or "No additional detail."
-        return f"Structured fact: {metric_label} returned status {status}. {reason}"
 
-    status = _normalize_text(result.get("resolver_status")) or "unresolved"
-    reason = _normalize_text(result.get("resolver_reason")) or "Could not resolve the structured fact request."
-    return f"Structured fact request {status}. {reason}"
+def _structured_fact_rejection_issue(result: Dict[str, Any]) -> OpenIssue:
+    resolver_status = (_normalize_text(result.get("resolver_status")) or "unresolved").lower()
+    resolver_reason = _normalize_text(result.get("resolver_reason")) or "Structured fact evidence is unavailable."
+    if resolver_reason.lower().startswith("structured-fact capability rejected"):
+        return _structured_fact_issue(
+            result=result,
+            code="STRUCTURED_FACT_CAPABILITY_REJECTED",
+            message=resolver_reason,
+        )
+    resolver_codes = {
+        "ambiguous": "STRUCTURED_FACT_AMBIGUOUS",
+        "missing_inputs": "STRUCTURED_FACT_MISSING_INPUTS",
+        "unresolved": "STRUCTURED_FACT_UNRESOLVED",
+    }
+    if resolver_status != "resolved":
+        return _structured_fact_issue(
+            result=result,
+            code=resolver_codes.get(resolver_status, "STRUCTURED_FACT_UNRESOLVED"),
+            message=resolver_reason,
+        )
+
+    tool_result = result.get("tool_result") or {}
+    if not isinstance(tool_result, dict) or not tool_result:
+        return _structured_fact_issue(
+            result=result,
+            code="STRUCTURED_FACT_ERROR",
+            message="Structured fact execution produced no tool result.",
+            severity=Severity.ERROR,
+        )
+    tool_status = (_normalize_text(tool_result.get("status")) or "error").lower()
+    tool_codes = {
+        "partial": "STRUCTURED_FACT_PARTIAL",
+        "not_found": "STRUCTURED_FACT_NOT_FOUND",
+        "unsupported_metric": "STRUCTURED_FACT_UNSUPPORTED",
+        "ambiguous": "STRUCTURED_FACT_AMBIGUOUS",
+        "error": "STRUCTURED_FACT_ERROR",
+    }
+    message = (
+        _normalize_text(tool_result.get("error"))
+        or f"Structured fact returned status {tool_status}."
+    )
+    return _structured_fact_issue(
+        result=result,
+        code=tool_codes.get(tool_status, "STRUCTURED_FACT_ERROR"),
+        message=message,
+        severity=(Severity.ERROR if tool_status == "error" else Severity.WARNING),
+    )
+
+
+def _structured_fact_evidence_from_result(
+    *,
+    packet: AnalystPacket,
+    result: Dict[str, Any],
+) -> tuple[Optional[StructuredFactEvidence], Optional[OpenIssue]]:
+    resolver_status = (_normalize_text(result.get("resolver_status")) or "unresolved").lower()
+    tool_result = result.get("tool_result") or {}
+    resolved_metric_id = _normalize_text(result.get("resolved_metric_id"))
+    if (
+        resolver_status != "resolved"
+        or not isinstance(tool_result, dict)
+        or tool_result.get("ok") is not True
+        or (_normalize_text(tool_result.get("status")) or "").lower() != "ok"
+    ):
+        return None, _structured_fact_rejection_issue(result)
+
+    value = tool_result.get("value")
+    tool_metric_id = _normalize_text(tool_result.get("metric_id"))
+    resolved_ticker = _normalize_text(result.get("resolved_ticker"))
+    tool_ticker = _normalize_text(tool_result.get("ticker"))
+    resolved_year = _normalize_int(result.get("resolved_fiscal_year"))
+    tool_year = _normalize_int(tool_result.get("fiscal_year"))
+    raw_components = tool_result.get("components")
+    raw_missing_groups = tool_result.get("missing_component_groups")
+    try:
+        missing_component_groups = normalize_missing_component_groups(
+            raw_missing_groups
+        )
+        missing_component_groups_valid = True
+    except ValueError:
+        missing_component_groups = []
+        missing_component_groups_valid = False
+    tool_form_raw = _normalize_text(tool_result.get("form_type"))
+    tool_form = _coerce_form_type_value(tool_form_raw)
+    if (
+        not resolved_metric_id
+        or (tool_metric_id is not None and tool_metric_id != resolved_metric_id)
+        or (
+            resolved_ticker is not None
+            and tool_ticker is not None
+            and resolved_ticker.upper() != tool_ticker.upper()
+        )
+        or (
+            resolved_year is not None
+            and tool_year is not None
+            and resolved_year != tool_year
+        )
+        or (tool_form_raw is not None and tool_form is None)
+        or not _structured_fact_form_matches(packet.metadata.form_type, tool_form)
+        or isinstance(value, bool)
+        or not isinstance(value, (int, float))
+        or not math.isfinite(float(value))
+        or (raw_components is not None and not isinstance(raw_components, list))
+        or (
+            isinstance(raw_components, list)
+            and any(not isinstance(component, dict) for component in raw_components)
+        )
+        or not missing_component_groups_valid
+    ):
+        return None, _structured_fact_issue(
+            result=result,
+            code="STRUCTURED_FACT_INVALID_EVIDENCE",
+            message=(
+                "Successful structured fact result contained invalid execution "
+                "identity, numeric value, or component data."
+            ),
+            severity=Severity.ERROR,
+        )
+
+    definition = METRIC_REGISTRY.get(resolved_metric_id)
+    metric_label = _normalize_text(getattr(definition, "label", None)) or resolved_metric_id
+    form_type = (
+        tool_form
+        if tool_form_raw is not None
+        else packet.metadata.form_type
+    )
+    components = [dict(component) for component in (raw_components or [])]
+    try:
+        evidence = StructuredFactEvidence(
+            metric_id=resolved_metric_id,
+            metric_label=metric_label,
+            status="ok",
+            value=float(value),
+            unit=_normalize_text(tool_result.get("unit")),
+            ticker=(
+                _normalize_text(tool_result.get("ticker"))
+                or resolved_ticker
+                or packet.metadata.ticker
+            ),
+            fiscal_year=(
+                _normalize_int(tool_result.get("fiscal_year"))
+                or resolved_year
+                or packet.metadata.fiscal_year
+            ),
+            form_type=form_type,
+            accession_number=_normalize_text(tool_result.get("accession_number")),
+            report_date=_normalize_text(tool_result.get("report_date")),
+            filed_date=_normalize_text(tool_result.get("filed_date")),
+            source_url=_normalize_text(tool_result.get("source_url")),
+            components=components,
+            missing_component_groups=missing_component_groups,
+        )
+    except Exception as exc:
+        return None, _structured_fact_issue(
+            result=result,
+            code="STRUCTURED_FACT_INVALID_EVIDENCE",
+            message=f"Structured fact evidence failed contract validation: {exc}",
+            severity=Severity.ERROR,
+        )
+    return evidence, None
+
+
+def _structured_fact_target_id(
+    *, packet: AnalystPacket, evidence: StructuredFactEvidence
+) -> Optional[str]:
+    for target in packet.targets or []:
+        if not isinstance(target, dict):
+            continue
+        if evidence.ticker and _normalize_text(target.get("ticker")) != evidence.ticker:
+            continue
+        if evidence.fiscal_year is not None and _normalize_int(target.get("fiscal_year")) != evidence.fiscal_year:
+            continue
+        target_id = _normalize_text(target.get("target_id"))
+        if target_id:
+            return target_id
+    return None
 
 
 def _build_structured_fact_context_items(
     *,
     packet: AnalystPacket,
     structured_fact_results: Sequence[Dict[str, Any]],
-) -> list[ContextItem]:
+) -> tuple[list[ContextItem], list[OpenIssue]]:
     items: list[ContextItem] = []
-    next_index = len(packet.context_items) + 1
+    issues: list[OpenIssue] = []
     for result in structured_fact_results or []:
         if not isinstance(result, dict):
             continue
-        tool_result = result.get("tool_result") or {}
-        form_type = _coerce_form_type_value((tool_result or {}).get("form_type")) or packet.metadata.form_type
+        evidence, issue = _structured_fact_evidence_from_result(packet=packet, result=result)
+        if issue is not None:
+            issues.append(issue)
+            continue
+        if evidence is None:
+            continue
         source = SourceRef(
-            ticker=_normalize_text(result.get("resolved_ticker")) or packet.metadata.ticker,
-            fiscal_year=_normalize_int(result.get("resolved_fiscal_year")) or packet.metadata.fiscal_year,
-            form_type=form_type,
-            filing_date=_normalize_text((tool_result or {}).get("filed_date")),
-            accession_no=_normalize_text((tool_result or {}).get("accession_number")),
+            ticker=evidence.ticker,
+            fiscal_year=evidence.fiscal_year,
+            form_type=evidence.form_type,
+            filing_date=evidence.filed_date,
+            accession_no=evidence.accession_number,
+            report_date=evidence.report_date,
+            source_url=evidence.source_url,
         )
         items.append(
             ContextItem(
-                context_id=f"ctx_{next_index}",
-                kind=ContextItemKind.TEXT,
+                context_id="pending",
+                target_id=_structured_fact_target_id(packet=packet, evidence=evidence),
+                kind=ContextItemKind.STRUCTURED_FACT,
                 source=source,
-                payload={"content": _structured_fact_context_text(result)},
+                structured_fact=evidence,
             )
         )
-        next_index += 1
-    return items
+    return items, issues
 
 
 def _append_structured_fact_context_items(
@@ -1960,21 +2167,48 @@ def _append_structured_fact_context_items(
     packet: AnalystPacket,
     structured_fact_results: Sequence[Dict[str, Any]],
 ) -> AnalystPacket:
-    new_items = _build_structured_fact_context_items(
+    new_items, new_issues = _build_structured_fact_context_items(
         packet=packet,
         structured_fact_results=structured_fact_results,
     )
     if not new_items:
-        return packet
-
-    updated_context_items = list(packet.context_items) + new_items
+        if not new_issues:
+            return packet
+        return packet.model_copy(
+            update={
+                "open_issues": _dedupe_open_issues(
+                    list(packet.open_issues) + new_issues
+                )
+            }
+        )
+    ordered_items = new_items + list(packet.context_items)
+    updated_context_items = [
+        item.model_copy(update={"context_id": f"ctx_{index}"})
+        for index, item in enumerate(ordered_items, start=1)
+    ]
+    if len(new_items) > _ANALYST_MAX_CONTEXT_ITEMS:
+        new_issues.append(
+            OpenIssue(
+                code="STRUCTURED_FACT_CONTEXT_LIMIT_EXCEEDED",
+                message=(
+                    f"{len(new_items)} successful structured facts exceed the "
+                    f"{_ANALYST_MAX_CONTEXT_ITEMS}-item analyst context limit."
+                ),
+                severity=Severity.ERROR,
+                metadata={
+                    "successful_structured_facts": len(new_items),
+                    "analyst_context_limit": _ANALYST_MAX_CONTEXT_ITEMS,
+                },
+            )
+        )
     context_quality = packet.context_quality
-    if not packet.context_items and new_items and packet.context_quality == ContextQuality.LOW:
+    if new_items and not packet.context_items and packet.context_quality == ContextQuality.LOW:
         context_quality = ContextQuality.MEDIUM
     return packet.model_copy(
         update={
             "context_items": updated_context_items,
             "context_quality": context_quality,
+            "open_issues": _dedupe_open_issues(list(packet.open_issues) + new_issues),
         }
     )
 

@@ -6,6 +6,7 @@ Pydantic schemas for the SEC RAG planner/orchestrator (crawl mode).
 
 from __future__ import annotations
 
+import math
 from enum import Enum
 from typing import Any, Dict, List, Literal, Optional, Union
 
@@ -18,6 +19,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 
 class FormType(str, Enum):
     TEN_K = "10-K"
+    TEN_K_A = "10-K/A"
     TEN_Q = "10-Q"
 
 
@@ -37,6 +39,7 @@ class ContextQuality(str, Enum):
 class ContextItemKind(str, Enum):
     TABLE = "table"
     TEXT = "text"
+    STRUCTURED_FACT = "structured_fact"
     UNKNOWN = "unknown"
 
 
@@ -563,9 +566,107 @@ class SourceRef(BaseModel):
     # Optional rich provenance (extend later)
     filing_date: Optional[str] = None
     accession_no: Optional[str] = None
+    report_date: Optional[str] = None
+    source_url: Optional[str] = None
     section_path: Optional[str] = None
     doc_id: Optional[str] = None
     table_id: Optional[str] = None
+
+
+def normalize_missing_component_groups(value: Any) -> List[str]:
+    """Validate and normalize missing structured-metric component group IDs."""
+
+    if not isinstance(value, list):
+        raise ValueError("missing_component_groups must be a list of strings")
+
+    normalized_groups: List[str] = []
+    for item in value:
+        if not isinstance(item, str):
+            raise ValueError("missing_component_groups must contain only strings")
+        normalized = item.strip()
+        if not normalized:
+            raise ValueError("missing_component_groups must not contain blank strings")
+        normalized_groups.append(normalized)
+    return normalized_groups
+
+
+class StructuredFactEvidence(BaseModel):
+    """Typed analyst-boundary representation of a successful SEC metric result."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    metric_id: str
+    metric_label: str
+    status: Literal["ok"] = "ok"
+    value: float
+    unit: Optional[str] = None
+
+    ticker: Optional[str] = None
+    fiscal_year: Optional[int] = None
+    form_type: Optional[FormType] = None
+
+    accession_number: Optional[str] = None
+    report_date: Optional[str] = None
+    filed_date: Optional[str] = None
+    source_url: Optional[str] = None
+
+    components: List[Dict[str, Any]] = Field(default_factory=list)
+    missing_component_groups: List[str] = Field(default_factory=list)
+
+    @field_validator(
+        "unit",
+        "accession_number",
+        "report_date",
+        "filed_date",
+        "source_url",
+    )
+    @classmethod
+    def _normalize_optional_text(cls, value: Optional[str]) -> Optional[str]:
+        if value is None:
+            return None
+        normalized = str(value).strip()
+        return normalized or None
+
+    @field_validator("metric_id", "metric_label")
+    @classmethod
+    def _normalize_required_text(cls, value: str) -> str:
+        normalized = str(value or "").strip()
+        if not normalized:
+            raise ValueError("value must be non-empty")
+        return normalized
+
+    @field_validator("ticker")
+    @classmethod
+    def _normalize_ticker(cls, value: Optional[str]) -> Optional[str]:
+        if value is None:
+            return None
+        normalized = str(value).strip().upper()
+        return normalized or None
+
+    @field_validator("fiscal_year")
+    @classmethod
+    def _validate_fiscal_year(cls, value: Optional[int]) -> Optional[int]:
+        if value is None:
+            return None
+        year = int(value)
+        if not 1900 <= year <= 2100:
+            raise ValueError("fiscal_year out of reasonable range (1900-2100)")
+        return year
+
+    @field_validator("value", mode="before")
+    @classmethod
+    def _validate_numeric_value(cls, value: Any) -> float:
+        if isinstance(value, bool) or not isinstance(value, (int, float)):
+            raise ValueError("value must be a finite numeric value and not bool")
+        numeric = float(value)
+        if not math.isfinite(numeric):
+            raise ValueError("value must be finite")
+        return numeric
+
+    @field_validator("missing_component_groups", mode="before")
+    @classmethod
+    def _normalize_missing_groups(cls, value: Any) -> List[str]:
+        return normalize_missing_component_groups(value)
 
 
 class ContextItem(BaseModel):
@@ -580,9 +681,21 @@ class ContextItem(BaseModel):
 
     # Raw content / payload
     payload: Dict[str, Any] = Field(default_factory=dict)
+    structured_fact: Optional[StructuredFactEvidence] = None
 
     # Scores are optional but helpful for debugging
     total_score: Optional[float] = None
+
+    @model_validator(mode="after")
+    def _validate_kind_payload(self) -> "ContextItem":
+        if self.kind == ContextItemKind.STRUCTURED_FACT:
+            if self.structured_fact is None:
+                raise ValueError("structured_fact context requires typed structured_fact evidence")
+            if self.payload:
+                raise ValueError("structured_fact context must not use payload as evidence")
+        elif self.structured_fact is not None:
+            raise ValueError("non-structured context cannot contain structured_fact evidence")
+        return self
 
     @classmethod
     def from_table_candidate(

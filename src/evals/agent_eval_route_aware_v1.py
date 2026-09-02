@@ -1,9 +1,20 @@
 from __future__ import annotations
 
+import math
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
-from agents.analyst import ANALYST_CONTEXT_ITEM_LIMIT, AnalystRunResult
-from agents.contracts import AnalystPacket, PlannerRuntimeOutput
+from agents.analyst import (
+    ANALYST_CONTEXT_ITEM_LIMIT,
+    AnalystRunResult,
+    render_structured_fact_evidence,
+)
+from agents.contracts import (
+    AnalystPacket,
+    ContextItemKind,
+    FormType,
+    PlannerRuntimeOutput,
+    normalize_missing_component_groups,
+)
 from evals.agent_eval_v1_contracts import (
     AgentDeterministicChecksV1,
     AgentEvalExampleV1,
@@ -43,9 +54,36 @@ def _normalize_lower(value: Any) -> Optional[str]:
     return normalized.lower() if normalized else None
 
 
+def _normalize_int(value: Any) -> Optional[int]:
+    if value is None or isinstance(value, bool):
+        return None
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
+
 def _normalize_form_type(value: Any) -> Optional[str]:
     normalized = _normalize_text(getattr(value, "value", value))
     return normalized.upper() if normalized else None
+
+
+def _structured_form_matches(
+    expected: Optional[FormType],
+    returned_value: Any,
+) -> bool:
+    returned_text = _normalize_form_type(returned_value)
+    if returned_text is None:
+        return True
+    try:
+        returned = FormType(returned_text)
+    except ValueError:
+        return False
+    if expected is None:
+        return True
+    if expected == FormType.TEN_K:
+        return returned in {FormType.TEN_K, FormType.TEN_K_A}
+    return returned == expected
 
 
 def _metadata_match(
@@ -216,18 +254,23 @@ def _derive_effective_status(
 
 def _extract_semantic_contexts(
     run_output: Dict[str, Any],
-) -> Tuple[List[str], Optional[AnalystPacket], Optional[str]]:
+) -> Tuple[List[str], List[str], Optional[AnalystPacket], Optional[str]]:
     evaluation_trace = run_output.get("evaluation_trace") or {}
     packet_dump = evaluation_trace.get("analyst_packet")
     if packet_dump is None:
-        return [], None, "evaluation_trace.analyst_packet is missing"
+        return [], [], None, "evaluation_trace.analyst_packet is missing"
     try:
         packet = AnalystPacket.model_validate(packet_dump)
     except Exception as exc:
-        return [], None, str(exc)
+        return [], [], None, str(exc)
 
     contexts: List[str] = []
+    context_kinds: List[str] = []
     for item in packet.context_items[:ANALYST_CONTEXT_ITEM_LIMIT]:
+        if item.kind == ContextItemKind.STRUCTURED_FACT:
+            contexts.append(render_structured_fact_evidence(item.structured_fact))
+            context_kinds.append(item.kind.value)
+            continue
         payload = item.payload or {}
         content = (
             payload.get("table_markdown")
@@ -238,7 +281,135 @@ def _extract_semantic_contexts(
         normalized = str(content).strip()
         if normalized:
             contexts.append(normalized)
-    return contexts, packet, None
+            context_kinds.append(item.kind.value)
+    return contexts, context_kinds, packet, None
+
+
+def _structured_evidence_diagnostics(
+    run_output: Dict[str, Any],
+    packet: Optional[AnalystPacket],
+) -> Dict[str, Any]:
+    successful_results = 0
+    for result in run_output.get("structured_fact_results") or []:
+        if not isinstance(result, dict):
+            continue
+        tool_result = result.get("tool_result") or {}
+        value = tool_result.get("value") if isinstance(tool_result, dict) else None
+        resolved_metric_id = _normalize_text(result.get("resolved_metric_id"))
+        tool_metric_id = (
+            _normalize_text(tool_result.get("metric_id"))
+            if isinstance(tool_result, dict)
+            else None
+        )
+        resolved_ticker = _normalize_text(result.get("resolved_ticker"))
+        tool_ticker = (
+            _normalize_text(tool_result.get("ticker"))
+            if isinstance(tool_result, dict)
+            else None
+        )
+        resolved_year = _normalize_int(result.get("resolved_fiscal_year"))
+        tool_year = (
+            _normalize_int(tool_result.get("fiscal_year"))
+            if isinstance(tool_result, dict)
+            else None
+        )
+        raw_components = (
+            tool_result.get("components")
+            if isinstance(tool_result, dict)
+            else None
+        )
+        try:
+            normalize_missing_component_groups(
+                tool_result.get("missing_component_groups")
+                if isinstance(tool_result, dict)
+                else None
+            )
+            missing_component_groups_valid = True
+        except ValueError:
+            missing_component_groups_valid = False
+        if (
+            _normalize_lower(result.get("resolver_status")) == "resolved"
+            and resolved_metric_id is not None
+            and isinstance(tool_result, dict)
+            and (tool_metric_id is None or tool_metric_id == resolved_metric_id)
+            and (
+                resolved_ticker is None
+                or tool_ticker is None
+                or resolved_ticker.upper() == tool_ticker.upper()
+            )
+            and (
+                resolved_year is None
+                or tool_year is None
+                or resolved_year == tool_year
+            )
+            and _structured_form_matches(
+                packet.metadata.form_type if packet is not None else None,
+                tool_result.get("form_type"),
+            )
+            and (
+                raw_components is None
+                or (
+                    isinstance(raw_components, list)
+                    and all(
+                        isinstance(component, dict)
+                        for component in raw_components
+                    )
+                )
+            )
+            and missing_component_groups_valid
+            and tool_result.get("ok") is True
+            and _normalize_lower(tool_result.get("status")) == "ok"
+            and not isinstance(value, bool)
+            and isinstance(value, (int, float))
+            and math.isfinite(float(value))
+        ):
+            successful_results += 1
+
+    items = list(packet.context_items) if packet is not None else []
+    typed_items = [
+        item for item in items if item.kind == ContextItemKind.STRUCTURED_FACT
+    ]
+    visible_typed_items = [
+        item
+        for item in items[:ANALYST_CONTEXT_ITEM_LIMIT]
+        if item.kind == ContextItemKind.STRUCTURED_FACT
+    ]
+    synthetic_text_items = 0
+    for item in items:
+        if item.kind == ContextItemKind.STRUCTURED_FACT:
+            continue
+        payload = item.payload or {}
+        content = payload.get("content") or payload.get("text") or ""
+        if str(content).lstrip().lower().startswith("structured fact:"):
+            synthetic_text_items += 1
+
+    provenance_fields = {
+        "metric_id": lambda evidence: bool(evidence.metric_id),
+        "numeric_value": lambda evidence: (
+            not isinstance(evidence.value, bool)
+            and isinstance(evidence.value, (int, float))
+            and math.isfinite(float(evidence.value))
+        ),
+        "accession": lambda evidence: bool(evidence.accession_number),
+        "report_date": lambda evidence: bool(evidence.report_date),
+        "filed_date": lambda evidence: bool(evidence.filed_date),
+        "source_url": lambda evidence: bool(evidence.source_url),
+    }
+    coverage_counts = {
+        field_name: sum(
+            1
+            for item in typed_items
+            if item.structured_fact is not None and predicate(item.structured_fact)
+        )
+        for field_name, predicate in provenance_fields.items()
+    }
+    return {
+        "successful_execution_results": successful_results,
+        "typed_structured_fact_contexts": len(typed_items),
+        "analyst_visible_typed_structured_fact_contexts": len(visible_typed_items),
+        "synthetic_structured_text_contexts": synthetic_text_items,
+        "provenance_coverage_counts": coverage_counts,
+    }
 
 
 def _extract_timings(
@@ -501,7 +672,9 @@ def evaluate_run_output(
             "Completed or degraded run is missing an analyst result",
         )
 
-    semantic_contexts, _packet, packet_error = _extract_semantic_contexts(run_output)
+    semantic_contexts, semantic_context_kinds, packet, packet_error = (
+        _extract_semantic_contexts(run_output)
+    )
     if packet_error and effective_status in {"completed", "degraded"}:
         contract_error("analyst_packet_contract", packet_error)
 
@@ -552,6 +725,8 @@ def evaluate_run_output(
         analyst_citation_count=len(analyst.citations or []) if analyst is not None else 0,
         timings_ms=_extract_timings(run_output, analyst),
         semantic_contexts=semantic_contexts,
+        semantic_context_kinds=semantic_context_kinds,
+        structured_evidence=_structured_evidence_diagnostics(run_output, packet),
         trace={
             "planner": run_output.get("planner"),
             "retrieval": run_output.get("retrieval"),
@@ -612,6 +787,68 @@ def deterministic_summary(rows: Sequence[AgentEvalRowV1]) -> Dict[str, float]:
     for timing_name in ("planner", "retrieval", "structured_fact", "analyst", "total"):
         summary[f"{timing_name}_ms_mean"] = mean(
             [float(row.timings_ms.get(timing_name, 0)) for row in rows]
+        )
+    successful_results = sum(
+        int(row.structured_evidence.get("successful_execution_results") or 0)
+        for row in rows
+    )
+    typed_contexts = sum(
+        int(row.structured_evidence.get("typed_structured_fact_contexts") or 0)
+        for row in rows
+    )
+    visible_typed_contexts = sum(
+        int(
+            row.structured_evidence.get(
+                "analyst_visible_typed_structured_fact_contexts"
+            )
+            or 0
+        )
+        for row in rows
+    )
+    synthetic_text_contexts = sum(
+        int(row.structured_evidence.get("synthetic_structured_text_contexts") or 0)
+        for row in rows
+    )
+    summary.update(
+        {
+            "structured_successful_execution_results": float(successful_results),
+            "structured_typed_contexts": float(typed_contexts),
+            "structured_analyst_visible_typed_contexts": float(
+                visible_typed_contexts
+            ),
+            "structured_synthetic_text_contexts": float(synthetic_text_contexts),
+            "structured_typed_representation_rate": (
+                float(typed_contexts) / float(successful_results)
+                if successful_results
+                else 0.0
+            ),
+            "structured_analyst_visibility_rate": (
+                float(visible_typed_contexts) / float(typed_contexts)
+                if typed_contexts
+                else 0.0
+            ),
+        }
+    )
+    for field_name in (
+        "metric_id",
+        "numeric_value",
+        "accession",
+        "report_date",
+        "filed_date",
+        "source_url",
+    ):
+        covered = sum(
+            int(
+                (
+                    row.structured_evidence.get("provenance_coverage_counts")
+                    or {}
+                ).get(field_name)
+                or 0
+            )
+            for row in rows
+        )
+        summary[f"structured_{field_name}_coverage_rate"] = (
+            float(covered) / float(typed_contexts) if typed_contexts else 0.0
         )
     return summary
 

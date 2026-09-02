@@ -202,6 +202,8 @@ class AgentEvalRowV1(BaseModel):
 
     timings_ms: Dict[str, int] = Field(default_factory=dict)
     semantic_contexts: List[str] = Field(default_factory=list)
+    semantic_context_kinds: List[str] = Field(default_factory=list)
+    structured_evidence: Dict[str, Any] = Field(default_factory=dict)
     deterministic: AgentDeterministicChecksV1 = Field(
         default_factory=AgentDeterministicChecksV1
     )
