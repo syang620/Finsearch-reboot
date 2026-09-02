@@ -844,7 +844,7 @@ diagnostics exclude the same result from successful-execution counts.
 
 - Evaluated implementation SHA:
   `b3d49134038adde61d160677cfc79d6bb8b06ea5`.
-- Evidence artifact commit SHA: `UPDATED_EVIDENCE_COMMIT_SHA`.
+- Evidence artifact commit SHA: `ae10ca3b22ae1cc1833e1d0ee88fbb1798450787`.
 - Dataset: the same 15 cases at
   `data/evals/agents/v1/agent_eval_routing_v1.jsonl`, SHA-256
   `c0fbdd097d7fa1b3eb22953a3ba4e8c0e84aa70a8786e08ba78a3b305cabe6cd`
