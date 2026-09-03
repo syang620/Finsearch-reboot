@@ -27,6 +27,12 @@ immutable artifacts, and unchanged 15-case live-gate result are recorded in
 `docs/EVALUATION_BASELINES.md` under “Per-Lane Status and Degradation —
 2026-09-02.”
 
+The PR5 admission-loss correction was evaluated at
+`06835feaf10237aa79bd494d9fef0f4fc1aa0c0c`. Its expanded matrix and fresh
+15-case live evidence are recorded under “PR5 Admission-Loss Correction —
+2026-09-03.” The original `25e359d` artifacts and failing live baseline remain
+unchanged.
+
 The initial PR3 structured-fact capability baseline was evaluated independently at
 `6b6b6173bac9045b03ad2292910b5acfd51740c8`; review fixes were verified at
 `5a93171562dce106d1dd45cfe0c80aa5c01628ac` and
@@ -86,10 +92,13 @@ V1 treats reported runtime status and lane summaries as authoritative:
 }
 ```
 
-The evaluator independently derives shadow KB and structured status, admitted-
-evidence usability, effective status, and failure stage from execution artifacts and
-the final analyst packet. Any disagreement with runtime output is a critical
-inconsistency; evaluator values never replace runtime results.
+The evaluator independently derives shadow KB and structured status,
+admitted-evidence usability, effective status, and failure stage from raw execution
+results plus analyst-visible contexts and issues. It does not import or call the
+runtime lane helper. Any disagreement with runtime output is a critical
+inconsistency; evaluator values never replace runtime results. Compact retrieval
+output exposes the exact final `retrieved_candidate_count` for this independent
+admission comparison.
 
 The v1 evaluator requests the opt-in orchestration evidence trace. Its only payload
 is the final serialized `AnalystPacket`; semantic contexts are derived from that
@@ -136,12 +145,15 @@ Run it without external services:
 PYTHONPATH=.:src python scripts/evals/agents/eval_agent_degradation_v1.py
 ```
 
-Its 11 fault-injected cases cover both-lane success, either- and both-lane failure,
+Its 13 fault-injected cases cover both-lane success, either- and both-lane failure,
 usable KB partial, unusable structured partial, single-lane unusable runs, degraded
 evidence followed by analyst failure, non-filing zero-lane success, and filing
-zero-evidence rejection. It reports degradation classification accuracy, failure
-containment, all-lanes-unusable fail-closed behavior, disclosure, runtime/evaluator
-consistency, and overall graceful-degradation accuracy.
+zero-evidence rejection. They also cover two retrieved KB candidates with one
+hydration loss and one visible item, and two raw-`ok` structured requests with one
+PR4 rejection and one admitted fact; both must be usable `partial`, report
+`degraded`, and run the analyst. The matrix reports degradation classification
+accuracy, failure containment, all-lanes-unusable fail-closed behavior, disclosure,
+runtime/evaluator consistency, and overall graceful-degradation accuracy.
 
 The unchanged 15-case route-aware live dataset does not intentionally inject
 degradation. Its PR5 role is regression detection for existing routing, retrieval,

@@ -17,7 +17,9 @@ prove that evidence survived admission into analyst context.
 
 The runtime is authoritative for serialized `lanes`, `degradation`, top-level
 `status`, and `failure_stage`. The evaluator independently derives a shadow result
-and reports inconsistencies; it never replaces runtime values.
+from raw execution results plus analyst-visible contexts and issues, reports
+inconsistencies, and never imports or calls the runtime lane helper. It never
+replaces runtime values.
 
 Each lane reports `requested`, `attempted`, normalized `issues`, and one status:
 `not_requested`, `ok`, `partial`, `failed`, `ambiguous`, `unsupported`, or
@@ -30,15 +32,28 @@ Usability is an internal derivation, not a public status synonym:
   analyst packet.
 - A structured tool result may be `partial` while remaining unusable.
 
+For KB, `ok` requires every retrieved candidate expected within the configured KB
+admission bound to appear as analyst-visible non-structured evidence. If at least
+one item is admitted but another expected candidate is lost during hydration or
+admission, the lane is `partial` and usable. If none is admitted, the lane is
+`failed` and unusable.
+
+For structured facts, `ok` requires every successfully executed requested fact
+that is expected to yield evidence to survive PR4 admission. Any
+successful-but-rejected result makes the lane `partial` if other structured
+evidence survives; otherwise the lane is `failed` and unusable.
+
 Lane normalization follows this truth table:
 
 | Runtime outcome | Lane status | Usable |
 |---|---|---:|
 | Lane not requested by the effective plan | `not_requested` | No |
 | Requested but never processed | `skipped` | No |
-| All operations succeeded and admitted evidence exists | `ok` | Yes |
-| Admitted evidence exists and any operation was unsuccessful | `partial` | Yes |
+| Every requested operation expected to yield evidence succeeded and all expected evidence was admitted | `ok` | Yes |
+| Admitted evidence exists and an operation failed or expected evidence was lost during admission | `partial` | Yes |
 | Structured tool returned partial without admitted evidence | `partial` | No |
+| Retrieved KB candidates but zero KB evidence was admitted | `failed` | No |
+| Successful structured result(s) but zero PR4-valid typed evidence was admitted | `failed` | No |
 | Every requested structured operation was ambiguous | `ambiguous` | No |
 | Every requested structured operation was unsupported at the runtime boundary | `unsupported` | No |
 | Any other or mixed unusable outcome | `failed` | No |

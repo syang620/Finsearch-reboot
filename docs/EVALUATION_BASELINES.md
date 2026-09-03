@@ -1072,3 +1072,184 @@ regression observation. The run took 2,431,747 ms (about 40m32s). After every
 artifact was written, the previously documented MCP/AnyIO asynchronous-generator
 cleanup hang recurred. The completed wrapper was terminated with SIGTERM; no case
 was rerun, and the original Qdrant container state was restored.
+
+## PR5 Admission-Loss Correction — 2026-09-03
+
+This correction closes the two PR5 admission-loss gaps while preserving the
+original `25e359d` implementation and evidence artifacts unchanged.
+
+### Run identity
+
+| Field | Value |
+|---|---|
+| Status | Canonical admission-loss correction; deterministic matrix passed; live regression gate failed and was preserved |
+| Evaluated implementation SHA | `06835feaf10237aa79bd494d9fef0f4fc1aa0c0c` |
+| Degradation dataset | `data/evals/agents/v1/agent_eval_degradation_v1.jsonl` |
+| Degradation dataset SHA-256 | `0c7fa622902bf00a89a93120e8a0ad8866e6195f54810adf68f75b51f2cc0ca6` |
+| Deterministic cases | 13 |
+| Live regression dataset | unchanged `data/evals/agents/v1/agent_eval_routing_v1.jsonl` |
+| Live dataset SHA-256 | `c0fbdd097d7fa1b3eb22953a3ba4e8c0e84aa70a8786e08ba78a3b305cabe6cd` |
+| Live cases | 15 |
+| Python / pytest | `3.11.14` / `9.0.2` |
+| Planner / analyst | `ollama/qwen2.5:14b-instruct`, digest `7cdf5a0187d5c58cc5d369b255592f7841d1c4696d45a8c8a9489440385b22f6` |
+| Dense embedding | `qwen3-embedding:8b`, digest `64b933495768fbd3b87c20583d379728a07471e0c66733a9df87cd1901b3c44b` |
+| Reranker | `Qwen/Qwen3-Reranker-8B` through the configured Qwen3 API backend |
+| Qdrant | `1.16.2`; collection `sec_docs_dense_bm25_pr2_63dcec0`; 582 green points; fingerprint `0e60c99368eae07b4f00cb86a3d6e58d49b7e6bbd2c1df84e98204e8be75a744` before and after |
+| RAGAS | Disabled |
+
+The repository did not pin or recommend a pytest version. `pytest==9.0.2` was
+installed only in the `finsearch-arm` environment; no requirements file, project
+metadata, or lockfile changed. The tracked worktree was clean and exactly matched
+the evaluated implementation SHA before measurement.
+
+The corrected runtime counts retrieved KB candidates against analyst-visible KB
+evidence. Some admitted evidence plus any expected admission loss is usable
+`partial`; zero admitted KB evidence is unusable `failed`; complete admission is
+`ok`. Structured `ok` requires every successfully executed requested fact expected
+to yield evidence to survive PR4 admission. A successful-but-rejected result is
+usable `partial` when another fact survives and unusable `failed` otherwise.
+
+The shadow evaluator independently derives these outcomes from raw execution
+results plus analyst-visible contexts and issues. It does not import or call the
+runtime lane helper. Compact retrieval output carries the exact final
+`retrieved_candidate_count`, allowing count-only losses at the five-item analyst
+visibility boundary to be checked independently.
+
+### Deterministic degradation matrix
+
+Command:
+
+```bash
+conda run -n finsearch-arm --no-capture-output \
+  env PYTHONPATH=.:src python \
+  scripts/evals/agents/eval_agent_degradation_v1.py \
+  --eval-path data/evals/agents/v1/agent_eval_degradation_v1.jsonl \
+  --out-dir artifacts/evals/agents/v1/degradation/baselines/06835fe
+```
+
+| Metric | Result |
+|---|---:|
+| Degradation classification accuracy | 100% |
+| Failure-containment rate | 100% |
+| All-lanes-unusable fail-closed rate | 100% |
+| Degradation-disclosure rate | 100% |
+| Runtime/evaluator consistency rate | 100% |
+| Overall graceful-degradation behavior accuracy | 100% |
+
+The two added cases exercise real admission behavior:
+
+- `PR5_KB_ADMISSION_PARTIAL`: two retrieved candidates, one real hydration
+  rejection, and one admitted analyst-visible text item produce usable `partial`,
+  top-level `degraded`, and analyst execution.
+- `PR5_STRUCTURED_MIXED_ADMISSION`: two raw tool-`ok` results, one PR4 rejection,
+  and one admitted typed fact produce usable `partial`, top-level `degraded`, and
+  analyst execution.
+
+Artifacts:
+
+- `artifacts/evals/agents/v1/degradation/baselines/06835fe/summary.json`, SHA-256
+  `709d04f659981a76db054cd363c9310efb9efa3d1b200110bdce80bdaf088015`.
+- `artifacts/evals/agents/v1/degradation/baselines/06835fe/per_case.jsonl`, SHA-256
+  `c25bbe4a07e3c2780374e144f9fa9357b7e68df943e970a668cf4f9c027e08f6`.
+- `artifacts/evals/agents/v1/degradation/baselines/06835fe/manifest.json` records
+  both commands, identities, hashes, environment provenance, and limitations.
+
+### Fresh route-aware live gate
+
+The same 15-case RAGAS-disabled dataset was run once. Environment values for the
+SEC contact and reranker credential were supplied but are not recorded. The
+effective command was:
+
+```bash
+DASHSCOPE_API_KEY='<RERANKER_CREDENTIAL>' \
+QWEN3_RERANK_MODEL='Qwen/Qwen3-Reranker-8B' \
+SEC_RERANK_MODEL='Qwen/Qwen3-Reranker-8B' \
+QWEN3_EMBED_API_URL='http://127.0.0.1:11434/api/embed' \
+QWEN3_EMBED_MODEL='qwen3-embedding:8b' \
+QDRANT_URL='http://127.0.0.1:6333' \
+QDRANT_HOST='127.0.0.1' \
+QDRANT_PORT='6333' \
+QDRANT_COLLECTION_NAME='sec_docs_dense_bm25_pr2_63dcec0' \
+SEC_USER_AGENT='<SEC_CONTACT>' \
+FINSEARCH_ORCHESTRATOR_CHECKPOINTER_PATH='<CHECKPOINTER_DB>' \
+PYTHONPATH=.:src conda run -n finsearch-arm --no-capture-output python \
+  scripts/evals/agents/eval_agents_v1.py \
+  --eval-path data/evals/agents/v1/agent_eval_routing_v1.jsonl \
+  --out-dir artifacts/evals/agents/v1/baselines/06835fe \
+  --planner-model 'ollama/qwen2.5:14b-instruct' \
+  --analyst-model 'ollama/qwen2.5:14b-instruct' \
+  --deterministic-threshold 0.90 \
+  --max-critical-failure-rate 0
+```
+
+All 15 rows were valid and the evaluator recorded zero errors. The deterministic
+score was `0.948540`; three rows had critical failures, for a critical-failure rate
+of `0.20`. The strict gate therefore failed (`overall_pass=false`) and the result
+is preserved without selective reruns or tuning.
+
+Runtime/evaluator lane-status, effective-status, failure-stage, and degradation
+consistency rates were all 100%. Seven successful structured executions produced
+seven typed, analyst-visible contexts with 100% coverage for metric ID, finite
+numeric value, accession, report date, filed date, and source URL. No synthetic
+structured-text contexts were observed.
+
+The three critical rows were:
+
+- `AGENT_V1_HYBRID_001`: the analyst exceeded its tool-loop budget and its final
+  fallback output failed the analyst contract, producing an analyst-stage failure
+  and no accepted citation instead of the expected successful answer.
+- `AGENT_V1_ANALYST_001`: multiple successful calculator calls could not be
+  uniquely matched to the final calculation, producing
+  `CALCULATION_RESULT_AMBIGUOUS`, analyst `tool_error`, and no accepted citation.
+- `AGENT_V1_ANALYST_002`: one retrieval job timed out while three KB contexts
+  survived. Runtime and shadow both classified the KB lane as usable `partial` and
+  the run as `degraded`; the frozen row expects unqualified completion and does not
+  allow degradation.
+
+Artifacts:
+
+- `artifacts/evals/agents/v1/baselines/06835fe/summary.json`, SHA-256
+  `af36479d90980fcf47e4d9756e75378563ccebbd1e185efe504f9eb640432b6d`.
+- `artifacts/evals/agents/v1/baselines/06835fe/per_query.jsonl`, SHA-256
+  `489ad032d4d46c4ca61c11b493bd4dce156ee3e91159576b39578b409c39f1a5`.
+- zero-byte `artifacts/evals/agents/v1/baselines/06835fe/errors.jsonl`, SHA-256
+  `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`.
+
+The live run took 2,352,473 ms (about 39m12s). The known MCP/AnyIO
+asynchronous-generator warnings appeared during final interpreter shutdown, after
+all artifacts were written. The evaluator exited with status zero; no manual
+termination or case rerun was needed.
+
+### Corpus rebuild and reproducibility limitation
+
+The tracked AAPL FY2024 10-K HTML retained SHA-256
+`24a830a0f1256e371d36a1f7f72e5e85a38037d1de2f6f966eb8457db42ff6d6`.
+Freshly generated 101-row text, 48-row table, and 107-row split-text sidecars
+retained their historical SHA-256 values
+`a2035e3048c9d69945a6851e9f92b6eb64d97ea15ef1ab8fe1812b25e8cd08e0`,
+`a60a91dd358656c3667b9700a4e3a2fde5558a67900f62c0a22893fdaf2a6b1d`, and
+`856f6aec30636750141a695d864eb08da182160e25143b393b49bc7769436f71`.
+
+The rebuilt 582-point collection fingerprint was
+`0e60c99368eae07b4f00cb86a3d6e58d49b7e6bbd2c1df84e98204e8be75a744`
+before and after the live run, but differs from the historical PR5 fingerprint
+`103a1131b373fb651727048b6a875e4bd96b64754ebafd41c42dc6dcccfc5df8`.
+The exact historical vector snapshot therefore was not reproduced; the preserved
+model digests, source and sidecar hashes, point count, and stable within-run
+fingerprint bound this fresh result without claiming collection equivalence.
+
+### Local test verification
+
+The focused admission-loss, compact-retrieval, degradation-matrix, and route-aware
+evaluator suite passed 67 tests. The full suite completed with 394 passing tests,
+47 passing subtests, and two failures that were reproduced unchanged against the
+pre-fix branch head:
+
+- `tests/agents/planner/test_planner_routes.py::test_planner_routes_match_expected_routes`
+  (`alias_002` expected `structured_fact`, observed `kb`).
+- `tests/agents/retrieval/test_retrieval_workflow_no_tool_call.py::test_retrieval_no_tool_call_increments_attempts_and_stops_on_budget`
+  (expected two attempts, observed one).
+
+The installed environment also contains a top-level `tests` package, so the full
+run used an in-process namespace shim to select this repository's namespace-only
+test directory. Neither pre-existing failure touches the admission-loss changes.

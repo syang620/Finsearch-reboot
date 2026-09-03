@@ -16,7 +16,8 @@
   provenance-coverage results are recorded in `docs/EVALUATION_BASELINES.md`.
 - PR5 — complete: authoritative per-lane status, admitted-evidence usability,
   filing-task fail-closed behavior, and deterministic degradation evaluation at
-  `25e359d85776dc422e0d4d72b47152b407862d30`.
+  `25e359d85776dc422e0d4d72b47152b407862d30`; the admission-loss correction was
+  evaluated at `06835feaf10237aa79bd494d9fef0f4fc1aa0c0c`.
 
 ---
 
@@ -960,15 +961,25 @@ analyst.status = ok
 - Partial hybrid outcomes are machine-readable and runtime-authoritative.
 - Usability is derived only from admitted KB or PR4-valid typed evidence, not from
   lane status.
+- KB `ok` requires every retrieved candidate expected within the configured
+  admission bound to survive as analyst-visible KB evidence. Admission loss is
+  `partial` when evidence survives and `failed` when none survives.
+- Structured `ok` requires every successfully executed requested fact expected to
+  yield evidence to survive PR4 admission. A successful-but-rejected result is
+  `partial` with surviving structured evidence and `failed` without it.
 - Filing tasks with no usable requested lane fail closed before analyst execution.
 - Fatal evidence failure selects the terminal attempted lane; a later analyst
   failure takes precedence without clearing degradation.
 - PR3 KB fallback leaves structured capability issues observable while the
   structured lane remains `not_requested`.
-- The route-aware evaluator derives shadow lane status, usability, effective status,
-  and failure stage and treats inconsistencies as critical.
-- The frozen PR5 fault-injection matrix records classification, containment,
-  fail-closed, disclosure, consistency, and overall behavior rates.
+- The route-aware evaluator derives shadow lane status, usability, effective
+  status, and failure stage from raw execution results plus analyst-visible
+  contexts and issues, without importing the runtime lane helper, and treats
+  inconsistencies as critical.
+- The frozen 13-case PR5 fault-injection matrix records classification,
+  containment, fail-closed, disclosure, consistency, and overall behavior rates,
+  including one-of-two KB hydration admission and one-of-two structured PR4
+  admission loss.
 - User-facing and analyst-bound notices never interpolate raw error text.
 
 ---
