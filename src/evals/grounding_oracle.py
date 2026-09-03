@@ -37,6 +37,8 @@ def inspect_claims(packet: dict, candidate: dict, limit: int = 5) -> dict:
         for key in ("claim_id", "text", "metric_id"):
             if isinstance(claim.get(key), str):
                 claim[key] = claim[key].strip()
+        if "metric_id" in claim and claim["metric_id"] == "":
+            claim["metric_id"] = None
         if set(claim) - {"claim_id", "claim_type", "text", "context_ids", "metric_id"}:
             errors.append("GROUNDING_CLAIMS_MALFORMED")
         if not isinstance(claim.get("context_ids"), list) or any(not isinstance(ref, str) for ref in claim.get("context_ids", [])):
