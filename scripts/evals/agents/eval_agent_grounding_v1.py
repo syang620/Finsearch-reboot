@@ -81,7 +81,8 @@ class CandidateModel:
 
 class Calculator:
     async def ainvoke(self, args):
-        return {"artifact": {"result": 80.0, **args}, "content": json.dumps({"result": 80.0, **args}), "status": "success"}
+        # Injected tools return their payload directly (not an MCP envelope).
+        return {"result": 80.0, **args}
 
 
 async def evaluate(case):
@@ -135,6 +136,8 @@ async def main(args):
     manifest = {
         "runtime_commit": args.runtime_commit or subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip(),
         "harness_commit": subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip(),
+        "harness_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+        "oracle_sha256": hashlib.sha256(Path("src/evals/grounding_oracle.py").read_bytes()).hexdigest(),
         "dataset": str(dataset), "dataset_sha256": hashlib.sha256(dataset.read_bytes()).hexdigest(),
         "python": platform.python_version(), "pytest": pytest.__version__,
         "measurement": "deterministic synthetic FinalAnswer injection through AnalystAgent.arun; no live model",
