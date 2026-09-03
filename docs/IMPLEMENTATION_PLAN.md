@@ -20,7 +20,9 @@
   evaluated at `06835feaf10237aa79bd494d9fef0f4fc1aa0c0c`, and the post-review
   integration correction was evaluated at
   `7f258a378b75b3781d5ebf45edf70c597b381511`. Final CLI and empty-text admission
-  review fixes were evaluated at `cbff8ce06cdbfc13f9c19c445c59965d326d61b9`.
+  review fixes were evaluated at `cbff8ce06cdbfc13f9c19c445c59965d326d61b9`;
+  final admission-truthfulness audit fixes were evaluated at
+  `29d22268a27e51a62157eeae53649858d74e5242`.
 
 ---
 

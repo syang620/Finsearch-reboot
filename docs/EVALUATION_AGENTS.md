@@ -35,7 +35,10 @@ The PR5 admission-loss correction was evaluated at
 under “PR5 Post-Review Integration Correction — 2026-09-03.” Final CLI and
 empty-text admission fixes were evaluated at
 `cbff8ce06cdbfc13f9c19c445c59965d326d61b9` and are recorded under “PR5 Final
-Review Closure — 2026-09-03.” All earlier SHA-keyed evidence remains unchanged.
+Review Closure — 2026-09-03.” The final admission-truthfulness audit fixes were
+evaluated at `29d22268a27e51a62157eeae53649858d74e5242` and are recorded under “PR5
+Admission Truthfulness Audit Closure — 2026-09-03.” All earlier SHA-keyed evidence
+remains unchanged.
 
 The initial PR3 structured-fact capability baseline was evaluated independently at
 `6b6b6173bac9045b03ad2292910b5acfd51740c8`; review fixes were verified at
