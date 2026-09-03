@@ -669,7 +669,7 @@ def _lane_issues(
     lane: str,
 ) -> list[OpenIssue]:
     prefixes = (
-        ("RETRIEVAL_", "TABLE_HYDRATION_", "TABLE_MARKDOWN_")
+        ("RETRIEVAL_", "TABLE_HYDRATION_", "TABLE_MARKDOWN_", "EMPTY_TEXT_")
         if lane == "kb"
         else ("STRUCTURED_FACT_",)
     )
@@ -730,7 +730,12 @@ def _derive_evidence_lanes(
     )
     expected_kb_count = min(retrieved_kb_count, _KB_MAX_CONTEXT_ITEMS)
     has_kb_admission_issue = any(
-        issue.code in {"TABLE_HYDRATION_FAILED", "TABLE_MARKDOWN_EMPTY"}
+        issue.code
+        in {
+            "TABLE_HYDRATION_FAILED",
+            "TABLE_MARKDOWN_EMPTY",
+            "EMPTY_TEXT_CONTEXT",
+        }
         for issue in kb_issues
     )
     kb_admission_loss = kb_count < expected_kb_count or (

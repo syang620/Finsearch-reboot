@@ -5,7 +5,11 @@ from types import SimpleNamespace
 import pytest
 from pydantic import ValidationError
 
-from agents.analyst import AnalystRunResult, build_analyst_prompt
+from agents.analyst import (
+    AnalystRunResult,
+    build_analyst_prompt,
+    build_packet_from_retrieval_output,
+)
 from agents.contracts import (
     AnalysisTask,
     AnalystPacket,
@@ -265,6 +269,57 @@ def test_kb_candidate_count_above_packet_cap_requires_admission_issue_for_partia
     )
     state["packet"] = packet.model_copy(update={"open_issues": [issue]})
     assert _output(state)["lanes"]["kb"]["status"] == "partial"
+
+
+def test_empty_text_loss_is_partial_when_later_candidates_backfill_packet_cap() -> None:
+    retrieval_output = {
+        "ok": True,
+        "top_tables": [
+            {
+                "table_name": f"text-{index}",
+                "total_score": 10 - index,
+                "table": {
+                    "payload": {
+                        "doc_type": "text",
+                        "doc_id": f"AAPL_10-K_2024::text::{index}",
+                        "content": "" if index == 0 else f"usable evidence {index}",
+                        "ticker": "AAPL",
+                        "fiscal_year": 2024,
+                        "form_type": "10-K",
+                    }
+                },
+            }
+            for index in range(4)
+        ],
+        "metadata_used": {
+            "ticker": "AAPL",
+            "fiscal_year": 2024,
+            "form_type": "10-K",
+        },
+    }
+    packet = build_packet_from_retrieval_output(
+        user_query="What was revenue?",
+        retrieval_output=retrieval_output,
+        intent=PlannerIntent.FILING_FACT,
+        analysis_task={"task_type": "extract", "metric": "revenue"},
+    )
+    state = {
+        "plan_obj": _plan("kb"),
+        "retrieval_output": retrieval_output,
+        "packet": packet,
+        "analyst_result": _analyst(),
+    }
+
+    assert len(packet.context_items) == 3
+    assert [issue.code for issue in packet.open_issues] == ["EMPTY_TEXT_CONTEXT"]
+
+    output = _output(state)
+
+    assert output["status"] == "degraded"
+    assert output["lanes"]["kb"]["status"] == "partial"
+    assert [issue["code"] for issue in output["lanes"]["kb"]["issues"]] == [
+        "EMPTY_TEXT_CONTEXT"
+    ]
 
 
 def test_structured_tool_partial_without_admitted_evidence_is_unusable() -> None:

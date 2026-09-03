@@ -1097,6 +1097,30 @@ def test_shadow_kb_lane_detects_partial_admission_loss(issue_code: str) -> None:
     assert not lanes.kb.usable
 
 
+def test_shadow_kb_lane_counts_empty_text_loss_after_packet_cap_backfill() -> None:
+    output = _run_output("kb", reported_status="degraded", context_count=3)
+    output["retrieval"]["retrieved_candidate_count"] = 4
+    output["retrieval"]["attempts"][0]["results"] = [
+        {"doc_id": f"AAPL_10-K_2024::text::{index}", "score": 1.0}
+        for index in range(4)
+    ]
+    empty_text_issue = {
+        "code": "EMPTY_TEXT_CONTEXT",
+        "message": "One retrieved text candidate could not be admitted.",
+        "severity": "warning",
+    }
+    output["open_issues"] = [empty_text_issue]
+    output["evaluation_trace"]["analyst_packet"]["open_issues"] = [
+        empty_text_issue
+    ]
+
+    lanes, _metrics, _statuses = derive_lane_status(output)
+
+    assert lanes.kb.status == "partial"
+    assert lanes.kb.usable
+    assert lanes.kb.usable_evidence_count == 3
+
+
 def test_shadow_structured_lane_detects_tool_ok_admission_rejection() -> None:
     output = _run_output("structured_fact", reported_status="degraded")
     output["planner"]["structured_fact_requests"].append(
