@@ -1,0 +1,9 @@
+{
+  "all_lanes_unusable_fail_closed_rate": 1.0,
+  "cases": 13,
+  "degradation_classification_accuracy": 1.0,
+  "degradation_disclosure_rate": 1.0,
+  "failure_containment_rate": 1.0,
+  "overall_graceful_degradation_behavior_accuracy": 1.0,
+  "runtime_evaluator_consistency_rate": 1.0
+}

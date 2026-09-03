@@ -1387,3 +1387,83 @@ The focused batch, lane-classification, degradation-matrix, and route-aware
 evaluator suite passed 72 tests. The full suite completed with 402 passing tests,
 47 passing subtests, and the same two pre-existing failures documented in the
 `06835fe` baseline. Neither failure touches this correction.
+
+## PR5 Final Review Closure — 2026-09-03
+
+This final correction closes the two findings from the review of `7ad524c`. The
+`25e359d`, `06835fe`, and `7f258a3` evidence remains immutable.
+
+### Run identity
+
+| Field | Value |
+|---|---|
+| Status | Canonical final PR5 correction; deterministic matrix passed; live regression gate failed and was preserved |
+| Evaluated implementation SHA | `cbff8ce06cdbfc13f9c19c445c59965d326d61b9` |
+| Degradation dataset SHA-256 / cases | `0c7fa622902bf00a89a93120e8a0ad8866e6195f54810adf68f75b51f2cc0ca6` / 13 |
+| Live dataset SHA-256 / cases | `c0fbdd097d7fa1b3eb22953a3ba4e8c0e84aa70a8786e08ba78a3b305cabe6cd` / 15 |
+| Python / pytest | `3.11.14` / `9.0.2` |
+| Planner / analyst | `ollama/qwen2.5:14b-instruct`, digest `7cdf5a0187d5c58cc5d369b255592f7841d1c4696d45a8c8a9489440385b22f6` |
+| Dense embedding | `qwen3-embedding:8b`, digest `64b933495768fbd3b87c20583d379728a07471e0c66733a9df87cd1901b3c44b` |
+| Qdrant | `1.16.2`; collection `sec_docs_dense_bm25_pr2_63dcec0`; 582 green points; fingerprint `0e60c99368eae07b4f00cb86a3d6e58d49b7e6bbd2c1df84e98204e8be75a744` before and after |
+| RAGAS | Disabled |
+
+The primary CLI now treats a usable `degraded` result as successful, displays the
+degraded status and canonical notice before the analyst answer, and exits zero.
+The runtime and independent shadow evaluator also count `EMPTY_TEXT_CONTEXT` as KB
+admission loss when later candidates backfill the three visible KB slots; the lane
+remains usable but becomes `partial` and the top-level result is `degraded`.
+
+`pytest==9.0.2` remained environment-only, repository dependency files were
+unchanged, and the tracked worktree matched the implementation SHA before both
+measurements.
+
+### Deterministic and live results
+
+The unchanged 13-case deterministic command wrote to
+`artifacts/evals/agents/v1/degradation/baselines/cbff8ce`. All six matrix rates
+were 100%. Its summary SHA-256 is
+`709d04f659981a76db054cd363c9310efb9efa3d1b200110bdce80bdaf088015` and its
+per-case SHA-256 is
+`c25bbe4a07e3c2780374e144f9fa9357b7e68df943e970a668cf4f9c027e08f6`.
+
+The unchanged 15-case route-aware live command used the same redacted environment
+and thresholds as the `7f258a3` run, a fresh checkpointer, and output directory
+`artifacts/evals/agents/v1/baselines/cbff8ce`. It ran exactly once. All 15 rows
+were valid with zero evaluator errors. The deterministic score was `0.961874` and
+two rows were critical, for a `0.133333` critical-failure rate; the strict
+zero-critical-row gate therefore remained false.
+
+Runtime/shadow lane status, effective status, failure stage, and exact degradation
+summary consistency were all 100%. Seven successful structured executions yielded
+seven typed, analyst-visible contexts with complete provenance-field coverage and
+no synthetic structured-text contexts.
+
+The critical rows were unchanged:
+
+- `AGENT_V1_HYBRID_001`: analyst tool-loop exhaustion and an invalid fallback
+  output caused analyst-stage failure with no accepted citation.
+- `AGENT_V1_ANALYST_001`: ambiguous matching across successful calculator calls
+  produced `CALCULATION_RESULT_AMBIGUOUS`, analyst `tool_error`, and no accepted
+  citation.
+
+Live artifacts:
+
+- `artifacts/evals/agents/v1/baselines/cbff8ce/summary.json`, SHA-256
+  `8d00c760ae69b85b80426ca0537fe885479888fad68ede6f361ef96d677a4709`.
+- `artifacts/evals/agents/v1/baselines/cbff8ce/per_query.jsonl`, SHA-256
+  `c013a54667addc3c14dc402ade692b7c3d1400276b1b407a77024e941a4f067b`.
+- Zero-byte `artifacts/evals/agents/v1/baselines/cbff8ce/errors.jsonl`, SHA-256
+  `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`.
+
+The live run took 2,178,744 ms (about 36 minutes). Known MCP/AnyIO shutdown
+warnings appeared only after artifact generation; the evaluator exited
+successfully. The post-run collection fingerprint and all dataset/source/sidecar
+hashes matched their pre-run values. Exact historical collection equivalence is
+still not claimed, and the hosted reranker exposes no immutable service-side
+digest.
+
+The focused CLI, batch, lane, degradation, and route-aware evaluator suite passed
+75 tests. The full suite completed with 405 passing tests, 47 passing subtests, and
+the same two pre-existing failures documented above. Neither failure touches PR5.
+Full commands, redacted environment, hashes, provenance, and limitations are in
+`artifacts/evals/agents/v1/degradation/baselines/cbff8ce/manifest.json`.

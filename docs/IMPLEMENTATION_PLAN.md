@@ -19,7 +19,8 @@
   `25e359d85776dc422e0d4d72b47152b407862d30`; the admission-loss correction was
   evaluated at `06835feaf10237aa79bd494d9fef0f4fc1aa0c0c`, and the post-review
   integration correction was evaluated at
-  `7f258a378b75b3781d5ebf45edf70c597b381511`.
+  `7f258a378b75b3781d5ebf45edf70c597b381511`. Final CLI and empty-text admission
+  review fixes were evaluated at `cbff8ce06cdbfc13f9c19c445c59965d326d61b9`.
 
 ---
 
