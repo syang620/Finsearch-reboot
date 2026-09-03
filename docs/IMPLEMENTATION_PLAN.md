@@ -22,7 +22,8 @@
   `7f258a378b75b3781d5ebf45edf70c597b381511`. Final CLI and empty-text admission
   review fixes were evaluated at `cbff8ce06cdbfc13f9c19c445c59965d326d61b9`;
   final admission-truthfulness audit fixes were evaluated at
-  `29d22268a27e51a62157eeae53649858d74e5242`.
+  `29d22268a27e51a62157eeae53649858d74e5242`, and the executed-empty retrieval
+  trace correction was evaluated at `65296dc6253e3dd1c8285e7f1fcaf553c4a85180`.
 
 ---
 

@@ -1558,3 +1558,88 @@ passing tests, 47 passing subtests, and the same two pre-existing failures
 documented above. Neither failure touches PR5. Full commands, redacted environment,
 hashes, provenance, and limitations are in
 `artifacts/evals/agents/v1/degradation/baselines/29d2226/manifest.json`.
+
+## PR5 Executed-Retrieval Trace Closure — 2026-09-03
+
+This correction closes the final finding from the review of `88d7fcb`. All
+earlier SHA-keyed PR5 evidence, including `29d2226`, remains unchanged.
+
+### Run identity
+
+| Field | Value |
+|---|---|
+| Status | Final reviewed PR5 correction; deterministic matrix passed; live regression gate failed and was preserved |
+| Evaluated implementation SHA | `65296dc6253e3dd1c8285e7f1fcaf553c4a85180` |
+| Degradation dataset SHA-256 / cases | `0c7fa622902bf00a89a93120e8a0ad8866e6195f54810adf68f75b51f2cc0ca6` / 13 |
+| Live dataset SHA-256 / cases | `c0fbdd097d7fa1b3eb22953a3ba4e8c0e84aa70a8786e08ba78a3b305cabe6cd` / 15 |
+| Python / pytest | `3.11.14` / `9.0.2` |
+| Planner / analyst | `ollama/qwen2.5:14b-instruct`, digest `7cdf5a0187d5c58cc5d369b255592f7841d1c4696d45a8c8a9489440385b22f6` |
+| Dense embedding | `qwen3-embedding:8b`, digest `64b933495768fbd3b87c20583d379728a07471e0c66733a9df87cd1901b3c44b` |
+| Qdrant | `1.16.2`; collection `sec_docs_dense_bm25_pr2_63dcec0`; 582 green points; fingerprint `0e60c99368eae07b4f00cb86a3d6e58d49b7e6bbd2c1df84e98204e8be75a744` before and after |
+| RAGAS | Disabled |
+
+Compact retrieval output now distinguishes retrieval that never ran from an
+executed retrieval that returned an empty object. The former exposes
+`attempted=false` and remains `skipped`; the latter exposes `attempted=true` and
+remains `failed`. The independent shadow evaluator consumes that public trace
+fact while retaining its older attempts/runs/ok/target inference for historical
+artifacts.
+
+`pytest==9.0.2` remained environment-only, repository dependency files were
+unchanged, and the tracked worktree matched the implementation SHA before both
+measurements. An independent review of the correction found no actionable P0–P2
+issue.
+
+### Deterministic and live results
+
+The unchanged 13-case deterministic command wrote to
+`artifacts/evals/agents/v1/degradation/baselines/65296dc`. All six matrix rates
+were 100%. Its summary SHA-256 is
+`709d04f659981a76db054cd363c9310efb9efa3d1b200110bdce80bdaf088015` and its
+per-case SHA-256 is
+`4e661abdc6c1c78f0937c86d0123ef9c2b3a2858ab77ded929dc58c9b36cd84c`.
+The per-case hash changed because the additive public `retrieval.attempted` trace
+field is now serialized; the dataset and aggregate matrix results are unchanged.
+
+The unchanged 15-case route-aware live command used the same redacted environment
+and thresholds as the earlier PR5 runs, a fresh checkpointer, and output directory
+`artifacts/evals/agents/v1/baselines/65296dc`. It ran exactly once. All 15 rows
+were valid with zero evaluator errors. The deterministic score was `0.961874` and
+two rows were critical, for a `0.133333` critical-failure rate; the strict
+zero-critical-row gate therefore remained false.
+
+Runtime/shadow lane status, effective status, failure stage, and exact degradation
+summary consistency were all 100%. Seven successful structured executions yielded
+seven typed, analyst-visible contexts with complete provenance-field coverage and
+no synthetic structured-text contexts.
+
+The two critical rows were unchanged from the strongest earlier PR5 runs:
+
+- `AGENT_V1_HYBRID_001`: analyst tool-loop exhaustion and an invalid fallback
+  output caused analyst-stage failure with no accepted citation.
+- `AGENT_V1_ANALYST_001`: ambiguous matching across successful calculator calls
+  produced `CALCULATION_RESULT_AMBIGUOUS`, analyst `tool_error`, and no accepted
+  citation.
+
+Live artifacts:
+
+- `artifacts/evals/agents/v1/baselines/65296dc/summary.json`, SHA-256
+  `10122a372f657be94f89754e7c50b6ed83846e7bb0f2134ab156cdf057079b51`.
+- `artifacts/evals/agents/v1/baselines/65296dc/per_query.jsonl`, SHA-256
+  `71b1389304269e099a3f5ad2e532efda4a4562c8acb6aa005c347653462e58ef`.
+- Zero-byte `artifacts/evals/agents/v1/baselines/65296dc/errors.jsonl`, SHA-256
+  `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`.
+
+The live run took 2,187,035 ms (about 36 minutes). Known MCP/AnyIO shutdown
+warnings appeared only after artifact generation; the evaluator exited
+successfully. The post-run collection fingerprint and all dataset/source/sidecar
+hashes matched their pre-run values. Exact historical collection equivalence is
+still not claimed, and the hosted reranker exposes no immutable service-side
+digest.
+
+The focused runtime, compaction, packet-flow, deduplication, CLI, batch,
+degradation, and route-aware evaluator suite passed 194 tests. The full suite
+completed with 421 passing tests, 47 passing subtests, and the same two pre-existing
+failures documented above. Neither failure touches PR5. Full commands, redacted
+environment, hashes, provenance, and limitations are in
+`artifacts/evals/agents/v1/degradation/baselines/65296dc/manifest.json`.
