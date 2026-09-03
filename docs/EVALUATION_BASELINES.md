@@ -1,5 +1,171 @@
 # FinSearch Evaluation Baselines
 
+## PR6 release exception PR6-CALC-001 — 2026-09-03
+
+The project owner explicitly approved merging PR6 with the single known
+pre-existing live failure `AGENT_V1_ANALYST_001` /
+`CALCULATION_RESULT_AMBIGUOUS`. This exception applies only to PR 23 and its
+reviewed implementation `0f8e477c47b7f11a8e069720b3b089e81f25cf9d`.
+
+The unchanged live gate **failed**, with 14/15 non-critical rows, one critical
+calculator-provenance failure, zero evaluator errors and score `0.980392`.
+The exception accepts that result for PR6 closure; it does not change the gate,
+its thresholds, the raw artifacts, or the runtime's fail-closed behavior. The
+same error is preserved in the PR5 `de0142c` baseline. PR6-specific grounding
+passed 37/37, degradation passed 14/14, applicable runtime/evaluator consistency
+was 100%, and fresh review found no major issues.
+
+The remaining risk is an unavailable calculation answer when successful tool
+results cannot be uniquely matched. No ambiguous calculation is accepted as a
+successful answer. The separately documented semantic-quality limitations and
+pre-existing full-suite failures remain visible; this exception is not a claim
+of semantic correctness or a blanket waiver for other regressions.
+
+Required follow-up before PR7: open a separate, narrow calculator-reliability PR,
+freeze a focused regression fixture against unchanged PR6 before changing
+behavior, measure before/after, then rerun the unchanged 15-case gate once the
+calculator fix is frozen. Do not change PR6 grounding policy to obtain a pass.
+This exception does not automatically apply to that follow-up or future PRs.
+
+Supporting immutable evidence:
+`artifacts/evals/agents/v1/baselines/0f8e477/manifest.json` and the grounding,
+degradation and review records linked below. Merge authorization was provided
+explicitly by the project owner after reviewing these results.
+
+## PR6 live gate — 2026-09-03
+
+The unchanged 15-case live gate ran exactly once on clean, detached implementation
+`0f8e477c47b7f11a8e069720b3b089e81f25cf9d`. All 15 rows were valid and there
+were zero evaluator errors. The deterministic score was `0.980392`, but one
+critical row (`1/15`, `0.066667`) means the strict zero-critical-row gate **failed**.
+No expectations, thresholds, provider settings or retry budgets were changed,
+and no cases were selectively rerun. PR 23 remains draft; release closure needs
+the calculator failure resolved or an explicit release exception.
+
+The critical case is `AGENT_V1_ANALYST_001`: the final calculation could not be
+uniquely matched to a successful calculator result, producing
+`CALCULATION_RESULT_AMBIGUOUS`, analyst `tool_error`, and analyst-stage failure.
+This same failure is recorded in the prior PR5 baseline `de0142c`. The lower
+critical count in this stochastic run is not a controlled performance-uplift claim.
+
+Runtime/shadow lane status, effective status, failure stage, degradation and
+grounding consistency were all 100%. The independent grounding assessment covered
+12 successful outputs, including one no-claim insufficient-data response. Eleven
+claim-bearing outputs contained 18 claims and 18 context references, with no
+grounding inconsistencies. Seven successful structured executions yielded seven
+typed, visible contexts with complete provenance-field coverage and no synthetic
+structured-text contexts. The frozen PR6 matrix remains the authoritative
+PR-specific gate: 37/37 passed; the unchanged PR5 matrix passed 14/14.
+
+Structural validity does not establish answer completeness or semantic quality.
+The preserved live traces show that `AGENT_V1_HYBRID_001` omits the requested
+explanation, `AGENT_V1_HYBRID_002` points to Item 7 rather than explaining cash
+flow, and `AGENT_V1_KB_002` mixes English and Thai. These are qualitative
+observations, not newly scored metrics or evidence of semantic uplift. The frozen
+secondary judge results remain separately reported below.
+
+Execution used Python 3.11.14, environment-only pytest 9.0.2, the recorded
+qwen2.5:14b-instruct and qwen3-embedding:8b digests, hosted Qwen3 reranking, a fresh
+checkpointer and Qdrant 1.16.2. Real SEC contact information was supplied only in
+the local environment. The 582-point index fingerprint was
+`6c72627b05dbec1e7f65d2132b8572b9fa12c47af711f2a12b8b776967994cee`
+before and after, using sorted Qdrant Record JSON including payloads and vectors.
+Source and sidecar hashes match PR5; equality to historical fingerprints produced
+by other methods is not claimed. The hosted reranker has no immutable service-side
+digest. RAGAS was disabled.
+
+The run took 2,583,004 ms (about 43 minutes) and exited zero. Known MCP/AnyIO
+shutdown warnings did not prevent artifact generation. A fresh focused suite on
+the same implementation passed 318 tests with one expected warning. The earlier
+full-suite result and fresh no-major-issues review remain unchanged.
+
+New immutable outputs under `artifacts/evals/agents/v1/baselines/0f8e477/`:
+
+- `summary.json`, SHA-256 `d83eaa7aef10e729adee61418cd58564fc3fcb627f28df633446b3ea514e7131`.
+- `per_query.jsonl`, SHA-256 `4840d2f646d9577d658bdb47ba7527f560bc284052c1357cffa3f757cb842836`.
+- Empty `errors.jsonl`, SHA-256 `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`.
+- `manifest.json`: redacted effective command, environment/model/corpus provenance,
+  source hashes, critical-case details, focused-test command and review reference.
+
+Earlier measurements, including the pre-live verification snapshot, all PR5
+baselines and the original failing `25e359d` evidence, remain unchanged.
+
+## PR6 implementation evidence — 2026-09-03
+
+Implementation `0f8e477c47b7f11a8e069720b3b089e81f25cf9d` enforces explicit
+claim bindings, claim-derived filing prose and comparison rows, bounded repair,
+and analyst-stage fail-closed behavior. Calculation claims activate the existing
+calculator checks even on extraction tasks; positive calculation claims do not
+gain an insufficient-data exemption. Per-variable evidence mapping and semantic
+entailment remain secondary evaluation concerns, as explicitly scoped in ADR 004.
+
+The frozen 37-case grounding matrix passes 37/37, compared with 2/37 on the
+canonical unchanged-PR5 runtime. All applicable deterministic rates are 100%,
+with denominators recorded: 18/18 claim coverage, 40/40 valid references, 20/20
+source preservation and completeness, 3/3 structured-metric compatibility,
+11/11 narrative-type compatibility, 1/1 mixed hybrid binding, 6/6 invalid-ID
+detection, and 18/18 fail-closed handling. Dataset, harness and independent oracle
+hashes match exactly between the canonical before and after measurements. These
+are structural enforcement results, not claimed semantic improvements.
+
+The unchanged 14-case PR5 degradation matrix also passes all six rates at 100%.
+Full tests: 501 passed, 47 subtests passed, and the same two pre-existing failures
+in planner alias routing and retrieval retry-count expectations. pytest 9.0.2
+remains environment-only; repository dependency files were not changed.
+
+The frozen secondary judge assessed 18 observed claims: 3 fully supported,
+14 partially supported and 1 unsupported, with zero judge errors and 100%
+assessment coverage. Full-support precision and grounded-claim rate are 0.166667;
+unsupported rate is 0.055556. The unsupported attribution fixture is intentionally
+retained. PR5 emitted no bound claims, so no before/after semantic uplift is
+claimed. The judge was qwen2.5:14b-instruct at temperature 0, digest
+`7cdf5a0187d5c58cc5d369b255592f7841d1c4696d45a8c8a9489440385b22f6`.
+
+Artifacts and command/provenance records:
+
+- `artifacts/evals/agents/v1/grounding/baselines/0f8e477/`
+- `artifacts/evals/agents/v1/grounding/baselines/0f8e477/judge/`
+- `artifacts/evals/agents/v1/degradation/baselines/0f8e477/`
+
+All prior measurements, including initial implementation `9851ffd`, remain
+unchanged. The fresh GitHub review on `0f8e477` reported no major issues after the
+no-calculator claim bypass was fixed and the agreed semantic boundary documented.
+
+**Pre-live status at the time of this entry:** the unchanged 15-case live gate had not run because
+SEC_USER_AGENT is unset and real contact information is required. No placeholder
+contact, modified expectation, weakened threshold or synthetic replacement was
+used. PR 23 remains draft pending that measurement. A temporary corpus was
+prepared from the same hashed PR5 sidecars, but no live-run corpus equivalence or
+gate result is claimed before execution.
+
+## PR6 pre-implementation grounding baseline — 2026-09-03
+
+The canonical before measurement is
+`artifacts/evals/agents/v1/grounding/baselines/4ba5553-canonical`, using unchanged
+PR5 runtime `4ba5553737a2e788da1f4e5a01519f65685b15bd` in an isolated worktree
+and frozen harness/oracle commit `9c2e8fa`. The 37 candidate-injection scenarios
+run the real analyst graph without a live model. This is a structural enforcement
+measurement, not a semantic-quality benchmark.
+
+The original prototype measurement under `grounding/baselines/4ba5553` remains
+unchanged but is superseded: its calculator stub used an MCP envelope where the
+injected-tool interface expects a direct payload, and its KB fixture text was in
+an unrecognized field. Both harness issues were corrected and measured against
+unchanged PR5 code before the matched comparison. The frozen dataset itself is
+unchanged. Intermediate harness-development measurements were diagnostic only.
+
+Canonical baseline: 2/37 scenarios satisfy the new contract; 36 outputs report
+success, but only 1/36 passes full finalized-output integrity. Grounding fail-closed
+behavior is 1/18; known visible citation IDs and source preservation are each
+31/32. Legacy outputs contain no explicit claims, so claim-type/coverage metrics
+have zero denominators and are unavailable, not inferred or labeled perfect.
+No semantic improvement can be inferred from these missing bindings.
+
+The environment remains Python 3.11.14 with pytest 9.0.2 installed environment-only
+in finsearch-arm. Historical PR5 evidence and repository dependency files are
+unchanged. Final implementation, after evidence and fresh review are recorded
+separately once available.
+
 This document records measured evaluation results. It is intentionally separate from
 `docs/ARCHITECTURE.md`, which describes current system behavior without mutable model
 scores.

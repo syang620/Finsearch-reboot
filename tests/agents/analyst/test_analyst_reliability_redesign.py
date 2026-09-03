@@ -29,6 +29,12 @@ from agents.contracts import FormType
 from tests.snapshot_utils import assert_graph_snapshot_jsonable
 
 
+def _claims(text):
+    # Bind legacy reliability fixtures; adversarial tests supply claims explicitly.
+    return [{"claim_id": "c1", "claim_type": "narrative", "text": text,
+             "context_ids": ["ctx_1"]}]
+
+
 class _FakeBoundModel:
     def __init__(self, responses):
         self._responses = list(responses)
@@ -143,6 +149,7 @@ class _ConcurrentComputeModel:
                         "args": {
                             "status": "ok",
                             "answer": f"The computed result is {result}.",
+                            "claims": _claims(f"The computed result is {result}."),
                             "used_context_ids": ["ctx_1"],
                             "missing_values": [],
                             "confidence": 0.9,
@@ -219,6 +226,7 @@ def _run_computation_history_case(*, tool_calls, tool_results, final_calculation
                     "args": {
                         "status": "ok",
                         "answer": "The computed result is 12.87%.",
+                        "claims": _claims("The computed result is 12.87%."),
                         "used_context_ids": ["ctx_1"],
                         "missing_values": [],
                         "confidence": 0.9,
@@ -270,6 +278,7 @@ def test_parse_agent_messages_reads_final_answer_tool():
                 "args": {
                     "status": "ok",
                     "answer": "Total debt was $42 million.",
+                    "claims": _claims("Total debt was $42 million."),
                     "used_context_ids": ["ctx_1"],
                     "missing_values": [],
                     "confidence": 0.8,
@@ -296,6 +305,7 @@ def test_analyst_graph_state_round_trips_with_checkpointer():
                     "args": {
                         "status": "ok",
                         "answer": "Recovered.",
+                        "claims": _claims("Recovered."),
                         "used_context_ids": ["ctx_1"],
                         "missing_values": [],
                         "confidence": 0.8,
@@ -503,6 +513,7 @@ def test_compare_row_context_ids_are_promoted_to_citations():
                 "args": {
                     "status": "ok",
                     "answer": "Comparison complete.",
+                    "claims": _claims("Total debt was $42 million."),
                     "used_context_ids": [],
                     "missing_values": [],
                     "confidence": 0.8,
@@ -510,6 +521,7 @@ def test_compare_row_context_ids_are_promoted_to_citations():
                     "compare_rows": [
                         {
                             "target_id": "AAPL:2024:10-K",
+                            "claim_id": "c1",
                             "label": "Total debt",
                             "value": "$42 million",
                             "context_ids": ["ctx_1"],
@@ -541,6 +553,7 @@ def test_parse_agent_messages_resets_state_after_retry_human_message():
                 "args": {
                     "status": "ok",
                     "answer": "stale answer",
+                    "claims": _claims("stale answer"),
                     "used_context_ids": ["ctx_1"],
                     "missing_values": [],
                     "confidence": 0.8,
@@ -641,6 +654,7 @@ def test_retry_history_contains_synthetic_finalanswer_tool_message():
                 "args": {
                     "status": "ok",
                     "answer": "Recovered on retry.",
+                    "claims": _claims("Recovered on retry."),
                     "used_context_ids": ["ctx_1"],
                     "missing_values": [],
                     "confidence": 0.8,
@@ -679,6 +693,7 @@ def test_mixed_finalanswer_and_calculator_calls_emit_finalanswer_error_tool_mess
                 "args": {
                     "status": "ok",
                     "answer": "Jumped ahead.",
+                    "claims": _claims("Jumped ahead."),
                     "used_context_ids": ["ctx_1"],
                     "missing_values": [],
                     "confidence": 0.8,
@@ -697,6 +712,7 @@ def test_mixed_finalanswer_and_calculator_calls_emit_finalanswer_error_tool_mess
                 "args": {
                     "status": "ok",
                     "answer": "Recovered.",
+                    "claims": _claims("Recovered."),
                     "used_context_ids": ["ctx_1"],
                     "missing_values": [],
                     "confidence": 0.8,
@@ -761,6 +777,7 @@ def test_tool_round_limit_invalidates_same_turn_finalanswer():
                 "args": {
                     "status": "ok",
                     "answer": "Hallucinated completion.",
+                    "claims": _claims("Hallucinated completion."),
                     "used_context_ids": ["ctx_1"],
                     "missing_values": [],
                     "confidence": 0.8,
@@ -889,6 +906,7 @@ def test_tool_result_mismatch_fails_closed():
                 "args": {
                     "status": "ok",
                     "answer": "The computed result is 99.",
+                    "claims": _claims("The computed result is 99."),
                     "used_context_ids": ["ctx_1"],
                     "missing_values": [],
                     "confidence": 0.9,
@@ -1238,6 +1256,7 @@ def test_non_compute_prefers_tool_computation_when_available():
                 "args": {
                     "status": "ok",
                     "answer": "Extracted result.",
+                    "claims": _claims("Extracted result."),
                     "used_context_ids": ["ctx_1"],
                     "missing_values": [],
                     "confidence": 0.9,
@@ -1294,6 +1313,7 @@ def test_non_compute_does_not_fail_closed_on_final_calculation_mismatch():
                 "args": {
                     "status": "ok",
                     "answer": "Extracted answer using multiple derived values.",
+                    "claims": _claims("Extracted answer using multiple derived values."),
                     "used_context_ids": ["ctx_1"],
                     "missing_values": [],
                     "confidence": 0.9,
@@ -1414,6 +1434,7 @@ def test_invalid_tool_calls_feed_back_error_tool_message():
                 "args": {
                     "status": "ok",
                     "answer": "Recovered.",
+                    "claims": _claims("Recovered."),
                     "used_context_ids": ["ctx_1"],
                     "missing_values": [],
                     "confidence": 0.8,
@@ -1467,6 +1488,7 @@ def test_invalid_final_answer_feeds_back_error_tool_message():
                 "args": {
                     "status": "ok",
                     "answer": "Recovered.",
+                    "claims": _claims("Recovered."),
                     "used_context_ids": ["ctx_1"],
                     "missing_values": [],
                     "confidence": 0.8,
@@ -1513,6 +1535,7 @@ def test_injected_tool_map_makes_tools_available_without_runtime(monkeypatch):
                                 "args": {
                                     "status": "ok",
                                     "answer": "Done.",
+                                    "claims": _claims("Done."),
                                     "used_context_ids": ["ctx_1"],
                                     "missing_values": [],
                                     "confidence": 0.8,
@@ -1558,6 +1581,7 @@ def test_persistent_runtime_is_reused_and_closed_once(monkeypatch):
                 "args": {
                     "status": "ok",
                     "answer": "Done.",
+                    "claims": _claims("Done."),
                     "used_context_ids": ["ctx_1"],
                     "missing_values": [],
                     "confidence": 0.8,

@@ -1,0 +1,11 @@
+{
+  "runtime_commit": "4ba5553737a2e788da1f4e5a01519f65685b15bd",
+  "harness_commit": "ccdd222be33c852568877687b63865843bbb8131",
+  "dataset": "data/evals/agents/v1/agent_eval_grounding_v1.jsonl",
+  "dataset_sha256": "8e471f2d12dd6af2bcaa94719bc2073808f82eadc2242a934f358ddf4109964d",
+  "python": "3.11.14",
+  "pytest": "9.0.2",
+  "measurement": "deterministic synthetic FinalAnswer injection through AnalystAgent.arun; no live model",
+  "legacy_binding_policy": "Absent finalized claims remain absent; never infer from flat citations.",
+  "created_at": "2026-09-03T20:13:30.983491+00:00"
+}

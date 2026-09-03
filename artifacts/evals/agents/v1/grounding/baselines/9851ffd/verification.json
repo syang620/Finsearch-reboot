@@ -1,0 +1,41 @@
+{
+  "evaluated_implementation": "9851ffd7166ba6538617e57dd3163264113471b6",
+  "baseline_runtime": "4ba5553737a2e788da1f4e5a01519f65685b15bd",
+  "baseline_directory": "artifacts/evals/agents/v1/grounding/baselines/4ba5553-canonical",
+  "measurement": "Frozen synthetic candidate injection into the real analyst graph",
+  "grounding_cases": 37,
+  "grounding_passes": 37,
+  "degradation_cases": 14,
+  "degradation_all_rates": 1,
+  "python": "3.11.14",
+  "pytest": "9.0.2",
+  "dependency_changes": "none; pytest remains environment-only",
+  "focused_tests": "211 passed",
+  "full_tests": {
+    "passed": 498,
+    "failed": 2,
+    "subtests": 47,
+    "known_failures": [
+      "tests/agents/planner/test_planner_routes.py::test_planner_routes_match_expected_routes",
+      "tests/agents/retrieval/test_retrieval_workflow_no_tool_call.py::test_retrieval_no_tool_call_increments_attempts_and_stops_on_budget"
+    ]
+  },
+  "semantic_judge": {
+    "fully_supported": 3,
+    "partially_supported": 14,
+    "unsupported": 1,
+    "errors": 0,
+    "source": "judge/summary.json",
+    "baseline_comparability": "Unavailable: PR5 emits no bound claims. No semantic uplift claimed."
+  },
+  "live_gate": {
+    "status": "not_run",
+    "reason": "SEC_USER_AGENT contact unavailable; user input requested"
+  },
+  "review": {
+    "status": "requested",
+    "pr": 23
+  },
+  "tracked_worktree_clean_at_measurement": true,
+  "immutable_history": "All original PR5 evidence preserved."
+}

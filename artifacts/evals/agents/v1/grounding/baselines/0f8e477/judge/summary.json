@@ -1,0 +1,9 @@
+{
+  "observed_claims": 18,
+  "assessed_claims": 18,
+  "errors": 0,
+  "claim_support_precision": 0.16666666666666666,
+  "unsupported_claim_rate": 0.05555555555555555,
+  "grounded_claim_rate": 0.16666666666666666,
+  "assessment_coverage": 1.0
+}

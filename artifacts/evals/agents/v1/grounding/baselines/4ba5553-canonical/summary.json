@@ -1,0 +1,64 @@
+{
+  "cases": 37,
+  "behavior_passes": 2,
+  "behavior_accuracy": 0.05405405405405406,
+  "successful_outputs": 36,
+  "successful_output_integrity_rate": 0.027777777777777776,
+  "gate_pass": false,
+  "metrics": {
+    "claim_citation_coverage": {
+      "passed": 0,
+      "denominator": 0,
+      "rate": null
+    },
+    "valid_context_id": {
+      "passed": 31,
+      "denominator": 32,
+      "rate": 0.96875
+    },
+    "citation_source_preservation": {
+      "passed": 31,
+      "denominator": 32,
+      "rate": 0.96875
+    },
+    "citation_source_completeness": {
+      "passed": 32,
+      "denominator": 32,
+      "rate": 1.0
+    },
+    "structured_numeric_evidence_type_accuracy": {
+      "passed": 0,
+      "denominator": 0,
+      "rate": null
+    },
+    "narrative_evidence_type_accuracy": {
+      "passed": 0,
+      "denominator": 0,
+      "rate": null
+    },
+    "hybrid_claim_evidence_routing_accuracy": {
+      "passed": 0,
+      "denominator": 0,
+      "rate": null
+    },
+    "invalid_citation_detection": {
+      "passed": 5,
+      "denominator": 6,
+      "rate": 0.8333333333333334
+    },
+    "grounding_fail_closed": {
+      "passed": 1,
+      "denominator": 18,
+      "rate": 0.05555555555555555
+    },
+    "runtime_evaluator_consistency": {
+      "passed": 2,
+      "denominator": 37,
+      "rate": 0.05405405405405406
+    }
+  },
+  "semantic_judge": {
+    "status": "not_run",
+    "note": "Fixture annotations are not judge scores."
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "model": "qwen2.5:14b-instruct",
+  "model_digest": "7cdf5a0187d5c58cc5d369b255592f7841d1c4696d45a8c8a9489440385b22f6",
+  "temperature": 0,
+  "rubric_sha256": "1dcf507e1506b01f886129440e86c3301fb283e0179b4b58f7bd5ac0f1d7fd6f",
+  "input_sha256": "de84b85f3bbf57090d4272301ae369dd4fb63386465611bf80caf2d2fd17d157",
+  "protocol": "Observed finalized claims only; no inferred legacy bindings; fixture labels never shown to judge."
+}

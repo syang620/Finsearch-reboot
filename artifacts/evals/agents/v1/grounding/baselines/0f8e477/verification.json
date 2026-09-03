@@ -1,0 +1,92 @@
+{
+  "evaluated_implementation": "0f8e477c47b7f11a8e069720b3b089e81f25cf9d",
+  "previous_measurement": "9851ffd7166ba6538617e57dd3163264113471b6",
+  "baseline": {
+    "runtime": "4ba5553737a2e788da1f4e5a01519f65685b15bd",
+    "directory": "artifacts/evals/agents/v1/grounding/baselines/4ba5553-canonical",
+    "dataset_sha256": "8e471f2d12dd6af2bcaa94719bc2073808f82eadc2242a934f358ddf4109964d",
+    "harness_sha256": "c97918b70489043dd1bea7a10eb77cab88d904ff42cda3f92c6ea8015284dde0",
+    "oracle_sha256": "a33c27bf7ecb8fbb6bd9f98249978eb4294006284d18940e9b7695bfc111379b",
+    "matched_hashes": true
+  },
+  "grounding": {
+    "cases": 37,
+    "passes": 37,
+    "successful_outputs": 19,
+    "all_applicable_metric_rates": 1,
+    "scope": "Synthetic FinalAnswer injection through the real analyst graph; structural correctness, not semantic entailment"
+  },
+  "degradation": {
+    "cases": 14,
+    "all_rates": 1,
+    "unchanged_dataset": true
+  },
+  "semantic": {
+    "observed_claims": 18,
+    "assessed": 18,
+    "fully_supported": 3,
+    "partially_supported": 14,
+    "unsupported": 1,
+    "errors": 0,
+    "model": "qwen2.5:14b-instruct",
+    "model_digest": "7cdf5a0187d5c58cc5d369b255592f7841d1c4696d45a8c8a9489440385b22f6",
+    "rubric_sha256": "1dcf507e1506b01f886129440e86c3301fb283e0179b4b58f7bd5ac0f1d7fd6f",
+    "baseline_comparable": false,
+    "note": "Legacy output has no bound claims. No semantic uplift claimed; the adversarial unsupported attribution is preserved."
+  },
+  "tests": {
+    "python": "3.11.14",
+    "pytest": "9.0.2",
+    "dependency_changes": "none",
+    "full_passed": 501,
+    "full_failed": 2,
+    "subtests_passed": 47,
+    "known_failures": [
+      "tests/agents/planner/test_planner_routes.py::test_planner_routes_match_expected_routes",
+      "tests/agents/retrieval/test_retrieval_workflow_no_tool_call.py::test_retrieval_no_tool_call_increments_attempts_and_stops_on_budget"
+    ]
+  },
+  "commands": [
+    "PYTHONPATH=.:src conda run -n finsearch-arm python scripts/evals/agents/eval_agent_grounding_v1.py --out-dir artifacts/evals/agents/v1/grounding/baselines/0f8e477",
+    "PYTHONPATH=.:src conda run -n finsearch-arm python scripts/evals/agents/eval_agent_degradation_v1.py --out-dir artifacts/evals/agents/v1/degradation/baselines/0f8e477",
+    "PYTHONPATH=.:src conda run -n finsearch-arm python scripts/evals/agents/eval_grounding_judge_v1.py --per-case artifacts/evals/agents/v1/grounding/baselines/0f8e477/per_case.jsonl --out-dir artifacts/evals/agents/v1/grounding/baselines/0f8e477/judge",
+    "conda run -n finsearch-arm python -c 'import pathlib,sys,types;p=types.ModuleType(\"tests\");p.__path__=[str(pathlib.Path.cwd()/\"tests\")];sys.modules[\"tests\"]=p;import pytest;raise SystemExit(pytest.main([\"-q\",\"--tb=short\"]))'"
+  ],
+  "artifacts": [
+    {
+      "path": "artifacts/evals/agents/v1/grounding/baselines/0f8e477/summary.json",
+      "sha256": "e4a6a803b8896aafbef8910327155b6bfae74e250fce1d2f173589ece7c5ea67"
+    },
+    {
+      "path": "artifacts/evals/agents/v1/grounding/baselines/0f8e477/per_case.jsonl",
+      "sha256": "82abfde487b7aa3be61163425fbbd9d380d48e030930e2310347cc68aaa53768"
+    },
+    {
+      "path": "artifacts/evals/agents/v1/grounding/baselines/0f8e477/judge/summary.json",
+      "sha256": "aba12fa6d63df3a256528a2033a2dbf1a8ab67fed4c1d4cd55179aef08ce2753"
+    },
+    {
+      "path": "artifacts/evals/agents/v1/grounding/baselines/0f8e477/judge/per_claim.jsonl",
+      "sha256": "7d50b0f16fb7746faa5137d9379b74852e92ec9a5c1ec24be10b776d0c6b84b4"
+    },
+    {
+      "path": "artifacts/evals/agents/v1/degradation/baselines/0f8e477/summary.json",
+      "sha256": "df12eddaf88b8a9dc22a471537b0f91477072c3fa5c6e1961368f2842591fe11"
+    },
+    {
+      "path": "artifacts/evals/agents/v1/degradation/baselines/0f8e477/per_case.jsonl",
+      "sha256": "3010280cd4c17a905e4b6a003230cbba1efdef34eadd66bd16dac160f486404d"
+    }
+  ],
+  "live_gate": {
+    "status": "not_run",
+    "reason": "SEC_USER_AGENT is unset; real contact information requested from user. No placeholder contact or altered gate used."
+  },
+  "review": {
+    "status": "completed_no_major_issues_on_0f8e477",
+    "pr": 23,
+    "prior_finding": "No-calculator claim bypass fixed; deeper variable/evidence entailment remains the explicitly approved evaluation boundary."
+  },
+  "tracked_worktree_clean_at_measurement": true,
+  "history": "All original PR5 evidence, original pre-PR6 prototype evidence and earlier PR6 measurements preserved."
+}

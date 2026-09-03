@@ -49,6 +49,7 @@ except Exception:  # pragma: no cover - optional dependency
 from ingestion.chunk_paths import resolve_chunk_file
 from llm_client import build_chat_model
 from .table_loader import load_table_data
+from .grounding import GroundedClaim, GROUNDING_FAILURE_ANSWER, validate_grounding
 
 from agents.contracts import (
     AnalystPacket,
@@ -105,6 +106,7 @@ class AnalystComputation(BaseModel):
 
 
 class AnalystCompareRow(BaseModel):
+    claim_id: Optional[str] = None
     target_id: Optional[str] = None
     label: str
     value: Optional[str] = None
@@ -132,6 +134,7 @@ class AnalystStructuredAnswer(BaseModel):
     confidence: Optional[float] = None
     calculation: Optional[AnalystComputation] = None
     compare_rows: List[AnalystCompareRow]
+    claims: List[GroundedClaim] = Field(default_factory=list)
 
     @field_validator("status", mode="before")
     @classmethod
@@ -168,6 +171,9 @@ class AnalystTrace(BaseModel):
     raw_message_count: int = 0
     final_output_valid: bool = False
     tool_error_code: Optional[str] = None
+    context_item_limit: Optional[int] = Field(default=None, ge=0)
+    analyst_visible_context_ids: List[str] = Field(default_factory=list)
+    grounding_attempts: List[Dict[str, Any]] = Field(default_factory=list)
 
 
 class AnalystRunResult(BaseModel):
@@ -182,6 +188,7 @@ class AnalystRunResult(BaseModel):
     computation: Optional[AnalystComputation] = None
     compare_rows: List[AnalystCompareRow] = Field(default_factory=list)
     citations: List[AnalystCitation] = Field(default_factory=list)
+    claims: List[GroundedClaim] = Field(default_factory=list)
     open_issues: List[OpenIssue] = Field(default_factory=list)
     trace: AnalystTrace = Field(default_factory=AnalystTrace)
     error: Optional[str] = None
@@ -246,7 +253,8 @@ FINAL_ANSWER_TOOL = StructuredTool.from_function(
     name="FinalAnswer",
     description=(
         "Finish the analyst run with the final validated answer. "
-        "Always include status, answer, used_context_ids, missing_values, confidence, calculation, and compare_rows."
+        "Always include status, answer, claims, used_context_ids, missing_values, confidence, calculation, and compare_rows. "
+        "Every substantive filing assertion belongs in a grounded claim; comparison rows reference claim_id."
     ),
     args_schema=AnalystStructuredAnswer,
 )
@@ -724,6 +732,14 @@ def build_analyst_prompt(
         "Task:\n"
         "- Answer the user query grounded in the context above.\n"
         "- Typed structured facts are direct evidence; use their numeric value and SEC provenance as shown.\n"
+        "- For filing answers, put EVERY substantive assertion in claims: claim_id, claim_type, text, context_ids, metric_id.\n"
+        "- Allowed claim types: structured_numeric, kb_numeric, calculation, narrative, attribution.\n"
+        "- structured_numeric must cite a structured_fact with the same metric_id; narrative, attribution and kb_numeric must cite KB text/table.\n"
+        "- calculation claims must cite their input evidence and retain the validated calculator result.\n"
+        "- Each claim needs at least one supplied, visible context ID. Never invent source metadata.\n"
+        "- The final prose will be assembled from claim text; do not leave factual assertions only in answer.\n"
+        "- Each compare_rows row needs claim_id; its label and value must occur verbatim in that claim text.\n"
+        "- With insufficient_data, claims may be empty; otherwise any positive assertions still need grounded claims.\n"
         "- Follow the typed degradation notice exactly; do not claim coverage from unavailable lanes.\n"
         "- For compare or table-style requests, fill compare_rows with one row per target/value.\n"
         f"{calculation_instruction}"
@@ -1113,6 +1129,7 @@ class _AnalystWorkflowState(TypedDict, total=False):
     error: Optional[str]
     timing_ms: Dict[str, int]
     should_retry: bool
+    grounding_attempts: List[Dict[str, Any]]
     tool_setup_error: Optional[str]
     pending_tool_calls: List[_SerializedToolCall]
     tools_available: bool
@@ -1207,7 +1224,18 @@ def _validate_financial_evaluator_args(args: Any) -> Optional[Dict[str, str]]:
     return None
 
 
-def _retry_reason_message(packet: Optional[AnalystPacket], parsed: Dict[str, Any]) -> str:
+def _retry_reason_message(packet: Optional[AnalystPacket], parsed: Dict[str, Any], *, max_context_items: int = ANALYST_CONTEXT_ITEM_LIMIT) -> str:
+    final = _validated_final_output_from_parsed(parsed)
+    requires_calculation = _requires_calculation(packet) or bool(final and any(claim.claim_type == "calculation" for claim in final.claims))
+    if packet is not None and final is not None and final.status in {"ok", "insufficient_data"}:
+        grounding = validate_grounding(packet, final.model_dump(mode="json"), limit=max_context_items)
+        if not grounding.valid:
+            return (
+                "Your claim evidence bindings failed validation: " + ", ".join(grounding.issue_codes)
+                + ". Return corrected claims in FinalAnswer; every claim needs appropriate visible evidence. "
+                + "Allowed IDs: " + ", ".join(item.context_id for item in packet.context_items[:max_context_items])
+                + ". Preserve successful calculator results already available; do not recompute them merely to repair citations."
+            )
     tool_error = str(parsed.get("tool_error") or "").strip()
     tool_error_code = str(parsed.get("tool_error_code") or "").strip().lower()
     if tool_error:
@@ -1238,17 +1266,17 @@ def _retry_reason_message(packet: Optional[AnalystPacket], parsed: Dict[str, Any
             "Your FinalAnswer payload failed validation: "
             f"{final_output_error}. Call FinalAnswer again with valid structured arguments only."
         )
-    if _requires_calculation(packet) and not parsed.get("used_financial_evaluator"):
+    if requires_calculation and not parsed.get("used_financial_evaluator"):
         return (
             "This task requires grounded calculation. Call financial_evaluator first, "
             "then call FinalAnswer after the tool result is available."
         )
-    if _requires_calculation(packet) and parsed.get("numeric_result") is None:
+    if requires_calculation and parsed.get("numeric_result") is None:
         return (
             "The calculation completed without a reliable numeric result. "
             "Call financial_evaluator again with corrected inputs, then finish with FinalAnswer."
         )
-    if _requires_calculation(packet) and parsed.get("numeric_result") is not None:
+    if requires_calculation and parsed.get("numeric_result") is not None:
         return (
             "You already have a valid financial_evaluator result available. "
             "Do not call financial_evaluator again unless exactly one additional scalar is still missing. "
@@ -1444,6 +1472,7 @@ def _should_retry_response(
     max_attempts: int,
     *,
     tools_available: bool,
+    max_context_items: int = ANALYST_CONTEXT_ITEM_LIMIT,
 ) -> bool:
     if packet is None or attempt >= max_attempts:
         return False
@@ -1452,11 +1481,17 @@ def _should_retry_response(
     if not parsed.get("final_output_valid"):
         return True
 
-    if not _requires_calculation(packet):
+    final_output = _validated_final_output_from_parsed(parsed)
+    if final_output is not None and final_output.status in {"ok", "insufficient_data"}:
+        if not validate_grounding(packet, final_output.model_dump(mode="json"), limit=max_context_items).valid:
+            return True
+
+    claim_calculation = bool(final_output and any(claim.claim_type == "calculation" for claim in final_output.claims))
+    if not _requires_calculation(packet) and not claim_calculation:
         return False
     if not tools_available:
         return False
-    if parsed.get("calculation_blocked"):
+    if parsed.get("calculation_blocked") and not claim_calculation:
         return False
     final_output = _validated_final_output_from_parsed(parsed)
     if final_output is not None and final_output.status == "tool_error":
@@ -1828,6 +1863,10 @@ class AnalystAgent:
     _tool_setup_error: Optional[str] = None
     _tool_runtime: Optional[_FinancialToolRuntime] = None
     _tool_runtime_lock: Any = None
+
+    def __post_init__(self) -> None:
+        if isinstance(self.max_context_items, bool) or not isinstance(self.max_context_items, int) or self.max_context_items < 0:
+            raise ValueError("max_context_items must be a non-negative integer")
 
     @property
     def is_ready(self) -> bool:
@@ -2208,10 +2247,18 @@ class AnalystAgent:
                 attempt,
                 max_attempts,
                 tools_available=bool(state.get("tools_available")),
+                max_context_items=self.max_context_items,
             )
             update: Dict[str, Any] = {"should_retry": should_retry}
+            final = _validated_final_output_from_parsed(parsed)
+            if packet is not None and final is not None and final.status in {"ok", "insufficient_data"}:
+                decision = validate_grounding(packet, final.model_dump(mode="json"), limit=self.max_context_items)
+                update["grounding_attempts"] = [*state.get("grounding_attempts", []), {
+                    "attempt": attempt, "candidate": final.model_dump(mode="json"),
+                    "decision": decision.model_dump(mode="json"),
+                }]
             if should_retry:
-                update["messages"] = [HumanMessage(content=_retry_reason_message(packet, parsed))]
+                update["messages"] = [HumanMessage(content=_retry_reason_message(packet, parsed, max_context_items=self.max_context_items))]
                 update["attempt"] = attempt + 1
             return update
 
@@ -2438,11 +2485,13 @@ class AnalystAgent:
                 )
             )
 
-        requires_calculation = _requires_calculation(packet)
+        claim_calculation = any(claim.claim_type == "calculation" for claim in final_output.claims)
+        requires_calculation = _requires_calculation(packet) or claim_calculation
         insufficient_data_terminal = (
             final_output.status == "insufficient_data"
             and not parsed.get("tool_error")
         )
+        calculation_exempt = insufficient_data_terminal and not claim_calculation
         tool_computation = _computation_from_parsed_state(parsed)
         successful_computations = _successful_computations_from_parsed_state(parsed)
         final_calculation = final_output.calculation
@@ -2450,7 +2499,7 @@ class AnalystAgent:
         calculation_mismatch = False
         calculation_ambiguous = False
 
-        if requires_calculation and not insufficient_data_terminal:
+        if requires_calculation and not calculation_exempt:
             if parsed.get("tool_error"):
                 calculation_mismatch = tool_computation is not None and not _computations_match(
                     final_calculation,
@@ -2542,7 +2591,7 @@ class AnalystAgent:
                 error="CALCULATION_RESULT_MISMATCH",
             )
 
-        if requires_calculation and not insufficient_data_terminal:
+        if requires_calculation and not calculation_exempt:
             if computation is None or computation.result is None:
                 result_open_issues.append(
                     OpenIssue(
@@ -2574,7 +2623,38 @@ class AnalystAgent:
                     error="COMPUTE_RESULT_MISSING",
                 )
 
-        context_map = {item.context_id: item for item in packet.context_items}
+        grounding = validate_grounding(packet, final_output.model_dump(mode="json"), limit=self.max_context_items)
+        grounding_trace = dict(
+            context_item_limit=self.max_context_items,
+            analyst_visible_context_ids=[item.context_id for item in packet.context_items[:self.max_context_items]],
+            grounding_attempts=list(final_state.get("grounding_attempts") or []),
+        )
+        if final_output.status in {"ok", "insufficient_data"} and not grounding.valid:
+            result_open_issues.extend(OpenIssue(code=code, message="Analyst claim grounding validation failed.", severity=Severity.ERROR) for code in grounding.issue_codes)
+            return AnalystRunResult(
+                ok=False, status="grounding_error", answer=GROUNDING_FAILURE_ANSWER,
+                intent=packet.intent, metric=packet.analysis_task.metric,
+                open_issues=result_open_issues, error="ANALYST_GROUNDING_INVALID",
+                trace=AnalystTrace(
+                    timing_ms={**timing_ms, "total_ms": elapsed},
+                    used_financial_evaluator=bool(parsed.get("used_financial_evaluator")),
+                    tool_calls=list(parsed.get("tool_calls") or []), raw_message_count=len(messages),
+                    final_output_valid=True, **grounding_trace,
+                ),
+            )
+        if grounding.invalid_context_ids:
+            result_open_issues.append(OpenIssue(
+                code="GROUNDING_UNKNOWN_CONTEXT_ID", severity=Severity.WARNING,
+                message="Invalid or non-visible citation references were removed; all retained claims have compatible evidence.",
+            ))
+        # Never publish model prose outside the validated claim boundary.
+        if grounding.required:
+            final_output = final_output.model_copy(update={
+                "answer": grounding.answer, "used_context_ids": grounding.context_ids,
+                "claims": grounding.claims,
+                "compare_rows": [AnalystCompareRow.model_validate(row) for row in grounding.compare_rows],
+            })
+        context_map = {item.context_id: item for item in packet.context_items[:self.max_context_items]}
         cited_context_ids: List[str] = []
         seen_context_ids: set[str] = set()
         for context_id in list(final_output.used_context_ids):
@@ -2627,6 +2707,7 @@ class AnalystAgent:
             computation=computation,
             compare_rows=list(final_output.compare_rows),
             citations=citations,
+            claims=list(final_output.claims),
             open_issues=result_open_issues,
             trace=AnalystTrace(
                 timing_ms={**timing_ms, "total_ms": elapsed},
@@ -2635,6 +2716,7 @@ class AnalystAgent:
                 raw_message_count=len(messages),
                 final_output_valid=True,
                 tool_error_code=_parsed_tool_error_code(parsed),
+                **grounding_trace,
             ),
             error=None if ok else final_output.status,
         )

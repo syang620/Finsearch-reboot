@@ -26,6 +26,7 @@ from evals.agent_eval_v1_contracts import (
     EffectiveStatus,
     load_agent_eval_examples_v1,
 )
+from evals.grounding_oracle import inspect_claims, inspect_final
 
 
 MODE = "route_aware_v1"
@@ -847,6 +848,7 @@ def _build_checks(
         checks.citation_match = (
             row.analyst_citation_count >= expected.expected_min_citations
         )
+    checks.grounding_consistent = row.grounding.get("consistent")
 
     _append_critical(checks, not checks.contract_valid, "CONTRACT_INVALID")
     for field_name, code in (
@@ -863,6 +865,7 @@ def _build_checks(
         ("effective_status_consistent", "EFFECTIVE_STATUS_INCONSISTENT"),
         ("failure_stage_consistent", "FAILURE_STAGE_INCONSISTENT"),
         ("degradation_consistent", "DEGRADATION_INCONSISTENT"),
+        ("grounding_consistent", "GROUNDING_INCONSISTENT"),
     ):
         value = getattr(checks, field_name)
         _append_critical(checks, value is False, code)
@@ -1059,6 +1062,56 @@ def evaluate_run_output(
     if packet_error and effective_status in {"completed", "degraded"}:
         contract_error("analyst_packet_contract", packet_error)
 
+    grounding: Dict[str, Any] = {}
+    if packet is not None and analyst is not None and packet.intent.value in {"filing_fact", "filing_calc"}:
+        limit = analyst.trace.context_item_limit
+        limit = ANALYST_CONTEXT_ITEM_LIMIT if limit is None else limit
+        packet_data = packet.model_dump(mode="json")
+        final_data = analyst.model_dump(mode="json")
+        if analyst.ok and analyst.status in {"ok", "insufficient_data"}:
+            grounding = inspect_final(packet_data, final_data, limit)
+            if any(claim.claim_type == "calculation" for claim in analyst.claims) and (
+                not analyst.trace.used_financial_evaluator
+                or not any(call.get("name") == "financial_evaluator" for call in analyst.trace.tool_calls)
+                or analyst.computation is None
+                or analyst.computation.result is None
+                or not math.isfinite(analyst.computation.result)
+            ):
+                grounding["errors"].append("GROUNDING_CALCULATOR_MISSING")
+            visible_ids = [item.context_id for item in packet.context_items[:limit]]
+            if analyst.trace.context_item_limit is not None and analyst.trace.analyst_visible_context_ids != visible_ids:
+                grounding["errors"].append("GROUNDING_VISIBILITY_TRACE_MISMATCH")
+            candidates = [call.get("args") for call in analyst.trace.tool_calls if call.get("name") == "FinalAnswer"]
+            if candidates:
+                raw_decision = inspect_claims(packet_data, candidates[-1], limit)
+                # The final claim list must be the sanitized candidate, not a
+                # separately fabricated replacement with superficially valid IDs.
+                normalized_claims = [
+                    {**claim, "metric_id": claim.get("metric_id")}
+                    for claim in raw_decision["claims"]
+                ]
+                if not raw_decision["valid"] or normalized_claims != final_data["claims"]:
+                    grounding["errors"].append("GROUNDING_CANDIDATE_FINAL_MISMATCH")
+                if raw_decision["rejected_context_ids"] and not any(issue.code == "GROUNDING_UNKNOWN_CONTEXT_ID" for issue in analyst.open_issues):
+                    grounding["errors"].append("GROUNDING_SANITIZATION_UNDISCLOSED")
+            for attempt in analyst.trace.grounding_attempts:
+                shadow = inspect_claims(packet_data, attempt.get("candidate"), limit)
+                decision = attempt.get("decision") or {}
+                if decision.get("valid") != shadow["valid"] or decision.get("context_ids") != shadow["accepted_context_ids"]:
+                    grounding["errors"].append("GROUNDING_REPAIR_TRACE_MISMATCH")
+            grounding["consistent"] = not grounding["errors"]
+            if not grounding["consistent"]:
+                derived_effective = "failed"
+                derived_failure_stage = "analyst"
+                if runtime_lanes is not None:
+                    effective_consistent = reported_status == derived_effective
+                    failure_stage_consistent = failure_stage == derived_failure_stage
+                else:
+                    effective_status = derived_effective
+        elif analyst.status == "grounding_error":
+            candidates = [call.get("args") for call in analyst.trace.tool_calls if call.get("name") == "FinalAnswer"]
+            grounding["consistent"] = bool(candidates) and not inspect_claims(packet_data, candidates[-1], limit)["valid"]
+
     route = _normalize_lower(run_output.get("route"))
     if planner is not None and route != planner.route:
         contract_error(
@@ -1112,6 +1165,7 @@ def evaluate_run_output(
         semantic_contexts=semantic_contexts,
         semantic_context_kinds=semantic_context_kinds,
         structured_evidence=_structured_evidence_diagnostics(run_output, packet),
+        grounding=grounding,
         trace={
             "planner": run_output.get("planner"),
             "lanes": run_output.get("lanes"),

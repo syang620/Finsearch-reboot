@@ -162,6 +162,7 @@ class AgentDeterministicChecksV1(BaseModel):
     tool_use_match: Optional[bool] = None
     compute_match: Optional[bool] = None
     citation_match: Optional[bool] = None
+    grounding_consistent: Optional[bool] = None
 
     score: float = 0.0
     weighted_components: Dict[str, float] = Field(default_factory=dict)
@@ -212,6 +213,7 @@ class AgentEvalRowV1(BaseModel):
     semantic_contexts: List[str] = Field(default_factory=list)
     semantic_context_kinds: List[str] = Field(default_factory=list)
     structured_evidence: Dict[str, Any] = Field(default_factory=dict)
+    grounding: Dict[str, Any] = Field(default_factory=dict)
     deterministic: AgentDeterministicChecksV1 = Field(
         default_factory=AgentDeterministicChecksV1
     )

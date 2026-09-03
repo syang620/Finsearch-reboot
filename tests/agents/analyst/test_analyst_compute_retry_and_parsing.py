@@ -339,7 +339,7 @@ class AnalystWorkflowTests(unittest.IsolatedAsyncioTestCase):
             async def ainvoke(self, messages):
                 self.calls.append(list(messages))
                 if len(self.calls) == 1:
-                    return AIMessage(content='{"status":"ok","answer":"I think it is 50.","used_context_ids":["ctx_1"],"missing_values":[],"confidence":0.3,"calculation":null,"compare_rows":[]}')
+                    return AIMessage(content='{"status":"ok","answer":"I think it is 50.","used_context_ids":["ctx_1"],"missing_values":[],"confidence":0.3,"calculation":null,"compare_rows":[],"claims":[{"claim_id":"c1","claim_type":"calculation","text":"I think it is 50.","context_ids":["ctx_1"]}]}')
                 if len(self.calls) == 2:
                     return AIMessage(
                         content="Calling tool",
@@ -352,7 +352,7 @@ class AnalystWorkflowTests(unittest.IsolatedAsyncioTestCase):
                         ],
                     )
                 return AIMessage(
-                    content='{"status":"ok","answer":"The computed result is 50.","used_context_ids":["ctx_1"],"missing_values":[],"confidence":0.95,"calculation":{"expression":"100/2","variables":{"revenue":"100","shares":"2"},"result":50},"compare_rows":[]}'
+                    content='{"status":"ok","answer":"The computed result is 50.","used_context_ids":["ctx_1"],"missing_values":[],"confidence":0.95,"calculation":{"expression":"100/2","variables":{"revenue":"100","shares":"2"},"result":50},"compare_rows":[],"claims":[{"claim_id":"c1","claim_type":"calculation","text":"The computed result is 50.","context_ids":["ctx_1"]}]}'
                 )
 
         class FakeTool:
@@ -448,6 +448,7 @@ class AnalystWorkflowTests(unittest.IsolatedAsyncioTestCase):
                             "args": {
                                 "status": "ok",
                                 "answer": "Growth rate was 25%.",
+                                "claims": [{"claim_id": "c1", "claim_type": "calculation", "text": "Growth rate was 25%.", "context_ids": ["ctx_1"]}],
                                 "used_context_ids": ["ctx_1"],
                                 "missing_values": [],
                                 "confidence": 0.9,

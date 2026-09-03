@@ -1,5 +1,7 @@
 # Architecture Decision Records
 
+- [ADR 004: Claim-level citation integrity](004-citation-policy.md)
+
 Architecture Decision Records (ADRs) capture consequential architectural choices,
 the reasons behind them, and their trade-offs. `docs/ARCHITECTURE.md` describes what
 the current system does; ADRs explain why durable boundaries and behaviors were

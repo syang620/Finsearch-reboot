@@ -1,0 +1,9 @@
+{
+  "observed_claims": 0,
+  "assessed_claims": 0,
+  "errors": 0,
+  "claim_support_precision": null,
+  "unsupported_claim_rate": null,
+  "grounded_claim_rate": null,
+  "assessment_coverage": null
+}
