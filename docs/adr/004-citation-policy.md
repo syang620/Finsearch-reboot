@@ -16,6 +16,9 @@ Every substantive claim needs usable analyst-visible evidence. Structured numeri
 claims require a typed structured fact with matching metric_id; KB numeric,
 narrative and attribution claims require text/table evidence. Calculation claims
 cite input evidence while the existing calculator-result checks remain in force.
+Declaring a calculation claim activates those same checks even when the planner
+called the task extraction, and insufficient_data does not exempt positive
+calculation claims from them.
 This checks declared bindings and compatibility, not natural-language entailment.
 
 Public filing answer prose is composed from validated claim text, not an

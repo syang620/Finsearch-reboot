@@ -103,3 +103,22 @@ def test_sanitization_is_claim_local():
     case["expected_ok"] = False
     case.pop("expected_sanitized")
     assert asyncio.run(evaluate(case))["behavior_pass"]
+
+
+@pytest.mark.parametrize("status", ["ok", "insufficient_data"])
+def test_calculation_claim_cannot_bypass_calculator_on_extract_task(status):
+    case = copy.deepcopy(CASES[8])
+    case.pop("calculator")
+    case["outputs"][0]["status"] = status
+    row = asyncio.run(evaluate(case))
+    assert not row["analyst"]["ok"]
+    assert row["analyst"]["error"] in {"COMPUTE_RESULT_MISSING", "CALCULATION_RESULT_MISMATCH"}
+
+
+def test_shadow_checks_calculation_claims_even_without_planner_compute_flag():
+    output = _run_output("kb")
+    output["analyst"]["claims"][0]["claim_type"] = "calculation"
+    row, errors, _ = evaluate_run_output(_example("kb"), output)
+    assert errors == []
+    assert "GROUNDING_CALCULATOR_MISSING" in row.grounding["errors"]
+    assert row.derived_failure_stage == "analyst"

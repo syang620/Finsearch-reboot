@@ -1070,6 +1070,14 @@ def evaluate_run_output(
         final_data = analyst.model_dump(mode="json")
         if analyst.ok and analyst.status in {"ok", "insufficient_data"}:
             grounding = inspect_final(packet_data, final_data, limit)
+            if any(claim.claim_type == "calculation" for claim in analyst.claims) and (
+                not analyst.trace.used_financial_evaluator
+                or not any(call.get("name") == "financial_evaluator" for call in analyst.trace.tool_calls)
+                or analyst.computation is None
+                or analyst.computation.result is None
+                or not math.isfinite(analyst.computation.result)
+            ):
+                grounding["errors"].append("GROUNDING_CALCULATOR_MISSING")
             visible_ids = [item.context_id for item in packet.context_items[:limit]]
             if analyst.trace.context_item_limit is not None and analyst.trace.analyst_visible_context_ids != visible_ids:
                 grounding["errors"].append("GROUNDING_VISIBILITY_TRACE_MISMATCH")

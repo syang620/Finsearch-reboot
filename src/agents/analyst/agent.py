@@ -1226,6 +1226,7 @@ def _validate_financial_evaluator_args(args: Any) -> Optional[Dict[str, str]]:
 
 def _retry_reason_message(packet: Optional[AnalystPacket], parsed: Dict[str, Any], *, max_context_items: int = ANALYST_CONTEXT_ITEM_LIMIT) -> str:
     final = _validated_final_output_from_parsed(parsed)
+    requires_calculation = _requires_calculation(packet) or bool(final and any(claim.claim_type == "calculation" for claim in final.claims))
     if packet is not None and final is not None and final.status in {"ok", "insufficient_data"}:
         grounding = validate_grounding(packet, final.model_dump(mode="json"), limit=max_context_items)
         if not grounding.valid:
@@ -1265,17 +1266,17 @@ def _retry_reason_message(packet: Optional[AnalystPacket], parsed: Dict[str, Any
             "Your FinalAnswer payload failed validation: "
             f"{final_output_error}. Call FinalAnswer again with valid structured arguments only."
         )
-    if _requires_calculation(packet) and not parsed.get("used_financial_evaluator"):
+    if requires_calculation and not parsed.get("used_financial_evaluator"):
         return (
             "This task requires grounded calculation. Call financial_evaluator first, "
             "then call FinalAnswer after the tool result is available."
         )
-    if _requires_calculation(packet) and parsed.get("numeric_result") is None:
+    if requires_calculation and parsed.get("numeric_result") is None:
         return (
             "The calculation completed without a reliable numeric result. "
             "Call financial_evaluator again with corrected inputs, then finish with FinalAnswer."
         )
-    if _requires_calculation(packet) and parsed.get("numeric_result") is not None:
+    if requires_calculation and parsed.get("numeric_result") is not None:
         return (
             "You already have a valid financial_evaluator result available. "
             "Do not call financial_evaluator again unless exactly one additional scalar is still missing. "
@@ -1485,11 +1486,12 @@ def _should_retry_response(
         if not validate_grounding(packet, final_output.model_dump(mode="json"), limit=max_context_items).valid:
             return True
 
-    if not _requires_calculation(packet):
+    claim_calculation = bool(final_output and any(claim.claim_type == "calculation" for claim in final_output.claims))
+    if not _requires_calculation(packet) and not claim_calculation:
         return False
     if not tools_available:
         return False
-    if parsed.get("calculation_blocked"):
+    if parsed.get("calculation_blocked") and not claim_calculation:
         return False
     final_output = _validated_final_output_from_parsed(parsed)
     if final_output is not None and final_output.status == "tool_error":
@@ -2483,11 +2485,13 @@ class AnalystAgent:
                 )
             )
 
-        requires_calculation = _requires_calculation(packet)
+        claim_calculation = any(claim.claim_type == "calculation" for claim in final_output.claims)
+        requires_calculation = _requires_calculation(packet) or claim_calculation
         insufficient_data_terminal = (
             final_output.status == "insufficient_data"
             and not parsed.get("tool_error")
         )
+        calculation_exempt = insufficient_data_terminal and not claim_calculation
         tool_computation = _computation_from_parsed_state(parsed)
         successful_computations = _successful_computations_from_parsed_state(parsed)
         final_calculation = final_output.calculation
@@ -2495,7 +2499,7 @@ class AnalystAgent:
         calculation_mismatch = False
         calculation_ambiguous = False
 
-        if requires_calculation and not insufficient_data_terminal:
+        if requires_calculation and not calculation_exempt:
             if parsed.get("tool_error"):
                 calculation_mismatch = tool_computation is not None and not _computations_match(
                     final_calculation,
@@ -2587,7 +2591,7 @@ class AnalystAgent:
                 error="CALCULATION_RESULT_MISMATCH",
             )
 
-        if requires_calculation and not insufficient_data_terminal:
+        if requires_calculation and not calculation_exempt:
             if computation is None or computation.result is None:
                 result_open_issues.append(
                     OpenIssue(
