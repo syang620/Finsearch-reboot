@@ -1129,6 +1129,7 @@ def _compact_retrieval_result_for_user(*, retrieval_output: Any) -> Dict[str, An
     if not isinstance(retrieval_output, dict):
         return {
             "type": "retrieval",
+            "attempted": False,
             "ok": False,
             "original_user_query": None,
             "target": {},
@@ -1263,6 +1264,7 @@ def _compact_retrieval_result_for_user(*, retrieval_output: Any) -> Dict[str, An
 
     return {
         "type": "retrieval",
+        "attempted": True,
         "ok": bool(retrieval_output.get("ok", False)),
         "original_user_query": _normalize_text(retrieval_output.get("original_user_query")),
         "target": target,

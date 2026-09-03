@@ -906,6 +906,34 @@ def test_requested_structured_lane_without_results_is_skipped() -> None:
     assert statuses == []
 
 
+def test_requested_kb_lane_distinguishes_empty_execution_from_no_execution() -> None:
+    output = _run_output(
+        "kb",
+        kb_ok=False,
+        reported_status="failed",
+        include_analyst=False,
+        context_count=0,
+    )
+    output["retrieval"].update(
+        {
+            "attempted": True,
+            "attempts": [],
+            "targets": [],
+            "target": {},
+            "retrieved_candidate_count": 0,
+        }
+    )
+
+    executed_lanes, _metric_ids, _statuses = derive_lane_status(output)
+    output["retrieval"]["attempted"] = False
+    skipped_lanes, _metric_ids, _statuses = derive_lane_status(output)
+
+    assert executed_lanes.kb.attempted
+    assert executed_lanes.kb.status == "failed"
+    assert not skipped_lanes.kb.attempted
+    assert skipped_lanes.kb.status == "skipped"
+
+
 def test_explicit_analyst_calculator_and_citation_requirements_are_critical() -> None:
     example = _example(
         "kb",

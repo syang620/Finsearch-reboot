@@ -1573,6 +1573,64 @@ class OrchestratorRuntimeTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(client.calls, [])
         self.assertTrue(output["retrieval"]["ok"])
 
+    async def test_empty_retrieval_execution_remains_visible_to_shadow_evaluator(self) -> None:
+        async def _fake_retrieval_agent(state, client=None):
+            return {}
+
+        await aclose_orchestrator_runtime()
+        saver = InMemorySaver()
+        with (
+            mock.patch("agents.orchestrator.agent_orchestrator._get_orchestrator_checkpointer", new=mock.AsyncMock(return_value=saver)),
+            mock.patch("agents.orchestrator.agent_orchestrator._orchestrator_checkpoint_ttl_seconds", return_value=0),
+            mock.patch("agents.orchestrator.agent_orchestrator._get_orchestrator_mcp_client", new=mock.AsyncMock(return_value=object())),
+            mock.patch("agents.orchestrator.agent_orchestrator.retrieval_agent", new=_fake_retrieval_agent),
+        ):
+            output = await _invoke_orchestrator(
+                {
+                    "user_query": "What was revenue?",
+                    "plan_id": "kb-empty-retrieval",
+                    "analyst_model": "shared-model",
+                    "tables_dir": "data/chunked",
+                    "debug": False,
+                    "include_evidence_trace": True,
+                },
+                run_id="kb-empty-retrieval",
+                planner=_KBRoutePlanner(),
+            )
+
+        self.assertEqual(output["status"], "failed")
+        self.assertEqual(output["failure_stage"], "retrieval")
+        self.assertTrue(output["retrieval"]["attempted"])
+        self.assertEqual(output["retrieval"]["attempts"], [])
+        self.assertTrue(output["lanes"]["kb"]["attempted"])
+        self.assertEqual(output["lanes"]["kb"]["status"], "failed")
+
+        from evals.agent_eval_route_aware_v1 import evaluate_run_output
+        from evals.agent_eval_v1_contracts import AgentEvalExampleV1, AgentExpectedV1
+
+        row, errors, _sample = evaluate_run_output(
+            AgentEvalExampleV1(
+                id="kb-empty-retrieval",
+                user_query="What was revenue?",
+                gold_answer="Revenue was reported in the filing.",
+                expected=AgentExpectedV1(
+                    route="kb",
+                    expect_kb_lane=True,
+                    expect_structured_fact_lane=False,
+                    expected_reported_status="failed",
+                    expected_effective_status="failed",
+                    expected_failure_stage="retrieval",
+                ),
+            ),
+            output,
+        )
+
+        self.assertEqual(errors, [])
+        self.assertTrue(row.lane_status_consistent)
+        self.assertTrue(row.derived_lane_status.kb.attempted)
+        self.assertEqual(row.derived_lane_status.kb.status, "failed")
+        self.assertEqual(row.deterministic.critical_failures, [])
+
     async def test_orchestrator_graph_state_round_trips_with_structured_fact_route(self) -> None:
         import agents.orchestrator.agent_orchestrator as orchestrator
 

@@ -209,7 +209,8 @@ def _derive_kb_lane(
     ]
     total_runs = sum(int(item.get("runs") or 0) for item in targets)
     attempted = requested and bool(
-        attempts
+        retrieval.get("attempted") is True
+        or attempts
         or total_runs > 0
         or retrieval.get("ok") is True
         or retrieval.get("target")

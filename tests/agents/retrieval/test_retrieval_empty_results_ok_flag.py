@@ -58,6 +58,15 @@ class RetrievalOkFlagTests(unittest.TestCase):
         self.assertFalse(compact.get("ok"))
         self.assertEqual(compact.get("retrieved_candidate_count"), 1)
 
+    def test_compacted_retrieval_preserves_empty_execution(self) -> None:
+        not_executed = _compact_retrieval_result_for_user(retrieval_output=None)
+        executed_empty = _compact_retrieval_result_for_user(retrieval_output={})
+
+        self.assertFalse(not_executed["attempted"])
+        self.assertTrue(executed_empty["attempted"])
+        self.assertEqual(not_executed["attempts"], [])
+        self.assertEqual(executed_empty["attempts"], [])
+
 
 if __name__ == "__main__":
     unittest.main()
