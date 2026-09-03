@@ -408,6 +408,9 @@ def test_consistent_runtime_lanes_are_authoritative() -> None:
         "affected_lanes": [],
         "notice": "",
     }
+    packet = output["evaluation_trace"]["analyst_packet"]
+    packet["lanes"] = output["lanes"]
+    packet["degradation"] = output["degradation"]
 
     row, errors, _sample = evaluate_run_output(_example("hybrid"), output)
 
@@ -469,6 +472,37 @@ def test_degradation_consistency_requires_packet_summary_match() -> None:
     )
 
     assert errors == []
+    assert row.degradation_consistent is False
+    assert "DEGRADATION_INCONSISTENT" in row.deterministic.critical_failures
+
+
+def test_degradation_consistency_requires_packet_lane_summary_match() -> None:
+    output = _run_output(
+        "hybrid",
+        structured_status="partial",
+        reported_status="degraded",
+    )
+    _add_consistent_degraded_runtime_summaries(output)
+    output["evaluation_trace"]["analyst_packet"]["lanes"] = {
+        lane_name: dict(lane_summary)
+        for lane_name, lane_summary in output["lanes"].items()
+    }
+    output["evaluation_trace"]["analyst_packet"]["lanes"]["structured_fact"][
+        "status"
+    ] = "ok"
+
+    row, errors, _sample = evaluate_run_output(
+        _example(
+            "hybrid",
+            expected_reported_status="degraded",
+            expected_effective_status="degraded",
+            allow_degraded=True,
+        ),
+        output,
+    )
+
+    assert errors == []
+    assert row.lane_status_consistent is True
     assert row.degradation_consistent is False
     assert "DEGRADATION_INCONSISTENT" in row.deterministic.critical_failures
 

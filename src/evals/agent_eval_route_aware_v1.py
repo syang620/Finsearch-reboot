@@ -1018,12 +1018,21 @@ def evaluate_run_output(
                 effective_status in {"completed", "degraded"}
                 or packet_dump is not None
             )
+            packet_lanes = (
+                AgentLaneStatusSet.model_validate(
+                    packet.lanes.model_dump(mode="json")
+                )
+                if packet is not None
+                else None
+            )
             degradation_consistent = (
                 degradation_obj == expected_degradation
                 and (
                     not packet_required
                     or (
                         packet is not None
+                        and packet_lanes is not None
+                        and _lane_status_consistent(packet_lanes, derived_lanes)
                         and packet.degradation == expected_degradation
                     )
                 )
