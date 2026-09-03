@@ -1,5 +1,37 @@
 # FinSearch Evaluation Baselines
 
+## PR6 release exception PR6-CALC-001 — 2026-09-03
+
+The project owner explicitly approved merging PR6 with the single known
+pre-existing live failure `AGENT_V1_ANALYST_001` /
+`CALCULATION_RESULT_AMBIGUOUS`. This exception applies only to PR 23 and its
+reviewed implementation `0f8e477c47b7f11a8e069720b3b089e81f25cf9d`.
+
+The unchanged live gate **failed**, with 14/15 non-critical rows, one critical
+calculator-provenance failure, zero evaluator errors and score `0.980392`.
+The exception accepts that result for PR6 closure; it does not change the gate,
+its thresholds, the raw artifacts, or the runtime's fail-closed behavior. The
+same error is preserved in the PR5 `de0142c` baseline. PR6-specific grounding
+passed 37/37, degradation passed 14/14, applicable runtime/evaluator consistency
+was 100%, and fresh review found no major issues.
+
+The remaining risk is an unavailable calculation answer when successful tool
+results cannot be uniquely matched. No ambiguous calculation is accepted as a
+successful answer. The separately documented semantic-quality limitations and
+pre-existing full-suite failures remain visible; this exception is not a claim
+of semantic correctness or a blanket waiver for other regressions.
+
+Required follow-up before PR7: open a separate, narrow calculator-reliability PR,
+freeze a focused regression fixture against unchanged PR6 before changing
+behavior, measure before/after, then rerun the unchanged 15-case gate once the
+calculator fix is frozen. Do not change PR6 grounding policy to obtain a pass.
+This exception does not automatically apply to that follow-up or future PRs.
+
+Supporting immutable evidence:
+`artifacts/evals/agents/v1/baselines/0f8e477/manifest.json` and the grounding,
+degradation and review records linked below. Merge authorization was provided
+explicitly by the project owner after reviewing these results.
+
 ## PR6 live gate — 2026-09-03
 
 The unchanged 15-case live gate ran exactly once on clean, detached implementation

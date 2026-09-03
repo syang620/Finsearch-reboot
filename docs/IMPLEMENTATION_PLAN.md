@@ -27,11 +27,17 @@
   Structured mixed-outcome and exact request/result coverage were evaluated at
   `5762f51668016376746438c6dd5503e04b9c50c1`; final analyst-packet lane
   consistency was evaluated at `de0142ca89384aee9c1bad014879e7e83e94fc86`.
-- PR6 — implementation and deterministic grounding/degradation verification at
+- PR6 — approved for closure under explicit release exception `PR6-CALC-001`:
+  implementation and deterministic grounding/degradation verification at
   `0f8e477c47b7f11a8e069720b3b089e81f25cf9d`; fresh review found no major issues.
   The secondary semantic assessment and unchanged 15-case live gate are recorded.
-  The live gate failed on one inherited calculator-ambiguity case; release closure
-  requires its resolution or an explicit exception. PR 23 remains draft.
+  The live gate failed on one inherited calculator-ambiguity case; the project
+  owner explicitly accepted that known failure for PR6 only. The unchanged failed
+  gate and exception are recorded in `docs/EVALUATION_BASELINES.md`.
+- Before PR7 — a separate narrow calculator-reliability PR must freeze a focused
+  before fixture, resolve `CALCULATION_RESULT_AMBIGUOUS`, measure before/after,
+  and rerun the unchanged live gate after freezing the fix. PR6 grounding policy
+  is outside that follow-up's scope.
 
 ---
 
