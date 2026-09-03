@@ -132,7 +132,14 @@ class AnalystStructuredAnswer(BaseModel):
     used_context_ids: List[str]
     missing_values: List[str]
     confidence: Optional[float] = None
-    calculation: Optional[AnalystComputation] = None
+    calculation: Optional[AnalystComputation] = Field(
+        default=None,
+        description=(
+            "Select one successful financial_evaluator computation: copy its expression, "
+            "variables and result. Required when distinct calculations were executed; "
+            "preserve this selection during answer repairs. Do not recompute existing results."
+        ),
+    )
     compare_rows: List[AnalystCompareRow]
     claims: List[GroundedClaim] = Field(default_factory=list)
 
@@ -713,6 +720,8 @@ def build_analyst_prompt(
         "- financial_evaluator accepts exactly one scalar arithmetic expression per call.\n"
         "- Do not use assignments, multiple lines, or invented variable names in the expression.\n"
         "- If several derived values are needed, compute them one scalar at a time, then call FinalAnswer.\n"
+        "- In FinalAnswer.calculation, select the successful expression, variables and result that answer the question. "
+        "Keep that calculation block during answer repairs; do not repeat successful calculations.\n"
         if tools_available
         else '- If arithmetic is required and financial_evaluator is unavailable, return status="tool_error" instead of inventing a calculation.\n'
     )
@@ -1276,6 +1285,15 @@ def _retry_reason_message(packet: Optional[AnalystPacket], parsed: Dict[str, Any
             "The calculation completed without a reliable numeric result. "
             "Call financial_evaluator again with corrected inputs, then finish with FinalAnswer."
         )
+    if requires_calculation and _calculation_selection_is_ambiguous(final, parsed):
+        available = _distinct_successful_computations(_successful_computations_from_parsed_state(parsed))
+        return (
+            "CALCULATION_RESULT_AMBIGUOUS: select one successful calculation in "
+            "FinalAnswer.calculation by copying its expression, variables and result. "
+            "Do not infer the selection from prose or re-execute successful tools. "
+            "Preserve valid claim bindings. Available successful calculations: "
+            + json.dumps([item.model_dump(mode="json") for item in available], ensure_ascii=False)
+        )
     if requires_calculation and parsed.get("numeric_result") is not None:
         return (
             "You already have a valid financial_evaluator result available. "
@@ -1429,14 +1447,53 @@ def _resolve_matching_successful_computation(
     if not numeric_matches:
         return None, False
 
-    provenance_matches = [
+    provenance_matches = _distinct_successful_computations([
         computation
         for computation in numeric_matches
         if _computation_provenance_matches(structured, computation)
-    ]
+    ])
     if len(provenance_matches) == 1:
         return provenance_matches[0], False
     return None, True
+
+
+def _distinct_successful_computations(
+    computations: List[AnalystComputation],
+) -> List[AnalystComputation]:
+    """Collapse equivalent executions for selection only; retain original records."""
+    distinct: List[AnalystComputation] = []
+    for computation in computations:
+        # Result tolerance is for final-answer rounding, not tool-result identity.
+        finite_inputs = all(
+            _normalized_computation_variable(computation.variables.get(name, "")) is not None
+            for name in _EXPRESSION_IDENTIFIER_RE.findall(str(computation.expression or ""))
+        )
+        equivalent = (
+            computation.result is not None and math.isfinite(computation.result)
+            and finite_inputs
+            and any(
+                previous.result == computation.result
+                and _computation_provenance_matches(computation, previous)
+                for previous in distinct
+            )
+        )
+        if not equivalent:
+            distinct.append(computation)
+    return distinct
+
+
+def _calculation_selection_is_ambiguous(
+    final: Optional[AnalystStructuredAnswer],
+    parsed: Dict[str, Any] | _SerializedAnalystParsedState,
+) -> bool:
+    if final is None or final.status == "tool_error" or parsed.get("tool_error"):
+        return False
+    if final.status == "insufficient_data" and not any(claim.claim_type == "calculation" for claim in final.claims):
+        return False
+    computations = _successful_computations_from_parsed_state(parsed)
+    if final.calculation is None:
+        return len(_distinct_successful_computations(computations)) > 1
+    return _resolve_matching_successful_computation(final.calculation, computations)[1]
 
 
 def _tool_error_is_retryable(
@@ -1502,7 +1559,7 @@ def _should_retry_response(
         return True
     if parsed.get("numeric_result") is None:
         return True
-    return False
+    return _calculation_selection_is_ambiguous(final_output, parsed)
 
 
 def _should_retry_compute(
@@ -2518,13 +2575,10 @@ class AnalystAgent:
                     computation = matched_computation
                 else:
                     computation = None
-            elif len(successful_computations) == 1:
-                computation = successful_computations[0]
-            elif len(successful_computations) > 1:
-                calculation_ambiguous = True
-                computation = None
             else:
-                computation = None
+                distinct_computations = _distinct_successful_computations(successful_computations)
+                computation = distinct_computations[0] if len(distinct_computations) == 1 else None
+                calculation_ambiguous = len(distinct_computations) > 1
 
         if calculation_ambiguous:
             result_open_issues.append(

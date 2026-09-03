@@ -1047,7 +1047,7 @@ def test_equal_results_without_matching_provenance_are_ambiguous():
     assert any(issue.code == "CALCULATION_RESULT_AMBIGUOUS" for issue in result.open_issues)
 
 
-def test_duplicate_matching_provenance_is_ambiguous():
+def test_duplicate_matching_provenance_preserves_one_original_computation():
     result = _run_computation_history_case(
         tool_calls=[
             ("revenue", {"revenue": "100"}),
@@ -1064,9 +1064,12 @@ def test_duplicate_matching_provenance_is_ambiguous():
         },
     )
 
-    assert result.ok is False
-    assert result.error == "CALCULATION_RESULT_AMBIGUOUS"
-    assert result.computation is None
+    assert result.ok is True
+    assert result.error is None
+    assert result.computation.expression == "revenue"
+    assert result.computation.variables == {"revenue": "100"}
+    assert result.computation.result == 100.0
+    assert sum(call["name"] == "financial_evaluator" for call in result.trace.tool_calls) == 2
 
 
 def test_expression_normalization_preserves_token_boundaries():
