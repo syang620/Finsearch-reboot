@@ -354,12 +354,21 @@ def _derive_structured_lane(
         if isinstance(item, dict)
     ]
     requested = route in {"structured_fact", "hybrid"} and bool(requests)
-    results = [
-        item
-        for item in run_output.get("structured_fact_results") or []
-        if isinstance(item, dict)
-    ]
-    attempted = bool(results)
+    raw_structured_results = run_output.get("structured_fact_results")
+    raw_results_are_sequence = isinstance(
+        raw_structured_results, Sequence
+    ) and not isinstance(raw_structured_results, (str, bytes, bytearray))
+    raw_results = list(raw_structured_results) if raw_results_are_sequence else []
+    results = [item for item in raw_results if isinstance(item, dict)]
+    results_are_well_formed = (
+        raw_results_are_sequence and len(results) == len(raw_results)
+    )
+    complete_operation_coverage = (
+        results_are_well_formed and len(results) == len(requests)
+    )
+    attempted = raw_structured_results is not None and (
+        not raw_results_are_sequence or bool(raw_results)
+    )
     visible_items = (
         packet.context_items[:ANALYST_CONTEXT_ITEM_LIMIT]
         if packet is not None
@@ -397,15 +406,22 @@ def _derive_structured_lane(
     elif (
         usable
         and statuses
+        and complete_operation_coverage
         and all(status == "ok" for status in statuses)
         and not admission_loss
     ):
         aggregate_status = "ok"
     elif successful_result_count and not usable:
         aggregate_status = "failed"
-    elif usable or "partial" in statuses:
+    elif usable:
         aggregate_status = "partial"
-    elif defensive_rejection_classes:
+    elif complete_operation_coverage and statuses and all(
+        status == "partial" for status in statuses
+    ):
+        aggregate_status = "partial"
+    elif "partial" in statuses:
+        aggregate_status = "failed"
+    elif complete_operation_coverage and defensive_rejection_classes:
         question_classes = set(defensive_rejection_classes)
         if question_classes == {"ambiguous"}:
             aggregate_status = "ambiguous"
@@ -413,9 +429,11 @@ def _derive_structured_lane(
             aggregate_status = "unsupported"
         else:
             aggregate_status = "failed"
-    elif statuses and all(status == "ambiguous" for status in statuses):
+    elif complete_operation_coverage and statuses and all(
+        status == "ambiguous" for status in statuses
+    ):
         aggregate_status = "ambiguous"
-    elif statuses and all(
+    elif complete_operation_coverage and statuses and all(
         status in {"unsupported", "unsupported_metric"} for status in statuses
     ):
         aggregate_status = "unsupported"

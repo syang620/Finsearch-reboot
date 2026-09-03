@@ -38,6 +38,7 @@ LaneFixture = Literal[
     "partial_usable",
     "kb_admission_partial",
     "structured_mixed_admission",
+    "structured_mixed_unusable",
     "partial",
     "failed",
     "skipped",
@@ -98,7 +99,10 @@ def _planner(case: DegradationCase) -> dict:
             "fiscal_period": "FY",
         }
     ]
-    if case.structured_fact == "structured_mixed_admission":
+    if case.structured_fact in {
+        "structured_mixed_admission",
+        "structured_mixed_unusable",
+    }:
         structured_fact_requests.append(
             {
                 "subquestion": "What was Apple net income in FY2024?",
@@ -314,6 +318,45 @@ def _structured_fixture(outcome: LaneFixture) -> List[dict]:
                 },
             },
         ]
+    if outcome == "structured_mixed_unusable":
+        return [
+            {
+                "subquestion": "What was Apple revenue in FY2024?",
+                "metric_hint": "revenue",
+                "resolved_ticker": "AAPL",
+                "resolved_fiscal_year": 2024,
+                "resolved_metric_id": "revenue",
+                "resolver_status": "resolved",
+                "resolver_reason": "Supported metric.",
+                "tool_result": {
+                    "ok": False,
+                    "status": "partial",
+                    "metric_id": "revenue",
+                    "value": None,
+                    "missing_component_groups": [
+                        {"group": ["revenue"], "reason": "No matching facts."}
+                    ],
+                    "error": "Revenue evidence was incomplete.",
+                },
+            },
+            {
+                "subquestion": "What was Apple net income in FY2024?",
+                "metric_hint": "net_income",
+                "resolved_ticker": "AAPL",
+                "resolved_fiscal_year": 2024,
+                "resolved_metric_id": "net_income",
+                "resolver_status": "resolved",
+                "resolver_reason": "Supported metric.",
+                "tool_result": {
+                    "ok": False,
+                    "status": "error",
+                    "metric_id": "net_income",
+                    "value": None,
+                    "missing_component_groups": [],
+                    "error": "Structured fact execution failed.",
+                },
+            },
+        ]
     status = "ok" if outcome == "ok" else "partial" if outcome == "partial" else "error"
     return [
         {
@@ -371,7 +414,10 @@ def run_fault_injected_case(case: DegradationCase) -> Dict[str, Any]:
             context_items=items,
             open_issues=packet_issues,
         )
-    if case.structured_fact == "structured_mixed_admission":
+    if case.structured_fact in {
+        "structured_mixed_admission",
+        "structured_mixed_unusable",
+    }:
         packet = _append_structured_fact_context_items(
             packet=packet,
             structured_fact_results=structured_results,

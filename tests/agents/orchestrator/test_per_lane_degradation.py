@@ -412,6 +412,209 @@ def test_structured_tool_partial_without_admitted_evidence_is_unusable() -> None
     assert output["degradation"]["active"] is True
 
 
+@pytest.mark.parametrize(
+    ("operation_statuses", "expected_lane_status"),
+    [
+        (["partial", "partial"], "partial"),
+        (["partial", "error"], "failed"),
+        (["partial", "ambiguous"], "failed"),
+        (["partial", "unsupported_metric"], "failed"),
+    ],
+)
+def test_structured_without_admitted_evidence_is_partial_only_when_all_operations_are_partial(
+    operation_statuses: list[str],
+    expected_lane_status: str,
+) -> None:
+    plan = _plan("structured_fact")
+    plan["structured_fact_requests"] = [
+        {
+            "subquestion": f"What was metric {index}?",
+            "metric_hint": f"metric_{index}",
+        }
+        for index, _status in enumerate(operation_statuses)
+    ]
+    results = []
+    for index, status in enumerate(operation_statuses):
+        result = _structured_result(status)
+        result.update(
+            {
+                "subquestion": f"What was metric {index}?",
+                "resolved_metric_id": f"metric_{index}",
+            }
+        )
+        if status == "ambiguous":
+            result.update(
+                {
+                    "resolved_metric_id": None,
+                    "resolver_status": "ambiguous",
+                    "resolver_reason": "Multiple registry metrics matched.",
+                    "tool_result": None,
+                }
+            )
+        elif status == "partial":
+            result["tool_result"].update(
+                {
+                    "error": "A required component was unavailable.",
+                    "missing_component_groups": ["required_component"],
+                }
+            )
+        else:
+            result["tool_result"]["error"] = "Structured fact evidence is unavailable."
+        results.append(result)
+
+    packet = _append_structured_fact_context_items(
+        packet=_packet(),
+        structured_fact_results=results,
+    )
+    state = {
+        "plan_obj": plan,
+        "structured_fact_results": results,
+        "packet": packet,
+    }
+    packet = _packet_with_evidence_status(state=state, packet=packet)
+    state["packet"] = packet
+
+    assert packet.context_items == []
+    assert packet.open_issues
+    assert _route_after_retrieval_attach_open_issues(state) == "finalize"
+
+    output = _output(state)
+
+    assert output["status"] == "failed"
+    assert output["failure_stage"] == "structured_fact"
+    assert output["lanes"]["structured_fact"]["status"] == expected_lane_status
+    assert output["degradation"]["active"] is True
+
+
+@pytest.mark.parametrize(
+    "operation_status",
+    ["partial", "ambiguous", "unsupported_metric"],
+)
+def test_incomplete_structured_results_without_admitted_evidence_fail_closed(
+    operation_status: str,
+) -> None:
+    plan = _plan("structured_fact")
+    plan["structured_fact_requests"].append(
+        {"subquestion": "What was net income?", "metric_hint": "net_income"}
+    )
+
+    output = _output(
+        {
+            "plan_obj": plan,
+            "structured_fact_results": [_structured_result(operation_status)],
+            "packet": _packet(),
+        }
+    )
+
+    assert output["lanes"]["structured_fact"]["status"] == "failed"
+    assert output["status"] == "failed"
+    assert output["failure_stage"] == "structured_fact"
+
+
+def test_incomplete_structured_results_with_admitted_evidence_are_partial() -> None:
+    plan = _plan("structured_fact")
+    plan["structured_fact_requests"].append(
+        {"subquestion": "What was net income?", "metric_hint": "net_income"}
+    )
+    result = _successful_structured_result(
+        subquestion="What was revenue?",
+        metric_id="revenue",
+        value=391_000_000_000.0,
+    )
+    packet = _append_structured_fact_context_items(
+        packet=_packet(),
+        structured_fact_results=[result],
+    )
+    state = {
+        "plan_obj": plan,
+        "structured_fact_results": [result],
+        "packet": packet,
+        "analyst_result": _analyst(),
+    }
+    packet = _packet_with_evidence_status(state=state, packet=packet)
+    state["packet"] = packet
+
+    output = _output(state)
+
+    assert len(packet.context_items) == 1
+    assert output["lanes"]["structured_fact"]["status"] == "partial"
+    assert output["status"] == "degraded"
+    assert output["analyst"] is not None
+
+
+def test_malformed_structured_results_are_attempted_and_cannot_be_ok() -> None:
+    valid_result = _successful_structured_result(
+        subquestion="What was revenue?",
+        metric_id="revenue",
+        value=391_000_000_000.0,
+    )
+    usable_output = _output(
+        {
+            "plan_obj": _plan("structured_fact"),
+            "structured_fact_results": [valid_result, "malformed"],
+            "packet": _packet(_structured_item()),
+            "analyst_result": _analyst(),
+        }
+    )
+    unusable_output = _output(
+        {
+            "plan_obj": _plan("structured_fact"),
+            "structured_fact_results": ["malformed"],
+            "packet": _packet(),
+        }
+    )
+
+    assert usable_output["lanes"]["structured_fact"]["status"] == "partial"
+    assert usable_output["status"] == "degraded"
+    assert unusable_output["lanes"]["structured_fact"]["attempted"] is True
+    assert unusable_output["lanes"]["structured_fact"]["status"] == "failed"
+    assert unusable_output["status"] == "failed"
+
+
+def test_structured_admission_records_malformed_result_shapes() -> None:
+    valid_result = _successful_structured_result(
+        subquestion="What was revenue?",
+        metric_id="revenue",
+        value=391_000_000_000.0,
+    )
+    packet = _append_structured_fact_context_items(
+        packet=_packet(),
+        structured_fact_results=[valid_result, "malformed"],
+    )
+    invalid_container_packet = _append_structured_fact_context_items(
+        packet=_packet(),
+        structured_fact_results=42,
+    )
+
+    assert len(packet.context_items) == 1
+    assert [issue.code for issue in packet.open_issues] == [
+        "STRUCTURED_FACT_INVALID_EVIDENCE"
+    ]
+    assert invalid_container_packet.context_items == []
+    assert [issue.code for issue in invalid_container_packet.open_issues] == [
+        "STRUCTURED_FACT_INVALID_EVIDENCE"
+    ]
+
+
+@pytest.mark.parametrize(
+    "raw_results",
+    [42, "malformed", {"tool_result": {"status": "ok"}}],
+)
+def test_invalid_structured_result_containers_fail_closed(raw_results: object) -> None:
+    output = _output(
+        {
+            "plan_obj": _plan("structured_fact"),
+            "structured_fact_results": raw_results,
+            "packet": _packet(),
+        }
+    )
+
+    assert output["structured_fact_results"] == [None]
+    assert output["lanes"]["structured_fact"]["attempted"] is True
+    assert output["lanes"]["structured_fact"]["status"] == "failed"
+    assert output["status"] == "failed"
+
+
 def test_structured_success_rejected_during_admission_is_partial_when_evidence_survives() -> None:
     plan = _plan("structured_fact")
     plan["structured_fact_requests"] = [
@@ -648,6 +851,38 @@ def test_defensive_runtime_rejection_requires_complete_request_index_coverage(
                     "tool_result": None,
                 }
                 for _index in range(2)
+            ],
+            "packet": packet,
+        }
+    )
+
+    assert output["lanes"]["structured_fact"]["status"] == "failed"
+
+
+def test_defensive_runtime_rejection_requires_result_coverage() -> None:
+    issue = OpenIssue(
+        code="STRUCTURED_FACT_CAPABILITY_REJECTED",
+        message="The runtime boundary rejected this request.",
+        metadata={
+            "outcome": "defensive_rejection",
+            "question_class": "unsupported_ratio",
+        },
+    )
+    packet = _packet().model_copy(update={"open_issues": [issue]})
+    plan = _plan("structured_fact")
+    plan["structured_fact_requests"].append(
+        {"subquestion": "Rejected request 2", "metric_hint": "revenue"}
+    )
+
+    output = _output(
+        {
+            "plan_obj": plan,
+            "structured_fact_results": [
+                {
+                    "resolver_status": "unresolved",
+                    "resolver_reason": "Structured-fact capability rejected.",
+                    "tool_result": None,
+                }
             ],
             "packet": packet,
         }

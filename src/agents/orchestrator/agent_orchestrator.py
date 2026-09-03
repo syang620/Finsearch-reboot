@@ -727,7 +727,7 @@ def _derive_evidence_lanes(
     *,
     plan_obj: Dict[str, Any],
     retrieval_output: Any,
-    structured_fact_results: Sequence[Dict[str, Any]],
+    structured_fact_results: Any,
     packet: Optional[AnalystPacket],
     issues: Sequence[OpenIssue],
 ) -> tuple[_EvidenceLaneDerivation, _EvidenceLaneDerivation]:
@@ -808,13 +808,29 @@ def _derive_evidence_lanes(
         usable_evidence_count=kb_count,
     )
 
-    structured_requested = route in {"structured_fact", "hybrid"} and bool(
-        plan_obj.get("structured_fact_requests")
-    )
-    results = [
-        result for result in structured_fact_results or [] if isinstance(result, dict)
+    structured_requests = [
+        request
+        for request in plan_obj.get("structured_fact_requests") or []
+        if isinstance(request, dict)
     ]
-    structured_attempted = structured_requested and bool(results)
+    structured_requested = route in {"structured_fact", "hybrid"} and bool(
+        structured_requests
+    )
+    raw_results_are_sequence = isinstance(
+        structured_fact_results, Sequence
+    ) and not isinstance(structured_fact_results, (str, bytes, bytearray))
+    raw_results = list(structured_fact_results) if raw_results_are_sequence else []
+    results = [result for result in raw_results if isinstance(result, dict)]
+    results_are_well_formed = (
+        raw_results_are_sequence and len(results) == len(raw_results)
+    )
+    complete_operation_coverage = (
+        results_are_well_formed and len(results) == len(structured_requests)
+    )
+    has_raw_result_payload = structured_fact_results is not None and (
+        not raw_results_are_sequence or bool(raw_results)
+    )
+    structured_attempted = structured_requested and has_raw_result_payload
     structured_issues = _lane_issues(issues, lane="structured_fact")
     operation_statuses = [_structured_operation_status(result) for result in results]
     successful_operation_count = sum(
@@ -839,6 +855,7 @@ def _derive_evidence_lanes(
             EvidenceLaneStatus.OK
             if (
                 operation_statuses
+                and complete_operation_coverage
                 and all(status == "ok" for status in operation_statuses)
                 and structured_count == successful_operation_count
                 and not has_invalid_evidence
@@ -847,11 +864,15 @@ def _derive_evidence_lanes(
         )
     elif successful_operation_count:
         structured_status = EvidenceLaneStatus.FAILED
-    elif "partial" in operation_statuses:
+    elif complete_operation_coverage and operation_statuses and all(
+        status == "partial" for status in operation_statuses
+    ):
         structured_status = EvidenceLaneStatus.PARTIAL
-    elif _defensive_rejections_cover_results(
+    elif "partial" in operation_statuses:
+        structured_status = EvidenceLaneStatus.FAILED
+    elif complete_operation_coverage and _defensive_rejections_cover_results(
         defensive_rejections,
-        result_count=len(results),
+        result_count=len(structured_requests),
     ):
         question_classes = {
             str((issue.metadata or {}).get("question_class") or "")
@@ -869,9 +890,13 @@ def _derive_evidence_lanes(
             structured_status = EvidenceLaneStatus.UNSUPPORTED
         else:
             structured_status = EvidenceLaneStatus.FAILED
-    elif operation_statuses and all(status == "ambiguous" for status in operation_statuses):
+    elif (
+        complete_operation_coverage
+        and operation_statuses
+        and all(status == "ambiguous" for status in operation_statuses)
+    ):
         structured_status = EvidenceLaneStatus.AMBIGUOUS
-    elif operation_statuses and all(
+    elif complete_operation_coverage and operation_statuses and all(
         status in {"unsupported", "unsupported_metric"}
         for status in operation_statuses
     ):
@@ -922,7 +947,7 @@ def _packet_with_evidence_status(
     kb, structured = _derive_evidence_lanes(
         plan_obj=dict(state.get("plan_obj") or {}),
         retrieval_output=state.get("retrieval_output"),
-        structured_fact_results=state.get("structured_fact_results") or [],
+        structured_fact_results=state.get("structured_fact_results"),
         packet=packet,
         issues=list(packet.open_issues),
     )
@@ -2417,12 +2442,37 @@ def _structured_fact_target_id(
 def _build_structured_fact_context_items(
     *,
     packet: AnalystPacket,
-    structured_fact_results: Sequence[Dict[str, Any]],
+    structured_fact_results: Any,
 ) -> tuple[list[ContextItem], list[OpenIssue]]:
     items: list[ContextItem] = []
     issues: list[OpenIssue] = []
-    for result in structured_fact_results or []:
+    if structured_fact_results is None:
+        return items, issues
+    if not isinstance(structured_fact_results, Sequence) or isinstance(
+        structured_fact_results, (str, bytes, bytearray)
+    ):
+        return items, [
+            OpenIssue(
+                code="STRUCTURED_FACT_INVALID_EVIDENCE",
+                message=(
+                    "Structured fact results could not be admitted because the "
+                    "result container was invalid."
+                ),
+                severity=Severity.ERROR,
+            )
+        ]
+    for result in structured_fact_results:
         if not isinstance(result, dict):
+            issues.append(
+                OpenIssue(
+                    code="STRUCTURED_FACT_INVALID_EVIDENCE",
+                    message=(
+                        "A structured fact result could not be admitted because "
+                        "its payload shape was invalid."
+                    ),
+                    severity=Severity.ERROR,
+                )
+            )
             continue
         evidence, issue = _structured_fact_evidence_from_result(packet=packet, result=result)
         if issue is not None:
@@ -2454,7 +2504,7 @@ def _build_structured_fact_context_items(
 def _append_structured_fact_context_items(
     *,
     packet: AnalystPacket,
-    structured_fact_results: Sequence[Dict[str, Any]],
+    structured_fact_results: Any,
 ) -> AnalystPacket:
     new_items, new_issues = _build_structured_fact_context_items(
         packet=packet,
@@ -2537,7 +2587,7 @@ def _build_packet_from_retrieval_node(state: OrchestratorState) -> Dict[str, Any
     )
     packet = _append_structured_fact_context_items(
         packet=packet,
-        structured_fact_results=state.get("structured_fact_results") or [],
+        structured_fact_results=state.get("structured_fact_results"),
     )
     return {"packet": packet}
 
@@ -2551,7 +2601,7 @@ def _build_packet_without_retrieval_node(state: OrchestratorState) -> Dict[str, 
     )
     packet = _append_structured_fact_context_items(
         packet=packet,
-        structured_fact_results=state.get("structured_fact_results") or [],
+        structured_fact_results=state.get("structured_fact_results"),
     )
     open_issues: list[Dict[str, Any]] = []
     if str(plan_obj.get("status") or "").strip().lower() == "needs_clarification":
@@ -2658,7 +2708,7 @@ def _runtime_evidence_status(
     kb, structured = _derive_evidence_lanes(
         plan_obj=dict(state_values.get("plan_obj") or {}),
         retrieval_output=state_values.get("retrieval_output"),
-        structured_fact_results=state_values.get("structured_fact_results") or [],
+        structured_fact_results=state_values.get("structured_fact_results"),
         packet=typed_packet,
         issues=issues,
     )
@@ -2803,6 +2853,15 @@ def _format_run_output(
         state_values.get("open_issues"),
         getattr(packet, "open_issues", []),
     )
+    raw_structured_results = state_values.get("structured_fact_results")
+    if raw_structured_results is None:
+        serialized_structured_results = []
+    elif isinstance(raw_structured_results, Sequence) and not isinstance(
+        raw_structured_results, (str, bytes, bytearray)
+    ):
+        serialized_structured_results = list(raw_structured_results)
+    else:
+        serialized_structured_results = [None]
     out = {
         "run_id": run_id,
         "route": _coerce_plan_route(state_values.get("plan_obj") or {}),
@@ -2817,7 +2876,7 @@ def _format_run_output(
         "retrieval": _compact_retrieval_result_for_user(
             retrieval_output=state_values.get("retrieval_output"),
         ),
-        "structured_fact_results": list(state_values.get("structured_fact_results") or []),
+        "structured_fact_results": serialized_structured_results,
         "analyst": _serialize_analyst_result(state_values.get("analyst_result")),
         "interrupt": _serialize_interrupts(getattr(state_snapshot, "interrupts", ()) or ()),
         "orchestrator_trace": {
