@@ -14,7 +14,19 @@
 - PR4 — complete: native structured evidence and SEC provenance evaluated at
   `b3d49134038adde61d160677cfc79d6bb8b06ea5`; the live diagnostic gate and
   provenance-coverage results are recorded in `docs/EVALUATION_BASELINES.md`.
-- PR5 — next: first-class per-lane status and degradation semantics.
+- PR5 — complete: authoritative per-lane status, admitted-evidence usability,
+  filing-task fail-closed behavior, and deterministic degradation evaluation at
+  `25e359d85776dc422e0d4d72b47152b407862d30`; the admission-loss correction was
+  evaluated at `06835feaf10237aa79bd494d9fef0f4fc1aa0c0c`, and the post-review
+  integration correction was evaluated at
+  `7f258a378b75b3781d5ebf45edf70c597b381511`. Final CLI and empty-text admission
+  review fixes were evaluated at `cbff8ce06cdbfc13f9c19c445c59965d326d61b9`;
+  final admission-truthfulness audit fixes were evaluated at
+  `29d22268a27e51a62157eeae53649858d74e5242`, and the executed-empty retrieval
+  trace correction was evaluated at `65296dc6253e3dd1c8285e7f1fcaf553c4a85180`.
+  Structured mixed-outcome and exact request/result coverage were evaluated at
+  `5762f51668016376746438c6dd5503e04b9c50c1`; final analyst-packet lane
+  consistency was evaluated at `de0142ca89384aee9c1bad014879e7e83e94fc86`.
 
 ---
 
@@ -32,18 +44,13 @@ The current runtime already supports:
 - grounded analyst synthesis with deterministic arithmetic
 - stage timing and structured run output
 
-The main gaps are no longer in the top-level runtime graph. They are in the enforcement and validation layers around it:
+The remaining gaps are in the enforcement and validation layers around the runtime:
 
-1. The planner → orchestrator runtime contract is incomplete.
-2. The end-to-end evaluator still assumes the legacy KB-only filing path.
-3. Structured-fact routing policy is duplicated across prompt text, hard-coded safeguards, and evaluation fixtures.
-4. Structured SEC facts are flattened into synthetic text before reaching the analyst.
-5. Hybrid degradation and per-lane outcomes are not first-class runtime concepts.
-6. Citation validity is only partially enforced.
-7. Metric resolution remains embedded in the orchestrator.
-8. Filing amendment and annual-duration semantics are not fully specified.
-9. Background maintenance failures are not sufficiently observed.
-10. Documentation does not yet have one tracked canonical source of truth.
+1. Citation validity is only partially enforced.
+2. Metric resolution remains embedded in the orchestrator.
+3. Filing amendment and annual-duration semantics are not fully specified.
+4. Background maintenance failures are not sufficiently observed.
+5. Documentation does not yet have one tracked canonical source of truth.
 
 The recommended implementation order is therefore:
 
@@ -880,7 +887,7 @@ Represent sibling-lane outcomes explicitly.
 
 ## 8.2 Top-level status
 
-Proposed:
+Implemented:
 
 ```text
 completed
@@ -960,10 +967,29 @@ analyst.status = ok
 
 ## 8.6 Acceptance criteria
 
-- Partial hybrid outcomes are machine-readable.
-- Fatal structured-fact failure can be identified as a stage where appropriate.
-- E2E evaluator checks lane outcomes.
-- User-facing answer never silently hides degradation.
+- Partial hybrid outcomes are machine-readable and runtime-authoritative.
+- Usability is derived only from admitted KB or PR4-valid typed evidence, not from
+  lane status.
+- KB `ok` requires every retrieved candidate expected within the configured
+  admission bound to survive as analyst-visible KB evidence. Admission loss is
+  `partial` when evidence survives and `failed` when none survives.
+- Structured `ok` requires every successfully executed requested fact expected to
+  yield evidence to survive PR4 admission. A successful-but-rejected result is
+  `partial` with surviving structured evidence and `failed` without it.
+- Filing tasks with no usable requested lane fail closed before analyst execution.
+- Fatal evidence failure selects the terminal attempted lane; a later analyst
+  failure takes precedence without clearing degradation.
+- PR3 KB fallback leaves structured capability issues observable while the
+  structured lane remains `not_requested`.
+- The route-aware evaluator derives shadow lane status, usability, effective
+  status, and failure stage from raw execution results plus analyst-visible
+  contexts and issues, without importing the runtime lane helper, and treats
+  inconsistencies as critical.
+- The frozen 14-case PR5 fault-injection matrix records classification,
+  containment, fail-closed, disclosure, consistency, and overall behavior rates,
+  including one-of-two KB hydration admission and one-of-two structured PR4
+  admission loss, plus mixed unusable structured outcomes.
+- User-facing and analyst-bound notices never interpolate raw error text.
 
 ---
 

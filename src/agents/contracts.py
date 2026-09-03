@@ -49,6 +49,16 @@ class Severity(str, Enum):
     ERROR = "error"
 
 
+class EvidenceLaneStatus(str, Enum):
+    NOT_REQUESTED = "not_requested"
+    OK = "ok"
+    PARTIAL = "partial"
+    FAILED = "failed"
+    AMBIGUOUS = "ambiguous"
+    UNSUPPORTED = "unsupported"
+    SKIPPED = "skipped"
+
+
 PlannerRoute = Literal["kb", "structured_fact", "hybrid"]
 PlannerTaskClass = Literal[
     "single_target_fact",
@@ -68,6 +78,51 @@ class OpenIssue(BaseModel):
     message: str = Field(..., description="Human-readable description")
     severity: Severity = Field(default=Severity.WARNING)
     metadata: Optional[Dict[str, Any]] = None
+
+
+class EvidenceLaneSummary(BaseModel):
+    """Authoritative public outcome for one runtime evidence lane."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    requested: bool = False
+    attempted: bool = False
+    status: EvidenceLaneStatus = EvidenceLaneStatus.NOT_REQUESTED
+    issues: List[OpenIssue] = Field(default_factory=list)
+
+
+class EvidenceLaneStatusSet(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    kb: EvidenceLaneSummary = Field(default_factory=EvidenceLaneSummary)
+    structured_fact: EvidenceLaneSummary = Field(default_factory=EvidenceLaneSummary)
+
+
+class DegradationSummary(BaseModel):
+    """Sanitized evidence-coverage disclosure shared with callers and analyst."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    active: bool = False
+    affected_lanes: List[Literal["kb", "structured_fact"]] = Field(
+        default_factory=list
+    )
+    notice: str = ""
+
+    @model_validator(mode="after")
+    def _validate_active_shape(self) -> "DegradationSummary":
+        canonical = [
+            lane
+            for lane in ("kb", "structured_fact")
+            if lane in self.affected_lanes
+        ]
+        if self.affected_lanes != canonical:
+            raise ValueError("affected_lanes must be unique and canonically ordered")
+        if self.active != bool(self.affected_lanes):
+            raise ValueError("active must match whether affected_lanes is non-empty")
+        if self.active != bool(self.notice):
+            raise ValueError("notice must be present exactly when degradation is active")
+        return self
 
 
 class FilingMetadata(BaseModel):
@@ -746,6 +801,8 @@ class AnalystPacket(BaseModel):
     context_items: List[ContextItem] = Field(default_factory=list)
     context_quality: ContextQuality = ContextQuality.MEDIUM
     open_issues: List[OpenIssue] = Field(default_factory=list)
+    lanes: EvidenceLaneStatusSet = Field(default_factory=EvidenceLaneStatusSet)
+    degradation: DegradationSummary = Field(default_factory=DegradationSummary)
 
     @field_validator("user_query")
     @classmethod

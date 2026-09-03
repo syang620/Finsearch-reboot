@@ -255,7 +255,7 @@ async def _run_batch(args: argparse.Namespace) -> Dict[str, Any]:
 
         status = str(current.get("status") or "unknown")
         status_counts[status] = status_counts.get(status, 0) + 1
-        if status == "completed":
+        if status in {"completed", "degraded"}:
             completed += 1
         else:
             if not (args.skip_interrupted and status == "interrupted"):

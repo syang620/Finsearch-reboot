@@ -1,0 +1,115 @@
+{
+  "evaluated_commit": "de0142ca89384aee9c1bad014879e7e83e94fc86",
+  "completed_at": "2026-09-03T11:00:16-04:00",
+  "timezone": "America/New_York",
+  "python": "3.11.14",
+  "pytest_version": "9.0.2",
+  "pytest_installation": "Environment-only in finsearch-arm; repository dependency files unchanged.",
+  "final_review_fixes": [
+    "The route-aware evaluator now compares analyst-packet lane summaries with its independently derived lanes whenever an analyst packet is required or present.",
+    "A stale analyst-visible requested, attempted, or status value now makes degradation consistency false and triggers the existing critical inconsistency gate.",
+    "A focused regression keeps caller-visible lanes correct while corrupting only the packet lane summary, proving the evaluator detects the analyst/caller divergence."
+  ],
+  "degradation_evaluation": {
+    "dataset": "data/evals/agents/v1/agent_eval_degradation_v1.jsonl",
+    "dataset_sha256": "a8c54aad42061b99bf114a60818cb817e5f15e76279dfa59b72464fdb5ed7012",
+    "cases": 14,
+    "command": "conda run -n finsearch-arm --no-capture-output env PYTHONPATH=.:src python scripts/evals/agents/eval_agent_degradation_v1.py --eval-path data/evals/agents/v1/agent_eval_degradation_v1.jsonl --out-dir artifacts/evals/agents/v1/degradation/baselines/de0142c",
+    "summary": "artifacts/evals/agents/v1/degradation/baselines/de0142c/summary.json",
+    "summary_sha256": "df12eddaf88b8a9dc22a471537b0f91477072c3fa5c6e1961368f2842591fe11",
+    "per_case": "artifacts/evals/agents/v1/degradation/baselines/de0142c/per_case.jsonl",
+    "per_case_sha256": "1fcce481c35acd2d6428abadc8bb3753fd2dff1987ff0bd5db8e0df97cb0a370",
+    "result": {
+      "degradation_classification_accuracy": 1.0,
+      "failure_containment_rate": 1.0,
+      "all_lanes_unusable_fail_closed_rate": 1.0,
+      "degradation_disclosure_rate": 1.0,
+      "runtime_evaluator_consistency_rate": 1.0,
+      "overall_graceful_degradation_behavior_accuracy": 1.0
+    }
+  },
+  "route_aware_live_gate": {
+    "dataset": "data/evals/agents/v1/agent_eval_routing_v1.jsonl",
+    "dataset_sha256": "c0fbdd097d7fa1b3eb22953a3ba4e8c0e84aa70a8786e08ba78a3b305cabe6cd",
+    "cases": 15,
+    "ragas_enabled": false,
+    "planner_model": "ollama/qwen2.5:14b-instruct",
+    "analyst_model": "ollama/qwen2.5:14b-instruct",
+    "ollama_model_digest": "7cdf5a0187d5c58cc5d369b255592f7841d1c4696d45a8c8a9489440385b22f6",
+    "embedding_model": "qwen3-embedding:8b",
+    "embedding_model_digest": "64b933495768fbd3b87c20583d379728a07471e0c66733a9df87cd1901b3c44b",
+    "reranker_model": "Qwen/Qwen3-Reranker-8B",
+    "qdrant_version": "1.16.2",
+    "qdrant_collection": "sec_docs_dense_bm25_pr2_63dcec0",
+    "qdrant_points": 582,
+    "qdrant_collection_fingerprint_before": "0e60c99368eae07b4f00cb86a3d6e58d49b7e6bbd2c1df84e98204e8be75a744",
+    "qdrant_collection_fingerprint_after": "0e60c99368eae07b4f00cb86a3d6e58d49b7e6bbd2c1df84e98204e8be75a744",
+    "command": "DASHSCOPE_API_KEY='<RERANKER_CREDENTIAL>' QWEN3_RERANK_MODEL=Qwen/Qwen3-Reranker-8B SEC_RERANK_MODEL=Qwen/Qwen3-Reranker-8B QWEN3_EMBED_API_URL=http://127.0.0.1:11434/api/embed QWEN3_EMBED_MODEL=qwen3-embedding:8b QDRANT_URL=http://127.0.0.1:6333 QDRANT_HOST=127.0.0.1 QDRANT_PORT=6333 QDRANT_COLLECTION_NAME=sec_docs_dense_bm25_pr2_63dcec0 SEC_USER_AGENT='<SEC_CONTACT>' FINSEARCH_ORCHESTRATOR_CHECKPOINTER_PATH='<CHECKPOINTER_DB>' PYTHONPATH=.:src conda run -n finsearch-arm --no-capture-output python scripts/evals/agents/eval_agents_v1.py --eval-path data/evals/agents/v1/agent_eval_routing_v1.jsonl --out-dir artifacts/evals/agents/v1/baselines/de0142c --planner-model ollama/qwen2.5:14b-instruct --analyst-model ollama/qwen2.5:14b-instruct --deterministic-threshold 0.90 --max-critical-failure-rate 0",
+    "summary": "artifacts/evals/agents/v1/baselines/de0142c/summary.json",
+    "summary_sha256": "88f6ba76feb0827256107b379cdd9edae77768b70ecff1c5deb4f4d47f75eb59",
+    "per_query": "artifacts/evals/agents/v1/baselines/de0142c/per_query.jsonl",
+    "per_query_sha256": "7c7d0864ec3968b700ae0632db39e1e39db7b5d33b09208122cebb7299a0a885",
+    "errors": "artifacts/evals/agents/v1/baselines/de0142c/errors.jsonl",
+    "errors_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "result": {
+      "num_valid_queries": 15,
+      "num_failures": 0,
+      "deterministic_score_mean": 0.9485403050108931,
+      "critical_rows": 3,
+      "critical_failure_rate": 0.2,
+      "lane_status_consistent_rate": 1.0,
+      "effective_status_consistent_rate": 1.0,
+      "failure_stage_consistent_rate": 1.0,
+      "degradation_consistent_rate": 1.0,
+      "structured_typed_representation_rate": 1.0,
+      "structured_analyst_visibility_rate": 1.0,
+      "overall_pass": false,
+      "total_ms": 2229159
+    },
+    "critical_case_ids": [
+      "AGENT_V1_HYBRID_001",
+      "AGENT_V1_ANALYST_001",
+      "AGENT_V1_ANALYST_002"
+    ],
+    "cleanup_note": "Known MCP/AnyIO asynchronous-generator warnings appeared during final interpreter shutdown after artifacts were written. The evaluator exited zero; no manual termination or case rerun was needed."
+  },
+  "corpus_provenance": {
+    "source_html": "data/html_filings/AAPL/10-K/10-K_2024.html",
+    "source_html_sha256": "24a830a0f1256e371d36a1f7f72e5e85a38037d1de2f6f966eb8457db42ff6d6",
+    "sidecars": [
+      {
+        "path": "data/chunked/AAPL/10-K/10-K_2024.text.jsonl",
+        "rows": 101,
+        "sha256": "a2035e3048c9d69945a6851e9f92b6eb64d97ea15ef1ab8fe1812b25e8cd08e0"
+      },
+      {
+        "path": "data/chunked/AAPL/10-K/10-K_2024.tables.jsonl",
+        "rows": 48,
+        "sha256": "a60a91dd358656c3667b9700a4e3a2fde5558a67900f62c0a22893fdaf2a6b1d"
+      },
+      {
+        "path": "data/chunked/AAPL/10-K/10-K_2024.text.split.jsonl",
+        "rows": 107,
+        "sha256": "856f6aec30636750141a695d864eb08da182160e25143b393b49bc7769436f71"
+      }
+    ]
+  },
+  "test_verification": {
+    "focused": "178 passed",
+    "full": "450 passed, 2 failed, 47 subtests passed, 1 warning",
+    "pre_existing_failures": [
+      "tests/agents/planner/test_planner_routes.py::test_planner_routes_match_expected_routes",
+      "tests/agents/retrieval/test_retrieval_workflow_no_tool_call.py::test_retrieval_no_tool_call_increments_attempts_and_stops_on_budget"
+    ],
+    "note": "Both full-suite failures are unchanged from earlier PR5 baselines. A namespace shim selected the repository tests directory because the environment contains an installed top-level tests package. Focused runtime, packet-flow, independent evaluator, and deterministic matrix regressions passed."
+  },
+  "review_verification": {
+    "result": "The fresh GitHub review P2 was fixed and regression-tested before measurement.",
+    "scope": "The correction verifies that analyst-visible packet lanes agree with independently derived requested, attempted, and status values in addition to the exact degradation summary."
+  },
+  "limitations": [
+    "The rebuilt collection fingerprint differs from historical PR5 fingerprint 103a1131b373fb651727048b6a875e4bd96b64754ebafd41c42dc6dcccfc5df8; collection equivalence is not claimed.",
+    "The hosted reranker exposes no immutable service-side model digest.",
+    "The live regression gate is stochastic diagnostic evidence and failed its zero-critical-row threshold; no case was selectively rerun or tuned."
+  ]
+}

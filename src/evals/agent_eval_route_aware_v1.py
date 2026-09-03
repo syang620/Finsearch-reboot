@@ -11,6 +11,7 @@ from agents.analyst import (
 from agents.contracts import (
     AnalystPacket,
     ContextItemKind,
+    DegradationSummary,
     FormType,
     PlannerRuntimeOutput,
     normalize_missing_component_groups,
@@ -39,6 +40,22 @@ _FAILURE_STAGES = {
     "structured_fact",
     "analyst",
     "interrupted",
+}
+_KB_PACKET_EVIDENCE_LIMIT = 3
+_KB_ADMISSION_LOSS_CODES = {
+    "RETRIEVAL_CANDIDATE_UNSUPPORTED",
+    "TABLE_HYDRATION_FAILED",
+    "TABLE_MARKDOWN_EMPTY",
+    "EMPTY_TEXT_CONTEXT",
+}
+_STRUCTURED_ADMISSION_LOSS_CODE = "STRUCTURED_FACT_INVALID_EVIDENCE"
+_STRUCTURED_CAPABILITY_REJECTION_CODE = "STRUCTURED_FACT_CAPABILITY_REJECTED"
+_DEFENSIVE_REJECTION_OUTCOME = "defensive_rejection"
+_UNSUPPORTED_STRUCTURED_QUESTION_CLASSES = {
+    "unsupported_derived_metric",
+    "unsupported_ratio",
+    "unsupported_per_share",
+    "unsupported_comparison",
 }
 
 
@@ -104,7 +121,80 @@ def _metadata_match(
     return all(checks) if checks else None
 
 
-def _derive_kb_lane(run_output: Dict[str, Any]) -> AgentLaneObservation:
+def _packet_from_trace(run_output: Dict[str, Any]) -> Optional[AnalystPacket]:
+    packet_dump = (run_output.get("evaluation_trace") or {}).get("analyst_packet")
+    if packet_dump is None:
+        return None
+    try:
+        return AnalystPacket.model_validate(packet_dump)
+    except Exception:
+        return None
+
+
+def _analyst_issue_codes(
+    run_output: Dict[str, Any],
+    packet: Optional[AnalystPacket],
+) -> set[str]:
+    codes = {
+        normalized.upper()
+        for issue in run_output.get("open_issues") or []
+        if isinstance(issue, dict)
+        and (normalized := _normalize_text(issue.get("code")))
+    }
+    if packet is not None:
+        codes.update(
+            normalized.upper()
+            for issue in packet.open_issues
+            if (normalized := _normalize_text(issue.code))
+        )
+    return codes
+
+
+def _retrieved_kb_candidate_count(
+    retrieval: Dict[str, Any],
+) -> Tuple[Optional[int], bool]:
+    compact_count = _normalize_int(retrieval.get("retrieved_candidate_count"))
+    if compact_count is not None:
+        return max(0, compact_count), True
+
+    top_tables = retrieval.get("top_tables")
+    if isinstance(top_tables, list):
+        return sum(isinstance(item, dict) for item in top_tables), True
+
+    targets = [
+        item for item in retrieval.get("targets") or [] if isinstance(item, dict)
+    ]
+    target_counts = [
+        _normalize_int(item.get("tables_retrieved")) for item in targets
+    ]
+    known_target_counts = [
+        max(0, int(count)) for count in target_counts if count is not None
+    ]
+
+    attempt_result_counts: List[int] = []
+    observed_doc_ids: set[str] = set()
+    for item in retrieval.get("attempts") or []:
+        if not isinstance(item, dict) or not isinstance(item.get("results"), list):
+            continue
+        results = [result for result in item["results"] if isinstance(result, dict)]
+        attempt_result_counts.append(len(results))
+        observed_doc_ids.update(
+            doc_id
+            for result in results
+            if (doc_id := _normalize_text(result.get("doc_id")))
+        )
+    observed_counts = known_target_counts + attempt_result_counts
+    if observed_doc_ids:
+        observed_counts.append(len(observed_doc_ids))
+    if observed_counts:
+        return max(observed_counts), False
+    return None, False
+
+
+def _derive_kb_lane(
+    run_output: Dict[str, Any],
+    packet: Optional[AnalystPacket],
+) -> AgentLaneObservation:
     planner = run_output.get("planner") or {}
     route = _normalize_lower(run_output.get("route") or planner.get("route")) or "kb"
     requested = route in {"kb", "hybrid"} and bool(
@@ -118,27 +208,69 @@ def _derive_kb_lane(run_output: Dict[str, Any]) -> AgentLaneObservation:
         item for item in retrieval.get("targets") or [] if isinstance(item, dict)
     ]
     total_runs = sum(int(item.get("runs") or 0) for item in targets)
-    attempted = bool(attempts or total_runs > 0)
+    attempted = requested and bool(
+        retrieval.get("attempted") is True
+        or attempts
+        or total_runs > 0
+        or retrieval.get("ok") is True
+        or retrieval.get("target")
+    )
+    visible_items = (
+        packet.context_items[:ANALYST_CONTEXT_ITEM_LIMIT]
+        if packet is not None
+        else []
+    )
+    usable_evidence_count = sum(
+        1
+        for item in visible_items
+        if item.kind != ContextItemKind.STRUCTURED_FACT
+    )
+    usable = usable_evidence_count > 0
+    issue_codes = _analyst_issue_codes(run_output, packet)
+    retrieved_candidate_count, exact_candidate_count = (
+        _retrieved_kb_candidate_count(retrieval)
+    )
+    expected_admission_count = (
+        min(retrieved_candidate_count, _KB_PACKET_EVIDENCE_LIMIT)
+        if retrieved_candidate_count is not None
+        else None
+    )
+    has_admission_issue = bool(
+        issue_codes.intersection(_KB_ADMISSION_LOSS_CODES)
+    )
+    admission_loss = bool(
+        expected_admission_count is not None
+        and usable_evidence_count < expected_admission_count
+        and (exact_candidate_count or has_admission_issue)
+    ) or bool(
+        retrieved_candidate_count is not None
+        and usable_evidence_count < retrieved_candidate_count
+        and has_admission_issue
+    )
 
     if not requested:
         status = "not_requested"
     elif not attempted:
         status = "skipped"
-    else:
-        successful_runs = sum(
-            int(item.get("successful_runs") or 0) for item in targets
-        )
+    elif usable:
         failed_runs = sum(int(item.get("failed_runs") or 0) for item in targets)
-        if successful_runs and failed_runs:
+        if (
+            failed_runs
+            or retrieval.get("ok") is False
+            or "RETRIEVAL_PARTIAL_FAILURE" in issue_codes
+            or admission_loss
+        ):
             status = "partial"
-        elif bool(retrieval.get("ok")):
-            status = "ok"
         else:
-            status = "failed"
+            status = "ok"
+    else:
+        status = "failed"
     return AgentLaneObservation(
         requested=requested,
         attempted=attempted,
         status=status,
+        usable=usable,
+        usable_evidence_count=usable_evidence_count,
     )
 
 
@@ -155,8 +287,64 @@ def _structured_result_status(result: Dict[str, Any]) -> str:
     return "ok" if bool(tool_result.get("ok")) else "failed"
 
 
+def _defensive_structured_rejection_classes(
+    run_output: Dict[str, Any],
+    packet: Optional[AnalystPacket],
+    *,
+    result_count: int,
+) -> List[str]:
+    issues = (
+        [issue.model_dump(mode="json") for issue in packet.open_issues]
+        if packet is not None
+        else [
+            issue
+            for issue in run_output.get("open_issues") or []
+            if isinstance(issue, dict)
+        ]
+    )
+    rejection_metadata = [
+        metadata
+        for issue in issues
+        if _normalize_text(issue.get("code"))
+        == _STRUCTURED_CAPABILITY_REJECTION_CODE
+        and isinstance((metadata := issue.get("metadata")), dict)
+        and _normalize_lower(metadata.get("outcome"))
+        == _DEFENSIVE_REJECTION_OUTCOME
+    ]
+    if not rejection_metadata or result_count <= 0:
+        return []
+
+    indexed_metadata = [
+        metadata
+        for metadata in rejection_metadata
+        if "request_index" in metadata
+    ]
+    if not indexed_metadata:
+        if len(rejection_metadata) != result_count:
+            return []
+        return [
+            _normalize_lower(metadata.get("question_class")) or "unknown"
+            for metadata in rejection_metadata
+        ]
+    if len(indexed_metadata) != len(rejection_metadata):
+        return []
+
+    classes_by_index: Dict[int, str] = {}
+    for metadata in indexed_metadata:
+        request_index = _normalize_int(metadata.get("request_index"))
+        if request_index is None or request_index in classes_by_index:
+            return []
+        classes_by_index[request_index] = (
+            _normalize_lower(metadata.get("question_class")) or "unknown"
+        )
+    if set(classes_by_index) != set(range(result_count)):
+        return []
+    return [classes_by_index[index] for index in range(result_count)]
+
+
 def _derive_structured_lane(
     run_output: Dict[str, Any],
+    packet: Optional[AnalystPacket],
 ) -> Tuple[AgentLaneObservation, List[str], List[str]]:
     planner = run_output.get("planner") or {}
     route = _normalize_lower(run_output.get("route") or planner.get("route")) or "kb"
@@ -166,14 +354,45 @@ def _derive_structured_lane(
         if isinstance(item, dict)
     ]
     requested = route in {"structured_fact", "hybrid"} and bool(requests)
-    results = [
-        item
-        for item in run_output.get("structured_fact_results") or []
-        if isinstance(item, dict)
-    ]
-    attempted = bool(results)
+    raw_structured_results = run_output.get("structured_fact_results")
+    raw_results_are_sequence = isinstance(
+        raw_structured_results, Sequence
+    ) and not isinstance(raw_structured_results, (str, bytes, bytearray))
+    raw_results = list(raw_structured_results) if raw_results_are_sequence else []
+    results = [item for item in raw_results if isinstance(item, dict)]
+    results_are_well_formed = (
+        raw_results_are_sequence and len(results) == len(raw_results)
+    )
+    complete_operation_coverage = (
+        results_are_well_formed and len(results) == len(requests)
+    )
+    attempted = raw_structured_results is not None and (
+        not raw_results_are_sequence or bool(raw_results)
+    )
+    visible_items = (
+        packet.context_items[:ANALYST_CONTEXT_ITEM_LIMIT]
+        if packet is not None
+        else []
+    )
+    usable_evidence_count = sum(
+        1
+        for item in visible_items
+        if item.kind == ContextItemKind.STRUCTURED_FACT
+    )
+    usable = usable_evidence_count > 0
 
     statuses = [_structured_result_status(result) for result in results]
+    successful_result_count = sum(status == "ok" for status in statuses)
+    issue_codes = _analyst_issue_codes(run_output, packet)
+    defensive_rejection_classes = _defensive_structured_rejection_classes(
+        run_output,
+        packet,
+        result_count=len(results),
+    )
+    admission_loss = (
+        successful_result_count != usable_evidence_count
+        or _STRUCTURED_ADMISSION_LOSS_CODE in issue_codes
+    )
     metric_ids = [
         metric_id
         for result in results
@@ -184,20 +403,50 @@ def _derive_structured_lane(
         aggregate_status = "not_requested"
     elif not attempted:
         aggregate_status = "skipped"
-    elif all(status == "ok" for status in statuses):
+    elif (
+        usable
+        and statuses
+        and complete_operation_coverage
+        and all(status == "ok" for status in statuses)
+        and not admission_loss
+    ):
         aggregate_status = "ok"
-    elif "partial" in statuses or ("ok" in statuses and len(set(statuses)) > 1):
+    elif successful_result_count and not usable:
+        aggregate_status = "failed"
+    elif usable:
         aggregate_status = "partial"
-    elif len(set(statuses)) == 1:
-        aggregate_status = statuses[0]
+    elif complete_operation_coverage and statuses and all(
+        status == "partial" for status in statuses
+    ):
+        aggregate_status = "partial"
+    elif "partial" in statuses:
+        aggregate_status = "failed"
+    elif complete_operation_coverage and defensive_rejection_classes:
+        question_classes = set(defensive_rejection_classes)
+        if question_classes == {"ambiguous"}:
+            aggregate_status = "ambiguous"
+        elif question_classes <= _UNSUPPORTED_STRUCTURED_QUESTION_CLASSES:
+            aggregate_status = "unsupported"
+        else:
+            aggregate_status = "failed"
+    elif complete_operation_coverage and statuses and all(
+        status == "ambiguous" for status in statuses
+    ):
+        aggregate_status = "ambiguous"
+    elif complete_operation_coverage and statuses and all(
+        status in {"unsupported", "unsupported_metric"} for status in statuses
+    ):
+        aggregate_status = "unsupported"
     else:
-        aggregate_status = "partial"
+        aggregate_status = "failed"
 
     return (
         AgentLaneObservation(
             requested=requested,
             attempted=attempted,
             status=aggregate_status,
+            usable=usable,
+            usable_evidence_count=usable_evidence_count,
         ),
         metric_ids,
         statuses,
@@ -207,10 +456,13 @@ def _derive_structured_lane(
 def derive_lane_status(
     run_output: Dict[str, Any],
 ) -> Tuple[AgentLaneStatusSet, List[str], List[str]]:
-    structured_lane, metric_ids, statuses = _derive_structured_lane(run_output)
+    packet = _packet_from_trace(run_output)
+    structured_lane, metric_ids, statuses = _derive_structured_lane(
+        run_output, packet
+    )
     return (
         AgentLaneStatusSet(
-            kb=_derive_kb_lane(run_output),
+            kb=_derive_kb_lane(run_output, packet),
             structured_fact=structured_lane,
         ),
         metric_ids,
@@ -237,19 +489,81 @@ def _lane_status_consistent(
 def _derive_effective_status(
     reported_status: Optional[str],
     lanes: AgentLaneStatusSet,
+    planner: Optional[PlannerRuntimeOutput],
+    analyst: Optional[AnalystRunResult],
 ) -> Optional[EffectiveStatus]:
-    if reported_status in {"failed", "interrupted"}:
+    if reported_status == "interrupted":
         return reported_status
-    if reported_status != "completed":
+    if analyst is not None and not analyst.ok:
+        return "failed"
+    if planner is not None and planner.status != "completed":
+        return "failed"
+    if reported_status not in {"completed", "degraded", "failed"}:
         return None
     requested_lanes = [
         lane
         for lane in (lanes.kb, lanes.structured_fact)
         if lane.requested
     ]
+    if (
+        planner is not None
+        and planner.intent.value in {"filing_fact", "filing_calc"}
+        and not any(lane.usable for lane in requested_lanes)
+    ):
+        return "failed"
+    if reported_status == "failed":
+        return "failed"
     if any(lane.status != "ok" for lane in requested_lanes):
         return "degraded"
     return "completed"
+
+
+def _derive_failure_stage_shadow(
+    *,
+    reported_status: Optional[str],
+    planner: Optional[PlannerRuntimeOutput],
+    analyst: Optional[AnalystRunResult],
+    lanes: AgentLaneStatusSet,
+) -> Optional[str]:
+    if reported_status == "interrupted":
+        return "interrupted"
+    if planner is None:
+        return None
+    if planner.status != "completed":
+        return "planner"
+    if analyst is not None and not analyst.ok:
+        return "analyst"
+    if planner.intent.value in {"filing_fact", "filing_calc"}:
+        requested = [lanes.kb, lanes.structured_fact]
+        if not any(lane.usable for lane in requested if lane.requested):
+            if lanes.structured_fact.attempted:
+                return "structured_fact"
+            if lanes.kb.attempted:
+                return "retrieval"
+            return "planner"
+    return "none"
+
+
+def _expected_degradation(lanes: AgentLaneStatusSet) -> DegradationSummary:
+    affected = [
+        lane_name
+        for lane_name in ("kb", "structured_fact")
+        if (lane := getattr(lanes, lane_name)).requested and lane.status != "ok"
+    ]
+    if not affected:
+        return DegradationSummary()
+    statuses = "; ".join(
+        f"{lane_name}={getattr(lanes, lane_name).status}"
+        for lane_name in affected
+    )
+    return DegradationSummary(
+        active=True,
+        affected_lanes=affected,
+        notice=(
+            f"Evidence coverage is degraded ({statuses}). Do not claim coverage "
+            "from unavailable or incomplete evidence lanes."
+        ),
+    )
 
 
 def _extract_semantic_contexts(
@@ -509,6 +823,8 @@ def _build_checks(
     )
     checks.lane_status_consistent = row.lane_status_consistent
     checks.effective_status_consistent = row.effective_status_consistent
+    checks.failure_stage_consistent = row.failure_stage_consistent
+    checks.degradation_consistent = row.degradation_consistent
 
     if expected.expected_analyst_status is not None:
         checks.analyst_status_match = (
@@ -545,6 +861,8 @@ def _build_checks(
         ("degradation_match", "DEGRADATION_NOT_ALLOWED"),
         ("lane_status_consistent", "LANE_STATUS_INCONSISTENT"),
         ("effective_status_consistent", "EFFECTIVE_STATUS_INCONSISTENT"),
+        ("failure_stage_consistent", "FAILURE_STAGE_INCONSISTENT"),
+        ("degradation_consistent", "DEGRADATION_INCONSISTENT"),
     ):
         value = getattr(checks, field_name)
         _append_critical(checks, value is False, code)
@@ -643,7 +961,20 @@ def evaluate_run_output(
     if reported_status not in _EFFECTIVE_STATUSES:
         contract_error("runtime_status_contract", f"Unknown status: {reported_status}")
         reported_status = None
-    derived_effective = _derive_effective_status(reported_status, derived_lanes)
+
+    analyst_dump = run_output.get("analyst")
+    if analyst_dump is not None:
+        try:
+            analyst = AnalystRunResult.model_validate(analyst_dump)
+        except Exception as exc:
+            contract_error("analyst_contract", exc)
+
+    derived_effective = _derive_effective_status(
+        reported_status,
+        derived_lanes,
+        planner,
+        analyst,
+    )
     if runtime_lanes is not None:
         effective_status = reported_status
         effective_source = "runtime"
@@ -659,14 +990,64 @@ def evaluate_run_output(
             "failure_stage_contract",
             f"Unknown failure stage: {failure_stage}",
         )
+    derived_failure_stage = _derive_failure_stage_shadow(
+        reported_status=reported_status,
+        planner=planner,
+        analyst=analyst,
+        lanes=derived_lanes,
+    )
+    failure_stage_consistent = (
+        failure_stage == derived_failure_stage
+        if runtime_lanes is not None and derived_failure_stage is not None
+        else None
+    )
 
-    analyst_dump = run_output.get("analyst")
-    if analyst_dump is not None:
+    degradation: Dict[str, Any] = {}
+    degradation_consistent: Optional[bool] = None
+    raw_degradation = run_output.get("degradation")
+    if raw_degradation is not None:
         try:
-            analyst = AnalystRunResult.model_validate(analyst_dump)
+            degradation_obj = DegradationSummary.model_validate(raw_degradation)
+            degradation = degradation_obj.model_dump(mode="json")
+            expected_degradation = _expected_degradation(derived_lanes)
+            packet = _packet_from_trace(run_output)
+            packet_dump = (run_output.get("evaluation_trace") or {}).get(
+                "analyst_packet"
+            )
+            packet_required = (
+                effective_status in {"completed", "degraded"}
+                or packet_dump is not None
+            )
+            packet_lanes = (
+                AgentLaneStatusSet.model_validate(
+                    packet.lanes.model_dump(mode="json")
+                )
+                if packet is not None
+                else None
+            )
+            degradation_consistent = (
+                degradation_obj == expected_degradation
+                and (
+                    not packet_required
+                    or (
+                        packet is not None
+                        and packet_lanes is not None
+                        and _lane_status_consistent(packet_lanes, derived_lanes)
+                        and packet.degradation == expected_degradation
+                    )
+                )
+            )
         except Exception as exc:
-            contract_error("analyst_contract", exc)
-    elif effective_status in {"completed", "degraded"}:
+            contract_error("runtime_degradation_contract", exc)
+            degradation_consistent = False
+    elif runtime_lanes is not None:
+        contract_error(
+            "runtime_degradation_contract",
+            "Runtime lane summaries require a degradation summary",
+        )
+        degradation_consistent = False
+
+    if analyst_dump is None and effective_status in {"completed", "degraded"}:
         contract_error(
             "analyst_contract",
             "Completed or degraded run is missing an analyst result",
@@ -696,6 +1077,10 @@ def evaluate_run_output(
         derived_effective_status=derived_effective,
         effective_status_consistent=effective_consistent,
         failure_stage=failure_stage,
+        derived_failure_stage=derived_failure_stage,
+        failure_stage_consistent=failure_stage_consistent,
+        degradation=degradation,
+        degradation_consistent=degradation_consistent,
         route=route,
         lane_status_source=lane_source,
         runtime_lane_status=runtime_lanes,
@@ -729,6 +1114,8 @@ def evaluate_run_output(
         structured_evidence=_structured_evidence_diagnostics(run_output, packet),
         trace={
             "planner": run_output.get("planner"),
+            "lanes": run_output.get("lanes"),
+            "degradation": run_output.get("degradation"),
             "retrieval": run_output.get("retrieval"),
             "structured_fact_results": run_output.get("structured_fact_results") or [],
             "analyst": run_output.get("analyst"),

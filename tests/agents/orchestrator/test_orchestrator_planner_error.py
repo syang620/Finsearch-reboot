@@ -585,6 +585,20 @@ class OrchestratorPlannerErrorTests(unittest.TestCase):
             },
             "retrieval_state": {"targets": [{"ticker": "AAPL", "fiscal_year": 2024}]},
             "retrieval_output": {"ok": True},
+            "packet": AnalystPacket(
+                plan_id="run-id",
+                user_query="What is the price-to-earnings ratio?",
+                intent=PlannerIntent.FILING_CALC,
+                metadata=FilingMetadata(ticker="AAPL", fiscal_year=2024),
+                analysis_task=AnalysisTask(metric="price-to-earnings ratio"),
+                context_items=[
+                    ContextItem(
+                        context_id="ctx_1",
+                        kind=ContextItemKind.TEXT,
+                        payload={"content": "Filing evidence."},
+                    )
+                ],
+            ),
             "analyst_result": AnalystRunResult(
                 ok=True,
                 status="insufficient_data",
@@ -1559,6 +1573,64 @@ class OrchestratorRuntimeTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(client.calls, [])
         self.assertTrue(output["retrieval"]["ok"])
 
+    async def test_empty_retrieval_execution_remains_visible_to_shadow_evaluator(self) -> None:
+        async def _fake_retrieval_agent(state, client=None):
+            return {}
+
+        await aclose_orchestrator_runtime()
+        saver = InMemorySaver()
+        with (
+            mock.patch("agents.orchestrator.agent_orchestrator._get_orchestrator_checkpointer", new=mock.AsyncMock(return_value=saver)),
+            mock.patch("agents.orchestrator.agent_orchestrator._orchestrator_checkpoint_ttl_seconds", return_value=0),
+            mock.patch("agents.orchestrator.agent_orchestrator._get_orchestrator_mcp_client", new=mock.AsyncMock(return_value=object())),
+            mock.patch("agents.orchestrator.agent_orchestrator.retrieval_agent", new=_fake_retrieval_agent),
+        ):
+            output = await _invoke_orchestrator(
+                {
+                    "user_query": "What was revenue?",
+                    "plan_id": "kb-empty-retrieval",
+                    "analyst_model": "shared-model",
+                    "tables_dir": "data/chunked",
+                    "debug": False,
+                    "include_evidence_trace": True,
+                },
+                run_id="kb-empty-retrieval",
+                planner=_KBRoutePlanner(),
+            )
+
+        self.assertEqual(output["status"], "failed")
+        self.assertEqual(output["failure_stage"], "retrieval")
+        self.assertTrue(output["retrieval"]["attempted"])
+        self.assertEqual(output["retrieval"]["attempts"], [])
+        self.assertTrue(output["lanes"]["kb"]["attempted"])
+        self.assertEqual(output["lanes"]["kb"]["status"], "failed")
+
+        from evals.agent_eval_route_aware_v1 import evaluate_run_output
+        from evals.agent_eval_v1_contracts import AgentEvalExampleV1, AgentExpectedV1
+
+        row, errors, _sample = evaluate_run_output(
+            AgentEvalExampleV1(
+                id="kb-empty-retrieval",
+                user_query="What was revenue?",
+                gold_answer="Revenue was reported in the filing.",
+                expected=AgentExpectedV1(
+                    route="kb",
+                    expect_kb_lane=True,
+                    expect_structured_fact_lane=False,
+                    expected_reported_status="failed",
+                    expected_effective_status="failed",
+                    expected_failure_stage="retrieval",
+                ),
+            ),
+            output,
+        )
+
+        self.assertEqual(errors, [])
+        self.assertTrue(row.lane_status_consistent)
+        self.assertTrue(row.derived_lane_status.kb.attempted)
+        self.assertEqual(row.derived_lane_status.kb.status, "failed")
+        self.assertEqual(row.deterministic.critical_failures, [])
+
     async def test_orchestrator_graph_state_round_trips_with_structured_fact_route(self) -> None:
         import agents.orchestrator.agent_orchestrator as orchestrator
 
@@ -1799,7 +1871,7 @@ class OrchestratorRuntimeTests(unittest.IsolatedAsyncioTestCase):
             )
 
         self.assertEqual(output["route"], "hybrid")
-        self.assertEqual(output["status"], "completed")
+        self.assertEqual(output["status"], "degraded")
         self.assertFalse(output["retrieval"]["ok"])
         self.assertEqual(len(output["structured_fact_results"]), 1)
         self.assertTrue(output["structured_fact_results"][0]["tool_result"]["ok"])
@@ -1899,7 +1971,7 @@ class OrchestratorRuntimeTests(unittest.IsolatedAsyncioTestCase):
             )
 
         self.assertEqual(output["route"], "hybrid")
-        self.assertEqual(output["status"], "completed")
+        self.assertEqual(output["status"], "degraded")
         self.assertTrue(output["retrieval"]["ok"])
         self.assertEqual(len(output["structured_fact_results"]), 1)
         self.assertEqual(output["structured_fact_results"][0]["tool_result"]["status"], "partial")
@@ -1994,6 +2066,82 @@ class OrchestratorRuntimeTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(issue["metadata"]["metric_hint"], "revenue")
         self.assertIn("return on equity", issue["metadata"]["subquestion"])
         self.assertEqual(issue["metadata"]["candidate_metric_ids"], [])
+
+    async def test_identical_defensive_rejections_survive_dedupe_and_packet_flow(self) -> None:
+        import agents.orchestrator.agent_orchestrator as orchestrator
+
+        request = {
+            "subquestion": "Calculate Apple's return on equity in FY2025.",
+            "metric_hint": "revenue",
+            "entity_hint": "Apple",
+            "fiscal_year": 2025,
+        }
+        plan_obj = {
+            "status": "completed",
+            "intent": "filing_calc",
+            "route": "structured_fact",
+            "retrieval_needed": False,
+            "metadata": {
+                "ticker": "AAPL",
+                "fiscal_year": 2025,
+                "form_type": "10-K",
+            },
+            "analysis_task": {"metric": "return on equity"},
+            "structured_fact_requests": [dict(request), dict(request)],
+        }
+        get_client = mock.AsyncMock()
+        with mock.patch(
+            "agents.orchestrator.agent_orchestrator._get_orchestrator_mcp_client",
+            new=get_client,
+        ):
+            structured_output = await _structured_facts_node(
+                {"plan_obj": plan_obj}
+            )
+
+        get_client.assert_not_awaited()
+        generated_issues = structured_output["open_issues"]
+        self.assertEqual(len(generated_issues), 2)
+        self.assertEqual(
+            generated_issues[0]["message"],
+            generated_issues[1]["message"],
+        )
+        self.assertEqual(
+            [issue["metadata"]["request_index"] for issue in generated_issues],
+            [0, 1],
+        )
+
+        state = {
+            "user_query": "Calculate Apple's return on equity in FY2025.",
+            "plan_id": "defensive-dedupe",
+            "plan_obj": plan_obj,
+            "structured_fact_results": structured_output[
+                "structured_fact_results"
+            ],
+            "open_issues": orchestrator._dedupe_open_issue_payloads(
+                generated_issues,
+                generated_issues,
+            ),
+        }
+        packet_output = orchestrator._build_packet_without_retrieval_node(state)
+        state["packet"] = packet_output["packet"]
+        state["open_issues"] = orchestrator._dedupe_open_issue_payloads(
+            state["open_issues"],
+            packet_output["open_issues"],
+        )
+        packet = orchestrator._attach_open_issues_node(state)["packet"]
+        defensive_issues = [
+            issue
+            for issue in packet.open_issues
+            if issue.code == "STRUCTURED_FACT_CAPABILITY_REJECTED"
+            and (issue.metadata or {}).get("outcome") == "defensive_rejection"
+        ]
+
+        self.assertEqual(len(defensive_issues), 2)
+        self.assertEqual(
+            [issue.metadata["request_index"] for issue in defensive_issues],
+            [0, 1],
+        )
+        self.assertEqual(packet.lanes.structured_fact.status.value, "unsupported")
 
     async def test_structured_facts_node_rejects_alias_inside_unrelated_metric_name(self) -> None:
         get_client = mock.AsyncMock()

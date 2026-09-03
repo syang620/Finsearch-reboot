@@ -1,0 +1,69 @@
+{
+  "num_queries": 15,
+  "num_valid_queries": 15,
+  "num_failures": 0,
+  "deterministic": {
+    "score_mean": 0.9618736383442265,
+    "contract_valid_rate": 1.0,
+    "intent_match_rate": 1.0,
+    "route_match_rate": 1.0,
+    "metadata_match_rate": 1.0,
+    "kb_lane_match_rate": 1.0,
+    "structured_lane_match_rate": 1.0,
+    "structured_metric_match_rate": 1.0,
+    "structured_status_match_rate": 1.0,
+    "reported_status_match_rate": 0.8666666666666667,
+    "effective_status_match_rate": 0.8666666666666667,
+    "failure_stage_match_rate": 0.8666666666666667,
+    "degradation_match_rate": 1.0,
+    "lane_status_consistent_rate": 1.0,
+    "effective_status_consistent_rate": 1.0,
+    "failure_stage_consistent_rate": 1.0,
+    "degradation_consistent_rate": 1.0,
+    "analyst_status_match_rate": 0.8461538461538461,
+    "tool_use_match_rate": 1.0,
+    "compute_match_rate": 0.0,
+    "citation_match_rate": 0.8333333333333334,
+    "critical_failure_rate": 0.13333333333333333,
+    "planner_ms_mean": 31656.266666666666,
+    "retrieval_ms_mean": 49664.86666666667,
+    "structured_fact_ms_mean": 229.26666666666668,
+    "analyst_ms_mean": 64156.26666666667,
+    "total_ms_mean": 145772.26666666666,
+    "structured_successful_execution_results": 7.0,
+    "structured_typed_contexts": 7.0,
+    "structured_analyst_visible_typed_contexts": 7.0,
+    "structured_synthetic_text_contexts": 0.0,
+    "structured_typed_representation_rate": 1.0,
+    "structured_analyst_visibility_rate": 1.0,
+    "structured_metric_id_coverage_rate": 1.0,
+    "structured_numeric_value_coverage_rate": 1.0,
+    "structured_accession_coverage_rate": 1.0,
+    "structured_report_date_coverage_rate": 1.0,
+    "structured_filed_date_coverage_rate": 1.0,
+    "structured_source_url_coverage_rate": 1.0
+  },
+  "ragas": {},
+  "gate": {
+    "deterministic_gate_pass": false,
+    "ragas_gate_pass": true,
+    "overall_pass": false
+  },
+  "config": {
+    "mode": "route_aware_v1",
+    "eval_path": "data/evals/agents/v1/agent_eval_routing_v1.jsonl",
+    "analyst_model": "ollama/qwen2.5:14b-instruct",
+    "planner_model": "ollama/qwen2.5:14b-instruct",
+    "enable_ragas": false,
+    "thresholds": {
+      "deterministic_score_min": 0.9,
+      "max_critical_failure_rate": 0.0,
+      "ragas_faithfulness_min": 0.75,
+      "ragas_answer_relevancy_min": 0.75,
+      "max_ragas_error_rate": 0.1
+    },
+    "timing_ms": {
+      "total": 2187035
+    }
+  }
+}

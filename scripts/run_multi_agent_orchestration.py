@@ -161,7 +161,7 @@ def _print_output(result: dict[str, Any], as_json: bool) -> int:
     orchestrator_trace = result.get("orchestrator_trace") or {}
     total_ms = orchestrator_trace.get("total_ms")
 
-    if status != "completed":
+    if status not in {"completed", "degraded"}:
         print(f"Run status: {status}")
         print(f"Run ID: {result.get('run_id')}")
         if total_ms is not None:
@@ -171,6 +171,13 @@ def _print_output(result: dict[str, Any], as_json: bool) -> int:
         return 1
 
     analyst = result.get("analyst") or {}
+    if status == "degraded":
+        print("Run status: degraded")
+        degradation = result.get("degradation") or {}
+        notice = degradation.get("notice")
+        if isinstance(notice, str) and notice.strip():
+            print(notice.strip())
+
     answer = analyst.get("answer", "")
     if isinstance(answer, str):
         print(answer)
