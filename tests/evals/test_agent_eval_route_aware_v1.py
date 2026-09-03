@@ -127,7 +127,12 @@ def _packet(context_count: int = 1) -> AnalystPacket:
     )
 
 
-def _analyst_result() -> dict:
+def _analyst_result(packet=None) -> dict:
+    packet = packet or _packet()
+    item = packet.context_items[0] if packet.context_items else None
+    claims = [{"claim_id": "c1", "claim_type": "structured_numeric" if item.structured_fact else "narrative",
+               "text": "Apple revenue was reported in the filing.", "context_ids": [item.context_id],
+               "metric_id": item.structured_fact.metric_id if item.structured_fact else None}] if item else []
     return AnalystRunResult(
         ok=True,
         status="ok",
@@ -135,6 +140,8 @@ def _analyst_result() -> dict:
         intent=PlannerIntent.FILING_FACT,
         metric="revenue",
         used_context_ids=["ctx_1"],
+        claims=claims,
+        citations=[{"context_id": item.context_id, "source": item.source}] if item else [],
     ).model_dump(mode="json")
 
 
@@ -217,7 +224,7 @@ def _run_output(
             if route in {"structured_fact", "hybrid"}
             else []
         ),
-        "analyst": _analyst_result() if include_analyst else None,
+        "analyst": _analyst_result(packet) if include_analyst else None,
         "evaluation_trace": {
             "analyst_packet": packet.model_dump(mode="json")
             if include_analyst
@@ -976,7 +983,9 @@ def test_explicit_analyst_calculator_and_citation_requirements_are_critical() ->
         expected_min_citations=1,
     )
 
-    row, _errors, _sample = evaluate_run_output(example, _run_output("kb"))
+    output = _run_output("kb")
+    output["analyst"]["citations"] = []
+    row, _errors, _sample = evaluate_run_output(example, output)
 
     assert {
         "ANALYST_STATUS_MISMATCH",

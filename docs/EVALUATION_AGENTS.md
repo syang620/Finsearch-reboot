@@ -1,5 +1,36 @@
 # Agent Evaluation
 
+## PR6 grounding evaluation
+
+The frozen dataset is `data/evals/agents/v1/agent_eval_grounding_v1.jsonl` (37
+synthetic candidate-injection scenarios). Run the actual analyst graph without
+external services using:
+
+```bash
+PYTHONPATH=.:src python scripts/evals/agents/eval_agent_grounding_v1.py --out-dir artifacts/evals/agents/v1/grounding/baselines/<SHA>
+```
+
+The output directory must not already exist. The independently maintained oracle
+checks finalized claims, citations, source provenance and rendered prose; it does
+not import runtime grounding policy. Missing legacy claims are not inferred from
+flat IDs. Summary rates include numerator/denominator, and zero-denominator
+measurements are unavailable rather than perfect scores.
+
+Secondary semantic assessment uses the frozen rubric without gold fixture labels:
+
+```bash
+PYTHONPATH=.:src python scripts/evals/agents/eval_grounding_judge_v1.py --per-case artifacts/evals/agents/v1/grounding/baselines/<SHA>/per_case.jsonl --out-dir artifacts/evals/agents/v1/grounding/baselines/<SHA>/judge
+```
+
+Record model digest, rubric/input hashes, raw judgments, errors and assessment
+coverage. The judge cannot override deterministic failures. Passing structural
+checks does not mean the cited evidence entails the claim.
+
+The route-aware v1 gate now includes `grounding_consistent`; unsupported successful
+filing outputs produce `GROUNDING_INCONSISTENT` and an independent analyst-stage
+failure. Existing thresholds and the PR5 matrix remain unchanged. See ADR 004 for
+runtime compatibility and fail-closed semantics.
+
 The route-aware v1 evaluator is the end-to-end architecture gate for the current
 `kb`, `structured_fact`, and `hybrid` runtime. The original v0 evaluator remains
 available unchanged for historical reproducibility.
