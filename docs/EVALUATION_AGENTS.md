@@ -42,8 +42,11 @@ trace correction was evaluated at `65296dc6253e3dd1c8285e7f1fcaf553c4a85180`
 and is recorded under “PR5 Executed-Retrieval Trace Closure — 2026-09-03.” The
 structured mixed-outcome and exact-coverage correction was evaluated at
 `5762f51668016376746438c6dd5503e04b9c50c1` and is recorded under “PR5
-Structured Outcome Completeness Closure — 2026-09-03.” All earlier SHA-keyed
-evidence remains unchanged.
+Structured Outcome Completeness Closure — 2026-09-03.” The final analyst-packet
+lane-consistency correction was evaluated at
+`de0142ca89384aee9c1bad014879e7e83e94fc86` and is recorded under “PR5 Analyst
+Packet Lane Consistency Closure — 2026-09-03.” All earlier SHA-keyed evidence
+remains unchanged.
 
 The initial PR3 structured-fact capability baseline was evaluated independently at
 `6b6b6173bac9045b03ad2292910b5acfd51740c8`; review fixes were verified at

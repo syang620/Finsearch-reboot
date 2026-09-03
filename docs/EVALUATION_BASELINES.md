@@ -1740,3 +1740,86 @@ subtests, and the same two pre-existing failures documented above. Neither failu
 touches PR5. Full commands, redacted environment, hashes, provenance, and
 limitations are in
 `artifacts/evals/agents/v1/degradation/baselines/5762f51/manifest.json`.
+
+## PR5 Analyst Packet Lane Consistency Closure — 2026-09-03
+
+This correction closes the fresh-review finding on `95ce251`: the evaluator now
+verifies the analyst packet's lane summaries as well as its degradation summary.
+All earlier SHA-keyed evidence, including `25e359d` and `5762f51`, remains
+unchanged.
+
+### Run identity
+
+| Field | Value |
+|---|---|
+| Status | Fresh-review correction; deterministic matrix passed; live regression gate failed and was preserved |
+| Evaluated implementation SHA | `de0142ca89384aee9c1bad014879e7e83e94fc86` |
+| Degradation dataset SHA-256 / cases | `a8c54aad42061b99bf114a60818cb817e5f15e76279dfa59b72464fdb5ed7012` / 14 |
+| Live dataset SHA-256 / cases | `c0fbdd097d7fa1b3eb22953a3ba4e8c0e84aa70a8786e08ba78a3b305cabe6cd` / 15 |
+| Python / pytest | `3.11.14` / `9.0.2` |
+| Planner / analyst | `ollama/qwen2.5:14b-instruct`, digest `7cdf5a0187d5c58cc5d369b255592f7841d1c4696d45a8c8a9489440385b22f6` |
+| Dense embedding | `qwen3-embedding:8b`, digest `64b933495768fbd3b87c20583d379728a07471e0c66733a9df87cd1901b3c44b` |
+| Qdrant | `1.16.2`; collection `sec_docs_dense_bm25_pr2_63dcec0`; 582 green points; fingerprint `0e60c99368eae07b4f00cb86a3d6e58d49b7e6bbd2c1df84e98204e8be75a744` before and after |
+| RAGAS | Disabled |
+
+When caller-visible runtime lanes are correct but the analyst packet carries a
+stale `requested`, `attempted`, or `status` value, degradation consistency is now
+false and the existing critical inconsistency gate fires. The comparison uses the
+independent shadow lanes; it does not import or call the runtime lane helper.
+
+`pytest==9.0.2` remained environment-only, repository dependency files were
+unchanged, and the tracked worktree matched the implementation SHA before both
+measurements.
+
+### Deterministic and live results
+
+The 14-case deterministic command wrote to
+`artifacts/evals/agents/v1/degradation/baselines/de0142c`. All six matrix rates
+were 100%. Its summary SHA-256 is
+`df12eddaf88b8a9dc22a471537b0f91477072c3fa5c6e1961368f2842591fe11` and its
+per-case SHA-256 is
+`1fcce481c35acd2d6428abadc8bb3753fd2dff1987ff0bd5db8e0df97cb0a370`.
+
+The unchanged 15-case route-aware live command used a fresh checkpointer and
+output directory `artifacts/evals/agents/v1/baselines/de0142c`. It ran exactly
+once. All 15 rows were valid with zero evaluator errors. The deterministic score
+was `0.948540` and three rows were critical, for a `0.200000` critical-failure
+rate; the strict zero-critical-row gate therefore remained false.
+
+Runtime/shadow lane status, effective status, failure stage, degradation summary,
+and analyst-packet lane consistency were all 100%. Seven successful structured
+executions yielded seven typed, analyst-visible contexts with complete
+provenance-field coverage and no synthetic structured-text contexts.
+
+The critical rows were:
+
+- `AGENT_V1_HYBRID_001`: analyst tool-loop exhaustion and an invalid fallback
+  output caused analyst-stage failure with no accepted citation.
+- `AGENT_V1_ANALYST_001`: ambiguous matching across successful calculator calls
+  produced `CALCULATION_RESULT_AMBIGUOUS`, analyst `tool_error`, and no accepted
+  citation.
+- `AGENT_V1_ANALYST_002`: the analyst correctly returned `insufficient_data`
+  because `market_price_per_share` was unavailable, while the frozen expectation
+  required completion; this produced status and failure-stage mismatches.
+
+Live artifacts:
+
+- `artifacts/evals/agents/v1/baselines/de0142c/summary.json`, SHA-256
+  `88f6ba76feb0827256107b379cdd9edae77768b70ecff1c5deb4f4d47f75eb59`.
+- `artifacts/evals/agents/v1/baselines/de0142c/per_query.jsonl`, SHA-256
+  `7c7d0864ec3968b700ae0632db39e1e39db7b5d33b09208122cebb7299a0a885`.
+- Zero-byte `artifacts/evals/agents/v1/baselines/de0142c/errors.jsonl`, SHA-256
+  `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`.
+
+The live run took 2,229,159 ms (about 37 minutes). Known MCP/AnyIO shutdown
+warnings appeared only after artifact generation; the evaluator exited
+successfully. The collection fingerprint and all dataset/source/sidecar hashes
+matched before and after. Exact historical collection equivalence is not claimed,
+and the hosted reranker exposes no immutable service-side digest.
+
+The focused runtime, packet-flow, independent evaluator, and degradation-matrix
+suite passed 178 tests. The full suite completed with 450 passing tests, 47 passing
+subtests, and the same two pre-existing failures documented above. Neither failure
+touches PR5. Full commands, redacted environment, hashes, provenance, and
+limitations are in
+`artifacts/evals/agents/v1/degradation/baselines/de0142c/manifest.json`.

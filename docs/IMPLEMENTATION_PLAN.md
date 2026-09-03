@@ -25,7 +25,8 @@
   `29d22268a27e51a62157eeae53649858d74e5242`, and the executed-empty retrieval
   trace correction was evaluated at `65296dc6253e3dd1c8285e7f1fcaf553c4a85180`.
   Structured mixed-outcome and exact request/result coverage were evaluated at
-  `5762f51668016376746438c6dd5503e04b9c50c1`.
+  `5762f51668016376746438c6dd5503e04b9c50c1`; final analyst-packet lane
+  consistency was evaluated at `de0142ca89384aee9c1bad014879e7e83e94fc86`.
 
 ---
 
