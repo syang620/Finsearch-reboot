@@ -1,0 +1,12 @@
+{
+  "cases": 37,
+  "behavior_passes": 2,
+  "behavior_accuracy": 0.05405405405405406,
+  "successful_outputs": 34,
+  "successful_output_integrity_rate": 0.029411764705882353,
+  "gate_pass": false,
+  "semantic_judge": {
+    "status": "not_run",
+    "note": "Fixture annotations are not judge scores."
+  }
+}
