@@ -1,5 +1,53 @@
 # FinSearch Evaluation Baselines
 
+## PR6 implementation evidence — 2026-09-03
+
+Implementation `0f8e477c47b7f11a8e069720b3b089e81f25cf9d` enforces explicit
+claim bindings, claim-derived filing prose and comparison rows, bounded repair,
+and analyst-stage fail-closed behavior. Calculation claims activate the existing
+calculator checks even on extraction tasks; positive calculation claims do not
+gain an insufficient-data exemption. Per-variable evidence mapping and semantic
+entailment remain secondary evaluation concerns, as explicitly scoped in ADR 004.
+
+The frozen 37-case grounding matrix passes 37/37, compared with 2/37 on the
+canonical unchanged-PR5 runtime. All applicable deterministic rates are 100%,
+with denominators recorded: 18/18 claim coverage, 40/40 valid references, 20/20
+source preservation and completeness, 3/3 structured-metric compatibility,
+11/11 narrative-type compatibility, 1/1 mixed hybrid binding, 6/6 invalid-ID
+detection, and 18/18 fail-closed handling. Dataset, harness and independent oracle
+hashes match exactly between the canonical before and after measurements. These
+are structural enforcement results, not claimed semantic improvements.
+
+The unchanged 14-case PR5 degradation matrix also passes all six rates at 100%.
+Full tests: 501 passed, 47 subtests passed, and the same two pre-existing failures
+in planner alias routing and retrieval retry-count expectations. pytest 9.0.2
+remains environment-only; repository dependency files were not changed.
+
+The frozen secondary judge assessed 18 observed claims: 3 fully supported,
+14 partially supported and 1 unsupported, with zero judge errors and 100%
+assessment coverage. Full-support precision and grounded-claim rate are 0.166667;
+unsupported rate is 0.055556. The unsupported attribution fixture is intentionally
+retained. PR5 emitted no bound claims, so no before/after semantic uplift is
+claimed. The judge was qwen2.5:14b-instruct at temperature 0, digest
+`7cdf5a0187d5c58cc5d369b255592f7841d1c4696d45a8c8a9489440385b22f6`.
+
+Artifacts and command/provenance records:
+
+- `artifacts/evals/agents/v1/grounding/baselines/0f8e477/`
+- `artifacts/evals/agents/v1/grounding/baselines/0f8e477/judge/`
+- `artifacts/evals/agents/v1/degradation/baselines/0f8e477/`
+
+All prior measurements, including initial implementation `9851ffd`, remain
+unchanged. The fresh GitHub review on `0f8e477` reported no major issues after the
+no-calculator claim bypass was fixed and the agreed semantic boundary documented.
+
+**Not release-complete:** the unchanged 15-case live gate has not run because
+SEC_USER_AGENT is unset and real contact information is required. No placeholder
+contact, modified expectation, weakened threshold or synthetic replacement was
+used. PR 23 remains draft pending that measurement. A temporary corpus was
+prepared from the same hashed PR5 sidecars, but no live-run corpus equivalence or
+gate result is claimed before execution.
+
 ## PR6 pre-implementation grounding baseline — 2026-09-03
 
 The canonical before measurement is
