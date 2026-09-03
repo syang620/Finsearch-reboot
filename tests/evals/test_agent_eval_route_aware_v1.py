@@ -1121,6 +1121,36 @@ def test_shadow_kb_lane_counts_empty_text_loss_after_packet_cap_backfill() -> No
     assert lanes.kb.usable_evidence_count == 3
 
 
+def test_shadow_kb_lane_counts_unsupported_candidate_loss_after_packet_cap_backfill() -> None:
+    output = _run_output("kb", reported_status="degraded", context_count=3)
+    output["retrieval"]["retrieved_candidate_count"] = 4
+    output["retrieval"]["attempts"][0]["results"] = [
+        {"doc_id": "AAPL_10-K_2024::chart::0", "score": 1.0},
+        *[
+            {
+                "doc_id": f"AAPL_10-K_2024::text::{index}",
+                "score": 1.0 - index / 10,
+            }
+            for index in range(1, 4)
+        ],
+    ]
+    unsupported_issue = {
+        "code": "RETRIEVAL_CANDIDATE_UNSUPPORTED",
+        "message": "One retrieved candidate had an unrecognized evidence type.",
+        "severity": "warning",
+    }
+    output["open_issues"] = [unsupported_issue]
+    output["evaluation_trace"]["analyst_packet"]["open_issues"] = [
+        unsupported_issue
+    ]
+
+    lanes, _metrics, _statuses = derive_lane_status(output)
+
+    assert lanes.kb.status == "partial"
+    assert lanes.kb.usable
+    assert lanes.kb.usable_evidence_count == 3
+
+
 def test_shadow_structured_lane_detects_tool_ok_admission_rejection() -> None:
     output = _run_output("structured_fact", reported_status="degraded")
     output["planner"]["structured_fact_requests"].append(
@@ -1175,6 +1205,187 @@ def test_shadow_structured_lane_detects_tool_ok_admission_rejection() -> None:
     lanes, _metrics, _statuses = derive_lane_status(output)
 
     assert lanes.structured_fact.status == "failed"
+    assert not lanes.structured_fact.usable
+
+
+@pytest.mark.parametrize(
+    ("question_classes", "expected_lane_status"),
+    [
+        (["ambiguous", "ambiguous"], "ambiguous"),
+        (
+            [
+                "unsupported_derived_metric",
+                "unsupported_ratio",
+                "unsupported_per_share",
+                "unsupported_comparison",
+            ],
+            "unsupported",
+        ),
+        (["ambiguous", "unsupported_ratio"], "failed"),
+        (["ambiguous", "unknown"], "failed"),
+        (["unknown", "unknown"], "failed"),
+    ],
+)
+def test_shadow_structured_lane_classifies_defensive_capability_rejections(
+    question_classes: list[str],
+    expected_lane_status: str,
+) -> None:
+    output = _run_output("structured_fact", reported_status="failed")
+    output["planner"]["structured_fact_requests"] = [
+        {
+            **_structured_request(),
+            "subquestion": f"Rejected request {index}",
+        }
+        for index, _question_class in enumerate(question_classes)
+    ]
+    output["structured_fact_results"] = [
+        {
+            "subquestion": f"Rejected request {index}",
+            "metric_hint": "revenue",
+            "resolved_ticker": "AAPL",
+            "resolved_fiscal_year": 2024,
+            "resolved_metric_id": None,
+            "resolver_status": (
+                "ambiguous" if question_class == "ambiguous" else "unresolved"
+            ),
+            "resolver_reason": "Structured-fact capability rejected.",
+            "tool_result": None,
+        }
+        for index, question_class in enumerate(question_classes)
+    ]
+    issues = [
+        {
+            "code": "STRUCTURED_FACT_CAPABILITY_REJECTED",
+            "message": "The runtime boundary rejected this request.",
+            "severity": "warning",
+            "metadata": {
+                "request_index": index,
+                "question_class": question_class,
+                "metric_hint": "revenue",
+                "subquestion": f"Rejected request {index}",
+                "original_route": "structured_fact",
+                "effective_route": None,
+                "outcome": "defensive_rejection",
+                "reason": "Unsupported at the runtime boundary.",
+                "candidate_metric_ids": [],
+            },
+        }
+        for index, question_class in enumerate(question_classes)
+    ]
+    output["open_issues"] = issues
+    packet = output["evaluation_trace"]["analyst_packet"]
+    packet["context_items"] = []
+    packet["open_issues"] = issues
+    output["analyst"] = None
+    output["failure_stage"] = "structured_fact"
+    runtime_lanes = {
+        "kb": {
+            "requested": False,
+            "attempted": False,
+            "status": "not_requested",
+        },
+        "structured_fact": {
+            "requested": True,
+            "attempted": True,
+            "status": expected_lane_status,
+            "issues": issues,
+        },
+    }
+    degradation = {
+        "active": True,
+        "affected_lanes": ["structured_fact"],
+        "notice": (
+            "Evidence coverage is degraded "
+            f"(structured_fact={expected_lane_status}). Do not claim coverage "
+            "from unavailable or incomplete evidence lanes."
+        ),
+    }
+    output["lanes"] = runtime_lanes
+    output["degradation"] = degradation
+    packet["lanes"] = runtime_lanes
+    packet["degradation"] = degradation
+
+    lanes, _metrics, statuses = derive_lane_status(output)
+
+    assert statuses == [
+        "ambiguous" if question_class == "ambiguous" else "unresolved"
+        for question_class in question_classes
+    ]
+    assert lanes.structured_fact.status == expected_lane_status
+    assert not lanes.structured_fact.usable
+
+    row, errors, _sample = evaluate_run_output(
+        _example(
+            "structured_fact",
+            expected_reported_status="failed",
+            expected_effective_status="failed",
+            expected_failure_stage="structured_fact",
+            expected_analyst_status=None,
+        ),
+        output,
+    )
+
+    assert errors == []
+    assert row.lane_status_consistent
+    assert row.degradation_consistent
+    assert row.deterministic.critical_failures == []
+
+
+@pytest.mark.parametrize(
+    ("request_indexes", "expected_lane_status"),
+    [
+        ([0, 0], "failed"),
+        ([0, None], "failed"),
+        ([None, None], "unsupported"),
+    ],
+)
+def test_shadow_structured_lane_uses_defensive_request_index_coverage(
+    request_indexes: list[int | None],
+    expected_lane_status: str,
+) -> None:
+    output = _run_output("structured_fact", reported_status="failed")
+    output["planner"]["structured_fact_requests"] = [
+        {
+            **_structured_request(),
+            "subquestion": f"Rejected request {index}",
+        }
+        for index in range(2)
+    ]
+    output["structured_fact_results"] = [
+        {
+            "subquestion": f"Rejected request {index}",
+            "metric_hint": "revenue",
+            "resolved_metric_id": None,
+            "resolver_status": "unresolved",
+            "resolver_reason": "Structured-fact capability rejected.",
+            "tool_result": None,
+        }
+        for index in range(2)
+    ]
+    issues = []
+    for request_index in request_indexes:
+        metadata = {
+            "outcome": "defensive_rejection",
+            "question_class": "unsupported_ratio",
+        }
+        if request_index is not None:
+            metadata["request_index"] = request_index
+        issues.append(
+            {
+                "code": "STRUCTURED_FACT_CAPABILITY_REJECTED",
+                "message": "The runtime boundary rejected this request.",
+                "severity": "warning",
+                "metadata": metadata,
+            }
+        )
+    output["open_issues"] = issues
+    packet = output["evaluation_trace"]["analyst_packet"]
+    packet["context_items"] = []
+    packet["open_issues"] = issues
+
+    lanes, _metrics, _statuses = derive_lane_status(output)
+
+    assert lanes.structured_fact.status == expected_lane_status
     assert not lanes.structured_fact.usable
 
 

@@ -1622,6 +1622,16 @@ def build_packet_from_retrieval_output(
         payload = _extract_payload_from_retrieval_entry(entry)
         entry_type = _classify_retrieval_entry_type(entry=entry, payload=payload)
         if entry_type == "unsupported":
+            open_issues.append(
+                OpenIssue(
+                    code="RETRIEVAL_CANDIDATE_UNSUPPORTED",
+                    message=(
+                        "Skipping retrieved candidate because it could not be "
+                        "identified as a supported table or text evidence type."
+                    ),
+                    severity=Severity.WARNING,
+                )
+            )
             continue
 
         entry_ticker = payload.get("ticker") or ticker

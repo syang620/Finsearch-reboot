@@ -637,12 +637,13 @@ def _coerce_open_issue_payloads(issues: Any) -> list[Dict[str, Any]]:
 
 def _dedupe_open_issues(issues: Sequence[OpenIssue]) -> list[OpenIssue]:
     out: list[OpenIssue] = []
-    seen: set[tuple[str, str, str]] = set()
+    seen: set[tuple[str, str, str, Optional[int]]] = set()
     for issue in issues:
         code = issue.code
         message = issue.message
         severity = str(issue.severity)
-        key = (code, message, severity)
+        request_index = _normalize_int((issue.metadata or {}).get("request_index"))
+        key = (code, message, severity, request_index)
         if key in seen:
             continue
         seen.add(key)
@@ -693,6 +694,35 @@ def _structured_operation_status(result: Dict[str, Any]) -> str:
     )
 
 
+def _defensive_rejections_cover_results(
+    issues: Sequence[OpenIssue],
+    *,
+    result_count: int,
+) -> bool:
+    if not issues or result_count <= 0:
+        return False
+
+    indexed_issues = [
+        issue
+        for issue in issues
+        if "request_index" in (issue.metadata or {})
+    ]
+    if not indexed_issues:
+        return len(issues) == result_count
+    if len(indexed_issues) != len(issues):
+        return False
+
+    request_indexes = [
+        _normalize_int((issue.metadata or {}).get("request_index"))
+        for issue in indexed_issues
+    ]
+    return (
+        None not in request_indexes
+        and len(request_indexes) == result_count
+        and set(request_indexes) == set(range(result_count))
+    )
+
+
 def _derive_evidence_lanes(
     *,
     plan_obj: Dict[str, Any],
@@ -732,6 +762,7 @@ def _derive_evidence_lanes(
     has_kb_admission_issue = any(
         issue.code
         in {
+            "RETRIEVAL_CANDIDATE_UNSUPPORTED",
             "TABLE_HYDRATION_FAILED",
             "TABLE_MARKDOWN_EMPTY",
             "EMPTY_TEXT_CONTEXT",
@@ -818,7 +849,10 @@ def _derive_evidence_lanes(
         structured_status = EvidenceLaneStatus.FAILED
     elif "partial" in operation_statuses:
         structured_status = EvidenceLaneStatus.PARTIAL
-    elif defensive_rejections and len(defensive_rejections) == len(results):
+    elif _defensive_rejections_cover_results(
+        defensive_rejections,
+        result_count=len(results),
+    ):
         question_classes = {
             str((issue.metadata or {}).get("question_class") or "")
             for issue in defensive_rejections

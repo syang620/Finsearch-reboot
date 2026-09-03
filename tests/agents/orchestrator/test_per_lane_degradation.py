@@ -322,6 +322,81 @@ def test_empty_text_loss_is_partial_when_later_candidates_backfill_packet_cap() 
     ]
 
 
+def test_unsupported_candidate_loss_is_partial_when_valid_candidates_backfill_packet_cap() -> None:
+    retrieval_output = {
+        "ok": True,
+        "top_tables": [
+            {
+                "table_name": "unrecognized",
+                "total_score": 50,
+                "table": {
+                    "payload": {
+                        "doc_type": "chart",
+                        "doc_id": "AAPL_10-K_2024::chart::0",
+                    }
+                },
+            },
+            *[
+                {
+                    "table_name": f"text-{index}",
+                    "total_score": 40 - index,
+                    "table": {
+                        "payload": {
+                            "doc_type": "text",
+                            "doc_id": f"AAPL_10-K_2024::text::{index}",
+                            "content": f"usable evidence {index}",
+                            "ticker": "AAPL",
+                            "fiscal_year": 2024,
+                            "form_type": "10-K",
+                        }
+                    },
+                }
+                for index in range(1, 4)
+            ],
+        ],
+        "metadata_used": {
+            "ticker": "AAPL",
+            "fiscal_year": 2024,
+            "form_type": "10-K",
+        },
+    }
+    packet = build_packet_from_retrieval_output(
+        user_query="What was revenue?",
+        retrieval_output=retrieval_output,
+        intent=PlannerIntent.FILING_FACT,
+        analysis_task={"task_type": "extract", "metric": "revenue"},
+    )
+    state = {
+        "plan_obj": _plan("kb"),
+        "retrieval_output": retrieval_output,
+        "packet": packet,
+        "analyst_result": _analyst(),
+    }
+
+    assert len(packet.context_items) == 3
+    assert [issue.code for issue in packet.open_issues] == [
+        "RETRIEVAL_CANDIDATE_UNSUPPORTED"
+    ]
+    assert packet.open_issues[0].message == (
+        "Skipping retrieved candidate because it could not be identified as a "
+        "supported table or text evidence type."
+    )
+    packet = _packet_with_evidence_status(state=state, packet=packet)
+    state["packet"] = packet
+    assert packet.lanes.kb.status == EvidenceLaneStatus.PARTIAL
+    assert packet.degradation.active
+    assert _route_after_retrieval_attach_open_issues(state) == "analyst"
+
+    output = _output(state)
+
+    assert output["status"] == "degraded"
+    assert output["ok"] is True
+    assert output["lanes"]["kb"]["status"] == "partial"
+    assert output["lanes"]["kb"]["issues"][0]["code"] == (
+        "RETRIEVAL_CANDIDATE_UNSUPPORTED"
+    )
+
+
 def test_structured_tool_partial_without_admitted_evidence_is_unusable() -> None:
     output = _output(
         {
@@ -532,6 +607,53 @@ def test_defensive_runtime_capability_rejection_status(
     assert output["lanes"]["structured_fact"]["status"] == expected_lane_status
     assert output["status"] == "failed"
     assert output["failure_stage"] == "structured_fact"
+
+
+@pytest.mark.parametrize("request_indexes", [[0, 0], [0, None]])
+def test_defensive_runtime_rejection_requires_complete_request_index_coverage(
+    request_indexes: list[int | None],
+) -> None:
+    issues = []
+    for request_index in request_indexes:
+        metadata = {
+            "outcome": "defensive_rejection",
+            "question_class": "unsupported_ratio",
+        }
+        if request_index is not None:
+            metadata["request_index"] = request_index
+        issues.append(
+            OpenIssue(
+                code="STRUCTURED_FACT_CAPABILITY_REJECTED",
+                message="The runtime boundary rejected this request.",
+                metadata=metadata,
+            )
+        )
+    packet = _packet().model_copy(update={"open_issues": issues})
+    plan = _plan("structured_fact")
+    plan["structured_fact_requests"] = [
+        {
+            "subquestion": f"Rejected request {index}",
+            "metric_hint": "revenue",
+        }
+        for index in range(2)
+    ]
+
+    output = _output(
+        {
+            "plan_obj": plan,
+            "structured_fact_results": [
+                {
+                    "resolver_status": "unresolved",
+                    "resolver_reason": "Structured-fact capability rejected.",
+                    "tool_result": None,
+                }
+                for _index in range(2)
+            ],
+            "packet": packet,
+        }
+    )
+
+    assert output["lanes"]["structured_fact"]["status"] == "failed"
 
 
 def test_analyst_failure_overrides_status_and_preserves_evidence_degradation() -> None:

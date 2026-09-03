@@ -43,11 +43,20 @@ _FAILURE_STAGES = {
 }
 _KB_PACKET_EVIDENCE_LIMIT = 3
 _KB_ADMISSION_LOSS_CODES = {
+    "RETRIEVAL_CANDIDATE_UNSUPPORTED",
     "TABLE_HYDRATION_FAILED",
     "TABLE_MARKDOWN_EMPTY",
     "EMPTY_TEXT_CONTEXT",
 }
 _STRUCTURED_ADMISSION_LOSS_CODE = "STRUCTURED_FACT_INVALID_EVIDENCE"
+_STRUCTURED_CAPABILITY_REJECTION_CODE = "STRUCTURED_FACT_CAPABILITY_REJECTED"
+_DEFENSIVE_REJECTION_OUTCOME = "defensive_rejection"
+_UNSUPPORTED_STRUCTURED_QUESTION_CLASSES = {
+    "unsupported_derived_metric",
+    "unsupported_ratio",
+    "unsupported_per_share",
+    "unsupported_comparison",
+}
 
 
 def _normalize_text(value: Any) -> Optional[str]:
@@ -277,6 +286,61 @@ def _structured_result_status(result: Dict[str, Any]) -> str:
     return "ok" if bool(tool_result.get("ok")) else "failed"
 
 
+def _defensive_structured_rejection_classes(
+    run_output: Dict[str, Any],
+    packet: Optional[AnalystPacket],
+    *,
+    result_count: int,
+) -> List[str]:
+    issues = (
+        [issue.model_dump(mode="json") for issue in packet.open_issues]
+        if packet is not None
+        else [
+            issue
+            for issue in run_output.get("open_issues") or []
+            if isinstance(issue, dict)
+        ]
+    )
+    rejection_metadata = [
+        metadata
+        for issue in issues
+        if _normalize_text(issue.get("code"))
+        == _STRUCTURED_CAPABILITY_REJECTION_CODE
+        and isinstance((metadata := issue.get("metadata")), dict)
+        and _normalize_lower(metadata.get("outcome"))
+        == _DEFENSIVE_REJECTION_OUTCOME
+    ]
+    if not rejection_metadata or result_count <= 0:
+        return []
+
+    indexed_metadata = [
+        metadata
+        for metadata in rejection_metadata
+        if "request_index" in metadata
+    ]
+    if not indexed_metadata:
+        if len(rejection_metadata) != result_count:
+            return []
+        return [
+            _normalize_lower(metadata.get("question_class")) or "unknown"
+            for metadata in rejection_metadata
+        ]
+    if len(indexed_metadata) != len(rejection_metadata):
+        return []
+
+    classes_by_index: Dict[int, str] = {}
+    for metadata in indexed_metadata:
+        request_index = _normalize_int(metadata.get("request_index"))
+        if request_index is None or request_index in classes_by_index:
+            return []
+        classes_by_index[request_index] = (
+            _normalize_lower(metadata.get("question_class")) or "unknown"
+        )
+    if set(classes_by_index) != set(range(result_count)):
+        return []
+    return [classes_by_index[index] for index in range(result_count)]
+
+
 def _derive_structured_lane(
     run_output: Dict[str, Any],
     packet: Optional[AnalystPacket],
@@ -310,6 +374,11 @@ def _derive_structured_lane(
     statuses = [_structured_result_status(result) for result in results]
     successful_result_count = sum(status == "ok" for status in statuses)
     issue_codes = _analyst_issue_codes(run_output, packet)
+    defensive_rejection_classes = _defensive_structured_rejection_classes(
+        run_output,
+        packet,
+        result_count=len(results),
+    )
     admission_loss = (
         successful_result_count != usable_evidence_count
         or _STRUCTURED_ADMISSION_LOSS_CODE in issue_codes
@@ -335,6 +404,14 @@ def _derive_structured_lane(
         aggregate_status = "failed"
     elif usable or "partial" in statuses:
         aggregate_status = "partial"
+    elif defensive_rejection_classes:
+        question_classes = set(defensive_rejection_classes)
+        if question_classes == {"ambiguous"}:
+            aggregate_status = "ambiguous"
+        elif question_classes <= _UNSUPPORTED_STRUCTURED_QUESTION_CLASSES:
+            aggregate_status = "unsupported"
+        else:
+            aggregate_status = "failed"
     elif statuses and all(status == "ambiguous" for status in statuses):
         aggregate_status = "ambiguous"
     elif statuses and all(
