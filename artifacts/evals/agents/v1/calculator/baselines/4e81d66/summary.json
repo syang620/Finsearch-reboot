@@ -1,0 +1,9 @@
+{
+  "cases": 20,
+  "behavior_passes": 4,
+  "gate_pass": false,
+  "history_preserved": 20,
+  "unexpected_successes": 0,
+  "successful_outputs": 2,
+  "successful_grounding_valid": 2
+}

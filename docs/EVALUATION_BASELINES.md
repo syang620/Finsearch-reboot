@@ -1,5 +1,29 @@
 # FinSearch Evaluation Baselines
 
+## Calculator reliability before baseline — 2026-09-03
+
+PR6 merged at `6155034e4c1864e187a3318619524d9192024a78` under exception
+`PR6-CALC-001`. The separate calculator follow-up froze 20 focused fixtures and
+their independent expectation-based replay harness at
+`4e81d66acf6c478c015b6a5ea7ca1cc2bf149253`, before runtime behavior changed.
+The runtime source at that measurement is byte-identical to merged PR6.
+
+The before run satisfies 4/20 full behavior contracts. This strict count includes
+bounded retry/candidate-count and explicit selection-feedback expectations, not
+just terminal status: some already fail-closed cases fail only the new repair
+expectation. Both successful outputs retain valid grounding, all 20 histories are
+preserved, and there are zero unexpected successes. Repeated identical successful
+calculations are falsely ambiguous; missing final selection with distinct results
+fails without a dedicated selection repair.
+
+Evidence is in `artifacts/evals/agents/v1/calculator/baselines/4e81d66/`.
+Its manifest records source/dataset/harness hashes, environment-only pytest 9.0.2,
+Python version and the exact command. Derived fixtures are deliberately minimal,
+not exact live transcript replays; see
+`data/evals/agents/v1/calculator_regression_v1.md`. Grounding, lane policy and
+the historical PR6/PR5 evidence remain unchanged. The expensive live gate has not
+been rerun; it is reserved for the frozen calculator implementation.
+
 ## PR6 release exception PR6-CALC-001 — 2026-09-03
 
 The project owner explicitly approved merging PR6 with the single known
