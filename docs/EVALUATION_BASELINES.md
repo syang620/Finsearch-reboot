@@ -1643,3 +1643,100 @@ completed with 421 passing tests, 47 passing subtests, and the same two pre-exis
 failures documented above. Neither failure touches PR5. Full commands, redacted
 environment, hashes, provenance, and limitations are in
 `artifacts/evals/agents/v1/degradation/baselines/65296dc/manifest.json`.
+
+## PR5 Structured Outcome Completeness Closure — 2026-09-03
+
+This correction closes the mixed-unusable structured-lane finding from the fresh
+review of `5d7820f`, plus exact request/result coverage and malformed-result gaps
+found during the independent pre-commit audit. All earlier SHA-keyed PR5 evidence,
+including the original failing `25e359d` baseline, remains unchanged.
+
+### Run identity
+
+| Field | Value |
+|---|---|
+| Status | Reviewed PR5 correction; deterministic matrix passed; live regression gate failed and was preserved |
+| Evaluated implementation SHA | `5762f51668016376746438c6dd5503e04b9c50c1` |
+| Degradation dataset SHA-256 / cases | `a8c54aad42061b99bf114a60818cb817e5f15e76279dfa59b72464fdb5ed7012` / 14 |
+| Live dataset SHA-256 / cases | `c0fbdd097d7fa1b3eb22953a3ba4e8c0e84aa70a8786e08ba78a3b305cabe6cd` / 15 |
+| Python / pytest | `3.11.14` / `9.0.2` |
+| Planner / analyst | `ollama/qwen2.5:14b-instruct`, digest `7cdf5a0187d5c58cc5d369b255592f7841d1c4696d45a8c8a9489440385b22f6` |
+| Dense embedding | `qwen3-embedding:8b`, digest `64b933495768fbd3b87c20583d379728a07471e0c66733a9df87cd1901b3c44b` |
+| Qdrant | `1.16.2`; collection `sec_docs_dense_bm25_pr2_63dcec0`; pre-run 582 green points; post-run fingerprint `0e60c99368eae07b4f00cb86a3d6e58d49b7e6bbd2c1df84e98204e8be75a744`, matching the prior verified PR5 fingerprint |
+| RAGAS | Disabled |
+
+The structured lane now reserves unusable `partial` for a wholly partial outcome.
+Any partial mixed with an error, ambiguity, unsupported outcome, missing result, or
+malformed result fails closed when no evidence survives. Every whole-lane status
+requires exact requested/result coverage. If valid admitted evidence survives an
+incomplete or malformed result set, the lane remains usable but becomes `partial`.
+
+The independent shadow evaluator derives the same result from raw structured
+outputs and analyst-visible contexts/issues without importing the runtime lane
+helper. Invalid result containers and entries are represented safely and produce
+normalized admission issues, so malformed output cannot masquerade as skipped or
+complete.
+
+`pytest==9.0.2` remained environment-only, repository dependency files were
+unchanged, and the tracked worktree matched the implementation SHA before both
+measurements. Independent pre-commit review found no actionable P0–P2 issue after
+the final corrections.
+
+### Deterministic and live results
+
+The expanded 14-case deterministic command wrote to
+`artifacts/evals/agents/v1/degradation/baselines/5762f51`. All six matrix rates
+were 100%. Its summary SHA-256 is
+`df12eddaf88b8a9dc22a471537b0f91477072c3fa5c6e1961368f2842591fe11` and its
+per-case SHA-256 is
+`1fcce481c35acd2d6428abadc8bb3753fd2dff1987ff0bd5db8e0df97cb0a370`.
+
+The new `PR5_STRUCTURED_MIXED_UNUSABLE` case executes two requested structured
+facts that return `partial` and `error`, admits zero evidence, classifies both
+runtime and shadow lanes as `failed` and unusable, fails overall at the structured
+stage, and skips the analyst. The previously added KB and structured admission-loss
+cases remain usable `partial`, report `degraded`, and run the analyst.
+
+The unchanged 15-case route-aware live command used the same redacted environment
+and thresholds as earlier PR5 runs, a fresh checkpointer, and output directory
+`artifacts/evals/agents/v1/baselines/5762f51`. It ran exactly once. All 15 rows
+were valid with zero evaluator errors. The deterministic score was `0.961874` and
+two rows were critical, for a `0.133333` critical-failure rate; the strict
+zero-critical-row gate therefore remained false.
+
+Runtime/shadow lane status, effective status, failure stage, and exact degradation
+summary consistency were all 100%. Seven successful structured executions yielded
+seven typed, analyst-visible contexts with complete provenance-field coverage and
+no synthetic structured-text contexts.
+
+The two critical rows matched the strongest earlier PR5 runs:
+
+- `AGENT_V1_HYBRID_001`: analyst tool-loop exhaustion and an invalid fallback
+  output caused analyst-stage failure with no accepted citation.
+- `AGENT_V1_ANALYST_001`: ambiguous matching across successful calculator calls
+  produced `CALCULATION_RESULT_AMBIGUOUS`, analyst `tool_error`, and no accepted
+  citation.
+
+Live artifacts:
+
+- `artifacts/evals/agents/v1/baselines/5762f51/summary.json`, SHA-256
+  `9e3c335355ae4e47de623e155c9280e29d64a6676d2151e042c6f36b6d538481`.
+- `artifacts/evals/agents/v1/baselines/5762f51/per_query.jsonl`, SHA-256
+  `fa776d121db124dd6626b25c6ab951214dc8b7e756cf220e07de177ffae78572`.
+- Zero-byte `artifacts/evals/agents/v1/baselines/5762f51/errors.jsonl`, SHA-256
+  `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`.
+
+The live run took 2,238,643 ms (about 37 minutes). Known MCP/AnyIO shutdown
+warnings appeared only after artifact generation; the evaluator exited
+successfully. Pre-run collection info reported the expected 582 green points. The
+read-only evaluator performed no collection writes, and the post-run fingerprint
+matched the prior independently verified PR5 fingerprint. Exact historical
+collection equivalence is still not claimed, and the hosted reranker exposes no
+immutable service-side digest.
+
+The focused runtime, packet-flow, independent evaluator, and degradation-matrix
+suite passed 177 tests. The full suite completed with 449 passing tests, 47 passing
+subtests, and the same two pre-existing failures documented above. Neither failure
+touches PR5. Full commands, redacted environment, hashes, provenance, and
+limitations are in
+`artifacts/evals/agents/v1/degradation/baselines/5762f51/manifest.json`.

@@ -24,6 +24,8 @@
   final admission-truthfulness audit fixes were evaluated at
   `29d22268a27e51a62157eeae53649858d74e5242`, and the executed-empty retrieval
   trace correction was evaluated at `65296dc6253e3dd1c8285e7f1fcaf553c4a85180`.
+  Structured mixed-outcome and exact request/result coverage were evaluated at
+  `5762f51668016376746438c6dd5503e04b9c50c1`.
 
 ---
 
@@ -982,10 +984,10 @@ analyst.status = ok
   status, and failure stage from raw execution results plus analyst-visible
   contexts and issues, without importing the runtime lane helper, and treats
   inconsistencies as critical.
-- The frozen 13-case PR5 fault-injection matrix records classification,
+- The frozen 14-case PR5 fault-injection matrix records classification,
   containment, fail-closed, disclosure, consistency, and overall behavior rates,
   including one-of-two KB hydration admission and one-of-two structured PR4
-  admission loss.
+  admission loss, plus mixed unusable structured outcomes.
 - User-facing and analyst-bound notices never interpolate raw error text.
 
 ---

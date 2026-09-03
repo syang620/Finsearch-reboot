@@ -39,8 +39,11 @@ Review Closure — 2026-09-03.” The final admission-truthfulness audit fixes w
 evaluated at `29d22268a27e51a62157eeae53649858d74e5242` and are recorded under “PR5
 Admission Truthfulness Audit Closure — 2026-09-03.” The executed-empty retrieval
 trace correction was evaluated at `65296dc6253e3dd1c8285e7f1fcaf553c4a85180`
-and is recorded under “PR5 Executed-Retrieval Trace Closure — 2026-09-03.” All
-earlier SHA-keyed evidence remains unchanged.
+and is recorded under “PR5 Executed-Retrieval Trace Closure — 2026-09-03.” The
+structured mixed-outcome and exact-coverage correction was evaluated at
+`5762f51668016376746438c6dd5503e04b9c50c1` and is recorded under “PR5
+Structured Outcome Completeness Closure — 2026-09-03.” All earlier SHA-keyed
+evidence remains unchanged.
 
 The initial PR3 structured-fact capability baseline was evaluated independently at
 `6b6b6173bac9045b03ad2292910b5acfd51740c8`; review fixes were verified at
@@ -154,15 +157,17 @@ Run it without external services:
 PYTHONPATH=.:src python scripts/evals/agents/eval_agent_degradation_v1.py
 ```
 
-Its 13 fault-injected cases cover both-lane success, either- and both-lane failure,
+Its 14 fault-injected cases cover both-lane success, either- and both-lane failure,
 usable KB partial, unusable structured partial, single-lane unusable runs, degraded
 evidence followed by analyst failure, non-filing zero-lane success, and filing
 zero-evidence rejection. They also cover two retrieved KB candidates with one
 hydration loss and one visible item, and two raw-`ok` structured requests with one
 PR4 rejection and one admitted fact; both must be usable `partial`, report
-`degraded`, and run the analyst. The matrix reports degradation classification
-accuracy, failure containment, all-lanes-unusable fail-closed behavior, disclosure,
-runtime/evaluator consistency, and overall graceful-degradation accuracy.
+`degraded`, and run the analyst. A mixed structured `partial` plus `error` outcome
+with no admitted evidence must be `failed`, unusable, and analyst-skipped. The
+matrix reports degradation classification accuracy, failure containment,
+all-lanes-unusable fail-closed behavior, disclosure, runtime/evaluator consistency,
+and overall graceful-degradation accuracy.
 
 The unchanged 15-case route-aware live dataset does not intentionally inject
 degradation. Its PR5 role is regression detection for existing routing, retrieval,
