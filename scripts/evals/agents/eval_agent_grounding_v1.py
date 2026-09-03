@@ -18,7 +18,7 @@ from langchain_core.messages import AIMessage
 
 from agents.analyst import AnalystAgent
 from agents.contracts import AnalystPacket
-from evals.grounding_oracle import inspect_final
+from evals.grounding_oracle import inspect_claims, inspect_final
 
 
 def packet_for(case: dict) -> AnalystPacket:
@@ -37,7 +37,7 @@ def packet_for(case: dict) -> AnalystPacket:
     ]:
         context = {
             "context_id": cid, "kind": kind, "source": source,
-            "target_id": "AAPL:2024:10-K", "text": "Revenue was $100; net income was $20. Management attributed growth to demand.",
+            "target_id": "AAPL:2024:10-K",
         }
         if metric:
             context["structured_fact"] = {
@@ -46,6 +46,8 @@ def packet_for(case: dict) -> AnalystPacket:
                 "accession_number": source["accession_no"], "report_date": source["report_date"],
                 "filed_date": source["filing_date"], "source_url": source["source_url"],
             }
+        else:
+            context["payload"] = {"content": "Revenue was $100; net income was $20. Management attributed growth to demand."}
         contexts.append(context)
     if case.get("survivor") == "kb":
         contexts = [item for item in contexts if item["kind"] != "structured_fact"]
@@ -120,12 +122,54 @@ async def main(args):
     cases = [json.loads(line) for line in dataset.read_text().splitlines() if line.strip()]
     rows = [await evaluate(case) for case in cases]
     success = [row for row in rows if row["oracle"]["successful"]]
+    measurements = {name: [] for name in (
+        "claim_citation_coverage", "valid_context_id", "citation_source_preservation",
+        "citation_source_completeness", "structured_numeric_evidence_type_accuracy",
+        "narrative_evidence_type_accuracy", "hybrid_claim_evidence_routing_accuracy",
+        "invalid_citation_detection", "grounding_fail_closed", "runtime_evaluator_consistency",
+    )}
+    for case, row in zip(cases, rows):
+        result, packet = row["analyst"], row["analyst_packet"]
+        visible = {item["context_id"]: item for item in packet["context_items"][:case.get("visible_limit", 4)]}
+        measurements["runtime_evaluator_consistency"].append(row["behavior_pass"])
+        if not case["expected_ok"]:
+            measurements["grounding_fail_closed"].append(not result["ok"])
+        injected = inspect_claims(packet, case["outputs"][0], case.get("visible_limit", 4))
+        if injected["rejected_context_ids"]:
+            issue_codes = [issue["code"] for issue in result["open_issues"]]
+            detected = any("CONTEXT_ID" in code or "GROUNDING" in code for code in issue_codes)
+            detected = detected or any(not attempt["decision"]["valid"] for attempt in result["trace"].get("grounding_attempts", []))
+            measurements["invalid_citation_detection"].append(detected)
+        if not row["oracle"]["successful"]:
+            continue
+        claim_checks = []
+        for claim in result.get("claims", []):
+            check = inspect_claims(packet, {"status": "ok", "claims": [claim]}, case.get("visible_limit", 4))
+            measurements["claim_citation_coverage"].append(bool(check["accepted_context_ids"]))
+            measurements["valid_context_id"].extend(ref in visible for ref in claim["context_ids"])
+            kind = claim["claim_type"]
+            if kind == "structured_numeric":
+                measurements["structured_numeric_evidence_type_accuracy"].append("GROUNDING_METRIC_MISMATCH" not in check["errors"])
+            if kind in {"narrative", "attribution"}:
+                measurements["narrative_evidence_type_accuracy"].append("GROUNDING_EVIDENCE_TYPE_MISMATCH" not in check["errors"])
+            claim_checks.append(check["valid"])
+        kinds = {claim["claim_type"] for claim in result.get("claims", [])}
+        if "structured_numeric" in kinds and kinds.intersection({"narrative", "attribution"}):
+            measurements["hybrid_claim_evidence_routing_accuracy"].append(all(claim_checks))
+        for citation in result.get("citations", []):
+            context = visible.get(citation["context_id"])
+            measurements["valid_context_id"].append(context is not None)
+            measurements["citation_source_preservation"].append(context is not None and citation["source"] == context["source"])
+            measurements["citation_source_completeness"].append(all(citation["source"].get(key) for key in (
+                "ticker", "fiscal_year", "form_type", "accession_no", "report_date", "filing_date", "source_url",
+            )))
     summary = {
         "cases": len(rows), "behavior_passes": sum(row["behavior_pass"] for row in rows),
         "behavior_accuracy": sum(row["behavior_pass"] for row in rows) / len(rows),
         "successful_outputs": len(success),
         "successful_output_integrity_rate": sum(row["oracle"]["valid"] for row in success) / len(success) if success else None,
         "gate_pass": all(row["behavior_pass"] for row in rows),
+        "metrics": {name: {"passed": sum(values), "denominator": len(values), "rate": sum(values) / len(values) if values else None} for name, values in measurements.items()},
         "semantic_judge": {"status": "not_run", "note": "Fixture annotations are not judge scores."},
     }
     out = Path(args.out_dir)

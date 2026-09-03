@@ -13,23 +13,40 @@ SAFE_FAILURE = "The analyst could not produce an answer with valid evidence bind
 
 
 def inspect_claims(packet: dict, candidate: dict, limit: int = 5) -> dict:
+    malformed = {"valid": False, "errors": ["GROUNDING_CLAIMS_MALFORMED"],
+                 "rejected_context_ids": [], "accepted_context_ids": [], "claims": [], "compare_rows": []}
+    if not isinstance(candidate, dict):
+        return malformed
     visible = packet.get("context_items", [])[:limit]
     ids = [item.get("context_id") for item in visible]
     contexts = {item.get("context_id"): item for item in visible}
     errors, rejected, accepted, cleaned = [], [], [], []
     filing = packet.get("intent") in {"filing_fact", "filing_calc"}
     claims = candidate.get("claims") or []
+    if not isinstance(claims, list) or any(not isinstance(claim, dict) for claim in claims):
+        return malformed
+    if any(not isinstance(candidate.get(key, []), list) for key in ("used_context_ids", "compare_rows")):
+        return malformed
     if len(ids) != len(set(ids)):
         errors.append("DUPLICATE_VISIBLE_CONTEXT_ID")
     if filing and candidate.get("status") == "ok" and not claims:
         errors.append("GROUNDING_CLAIMS_MISSING")
     seen = set()
-    for claim in claims:
+    for raw_claim in claims:
+        claim = dict(raw_claim)
+        for key in ("claim_id", "text", "metric_id"):
+            if isinstance(claim.get(key), str):
+                claim[key] = claim[key].strip()
+        if set(claim) - {"claim_id", "claim_type", "text", "context_ids", "metric_id"}:
+            errors.append("GROUNDING_CLAIMS_MALFORMED")
+        if not isinstance(claim.get("context_ids"), list) or any(not isinstance(ref, str) for ref in claim.get("context_ids", [])):
+            return malformed
         cid = claim.get("claim_id")
         kind = claim.get("claim_type")
         if not isinstance(cid, str) or not cid.strip() or cid in seen:
             errors.append("GROUNDING_CLAIM_ID_INVALID")
-        seen.add(cid)
+        if isinstance(cid, str):
+            seen.add(cid)
         if not isinstance(claim.get("text"), str) or not claim["text"].strip():
             errors.append("GROUNDING_CLAIM_TEXT_MISSING")
         refs = []
@@ -37,8 +54,14 @@ def inspect_claims(packet: dict, candidate: dict, limit: int = 5) -> dict:
             ref = str(ref).strip()
             if ref not in contexts:
                 rejected.append(ref)
-            elif ref not in refs:
-                refs.append(ref)
+            else:
+                item = contexts[ref]
+                payload = item.get("payload") or {}
+                content = payload.get("table_markdown") or payload.get("content") or payload.get("text") or ""
+                if not item.get("structured_fact") and not (item.get("kind") in {"text", "table"} and str(content).strip()):
+                    errors.append("GROUNDING_CONTEXT_UNUSABLE")
+                elif ref not in refs:
+                    refs.append(ref)
         if not refs:
             errors.append("GROUNDING_CLAIM_UNSUPPORTED")
         evidence = [contexts[ref] for ref in refs]
@@ -59,9 +82,11 @@ def inspect_claims(packet: dict, candidate: dict, limit: int = 5) -> dict:
             if ref not in accepted:
                 accepted.append(ref)
         cleaned.append({**claim, "context_ids": refs})
-    by_id = {claim.get("claim_id"): claim for claim in cleaned}
+    by_id = {claim.get("claim_id"): claim for claim in cleaned if isinstance(claim.get("claim_id"), str)}
     rows = []
     for row in candidate.get("compare_rows", []):
+        if not isinstance(row, dict) or not isinstance(row.get("claim_id"), (str, type(None))):
+            return malformed
         claim = by_id.get(row.get("claim_id"))
         if claim is None:
             errors.append("GROUNDING_ROW_UNBOUND")
@@ -78,6 +103,8 @@ def inspect_claims(packet: dict, candidate: dict, limit: int = 5) -> dict:
         if str(ref).strip() not in contexts:
             rejected.append(str(ref).strip())
     for row in candidate.get("compare_rows", []):
+        if not isinstance(row.get("context_ids", []), list):
+            return malformed
         for ref in row.get("context_ids", []):
             if str(ref).strip() not in contexts:
                 rejected.append(str(ref).strip())
