@@ -1,5 +1,33 @@
 # FinSearch Evaluation Baselines
 
+## PR6 pre-implementation grounding baseline — 2026-09-03
+
+The canonical before measurement is
+`artifacts/evals/agents/v1/grounding/baselines/4ba5553-canonical`, using unchanged
+PR5 runtime `4ba5553737a2e788da1f4e5a01519f65685b15bd` in an isolated worktree
+and frozen harness/oracle commit `9c2e8fa`. The 37 candidate-injection scenarios
+run the real analyst graph without a live model. This is a structural enforcement
+measurement, not a semantic-quality benchmark.
+
+The original prototype measurement under `grounding/baselines/4ba5553` remains
+unchanged but is superseded: its calculator stub used an MCP envelope where the
+injected-tool interface expects a direct payload, and its KB fixture text was in
+an unrecognized field. Both harness issues were corrected and measured against
+unchanged PR5 code before the matched comparison. The frozen dataset itself is
+unchanged. Intermediate harness-development measurements were diagnostic only.
+
+Canonical baseline: 2/37 scenarios satisfy the new contract; 36 outputs report
+success, but only 1/36 passes full finalized-output integrity. Grounding fail-closed
+behavior is 1/18; known visible citation IDs and source preservation are each
+31/32. Legacy outputs contain no explicit claims, so claim-type/coverage metrics
+have zero denominators and are unavailable, not inferred or labeled perfect.
+No semantic improvement can be inferred from these missing bindings.
+
+The environment remains Python 3.11.14 with pytest 9.0.2 installed environment-only
+in finsearch-arm. Historical PR5 evidence and repository dependency files are
+unchanged. Final implementation, after evidence and fresh review are recorded
+separately once available.
+
 This document records measured evaluation results. It is intentionally separate from
 `docs/ARCHITECTURE.md`, which describes current system behavior without mutable model
 scores.
