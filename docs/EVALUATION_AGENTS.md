@@ -30,8 +30,10 @@ immutable artifacts, and unchanged 15-case live-gate result are recorded in
 The PR5 admission-loss correction was evaluated at
 `06835feaf10237aa79bd494d9fef0f4fc1aa0c0c`. Its expanded matrix and fresh
 15-case live evidence are recorded under “PR5 Admission-Loss Correction —
-2026-09-03.” The original `25e359d` artifacts and failing live baseline remain
-unchanged.
+2026-09-03.” The post-review integration correction was evaluated at
+`7f258a378b75b3781d5ebf45edf70c597b381511`; its immutable evidence is recorded
+under “PR5 Post-Review Integration Correction — 2026-09-03.” The `25e359d` and
+`06835fe` evidence remain unchanged.
 
 The initial PR3 structured-fact capability baseline was evaluated independently at
 `6b6b6173bac9045b03ad2292910b5acfd51740c8`; review fixes were verified at

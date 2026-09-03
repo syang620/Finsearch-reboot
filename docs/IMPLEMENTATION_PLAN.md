@@ -17,7 +17,9 @@
 - PR5 — complete: authoritative per-lane status, admitted-evidence usability,
   filing-task fail-closed behavior, and deterministic degradation evaluation at
   `25e359d85776dc422e0d4d72b47152b407862d30`; the admission-loss correction was
-  evaluated at `06835feaf10237aa79bd494d9fef0f4fc1aa0c0c`.
+  evaluated at `06835feaf10237aa79bd494d9fef0f4fc1aa0c0c`, and the post-review
+  integration correction was evaluated at
+  `7f258a378b75b3781d5ebf45edf70c597b381511`.
 
 ---
 
