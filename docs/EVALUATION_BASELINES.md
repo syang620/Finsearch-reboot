@@ -1,5 +1,63 @@
 # FinSearch Evaluation Baselines
 
+## PR6 live gate — 2026-09-03
+
+The unchanged 15-case live gate ran exactly once on clean, detached implementation
+`0f8e477c47b7f11a8e069720b3b089e81f25cf9d`. All 15 rows were valid and there
+were zero evaluator errors. The deterministic score was `0.980392`, but one
+critical row (`1/15`, `0.066667`) means the strict zero-critical-row gate **failed**.
+No expectations, thresholds, provider settings or retry budgets were changed,
+and no cases were selectively rerun. PR 23 remains draft; release closure needs
+the calculator failure resolved or an explicit release exception.
+
+The critical case is `AGENT_V1_ANALYST_001`: the final calculation could not be
+uniquely matched to a successful calculator result, producing
+`CALCULATION_RESULT_AMBIGUOUS`, analyst `tool_error`, and analyst-stage failure.
+This same failure is recorded in the prior PR5 baseline `de0142c`. The lower
+critical count in this stochastic run is not a controlled performance-uplift claim.
+
+Runtime/shadow lane status, effective status, failure stage, degradation and
+grounding consistency were all 100%. The independent grounding assessment covered
+12 successful outputs, including one no-claim insufficient-data response. Eleven
+claim-bearing outputs contained 18 claims and 18 context references, with no
+grounding inconsistencies. Seven successful structured executions yielded seven
+typed, visible contexts with complete provenance-field coverage and no synthetic
+structured-text contexts. The frozen PR6 matrix remains the authoritative
+PR-specific gate: 37/37 passed; the unchanged PR5 matrix passed 14/14.
+
+Structural validity does not establish answer completeness or semantic quality.
+The preserved live traces show that `AGENT_V1_HYBRID_001` omits the requested
+explanation, `AGENT_V1_HYBRID_002` points to Item 7 rather than explaining cash
+flow, and `AGENT_V1_KB_002` mixes English and Thai. These are qualitative
+observations, not newly scored metrics or evidence of semantic uplift. The frozen
+secondary judge results remain separately reported below.
+
+Execution used Python 3.11.14, environment-only pytest 9.0.2, the recorded
+qwen2.5:14b-instruct and qwen3-embedding:8b digests, hosted Qwen3 reranking, a fresh
+checkpointer and Qdrant 1.16.2. Real SEC contact information was supplied only in
+the local environment. The 582-point index fingerprint was
+`6c72627b05dbec1e7f65d2132b8572b9fa12c47af711f2a12b8b776967994cee`
+before and after, using sorted Qdrant Record JSON including payloads and vectors.
+Source and sidecar hashes match PR5; equality to historical fingerprints produced
+by other methods is not claimed. The hosted reranker has no immutable service-side
+digest. RAGAS was disabled.
+
+The run took 2,583,004 ms (about 43 minutes) and exited zero. Known MCP/AnyIO
+shutdown warnings did not prevent artifact generation. A fresh focused suite on
+the same implementation passed 318 tests with one expected warning. The earlier
+full-suite result and fresh no-major-issues review remain unchanged.
+
+New immutable outputs under `artifacts/evals/agents/v1/baselines/0f8e477/`:
+
+- `summary.json`, SHA-256 `d83eaa7aef10e729adee61418cd58564fc3fcb627f28df633446b3ea514e7131`.
+- `per_query.jsonl`, SHA-256 `4840d2f646d9577d658bdb47ba7527f560bc284052c1357cffa3f757cb842836`.
+- Empty `errors.jsonl`, SHA-256 `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`.
+- `manifest.json`: redacted effective command, environment/model/corpus provenance,
+  source hashes, critical-case details, focused-test command and review reference.
+
+Earlier measurements, including the pre-live verification snapshot, all PR5
+baselines and the original failing `25e359d` evidence, remain unchanged.
+
 ## PR6 implementation evidence — 2026-09-03
 
 Implementation `0f8e477c47b7f11a8e069720b3b089e81f25cf9d` enforces explicit
@@ -41,7 +99,7 @@ All prior measurements, including initial implementation `9851ffd`, remain
 unchanged. The fresh GitHub review on `0f8e477` reported no major issues after the
 no-calculator claim bypass was fixed and the agreed semantic boundary documented.
 
-**Not release-complete:** the unchanged 15-case live gate has not run because
+**Pre-live status at the time of this entry:** the unchanged 15-case live gate had not run because
 SEC_USER_AGENT is unset and real contact information is required. No placeholder
 contact, modified expectation, weakened threshold or synthetic replacement was
 used. PR 23 remains draft pending that measurement. A temporary corpus was

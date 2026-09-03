@@ -29,8 +29,9 @@
   consistency was evaluated at `de0142ca89384aee9c1bad014879e7e83e94fc86`.
 - PR6 — implementation and deterministic grounding/degradation verification at
   `0f8e477c47b7f11a8e069720b3b089e81f25cf9d`; fresh review found no major issues.
-  The secondary semantic assessment is recorded. Release closure remains pending
-  the unchanged live gate, which requires a configured real SEC contact string.
+  The secondary semantic assessment and unchanged 15-case live gate are recorded.
+  The live gate failed on one inherited calculator-ambiguity case; release closure
+  requires its resolution or an explicit exception. PR 23 remains draft.
 
 ---
 
