@@ -124,6 +124,7 @@ _ANALYST_CACHE: "OrderedDict[str, AnalystAgent]" = OrderedDict()
 _ANALYST_BUILD_LOCKS: Dict[str, asyncio.Lock] = {}
 _ANALYST_DEFAULT_MODEL = "qwen2.5-14b-instruct-1m"
 _ANALYST_MAX_CONTEXT_ITEMS = 5
+_KB_MAX_CONTEXT_ITEMS = 3
 _ANALYST_CACHE_MAX_SIZE = 4
 _ORCHESTRATOR_LAST_PRUNE_TS = 0.0
 _ORCHESTRATOR_MCP_CLIENT: Optional[Any] = None
@@ -668,7 +669,7 @@ def _lane_issues(
     lane: str,
 ) -> list[OpenIssue]:
     prefixes = (
-        ("RETRIEVAL_", "TABLE_HYDRATION_")
+        ("RETRIEVAL_", "TABLE_HYDRATION_", "TABLE_MARKDOWN_")
         if lane == "kb"
         else ("STRUCTURED_FACT_",)
     )
@@ -701,7 +702,11 @@ def _derive_evidence_lanes(
     issues: Sequence[OpenIssue],
 ) -> tuple[_EvidenceLaneDerivation, _EvidenceLaneDerivation]:
     route = _coerce_plan_route(plan_obj)
-    context_items = list(packet.context_items) if packet is not None else []
+    context_items = (
+        list(packet.context_items[:_ANALYST_MAX_CONTEXT_ITEMS])
+        if packet is not None
+        else []
+    )
     kb_count = sum(
         1 for item in context_items if item.kind != ContextItemKind.STRUCTURED_FACT
     )
@@ -714,6 +719,23 @@ def _derive_evidence_lanes(
     )
     kb_attempted = kb_requested and isinstance(retrieval_output, dict)
     kb_issues = _lane_issues(issues, lane="kb")
+    retrieved_kb_count = (
+        sum(
+            1
+            for candidate in retrieval_output.get("top_tables") or []
+            if isinstance(candidate, dict)
+        )
+        if isinstance(retrieval_output, dict)
+        else 0
+    )
+    expected_kb_count = min(retrieved_kb_count, _KB_MAX_CONTEXT_ITEMS)
+    has_kb_admission_issue = any(
+        issue.code in {"TABLE_HYDRATION_FAILED", "TABLE_MARKDOWN_EMPTY"}
+        for issue in kb_issues
+    )
+    kb_admission_loss = kb_count < expected_kb_count or (
+        retrieved_kb_count > kb_count and has_kb_admission_issue
+    )
     if not kb_requested:
         kb_status = EvidenceLaneStatus.NOT_REQUESTED
     elif not kb_attempted:
@@ -730,7 +752,11 @@ def _derive_evidence_lanes(
         )
         kb_status = (
             EvidenceLaneStatus.PARTIAL
-            if has_failed_operation or retrieval_output.get("ok") is False
+            if (
+                has_failed_operation
+                or retrieval_output.get("ok") is False
+                or kb_admission_loss
+            )
             else EvidenceLaneStatus.OK
         )
     else:
@@ -755,6 +781,13 @@ def _derive_evidence_lanes(
     structured_attempted = structured_requested and bool(results)
     structured_issues = _lane_issues(issues, lane="structured_fact")
     operation_statuses = [_structured_operation_status(result) for result in results]
+    successful_operation_count = sum(
+        1 for status in operation_statuses if status == "ok"
+    )
+    has_invalid_evidence = any(
+        issue.code == "STRUCTURED_FACT_INVALID_EVIDENCE"
+        for issue in structured_issues
+    )
     defensive_rejections = [
         issue
         for issue in structured_issues
@@ -768,9 +801,16 @@ def _derive_evidence_lanes(
     elif structured_count:
         structured_status = (
             EvidenceLaneStatus.OK
-            if operation_statuses and all(status == "ok" for status in operation_statuses)
+            if (
+                operation_statuses
+                and all(status == "ok" for status in operation_statuses)
+                and structured_count == successful_operation_count
+                and not has_invalid_evidence
+            )
             else EvidenceLaneStatus.PARTIAL
         )
+    elif successful_operation_count:
+        structured_status = EvidenceLaneStatus.FAILED
     elif "partial" in operation_statuses:
         structured_status = EvidenceLaneStatus.PARTIAL
     elif defensive_rejections and len(defensive_rejections) == len(results):
@@ -1048,6 +1088,7 @@ def _compact_retrieval_result_for_user(*, retrieval_output: Any) -> Dict[str, An
             "target": {},
             "attempts": [],
             "targets": [],
+            "retrieved_candidate_count": 0,
         }
 
     attempts: List[Dict[str, Any]] = []
@@ -1181,6 +1222,11 @@ def _compact_retrieval_result_for_user(*, retrieval_output: Any) -> Dict[str, An
         "target": target,
         "targets": retrieval_targets,
         "attempts": attempts,
+        "retrieved_candidate_count": sum(
+            1
+            for candidate in retrieval_output.get("top_tables") or []
+            if isinstance(candidate, dict)
+        ),
     }
 
 
@@ -2439,7 +2485,7 @@ def _build_packet_from_retrieval_node(state: OrchestratorState) -> Dict[str, Any
         plan_id=state["plan_id"],
         intent=_coerce_intent(plan_obj),
         analysis_task=analysis_task,
-        max_tables=3,
+        max_tables=_KB_MAX_CONTEXT_ITEMS,
     )
     packet = _append_structured_fact_context_items(
         packet=packet,

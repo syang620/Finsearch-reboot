@@ -407,6 +407,92 @@ def test_packet_evidence_is_ordered_and_limited_to_analyst_visible_items() -> No
     assert sample["contexts"] == row.semantic_contexts
 
 
+def test_compact_kb_count_keeps_shadow_aligned_at_context_budget() -> None:
+    planner = _planner_payload("hybrid")
+    metrics = ["revenue", "net_income", "operating_income"]
+    planner["structured_fact_requests"] = [
+        {
+            **_structured_request(),
+            "subquestion": f"What was Apple {metric} in FY2024?",
+            "metric_hint": metric,
+        }
+        for metric in metrics
+    ]
+    structured_items = [
+        ContextItem(
+            context_id=f"ctx_structured_{index}",
+            kind=ContextItemKind.STRUCTURED_FACT,
+            source=SourceRef(ticker="AAPL", fiscal_year=2024),
+            structured_fact=StructuredFactEvidence(
+                metric_id=metric,
+                metric_label=metric.replace("_", " ").title(),
+                value=float(index),
+                ticker="AAPL",
+                fiscal_year=2024,
+            ),
+        )
+        for index, metric in enumerate(metrics, start=1)
+    ]
+    kb_items = [
+        item.model_copy(update={"context_id": f"ctx_kb_{index}"})
+        for index, item in enumerate(_packet(context_count=3).context_items, start=1)
+    ]
+    packet = _packet(context_count=0)
+    packet.context_items = [*structured_items, *kb_items]
+    structured_results = []
+    for metric in metrics:
+        result = _structured_result()
+        result.update(
+            {
+                "subquestion": f"What was Apple {metric} in FY2024?",
+                "metric_hint": metric,
+                "resolved_metric_id": metric,
+            }
+        )
+        result["tool_result"]["metric_id"] = metric
+        structured_results.append(result)
+
+    output = _format_run_output(
+        run_id="run-1",
+        state_snapshot=SimpleNamespace(
+            values={
+                "plan_obj": planner,
+                "planner_dump": planner,
+                "retrieval_output": {
+                    "ok": True,
+                    "top_tables": [
+                        {"doc_id": f"kb-candidate-{index}"}
+                        for index in range(1, 4)
+                    ],
+                },
+                "structured_fact_results": structured_results,
+                "packet": packet,
+                "analyst_result": AnalystRunResult.model_validate(_analyst_result()),
+                "include_evidence_trace": True,
+            },
+            interrupts=(),
+        ),
+    )
+
+    assert output["retrieval"]["retrieved_candidate_count"] == 3
+    assert output["lanes"]["kb"]["status"] == "partial"
+    row, errors, _sample = evaluate_run_output(
+        _example(
+            "hybrid",
+            expected_reported_status="degraded",
+            expected_effective_status="degraded",
+            allow_degraded=True,
+        ),
+        output,
+    )
+
+    assert errors == []
+    assert row.derived_lane_status.kb.status == "partial"
+    assert row.derived_lane_status.kb.usable_evidence_count == 2
+    assert row.lane_status_consistent is True
+    assert "LANE_STATUS_INCONSISTENT" not in row.deterministic.critical_failures
+
+
 def test_typed_structured_evidence_is_visible_and_measured() -> None:
     output = _run_output("hybrid")
     output["structured_fact_results"][0]["tool_result"].update(
@@ -862,6 +948,109 @@ def test_lane_derivation_reports_partial_multi_target_kb() -> None:
     lanes, _metrics, _statuses = derive_lane_status(output)
 
     assert lanes.kb.status == "partial"
+
+
+@pytest.mark.parametrize(
+    "issue_code",
+    ["TABLE_HYDRATION_FAILED", "TABLE_MARKDOWN_EMPTY"],
+)
+def test_shadow_kb_lane_detects_partial_admission_loss(issue_code: str) -> None:
+    output = _run_output("kb", reported_status="degraded")
+    output["retrieval"]["targets"][0]["tables_retrieved"] = 2
+    output["retrieval"]["attempts"][0]["results"] = [
+        {"doc_id": "missing::table::0", "score": 1.0},
+        {"doc_id": "usable::text::1", "score": 0.9},
+    ]
+    hydration_issue = {
+        "code": issue_code,
+        "message": "One retrieved table could not be admitted.",
+        "severity": "warning",
+    }
+    output["open_issues"] = [hydration_issue]
+    output["evaluation_trace"]["analyst_packet"]["open_issues"] = [
+        hydration_issue
+    ]
+
+    row, errors, _sample = evaluate_run_output(
+        _example(
+            "kb",
+            expected_reported_status="degraded",
+            expected_effective_status="degraded",
+            allow_degraded=True,
+        ),
+        output,
+    )
+
+    assert errors == []
+    assert row.derived_lane_status.kb.status == "partial"
+    assert row.derived_lane_status.kb.usable
+    assert row.derived_lane_status.kb.usable_evidence_count == 1
+    assert row.effective_status == "degraded"
+    assert row.analyst_status == "ok"
+
+    _clear_packet_context(output)
+    output["retrieval"]["targets"][0]["tables_retrieved"] = 1
+    lanes, _metrics, _statuses = derive_lane_status(output)
+
+    assert lanes.kb.status == "failed"
+    assert not lanes.kb.usable
+
+
+def test_shadow_structured_lane_detects_tool_ok_admission_rejection() -> None:
+    output = _run_output("structured_fact", reported_status="degraded")
+    output["planner"]["structured_fact_requests"].append(
+        {
+            **_structured_request(),
+            "subquestion": "What was Apple net income in FY2024?",
+            "metric_hint": "net_income",
+        }
+    )
+    output["structured_fact_results"][0]["tool_result"]["value"] = (
+        391_000_000_000.0
+    )
+    rejected_result = _structured_result()
+    rejected_result.update(
+        {
+            "subquestion": "What was Apple net income in FY2024?",
+            "metric_hint": "net_income",
+            "resolved_metric_id": "net_income",
+        }
+    )
+    rejected_result["tool_result"].update(
+        {"metric_id": "net_income", "value": "not-numeric"}
+    )
+    output["structured_fact_results"].append(rejected_result)
+    invalid_issue = {
+        "code": "STRUCTURED_FACT_INVALID_EVIDENCE",
+        "message": "One successful result failed PR4 admission.",
+        "severity": "error",
+    }
+    output["open_issues"] = [invalid_issue]
+    output["evaluation_trace"]["analyst_packet"]["open_issues"] = [invalid_issue]
+
+    row, errors, _sample = evaluate_run_output(
+        _example(
+            "structured_fact",
+            expected_reported_status="degraded",
+            expected_effective_status="degraded",
+            allow_degraded=True,
+        ),
+        output,
+    )
+
+    assert errors == []
+    assert row.structured_statuses == ["ok", "ok"]
+    assert row.derived_lane_status.structured_fact.status == "partial"
+    assert row.derived_lane_status.structured_fact.usable
+    assert row.derived_lane_status.structured_fact.usable_evidence_count == 1
+    assert row.effective_status == "degraded"
+    assert row.analyst_status == "ok"
+
+    _clear_packet_context(output)
+    lanes, _metrics, _statuses = derive_lane_status(output)
+
+    assert lanes.structured_fact.status == "failed"
+    assert not lanes.structured_fact.usable
 
 
 def test_shared_runner_selects_v1_and_requests_evidence_trace(

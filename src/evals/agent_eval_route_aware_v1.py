@@ -41,6 +41,12 @@ _FAILURE_STAGES = {
     "analyst",
     "interrupted",
 }
+_KB_PACKET_EVIDENCE_LIMIT = 3
+_KB_ADMISSION_LOSS_CODES = {
+    "TABLE_HYDRATION_FAILED",
+    "TABLE_MARKDOWN_EMPTY",
+}
+_STRUCTURED_ADMISSION_LOSS_CODE = "STRUCTURED_FACT_INVALID_EVIDENCE"
 
 
 def _normalize_text(value: Any) -> Optional[str]:
@@ -115,6 +121,66 @@ def _packet_from_trace(run_output: Dict[str, Any]) -> Optional[AnalystPacket]:
         return None
 
 
+def _analyst_issue_codes(
+    run_output: Dict[str, Any],
+    packet: Optional[AnalystPacket],
+) -> set[str]:
+    codes = {
+        normalized.upper()
+        for issue in run_output.get("open_issues") or []
+        if isinstance(issue, dict)
+        and (normalized := _normalize_text(issue.get("code")))
+    }
+    if packet is not None:
+        codes.update(
+            normalized.upper()
+            for issue in packet.open_issues
+            if (normalized := _normalize_text(issue.code))
+        )
+    return codes
+
+
+def _retrieved_kb_candidate_count(
+    retrieval: Dict[str, Any],
+) -> Tuple[Optional[int], bool]:
+    compact_count = _normalize_int(retrieval.get("retrieved_candidate_count"))
+    if compact_count is not None:
+        return max(0, compact_count), True
+
+    top_tables = retrieval.get("top_tables")
+    if isinstance(top_tables, list):
+        return sum(isinstance(item, dict) for item in top_tables), True
+
+    targets = [
+        item for item in retrieval.get("targets") or [] if isinstance(item, dict)
+    ]
+    target_counts = [
+        _normalize_int(item.get("tables_retrieved")) for item in targets
+    ]
+    known_target_counts = [
+        max(0, int(count)) for count in target_counts if count is not None
+    ]
+
+    attempt_result_counts: List[int] = []
+    observed_doc_ids: set[str] = set()
+    for item in retrieval.get("attempts") or []:
+        if not isinstance(item, dict) or not isinstance(item.get("results"), list):
+            continue
+        results = [result for result in item["results"] if isinstance(result, dict)]
+        attempt_result_counts.append(len(results))
+        observed_doc_ids.update(
+            doc_id
+            for result in results
+            if (doc_id := _normalize_text(result.get("doc_id")))
+        )
+    observed_counts = known_target_counts + attempt_result_counts
+    if observed_doc_ids:
+        observed_counts.append(len(observed_doc_ids))
+    if observed_counts:
+        return max(observed_counts), False
+    return None, False
+
+
 def _derive_kb_lane(
     run_output: Dict[str, Any],
     packet: Optional[AnalystPacket],
@@ -138,12 +204,38 @@ def _derive_kb_lane(
         or retrieval.get("ok") is True
         or retrieval.get("target")
     )
+    visible_items = (
+        packet.context_items[:ANALYST_CONTEXT_ITEM_LIMIT]
+        if packet is not None
+        else []
+    )
     usable_evidence_count = sum(
         1
-        for item in (packet.context_items if packet is not None else [])
+        for item in visible_items
         if item.kind != ContextItemKind.STRUCTURED_FACT
     )
     usable = usable_evidence_count > 0
+    issue_codes = _analyst_issue_codes(run_output, packet)
+    retrieved_candidate_count, exact_candidate_count = (
+        _retrieved_kb_candidate_count(retrieval)
+    )
+    expected_admission_count = (
+        min(retrieved_candidate_count, _KB_PACKET_EVIDENCE_LIMIT)
+        if retrieved_candidate_count is not None
+        else None
+    )
+    has_admission_issue = bool(
+        issue_codes.intersection(_KB_ADMISSION_LOSS_CODES)
+    )
+    admission_loss = bool(
+        expected_admission_count is not None
+        and usable_evidence_count < expected_admission_count
+        and (exact_candidate_count or has_admission_issue)
+    ) or bool(
+        retrieved_candidate_count is not None
+        and usable_evidence_count < retrieved_candidate_count
+        and has_admission_issue
+    )
 
     if not requested:
         status = "not_requested"
@@ -151,15 +243,11 @@ def _derive_kb_lane(
         status = "skipped"
     elif usable:
         failed_runs = sum(int(item.get("failed_runs") or 0) for item in targets)
-        issue_codes = {
-            _normalize_text(issue.get("code"))
-            for issue in run_output.get("open_issues") or []
-            if isinstance(issue, dict)
-        }
         if (
             failed_runs
             or retrieval.get("ok") is False
             or "RETRIEVAL_PARTIAL_FAILURE" in issue_codes
+            or admission_loss
         ):
             status = "partial"
         else:
@@ -206,14 +294,25 @@ def _derive_structured_lane(
         if isinstance(item, dict)
     ]
     attempted = bool(results)
+    visible_items = (
+        packet.context_items[:ANALYST_CONTEXT_ITEM_LIMIT]
+        if packet is not None
+        else []
+    )
     usable_evidence_count = sum(
         1
-        for item in (packet.context_items if packet is not None else [])
+        for item in visible_items
         if item.kind == ContextItemKind.STRUCTURED_FACT
     )
     usable = usable_evidence_count > 0
 
     statuses = [_structured_result_status(result) for result in results]
+    successful_result_count = sum(status == "ok" for status in statuses)
+    issue_codes = _analyst_issue_codes(run_output, packet)
+    admission_loss = (
+        successful_result_count != usable_evidence_count
+        or _STRUCTURED_ADMISSION_LOSS_CODE in issue_codes
+    )
     metric_ids = [
         metric_id
         for result in results
@@ -224,8 +323,15 @@ def _derive_structured_lane(
         aggregate_status = "not_requested"
     elif not attempted:
         aggregate_status = "skipped"
-    elif usable and all(status == "ok" for status in statuses):
+    elif (
+        usable
+        and statuses
+        and all(status == "ok" for status in statuses)
+        and not admission_loss
+    ):
         aggregate_status = "ok"
+    elif successful_result_count and not usable:
+        aggregate_status = "failed"
     elif usable or "partial" in statuses:
         aggregate_status = "partial"
     elif statuses and all(status == "ambiguous" for status in statuses):

@@ -15,9 +15,44 @@ def test_frozen_degradation_matrix_is_complete_and_consistent() -> None:
     cases = load_degradation_cases(DATASET)
     result = evaluate_degradation_matrix(cases)
 
-    assert len(cases) == 11
-    assert set(result["summary"].values()) == {11, 1.0}
+    assert len(cases) == 13
+    assert set(result["summary"].values()) == {13, 1.0}
     assert all(row["checks"]["overall_correct"] for row in result["rows"])
+
+
+def test_degradation_matrix_covers_admission_loss() -> None:
+    rows = {
+        row["id"]: row
+        for row in evaluate_degradation_matrix(
+            load_degradation_cases(DATASET)
+        )["rows"]
+    }
+
+    kb = rows["PR5_KB_ADMISSION_PARTIAL"]["output"]
+    kb_packet = kb["evaluation_trace"]["analyst_packet"]
+    assert kb["retrieval"]["targets"][0]["tables_retrieved"] == 2
+    assert len(kb_packet["context_items"]) == 1
+    assert {issue["code"] for issue in kb_packet["open_issues"]} == {
+        "TABLE_HYDRATION_FAILED"
+    }
+    assert kb["lanes"]["kb"]["status"] == "partial"
+    assert kb["status"] == "degraded"
+    assert kb["analyst"] is not None
+
+    structured = rows["PR5_STRUCTURED_MIXED_ADMISSION"]["output"]
+    structured_packet = structured["evaluation_trace"]["analyst_packet"]
+    assert len(structured["planner"]["structured_fact_requests"]) == 2
+    assert [
+        result["tool_result"]["status"]
+        for result in structured["structured_fact_results"]
+    ] == ["ok", "ok"]
+    assert len(structured_packet["context_items"]) == 1
+    assert {issue["code"] for issue in structured_packet["open_issues"]} == {
+        "STRUCTURED_FACT_INVALID_EVIDENCE"
+    }
+    assert structured["lanes"]["structured_fact"]["status"] == "partial"
+    assert structured["status"] == "degraded"
+    assert structured["analyst"] is not None
 
 
 def test_degradation_matrix_preserves_analyst_failure_diagnostics() -> None:

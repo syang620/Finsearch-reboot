@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Literal, Optional, Sequence
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
-from agents.analyst import AnalystRunResult
+from agents.analyst import AnalystRunResult, build_packet_from_retrieval_output
 from agents.contracts import (
     AnalysisTask,
     AnalystPacket,
@@ -21,6 +21,7 @@ from agents.contracts import (
     StructuredFactEvidence,
 )
 from agents.orchestrator.agent_orchestrator import (
+    _append_structured_fact_context_items,
     _format_run_output,
     _packet_with_evidence_status,
 )
@@ -31,7 +32,16 @@ from evals.agent_eval_route_aware_v1 import (
 )
 
 
-LaneFixture = Literal["not_requested", "ok", "partial_usable", "partial", "failed", "skipped"]
+LaneFixture = Literal[
+    "not_requested",
+    "ok",
+    "partial_usable",
+    "kb_admission_partial",
+    "structured_mixed_admission",
+    "partial",
+    "failed",
+    "skipped",
+]
 AnalystFixture = Literal["ok", "failed", "skipped"]
 
 
@@ -79,24 +89,31 @@ def load_degradation_cases(path: str | Path) -> List[DegradationCase]:
 def _planner(case: DegradationCase) -> dict:
     kb_requested = case.kb != "not_requested"
     structured_requested = case.structured_fact != "not_requested"
+    structured_fact_requests = [
+        {
+            "subquestion": "What was Apple revenue in FY2024?",
+            "metric_hint": "revenue",
+            "entity_hint": "Apple",
+            "fiscal_year": 2024,
+            "fiscal_period": "FY",
+        }
+    ]
+    if case.structured_fact == "structured_mixed_admission":
+        structured_fact_requests.append(
+            {
+                "subquestion": "What was Apple net income in FY2024?",
+                "metric_hint": "net_income",
+                "entity_hint": "Apple",
+                "fiscal_year": 2024,
+                "fiscal_period": "FY",
+            }
+        )
     return {
         "status": "completed",
         "retrieval_needed": kb_requested,
         "intent": case.intent.value,
         "route": case.route,
-        "structured_fact_requests": (
-            [
-                {
-                    "subquestion": "What was Apple revenue in FY2024?",
-                    "metric_hint": "revenue",
-                    "entity_hint": "Apple",
-                    "fiscal_year": 2024,
-                    "fiscal_period": "FY",
-                }
-            ]
-            if structured_requested
-            else []
-        ),
+        "structured_fact_requests": structured_fact_requests if structured_requested else [],
         "metadata": {
             "ticker": "AAPL" if case.intent != PlannerIntent.DEFINITION else None,
             "company_name": "Apple" if case.intent != PlannerIntent.DEFINITION else None,
@@ -178,6 +195,61 @@ def _structured_context() -> ContextItem:
 def _retrieval_fixture(outcome: LaneFixture) -> Optional[dict]:
     if outcome in {"not_requested", "skipped"}:
         return None
+    if outcome == "kb_admission_partial":
+        candidates = [
+            {
+                "doc_id": "pr5-missing-table",
+                "doc_type": "table",
+                "table": {
+                    "payload": {
+                        "doc_id": "pr5-missing-table",
+                        "doc_type": "table",
+                    }
+                },
+            },
+            {
+                "doc_id": "pr5-usable-text",
+                "doc_type": "text",
+                "table": {
+                    "payload": {
+                        "doc_id": "pr5-usable-text",
+                        "doc_type": "text",
+                        "content": "Apple reported FY2024 revenue in its Form 10-K.",
+                        "ticker": "AAPL",
+                        "fiscal_year": 2024,
+                        "form_type": "10-K",
+                    }
+                },
+            },
+        ]
+        target = {"ticker": "AAPL", "fiscal_year": 2024, "form_type": "10-K"}
+        return {
+            "ok": True,
+            "top_tables": candidates,
+            "partial_failures": [],
+            "metadata_used": target,
+            "targets": [{"target_id": 1, **target}],
+            "trace": {
+                "runs": [
+                    {
+                        "target": target,
+                        "attempts": [
+                            {
+                                "attempt_index": 1,
+                                "request": {
+                                    "queries": ["Apple FY2024 revenue"],
+                                    "top_k": 2,
+                                },
+                                "retrieval": {"ok": True, "top_tables": candidates},
+                            }
+                        ],
+                        "final_retrieval": {"ok": True, "top_tables": candidates},
+                        "review_feedback": {"action": "accept"},
+                    }
+                ]
+            },
+            "error": None,
+        }
     usable = outcome in {"ok", "partial_usable"}
     return {
         "ok": usable,
@@ -205,6 +277,43 @@ def _retrieval_fixture(outcome: LaneFixture) -> Optional[dict]:
 def _structured_fixture(outcome: LaneFixture) -> List[dict]:
     if outcome in {"not_requested", "skipped"}:
         return []
+    if outcome == "structured_mixed_admission":
+        return [
+            {
+                "subquestion": "What was Apple revenue in FY2024?",
+                "metric_hint": "revenue",
+                "resolved_ticker": "AAPL",
+                "resolved_fiscal_year": 2024,
+                "resolved_metric_id": "revenue",
+                "resolver_status": "resolved",
+                "resolver_reason": "Supported metric.",
+                "tool_result": {
+                    "ok": True,
+                    "status": "ok",
+                    "metric_id": "revenue",
+                    "value": 391_000_000_000.0,
+                    "missing_component_groups": [],
+                    "error": None,
+                },
+            },
+            {
+                "subquestion": "What was Apple net income in FY2024?",
+                "metric_hint": "net_income",
+                "resolved_ticker": "AAPL",
+                "resolved_fiscal_year": 2024,
+                "resolved_metric_id": "net_income",
+                "resolver_status": "resolved",
+                "resolver_reason": "Supported metric.",
+                "tool_result": {
+                    "ok": True,
+                    "status": "ok",
+                    "metric_id": "net_income",
+                    "value": "invalid numeric payload",
+                    "missing_component_groups": [],
+                    "error": None,
+                },
+            },
+        ]
     status = "ok" if outcome == "ok" else "partial" if outcome == "partial" else "error"
     return [
         {
@@ -229,31 +338,44 @@ def _structured_fixture(outcome: LaneFixture) -> List[dict]:
 
 def run_fault_injected_case(case: DegradationCase) -> Dict[str, Any]:
     plan = _planner(case)
+    retrieval_output = _retrieval_fixture(case.kb)
+    structured_results = _structured_fixture(case.structured_fact)
     items: List[ContextItem] = []
     if case.kb in {"ok", "partial_usable"}:
         items.append(_kb_context())
     if case.structured_fact == "ok":
         items.insert(0, _structured_context())
-    packet = AnalystPacket(
-        plan_id=case.id,
-        user_query=plan["original_user_query"],
-        intent=case.intent,
-        metadata=FilingMetadata.model_validate(plan["metadata"]),
-        analysis_task=AnalysisTask.model_validate(plan["analysis_task"]),
-        context_items=items,
-        open_issues=(
-            [
-                OpenIssue(
-                    code="RETRIEVAL_PARTIAL_FAILURE",
-                    message="A fault-injected retrieval operation failed.",
-                )
-            ]
-            if case.kb == "partial_usable"
-            else []
-        ),
-    )
-    retrieval_output = _retrieval_fixture(case.kb)
-    structured_results = _structured_fixture(case.structured_fact)
+    packet_issues: List[OpenIssue] = []
+    if case.kb == "partial_usable":
+        packet_issues.append(
+            OpenIssue(
+                code="RETRIEVAL_PARTIAL_FAILURE",
+                message="A fault-injected retrieval operation failed.",
+            )
+        )
+    if case.kb == "kb_admission_partial":
+        packet = build_packet_from_retrieval_output(
+            plan_id=case.id,
+            user_query=plan["original_user_query"],
+            intent=case.intent,
+            analysis_task=plan["analysis_task"],
+            retrieval_output=retrieval_output,
+        )
+    else:
+        packet = AnalystPacket(
+            plan_id=case.id,
+            user_query=plan["original_user_query"],
+            intent=case.intent,
+            metadata=FilingMetadata.model_validate(plan["metadata"]),
+            analysis_task=AnalysisTask.model_validate(plan["analysis_task"]),
+            context_items=items,
+            open_issues=packet_issues,
+        )
+    if case.structured_fact == "structured_mixed_admission":
+        packet = _append_structured_fact_context_items(
+            packet=packet,
+            structured_fact_results=structured_results,
+        )
     state: Dict[str, Any] = {
         "plan_obj": plan,
         "planner_dump": plan,

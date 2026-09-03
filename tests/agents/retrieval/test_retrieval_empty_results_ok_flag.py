@@ -56,6 +56,7 @@ class RetrievalOkFlagTests(unittest.TestCase):
             }
         )
         self.assertFalse(compact.get("ok"))
+        self.assertEqual(compact.get("retrieved_candidate_count"), 1)
 
 
 if __name__ == "__main__":
