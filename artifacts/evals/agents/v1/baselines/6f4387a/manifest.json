@@ -1,0 +1,318 @@
+{
+  "evaluated_implementation": "6f4387aa1a30f5a3fac7f88cadd44f4b4c3b1b54",
+  "recorded_at_utc": "2026-09-03T22:39:31.960964+00:00",
+  "measurement_finished_at_utc": "2026-09-03T22:36:57.748968+00:00",
+  "tracked_worktree_clean_at_measurement": true,
+  "run_count": 1,
+  "evaluator_exit_code": 0,
+  "python": "3.11.14",
+  "pytest_version": "9.0.2",
+  "pytest_installation": "Environment-only in finsearch-arm; no dependency or lockfile changes.",
+  "dataset": "data/evals/agents/v1/agent_eval_routing_v1.jsonl",
+  "dataset_sha256": "c0fbdd097d7fa1b3eb22953a3ba4e8c0e84aa70a8786e08ba78a3b305cabe6cd",
+  "model_provenance": {
+    "planner_model": "ollama/qwen2.5:14b-instruct",
+    "analyst_model": "ollama/qwen2.5:14b-instruct",
+    "ollama_model_digest": "7cdf5a0187d5c58cc5d369b255592f7841d1c4696d45a8c8a9489440385b22f6",
+    "embedding_model": "qwen3-embedding:8b",
+    "embedding_model_digest": "64b933495768fbd3b87c20583d379728a07471e0c66733a9df87cd1901b3c44b",
+    "reranker_model": "Qwen/Qwen3-Reranker-8B"
+  },
+  "qdrant": {
+    "version": "1.16.2",
+    "collection": "sec_docs_dense_bm25_pr2_63dcec0",
+    "image_id": "sha256:cc45a127ebb7113d2ffeb7e2e012e8029f8b0af31f7ea8d139f6ac89a5ac81a7",
+    "preflight_status": "green",
+    "before": {
+      "points": 582,
+      "sha256": "6c72627b05dbec1e7f65d2132b8572b9fa12c47af711f2a12b8b776967994cee",
+      "method": "sorted Qdrant Record JSON including payload and vectors; compact sorted keys"
+    },
+    "after": {
+      "points": 582,
+      "sha256": "6c72627b05dbec1e7f65d2132b8572b9fa12c47af711f2a12b8b776967994cee",
+      "method": "sorted Qdrant Record JSON including payload and vectors; compact sorted keys"
+    },
+    "unchanged": true,
+    "historical_equivalence": "Fingerprint method and fingerprint match the immediately preceding PR6 0f8e477 run; no broader historical equivalence claim."
+  },
+  "corpus_provenance": {
+    "source_html": "data/html_filings/AAPL/10-K/10-K_2024.html",
+    "source_html_sha256": "24a830a0f1256e371d36a1f7f72e5e85a38037d1de2f6f966eb8457db42ff6d6",
+    "sidecars": [
+      {
+        "path": "data/chunked/AAPL/10-K/10-K_2024.text.jsonl",
+        "rows": 101,
+        "sha256": "a2035e3048c9d69945a6851e9f92b6eb64d97ea15ef1ab8fe1812b25e8cd08e0"
+      },
+      {
+        "path": "data/chunked/AAPL/10-K/10-K_2024.tables.jsonl",
+        "rows": 48,
+        "sha256": "a60a91dd358656c3667b9700a4e3a2fde5558a67900f62c0a22893fdaf2a6b1d"
+      },
+      {
+        "path": "data/chunked/AAPL/10-K/10-K_2024.text.split.jsonl",
+        "rows": 107,
+        "sha256": "856f6aec30636750141a695d864eb08da182160e25143b393b49bc7769436f71"
+      }
+    ],
+    "embedding_sidecars": [
+      {
+        "path": "data/embedding/AAPL/10-K/AAPL_10-K_2024.tables.embedded.jsonl",
+        "sha256": "c37c5194988377935a2de56748bf06a7261d29dacc14a0442660428701d81942"
+      },
+      {
+        "path": "data/embedding/AAPL/10-K/AAPL_10-K_2024.tables.rows.embedded.jsonl",
+        "sha256": "8ffbf13766976fc45d7af0cbf3c2d9678aa88672e515df717d655315f75e5115"
+      },
+      {
+        "path": "data/embedding/AAPL/10-K/AAPL_10-K_2024.text.embedded.jsonl",
+        "sha256": "4918039fa559d692beabdb30c473b1cc2fcff9794818fc7369fe90194941a92e"
+      }
+    ]
+  },
+  "execution": {
+    "launch_command_redacted": "SEC_USER_AGENT='<SEC_CONTACT>' conda run -n finsearch-arm --no-capture-output env PYTHONPATH=.:src python <LOCAL_LIVE_DRIVER>",
+    "effective_evaluator_command": "DASHSCOPE_API_KEY='<RERANKER_CREDENTIAL>' QWEN3_RERANK_MODEL=Qwen/Qwen3-Reranker-8B SEC_RERANK_MODEL=Qwen/Qwen3-Reranker-8B QWEN3_EMBED_API_URL=http://127.0.0.1:11434/api/embed QWEN3_EMBED_MODEL=qwen3-embedding:8b QDRANT_URL=http://127.0.0.1:6333 QDRANT_HOST=127.0.0.1 QDRANT_PORT=6333 QDRANT_COLLECTION_NAME=sec_docs_dense_bm25_pr2_63dcec0 SEC_USER_AGENT='<SEC_CONTACT>' FINSEARCH_ORCHESTRATOR_CHECKPOINTER_PATH='<CHECKPOINTER_DB>' PYTHONPATH=.:src conda run -n finsearch-arm --no-capture-output python scripts/evals/agents/eval_agents_v1.py --eval-path data/evals/agents/v1/agent_eval_routing_v1.jsonl --out-dir artifacts/evals/agents/v1/baselines/6f4387a --planner-model ollama/qwen2.5:14b-instruct --analyst-model ollama/qwen2.5:14b-instruct --deterministic-threshold 0.90 --max-critical-failure-rate 0",
+    "driver_note": "Local driver loads repository .env, applies the recorded environment, asserts a clean tracked checkout and new output directory, fingerprints Qdrant before/after, and calls the unchanged CLI entry point with these arguments.",
+    "local_driver_sha256": "0d694c5371dd6b271b3a95aa46d19b829fb266a2ec6305b9e103709eb93dcede",
+    "sec_contact": "Real user-supplied contact passed via local process environment; omitted from committed files.",
+    "checkpointer": "Fresh local database dedicated to this implementation; local path omitted.",
+    "ragas_enabled": false,
+    "deterministic_threshold": 0.9,
+    "max_critical_failure_rate": 0
+  },
+  "result": {
+    "num_queries": 15,
+    "num_valid_queries": 15,
+    "num_failures": 0,
+    "deterministic": {
+      "score_mean": 0.926785919045981,
+      "contract_valid_rate": 1.0,
+      "intent_match_rate": 1.0,
+      "route_match_rate": 1.0,
+      "metadata_match_rate": 1.0,
+      "kb_lane_match_rate": 1.0,
+      "structured_lane_match_rate": 1.0,
+      "structured_metric_match_rate": 1.0,
+      "structured_status_match_rate": 1.0,
+      "reported_status_match_rate": 0.7333333333333333,
+      "effective_status_match_rate": 0.7333333333333333,
+      "failure_stage_match_rate": 0.7333333333333333,
+      "degradation_match_rate": 1.0,
+      "lane_status_consistent_rate": 1.0,
+      "effective_status_consistent_rate": 1.0,
+      "failure_stage_consistent_rate": 1.0,
+      "degradation_consistent_rate": 1.0,
+      "analyst_status_match_rate": 0.6923076923076923,
+      "tool_use_match_rate": 1.0,
+      "compute_match_rate": 0.0,
+      "citation_match_rate": 0.6666666666666666,
+      "grounding_consistent_rate": 1.0,
+      "critical_failure_rate": 0.26666666666666666,
+      "planner_ms_mean": 36550.2,
+      "retrieval_ms_mean": 55055.53333333333,
+      "structured_fact_ms_mean": 253.53333333333333,
+      "analyst_ms_mean": 117261.93333333333,
+      "total_ms_mean": 209204.0,
+      "structured_successful_execution_results": 7.0,
+      "structured_typed_contexts": 7.0,
+      "structured_analyst_visible_typed_contexts": 7.0,
+      "structured_synthetic_text_contexts": 0.0,
+      "structured_typed_representation_rate": 1.0,
+      "structured_analyst_visibility_rate": 1.0,
+      "structured_metric_id_coverage_rate": 1.0,
+      "structured_numeric_value_coverage_rate": 1.0,
+      "structured_accession_coverage_rate": 1.0,
+      "structured_report_date_coverage_rate": 1.0,
+      "structured_filed_date_coverage_rate": 1.0,
+      "structured_source_url_coverage_rate": 1.0
+    },
+    "ragas": {},
+    "gate": {
+      "deterministic_gate_pass": false,
+      "ragas_gate_pass": true,
+      "overall_pass": false
+    },
+    "config": {
+      "mode": "route_aware_v1",
+      "eval_path": "data/evals/agents/v1/agent_eval_routing_v1.jsonl",
+      "analyst_model": "ollama/qwen2.5:14b-instruct",
+      "planner_model": "ollama/qwen2.5:14b-instruct",
+      "enable_ragas": false,
+      "thresholds": {
+        "deterministic_score_min": 0.9,
+        "max_critical_failure_rate": 0.0,
+        "ragas_faithfulness_min": 0.75,
+        "ragas_answer_relevancy_min": 0.75,
+        "max_ragas_error_rate": 0.1
+      },
+      "timing_ms": {
+        "total": 3138636
+      }
+    }
+  },
+  "critical_cases": [
+    {
+      "id": "AGENT_V1_SF_004",
+      "critical_failures": [
+        "REPORTED_STATUS_MISMATCH",
+        "EFFECTIVE_STATUS_MISMATCH",
+        "FAILURE_STAGE_MISMATCH",
+        "ANALYST_STATUS_MISMATCH",
+        "CITATION_MINIMUM_NOT_MET"
+      ],
+      "reported_status": "failed",
+      "failure_stage": "analyst",
+      "analyst_status": "error",
+      "analyst_error": "ANALYST_OUTPUT_INVALID",
+      "grounding": {}
+    },
+    {
+      "id": "AGENT_V1_HYBRID_002",
+      "critical_failures": [
+        "REPORTED_STATUS_MISMATCH",
+        "EFFECTIVE_STATUS_MISMATCH",
+        "FAILURE_STAGE_MISMATCH",
+        "ANALYST_STATUS_MISMATCH",
+        "CITATION_MINIMUM_NOT_MET"
+      ],
+      "reported_status": "failed",
+      "failure_stage": "analyst",
+      "analyst_status": "grounding_error",
+      "analyst_error": "ANALYST_GROUNDING_INVALID",
+      "grounding": {
+        "consistent": true
+      }
+    },
+    {
+      "id": "AGENT_V1_HYBRID_003",
+      "critical_failures": [
+        "REPORTED_STATUS_MISMATCH",
+        "EFFECTIVE_STATUS_MISMATCH",
+        "FAILURE_STAGE_MISMATCH",
+        "ANALYST_STATUS_MISMATCH",
+        "CITATION_MINIMUM_NOT_MET"
+      ],
+      "reported_status": "failed",
+      "failure_stage": "analyst",
+      "analyst_status": "grounding_error",
+      "analyst_error": "ANALYST_GROUNDING_INVALID",
+      "grounding": {
+        "consistent": true
+      }
+    },
+    {
+      "id": "AGENT_V1_ANALYST_001",
+      "critical_failures": [
+        "REPORTED_STATUS_MISMATCH",
+        "EFFECTIVE_STATUS_MISMATCH",
+        "FAILURE_STAGE_MISMATCH",
+        "ANALYST_STATUS_MISMATCH",
+        "CITATION_MINIMUM_NOT_MET"
+      ],
+      "reported_status": "failed",
+      "failure_stage": "analyst",
+      "analyst_status": "error",
+      "analyst_error": "ANALYST_OUTPUT_INVALID",
+      "grounding": {}
+    }
+  ],
+  "calculator_target_case": [
+    {
+      "id": "AGENT_V1_ANALYST_001",
+      "reported_status": "failed",
+      "effective_status": "failed",
+      "failure_stage": "analyst",
+      "analyst_status": "error",
+      "grounding": {},
+      "deterministic": {
+        "contract_valid": true,
+        "intent_match": true,
+        "route_match": true,
+        "metadata_match": true,
+        "kb_lane_match": true,
+        "structured_lane_match": true,
+        "structured_metric_match": null,
+        "structured_status_match": null,
+        "reported_status_match": false,
+        "effective_status_match": false,
+        "failure_stage_match": false,
+        "degradation_match": true,
+        "lane_status_consistent": true,
+        "effective_status_consistent": true,
+        "failure_stage_consistent": true,
+        "degradation_consistent": true,
+        "analyst_status_match": false,
+        "tool_use_match": true,
+        "compute_match": null,
+        "citation_match": false,
+        "grounding_consistent": null,
+        "score": 0.7058823529411765,
+        "weighted_components": {
+          "contract_valid": 1.0,
+          "intent_match": 1.0,
+          "route_match": 1.0,
+          "metadata_match": 1.0,
+          "kb_lane_match": 1.0,
+          "structured_lane_match": 1.0,
+          "reported_status_match": 0.0,
+          "effective_status_match": 0.0,
+          "failure_stage_match": 0.0,
+          "degradation_match": 1.0,
+          "lane_status_consistent": 1.0,
+          "effective_status_consistent": 1.0,
+          "failure_stage_consistent": 1.0,
+          "degradation_consistent": 1.0,
+          "analyst_status_match": 0.0,
+          "tool_use_match": 1.0,
+          "citation_match": 0.0
+        },
+        "critical_failures": [
+          "REPORTED_STATUS_MISMATCH",
+          "EFFECTIVE_STATUS_MISMATCH",
+          "FAILURE_STAGE_MISMATCH",
+          "ANALYST_STATUS_MISMATCH",
+          "CITATION_MINIMUM_NOT_MET"
+        ]
+      }
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "artifacts/evals/agents/v1/baselines/6f4387a/summary.json",
+      "sha256": "6ee2079db66cd25f1f348d523780cbf8d0aeafca29d81efb86072f35beaaa383"
+    },
+    {
+      "path": "artifacts/evals/agents/v1/baselines/6f4387a/per_query.jsonl",
+      "sha256": "4d0d185163e61c37c3296403796e079c258cfa75d4daa775532125cfb2f55a2e"
+    },
+    {
+      "path": "artifacts/evals/agents/v1/baselines/6f4387a/errors.jsonl",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "review": {
+    "url": "https://github.com/syang620/Finsearch-reboot/pull/24#issuecomment-5532540546",
+    "reviewed_implementation": "6f4387aa1a30f5a3fac7f88cadd44f4b4c3b1b54"
+  },
+  "diagnosis": {
+    "release_ready": false,
+    "noncritical_cases": 11,
+    "case_findings": {
+      "AGENT_V1_SF_004": "FinalAnswer omitted required compare_rows; terminal ANALYST_OUTPUT_INVALID.",
+      "AGENT_V1_HYBRID_002": "All recorded valid candidates failed GROUNDING_ROW_TEXT_MISMATCH.",
+      "AGENT_V1_HYBRID_003": "Recorded valid candidates failed GROUNDING_ROW_TEXT_MISMATCH.",
+      "AGENT_V1_ANALYST_001": "FinalAnswer retained explicit calculation selection but omitted required status; terminal ANALYST_OUTPUT_INVALID. This is not a successful live calculator result."
+    },
+    "interpretation": "The focused ambiguity contract passes, but the unchanged live gate remains failed. One stochastic comparison does not establish whether prompt changes caused the additional failures. Output-schema repair and claim/row repair are separate from the measured equivalence/selection behavior.",
+    "next_step": "Keep PR24 draft and PR7 unstarted; obtain scope approval before expanding to output-schema/claim-row repair. Do not weaken PR6 validation or apply its release exception to this PR."
+  },
+  "shutdown_note": "Known MCP/AnyIO shutdown warnings did not prevent the evaluator from exiting zero and writing all artifacts. Exit zero is not a passing gate.",
+  "limitations": [
+    "The stochastic live gate is not a controlled semantic quality benchmark; deterministic binding checks do not establish answer completeness or entailment.",
+    "The hosted reranker provides no immutable service-side digest.",
+    "PR6 release exception PR6-CALC-001 applies only to merged PR6, not automatically to this follow-up.",
+    "No provider tuning, changed thresholds or expectations, selective case reruns, or PR6 grounding-policy changes were made."
+  ]
+}

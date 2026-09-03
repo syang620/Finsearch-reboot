@@ -1,5 +1,61 @@
 # FinSearch Evaluation Baselines
 
+## Calculator follow-up verification — 2026-09-03
+
+PR 23 is merged at `6155034e4c1864e187a3318619524d9192024a78` under the
+PR6-only exception below. Separate calculator PR 24 remains **draft, not release
+ready**, with implementation frozen at
+`6f4387aa1a30f5a3fac7f88cadd44f4b4c3b1b54`. PR7 has not started.
+
+The matched 20-case replay improves full behavior contracts from **4/20 to
+20/20** and terminal status/error expectations from **10/20 to 20/20**. The
+dataset, harness and independent grounding-oracle hashes are identical before
+and after. All 20 raw histories are preserved, zero unexpected successes occur,
+and all 11 successful after outputs have valid grounding. The minimized replay
+isolates computation equivalence and selection; it is not an exact live replay.
+The unchanged grounding matrix passes 37/37 and degradation passes 14/14.
+Focused tests pass 342; full tests pass 525 with 47 passing subtests and the same
+two pre-existing planner-alias/retrieval-retry failures. pytest 9.0.2 remains
+environment-only. Fresh review of the frozen implementation found no major
+issues; that review does not override the subsequent failed live gate.
+
+The unchanged 15-case live gate ran once on the clean tracked implementation and
+**failed: 11/15 non-critical rows, four critical rows**, score `0.926786`, zero
+evaluator errors. The zero-critical threshold was not relaxed. Failures are:
+
+- `AGENT_V1_SF_004`: `ANALYST_OUTPUT_INVALID`; final answer omits required
+  `compare_rows`.
+- `AGENT_V1_HYBRID_002` and `AGENT_V1_HYBRID_003`:
+  `ANALYST_GROUNDING_INVALID` / `GROUNDING_ROW_TEXT_MISMATCH`.
+- `AGENT_V1_ANALYST_001`: final answer retains an explicit calculation selection
+  but omits required `status`, producing `ANALYST_OUTPUT_INVALID`. The earlier
+  ambiguity error is absent, but this is **not a successful calculator answer**.
+
+Lane/effective-status/failure-stage/degradation/grounding consistency remains
+100%: the runtime truthfully reports these failures. The 582-point index has the
+same before/after fingerprint as PR6 `0f8e477`; model, corpus, provider settings,
+datasets and thresholds are recorded unchanged. The run took 3,138,636 ms (about
+52 minutes) and exited zero despite known MCP/AnyIO shutdown warnings. Exit zero
+does not mean gate pass. This stochastic comparison alone cannot attribute the
+additional failures to the prompt change or establish a semantic-quality effect.
+
+No PR6 validation was weakened, no failed cases were selectively rerun, and no
+release exception applies to PR 24. Reaching 15/15 now requires a separately
+approved scope for output-schema and claim/row repair, preserving strict
+validation. Freeze those observed failure fixtures before any such behavior
+change; do not start PR7 or rerun the expensive gate speculatively.
+
+Immutable after evidence and exact execution provenance:
+
+- `artifacts/evals/agents/v1/calculator/baselines/6f4387a/` (including
+  `verification.json` with test commands and review link).
+- `artifacts/evals/agents/v1/grounding/baselines/6f4387a/`.
+- `artifacts/evals/agents/v1/degradation/baselines/6f4387a/`.
+- `artifacts/evals/agents/v1/baselines/6f4387a/` (raw failed live measurement,
+  hashes, redacted command, provenance and diagnosis in `manifest.json`).
+
+All earlier PR5/PR6 and calculator-before measurements remain unchanged.
+
 ## Calculator reliability before baseline — 2026-09-03
 
 PR6 merged at `6155034e4c1864e187a3318619524d9192024a78` under exception
@@ -21,8 +77,9 @@ Its manifest records source/dataset/harness hashes, environment-only pytest 9.0.
 Python version and the exact command. Derived fixtures are deliberately minimal,
 not exact live transcript replays; see
 `data/evals/agents/v1/calculator_regression_v1.md`. Grounding, lane policy and
-the historical PR6/PR5 evidence remain unchanged. The expensive live gate has not
-been rerun; it is reserved for the frozen calculator implementation.
+the historical PR6/PR5 evidence remain unchanged. At this before measurement,
+the expensive live gate had not been rerun; its later frozen-implementation
+result is recorded above.
 
 ## PR6 release exception PR6-CALC-001 — 2026-09-03
 

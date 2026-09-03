@@ -27,17 +27,22 @@
   Structured mixed-outcome and exact request/result coverage were evaluated at
   `5762f51668016376746438c6dd5503e04b9c50c1`; final analyst-packet lane
   consistency was evaluated at `de0142ca89384aee9c1bad014879e7e83e94fc86`.
-- PR6 — approved for closure under explicit release exception `PR6-CALC-001`:
+- PR6 — merged as PR 23 at `6155034e4c1864e187a3318619524d9192024a78`
+  under explicit release exception `PR6-CALC-001`:
   implementation and deterministic grounding/degradation verification at
   `0f8e477c47b7f11a8e069720b3b089e81f25cf9d`; fresh review found no major issues.
   The secondary semantic assessment and unchanged 15-case live gate are recorded.
   The live gate failed on one inherited calculator-ambiguity case; the project
   owner explicitly accepted that known failure for PR6 only. The unchanged failed
   gate and exception are recorded in `docs/EVALUATION_BASELINES.md`.
-- Before PR7 — a separate narrow calculator-reliability PR must freeze a focused
-  before fixture, resolve `CALCULATION_RESULT_AMBIGUOUS`, measure before/after,
-  and rerun the unchanged live gate after freezing the fix. PR6 grounding policy
-  is outside that follow-up's scope.
+- Before PR7 — separate calculator PR 24 remains draft at implementation
+  `6f4387aa1a30f5a3fac7f88cadd44f4b4c3b1b54`: frozen before/after calculator
+  behavior is 4/20 → 20/20; grounding 37/37 and degradation 14/14 remain intact.
+  The unchanged live gate was rerun once after freezing and failed with 11/15
+  non-critical rows: two invalid final-answer schemas and two claim/row grounding
+  mismatches. The calculator case still fails on a missing required status field.
+  No PR6 exception carries forward. Scope approval is required before expanding
+  to output repair; PR6 grounding policy remains unchanged and PR7 is unstarted.
 
 ---
 
