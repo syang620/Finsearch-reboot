@@ -818,11 +818,18 @@ def _derive_evidence_lanes(
             str((issue.metadata or {}).get("question_class") or "")
             for issue in defensive_rejections
         }
-        structured_status = (
-            EvidenceLaneStatus.AMBIGUOUS
-            if question_classes == {"ambiguous"}
-            else EvidenceLaneStatus.UNSUPPORTED
-        )
+        unsupported_question_classes = {
+            StructuredFactQuestionClass.UNSUPPORTED_DERIVED_METRIC.value,
+            StructuredFactQuestionClass.UNSUPPORTED_RATIO.value,
+            StructuredFactQuestionClass.UNSUPPORTED_PER_SHARE.value,
+            StructuredFactQuestionClass.UNSUPPORTED_COMPARISON.value,
+        }
+        if question_classes == {StructuredFactQuestionClass.AMBIGUOUS.value}:
+            structured_status = EvidenceLaneStatus.AMBIGUOUS
+        elif question_classes and question_classes <= unsupported_question_classes:
+            structured_status = EvidenceLaneStatus.UNSUPPORTED
+        else:
+            structured_status = EvidenceLaneStatus.FAILED
     elif operation_statuses and all(status == "ambiguous" for status in operation_statuses):
         structured_status = EvidenceLaneStatus.AMBIGUOUS
     elif operation_statuses and all(

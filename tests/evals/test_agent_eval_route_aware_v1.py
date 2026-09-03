@@ -236,6 +236,30 @@ def _clear_packet_context(output: dict) -> None:
     output["evaluation_trace"]["analyst_packet"]["context_items"] = []
 
 
+def _add_consistent_degraded_runtime_summaries(output: dict) -> None:
+    lanes = {
+        "kb": {"requested": True, "attempted": True, "status": "ok"},
+        "structured_fact": {
+            "requested": True,
+            "attempted": True,
+            "status": "partial",
+        },
+    }
+    degradation = {
+        "active": True,
+        "affected_lanes": ["structured_fact"],
+        "notice": (
+            "Evidence coverage is degraded (structured_fact=partial). Do not "
+            "claim coverage from unavailable or incomplete evidence lanes."
+        ),
+    }
+    output["lanes"] = lanes
+    output["degradation"] = degradation
+    packet = output["evaluation_trace"]["analyst_packet"]
+    packet["lanes"] = lanes
+    packet["degradation"] = dict(degradation)
+
+
 def _example(route: str, **expected_overrides) -> AgentEvalExampleV1:
     expected = {
         "intent": "filing_fact",
@@ -393,6 +417,83 @@ def test_consistent_runtime_lanes_are_authoritative() -> None:
     assert row.lane_status_consistent is True
     assert row.effective_status_consistent is True
     assert row.deterministic.critical_failures == []
+
+
+def test_degradation_consistency_requires_exact_notice_content() -> None:
+    output = _run_output(
+        "hybrid",
+        structured_status="partial",
+        reported_status="degraded",
+    )
+    _add_consistent_degraded_runtime_summaries(output)
+    stale_notice = "Evidence coverage is degraded."
+    output["degradation"]["notice"] = stale_notice
+    output["evaluation_trace"]["analyst_packet"]["degradation"][
+        "notice"
+    ] = stale_notice
+
+    row, errors, _sample = evaluate_run_output(
+        _example(
+            "hybrid",
+            expected_reported_status="degraded",
+            expected_effective_status="degraded",
+            allow_degraded=True,
+        ),
+        output,
+    )
+
+    assert errors == []
+    assert row.degradation_consistent is False
+    assert "DEGRADATION_INCONSISTENT" in row.deterministic.critical_failures
+
+
+def test_degradation_consistency_requires_packet_summary_match() -> None:
+    output = _run_output(
+        "hybrid",
+        structured_status="partial",
+        reported_status="degraded",
+    )
+    _add_consistent_degraded_runtime_summaries(output)
+    output["evaluation_trace"]["analyst_packet"]["degradation"][
+        "notice"
+    ] = "Analyst received a stale degradation notice."
+
+    row, errors, _sample = evaluate_run_output(
+        _example(
+            "hybrid",
+            expected_reported_status="degraded",
+            expected_effective_status="degraded",
+            allow_degraded=True,
+        ),
+        output,
+    )
+
+    assert errors == []
+    assert row.degradation_consistent is False
+    assert "DEGRADATION_INCONSISTENT" in row.deterministic.critical_failures
+
+
+def test_exact_degradation_summary_reaches_analyst_packet() -> None:
+    output = _run_output(
+        "hybrid",
+        structured_status="partial",
+        reported_status="degraded",
+    )
+    _add_consistent_degraded_runtime_summaries(output)
+
+    row, errors, _sample = evaluate_run_output(
+        _example(
+            "hybrid",
+            expected_reported_status="degraded",
+            expected_effective_status="degraded",
+            allow_degraded=True,
+        ),
+        output,
+    )
+
+    assert errors == []
+    assert row.degradation_consistent is True
+    assert "DEGRADATION_INCONSISTENT" not in row.deterministic.critical_failures
 
 
 def test_packet_evidence_is_ordered_and_limited_to_analyst_visible_items() -> None:

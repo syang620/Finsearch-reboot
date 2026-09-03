@@ -421,31 +421,60 @@ def test_pr3_kb_fallback_keeps_structured_issue_but_not_requested() -> None:
     assert output["degradation"]["active"] is False
 
 
-def test_defensive_runtime_capability_rejection_is_unsupported() -> None:
-    issue = OpenIssue(
-        code="STRUCTURED_FACT_CAPABILITY_REJECTED",
-        message="The runtime boundary rejected this request.",
-        metadata={
-            "outcome": "defensive_rejection",
-            "question_class": "unsupported_derived_metric",
-        },
-    )
-    packet = _packet().model_copy(update={"open_issues": [issue]})
+@pytest.mark.parametrize(
+    ("question_classes", "expected_lane_status"),
+    [
+        (["ambiguous", "ambiguous"], "ambiguous"),
+        (["unsupported_derived_metric", "unsupported_ratio"], "unsupported"),
+        (["ambiguous", "unsupported_ratio"], "failed"),
+        (["ambiguous", "unknown"], "failed"),
+        (["unknown", "unknown"], "failed"),
+    ],
+)
+def test_defensive_runtime_capability_rejection_status(
+    question_classes: list[str],
+    expected_lane_status: str,
+) -> None:
+    issues = [
+        OpenIssue(
+            code="STRUCTURED_FACT_CAPABILITY_REJECTED",
+            message=f"The runtime boundary rejected request {index}.",
+            metadata={
+                "outcome": "defensive_rejection",
+                "question_class": question_class,
+            },
+        )
+        for index, question_class in enumerate(question_classes)
+    ]
+    packet = _packet().model_copy(update={"open_issues": issues})
+    plan = _plan("structured_fact")
+    plan["structured_fact_requests"] = [
+        {
+            "subquestion": f"Rejected request {index}",
+            "metric_hint": "revenue",
+        }
+        for index, _question_class in enumerate(question_classes)
+    ]
     output = _output(
         {
-            "plan_obj": _plan("structured_fact"),
+            "plan_obj": plan,
             "structured_fact_results": [
                 {
-                    "resolver_status": "unresolved",
+                    "resolver_status": (
+                        "ambiguous"
+                        if question_class == "ambiguous"
+                        else "unresolved"
+                    ),
                     "resolver_reason": "Structured-fact capability rejected.",
                     "tool_result": None,
                 }
+                for question_class in question_classes
             ],
             "packet": packet,
         }
     )
 
-    assert output["lanes"]["structured_fact"]["status"] == "unsupported"
+    assert output["lanes"]["structured_fact"]["status"] == expected_lane_status
     assert output["status"] == "failed"
     assert output["failure_stage"] == "structured_fact"
 

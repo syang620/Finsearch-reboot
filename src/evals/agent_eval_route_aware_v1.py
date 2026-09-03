@@ -447,13 +447,26 @@ def _derive_failure_stage_shadow(
     return "none"
 
 
-def _expected_degradation(lanes: AgentLaneStatusSet) -> tuple[bool, List[str]]:
+def _expected_degradation(lanes: AgentLaneStatusSet) -> DegradationSummary:
     affected = [
         lane_name
         for lane_name in ("kb", "structured_fact")
         if (lane := getattr(lanes, lane_name)).requested and lane.status != "ok"
     ]
-    return bool(affected), affected
+    if not affected:
+        return DegradationSummary()
+    statuses = "; ".join(
+        f"{lane_name}={getattr(lanes, lane_name).status}"
+        for lane_name in affected
+    )
+    return DegradationSummary(
+        active=True,
+        affected_lanes=affected,
+        notice=(
+            f"Evidence coverage is degraded ({statuses}). Do not claim coverage "
+            "from unavailable or incomplete evidence lanes."
+        ),
+    )
 
 
 def _extract_semantic_contexts(
@@ -899,13 +912,24 @@ def evaluate_run_output(
         try:
             degradation_obj = DegradationSummary.model_validate(raw_degradation)
             degradation = degradation_obj.model_dump(mode="json")
-            expected_active, expected_affected = _expected_degradation(
-                derived_lanes
+            expected_degradation = _expected_degradation(derived_lanes)
+            packet = _packet_from_trace(run_output)
+            packet_dump = (run_output.get("evaluation_trace") or {}).get(
+                "analyst_packet"
+            )
+            packet_required = (
+                effective_status in {"completed", "degraded"}
+                or packet_dump is not None
             )
             degradation_consistent = (
-                degradation_obj.active == expected_active
-                and degradation_obj.affected_lanes == expected_affected
-                and bool(degradation_obj.notice) == expected_active
+                degradation_obj == expected_degradation
+                and (
+                    not packet_required
+                    or (
+                        packet is not None
+                        and packet.degradation == expected_degradation
+                    )
+                )
             )
         except Exception as exc:
             contract_error("runtime_degradation_contract", exc)
