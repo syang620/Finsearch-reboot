@@ -35,7 +35,8 @@
   The live gate failed on one inherited calculator-ambiguity case; the project
   owner explicitly accepted that known failure for PR6 only. The unchanged failed
   gate and exception are recorded in `docs/EVALUATION_BASELINES.md`.
-- PR24 — approved for merge under explicit exception `PR24-GROUNDING-001`, at
+- PR24 — merged at `2860c430036f3fa9e9488663fed9d086a03820af`
+  under explicit exception `PR24-GROUNDING-001`, at
   implementation
   `7062f48c9d929f2925ffa6820cfd08e18c41ecac`. The owner-approved extension adds
   precise bounded schema/claim-row repair feedback without changing PR6 validation.
@@ -46,7 +47,12 @@
   including the calculator case. All failures and the failed strict gate remain
   preserved; the owner accepted these three known failures for this merge only.
   No PR6 exception carries forward and no PR7 failure is automatically waived.
-  PR7 is authorized for planning only; resolver implementation remains unstarted.
+- PR7 — resolver extraction implemented after the owner-approved refinements.
+  The merged-PR24 oracle was frozen first at `fae5bbf`; all 170 cases reproduce
+  the complete resolution and execution snapshots exactly. The full suite has
+  719 passing tests and the same two documented PR24 failures. SHA-keyed
+  regression evidence, fresh review and the single live gate follow the freeze;
+  release is pending those results and no exception is assumed.
 
 ---
 
@@ -1114,7 +1120,15 @@ class StructuredFactResolution(BaseModel):
     ticker: str | None
     fiscal_year: int | None
     reason: str | None
+    selected_target: dict[str, Any] | None
 ```
+
+The resolver owns existing target selection and returns the complete selected
+target as opaque metadata. The orchestrator retains filing-form eligibility;
+`form_type` interpretation and filing/amendment semantics remain outside PR7.
+The API also accepts existing partial dictionary inputs without imposing new
+request/target validation. The legacy orchestrator continues ignoring non-dict
+targets, even though direct resolver calls support validated `PlannerTarget`s.
 
 ## 10.4 Acceptance criteria
 
@@ -1123,6 +1137,20 @@ class StructuredFactResolution(BaseModel):
 - `cash` remains ambiguous.
 - broad aliases remain rejected.
 - resolver unit tests cover all registered metrics and critical ambiguity cases.
+- Compare exactly with the 170 merged-PR24 observations frozen in `fae5bbf`:
+  `data/evals/agents/v1/structured_fact_resolver_pr24.json`. Status, metric ID,
+  ticker, year, selected target, reason, capability decisions, ordered execution
+  results and exact eventual SEC metric arguments must match.
+- Preserve nonempty-hint precedence, exact-before-phrase matching, first-match
+  selection, single-target fallback and missing-input precedence, including
+  surprising behavior. Capability and resolver aliases stay separate.
+- Re-run calculator (20), output repair (20), grounding (37), degradation (14),
+  resolver/integration tests and the full suite. Record known baseline failures.
+- Freeze the implementation SHA from a clean tracked worktree, complete fresh
+  review, then run the unchanged 15-case live gate once.
+- Every resolver/routing/tool-argument mismatch blocks release. Preserve unrelated
+  analyst grounding failures without tuning PR7; merging a failed gate requires
+  a new explicit PR7 exception. `PR24-GROUNDING-001` does not carry forward.
 
 ---
 

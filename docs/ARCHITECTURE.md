@@ -163,9 +163,10 @@ Primary implementations:
 ## 6. Structured-Fact Lane
 
 The planner emits human-readable requests such as `revenue` or `total debt`; it does
-not emit SEC concept names. Resolver logic in the orchestrator maps those hints to
-the supported metric registry and resolves ticker and fiscal year before calling
-`sec_get_metric`.
+not emit SEC concept names. The pure resolver in `src/structured_facts/resolver.py`
+maps those hints to the supported metric registry and resolves ticker and fiscal
+year. It returns the existing selected target as opaque metadata. Orchestration
+owns capability permission, filing-form eligibility and calls to `sec_get_metric`.
 
 `src/structured_facts/capabilities.py` answers whether structured execution is
 permitted and classifies unsupported, ambiguous, and unknown requests. It also
@@ -268,9 +269,9 @@ behavior:
 - The shared `PlannerOutput` contract does not contain every field used by the
   orchestrator. Runtime planner payloads and LangGraph state still contain normalized
   dictionaries alongside Pydantic models.
-- Structured metric resolution and execution coordination remain embedded in the
-  orchestrator. The capability policy intentionally does not absorb this future
-  resolver-extraction work.
+- Structured metric resolution is separate from execution coordination. Capability
+  and resolver aliases remain distinct; resolution preserves existing precedence
+  and fallback behavior, while orchestration owns permission and execution.
 - Structured results are flattened into synthetic `TEXT` context. Native numeric
   types, metric status, components, and source URLs are not fully represented by the
   analyst context contract.

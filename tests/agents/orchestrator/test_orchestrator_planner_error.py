@@ -33,7 +33,6 @@ from agents.orchestrator.agent_orchestrator import (
     _get_orchestrator_graph,
     _graph_config,
     _planner_error_node,
-    _resolve_metric_id_for_structured_fact_request,
     _route_after_planner_turn,
     _structured_fact_capability_decisions,
     _structured_fact_evidence_from_result,
@@ -42,6 +41,9 @@ from agents.orchestrator.agent_orchestrator import (
     aclose_orchestrator_runtime,
 )
 from tests.snapshot_utils import assert_graph_snapshot_jsonable
+from structured_facts.resolver import (
+    resolve_metric_id_for_structured_fact_request as _resolve_metric_id_for_structured_fact_request,
+)
 
 
 def test_orchestrator_capability_guard_uses_metric_clarification_answer() -> None:

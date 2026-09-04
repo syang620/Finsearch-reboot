@@ -49,8 +49,11 @@ enter that execution path.
 The capability policy may identify a supported or candidate registry metric ID for
 policy and diagnostic decisions. It does not own filing-specific phrase resolution,
 ticker/year resolution, SEC concept selection, filing anchoring, fact selection, or
-metric execution semantics. Those responsibilities remain with the orchestrator
-resolver and structured metric tool.
+metric execution semantics. Phrase and ticker/year resolution live in
+`src/structured_facts/resolver.py`; filing eligibility remains in orchestration,
+and SEC anchoring, selection and execution remain with the structured metric tool.
+The resolver returns selected-target metadata unchanged and does not interpret
+its filing form. A resolved identity is not permission to execute a request.
 
 ## Consequences
 
