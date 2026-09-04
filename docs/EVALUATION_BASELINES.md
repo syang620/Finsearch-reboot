@@ -1,5 +1,206 @@
 # FinSearch Evaluation Baselines
 
+## PR24 release exception PR24-GROUNDING-001 — 2026-09-04
+
+After reviewing the failed 12/15 live-gate result, the project owner explicitly
+authorized merging PR24 and proceeding to PR7 planning. This is a new exception
+for PR24, not an extension of `PR6-CALC-001`. It applies to implementation
+`7062f48c9d929f2925ffa6820cfd08e18c41ecac` and its evidence recorded at
+`aebd4bede06df105e469bab69bea52fc3a5b3fc0`.
+
+The strict live gate **failed**: three critical rows, score `0.946394`, zero
+evaluator errors. The owner accepts the following known unavailable answers for
+this merge only:
+
+- `AGENT_V1_HYBRID_001`: incompatible attribution evidence type and row-text
+  mismatches.
+- `AGENT_V1_HYBRID_003`: persistent row-text mismatches.
+- `AGENT_V1_ANALYST_001`: persistent calculation-row text mismatch; this is not
+  a successful calculator answer.
+
+No claim is made that all three failures predate PR24. The runtime continues to
+fail closed; no unsupported answer, threshold change, validation relaxation,
+selective rerun or rewritten evidence is approved. The 20/20 calculator and
+output-repair matrices, 37/37 grounding, 14/14 degradation and 100% applicable
+runtime/shadow consistency remain as measured. The two documented pre-existing
+full-suite failures and semantic-quality limitations remain visible; this is not
+a blanket waiver for other regressions or a claim of full-suite/semantic success.
+
+The immutable failed live measurement remains under
+`artifacts/evals/agents/v1/baselines/7062f48/`; its contemporaneous draft/stop
+disposition is historical and is not rewritten. This owner-approved exception
+supersedes that release disposition only. PR7 is authorized for planning, not
+implementation. PR7 must preserve behavior and record its own evidence; this
+exception does not automatically waive any PR7 gate failure.
+
+## PR24 output-contract repair — 2026-09-04 UTC
+
+Historical measurement and pre-exception disposition; see the release exception
+above for the subsequent owner-approved merge decision. All raw evidence remains
+unchanged.
+
+Current frozen implementation:
+`7062f48c9d929f2925ffa6820cfd08e18c41ecac`. The owner approved a narrow
+extension to schema and claim/row retry feedback: **repair model-output contract
+violations, not evidence truth**. PR6's validator and factual prose assembly,
+retrieval, lanes, resolver, provider settings, retry budgets and thresholds are
+unchanged. Only analyst diagnostic feedback changed after fixture freeze.
+
+The four failed live packets and final candidates from `6f4387a`, 20 new
+scenarios, and an independent expectation-based harness were frozen at
+`33b57b6eeed8abc99bdcfa4817cd447c02ab3f86` before changing runtime behavior.
+The matched before/after output-repair contracts improve **14/20 → 20/20**;
+precise-feedback coverage improves **0/6 → 6/6**, including the four captured
+live failure shapes **0/4 → 4/4**. Dataset, source, harness, independent oracle
+and PR6 validator hashes match exactly before/after.
+
+Terminal expectations were already **20/20 before** and remain 20/20: the stub
+injects corrected candidates unconditionally, not in response to interpreting
+the feedback. These results establish more precise diagnostics and preserved
+fail-closed behavior, not newly achieved terminal repair or live-model efficacy.
+All 20 inputs/histories are preserved, all seven successes pass independent
+grounding checks, and there are zero unexpected successes. No fields or factual
+claims are silently filled or rewritten by the new repair code.
+
+The original calculator matrix remains **20/20**, preserving its original
+4/20 → 20/20 comparison. Unchanged grounding passes **37/37** and degradation
+passes **14/14**. Focused tests pass **362**. Full tests pass **545**, with 47
+passing subtests and the same two pre-existing planner-alias/retrieval-retry
+failures; there is one expected table-renderer warning. Python is 3.11.14 and
+pytest 9.0.2 remains environment-only; dependency files are unchanged.
+
+The unchanged 15-case live gate ran **once** on clean tracked implementation
+`7062f48` and **failed: 12/15 non-critical rows, three critical rows**, score
+`0.946394`, zero evaluator errors. The zero-critical threshold is unchanged.
+Remaining failures, all correctly reported as analyst grounding errors:
+
+- `AGENT_V1_HYBRID_001`: `GROUNDING_EVIDENCE_TYPE_MISMATCH` and
+  `GROUNDING_ROW_TEXT_MISMATCH`. An attribution claim cites only structured
+  evidence; row labels also disagree with their bound claim text.
+- `AGENT_V1_HYBRID_003`: `GROUNDING_ROW_TEXT_MISMATCH`. Capitalization and numeric
+  formatting still differ between the rows and their claims after bounded retry.
+- `AGENT_V1_ANALYST_001`: `GROUNDING_ROW_TEXT_MISMATCH`. Required fields and the
+  explicit calculation are present, but the row label is not a verbatim substring
+  of the bound claim. This is **not a successful calculator answer**.
+
+The previous `AGENT_V1_SF_004` and `AGENT_V1_HYBRID_002` failures are non-critical
+in this run. There are no terminal `ANALYST_OUTPUT_INVALID` errors. The change
+from 11/15 to 12/15 non-critical rows is a single stochastic observation, not a
+controlled causal or semantic-quality improvement claim. All applicable lane,
+effective-status, failure-stage, degradation and grounding consistency rates
+remain 100%; seven structured executions yield seven visible typed contexts.
+
+The run took 2,799,423 ms (about 47 minutes). It exited zero and wrote all rows,
+despite the known MCP/AnyIO shutdown warnings. The 582-point Qdrant fingerprint
+remains `6c72627b05dbec1e7f65d2132b8572b9fa12c47af711f2a12b8b776967994cee`
+before and after, matching `0f8e477` and `6f4387a`. Model digests, source/sidecar
+hashes and redacted execution settings are recorded in the new live manifest.
+
+Fresh review of `7062f48` raised one P2: the release records still referred to
+older implementation evidence. This entry and the new SHA-keyed artifacts
+address that documentation/provenance gap; no runtime changes were made after
+freeze. Review references and exact commands are in the verification record.
+
+**Disposition: PR24 remains draft, not release ready.** As instructed, stop
+behavior changes and further evaluations after this failed live gate. Do not
+broaden PR24 again, selectively rerun failures, weaken validation, carry forward
+the PR6 exception, or start PR7. All earlier evidence remains unchanged.
+
+New immutable evidence:
+
+- `artifacts/evals/agents/v1/output_repair/baselines/33b57b6/` (before).
+- `artifacts/evals/agents/v1/output_repair/baselines/7062f48/` (after and
+  `verification.json`, including commands, matched hashes and review).
+- `artifacts/evals/agents/v1/calculator/baselines/7062f48/`.
+- `artifacts/evals/agents/v1/grounding/baselines/7062f48/`.
+- `artifacts/evals/agents/v1/degradation/baselines/7062f48/`.
+- `artifacts/evals/agents/v1/baselines/7062f48/` (failed live measurement and
+  `manifest.json` with provenance and case-level diagnosis).
+
+## Calculator follow-up verification — 2026-09-03
+
+Historical pre-extension snapshot; superseded for PR24 release assessment by the
+`7062f48` entry above. Its raw measurements are preserved unchanged.
+
+PR 23 is merged at `6155034e4c1864e187a3318619524d9192024a78` under the
+PR6-only exception below. Separate calculator PR 24 remains **draft, not release
+ready**, with implementation frozen at
+`6f4387aa1a30f5a3fac7f88cadd44f4b4c3b1b54`. PR7 has not started.
+
+The matched 20-case replay improves full behavior contracts from **4/20 to
+20/20** and terminal status/error expectations from **10/20 to 20/20**. The
+dataset, harness and independent grounding-oracle hashes are identical before
+and after. All 20 raw histories are preserved, zero unexpected successes occur,
+and all 11 successful after outputs have valid grounding. The minimized replay
+isolates computation equivalence and selection; it is not an exact live replay.
+The unchanged grounding matrix passes 37/37 and degradation passes 14/14.
+Focused tests pass 342; full tests pass 525 with 47 passing subtests and the same
+two pre-existing planner-alias/retrieval-retry failures. pytest 9.0.2 remains
+environment-only. Fresh review of the frozen implementation found no major
+issues; that review does not override the subsequent failed live gate.
+
+The unchanged 15-case live gate ran once on the clean tracked implementation and
+**failed: 11/15 non-critical rows, four critical rows**, score `0.926786`, zero
+evaluator errors. The zero-critical threshold was not relaxed. Failures are:
+
+- `AGENT_V1_SF_004`: `ANALYST_OUTPUT_INVALID`; final answer omits required
+  `compare_rows`.
+- `AGENT_V1_HYBRID_002` and `AGENT_V1_HYBRID_003`:
+  `ANALYST_GROUNDING_INVALID` / `GROUNDING_ROW_TEXT_MISMATCH`.
+- `AGENT_V1_ANALYST_001`: final answer retains an explicit calculation selection
+  but omits required `status`, producing `ANALYST_OUTPUT_INVALID`. The earlier
+  ambiguity error is absent, but this is **not a successful calculator answer**.
+
+Lane/effective-status/failure-stage/degradation/grounding consistency remains
+100%: the runtime truthfully reports these failures. The 582-point index has the
+same before/after fingerprint as PR6 `0f8e477`; model, corpus, provider settings,
+datasets and thresholds are recorded unchanged. The run took 3,138,636 ms (about
+52 minutes) and exited zero despite known MCP/AnyIO shutdown warnings. Exit zero
+does not mean gate pass. This stochastic comparison alone cannot attribute the
+additional failures to the prompt change or establish a semantic-quality effect.
+
+No PR6 validation was weakened, no failed cases were selectively rerun, and no
+release exception applies to PR 24. Reaching 15/15 now requires a separately
+approved scope for output-schema and claim/row repair, preserving strict
+validation. Freeze those observed failure fixtures before any such behavior
+change; do not start PR7 or rerun the expensive gate speculatively.
+
+Immutable after evidence and exact execution provenance:
+
+- `artifacts/evals/agents/v1/calculator/baselines/6f4387a/` (including
+  `verification.json` with test commands and review link).
+- `artifacts/evals/agents/v1/grounding/baselines/6f4387a/`.
+- `artifacts/evals/agents/v1/degradation/baselines/6f4387a/`.
+- `artifacts/evals/agents/v1/baselines/6f4387a/` (raw failed live measurement,
+  hashes, redacted command, provenance and diagnosis in `manifest.json`).
+
+All earlier PR5/PR6 and calculator-before measurements remain unchanged.
+
+## Calculator reliability before baseline — 2026-09-03
+
+PR6 merged at `6155034e4c1864e187a3318619524d9192024a78` under exception
+`PR6-CALC-001`. The separate calculator follow-up froze 20 focused fixtures and
+their independent expectation-based replay harness at
+`4e81d66acf6c478c015b6a5ea7ca1cc2bf149253`, before runtime behavior changed.
+The runtime source at that measurement is byte-identical to merged PR6.
+
+The before run satisfies 4/20 full behavior contracts. This strict count includes
+bounded retry/candidate-count and explicit selection-feedback expectations, not
+just terminal status: some already fail-closed cases fail only the new repair
+expectation. Both successful outputs retain valid grounding, all 20 histories are
+preserved, and there are zero unexpected successes. Repeated identical successful
+calculations are falsely ambiguous; missing final selection with distinct results
+fails without a dedicated selection repair.
+
+Evidence is in `artifacts/evals/agents/v1/calculator/baselines/4e81d66/`.
+Its manifest records source/dataset/harness hashes, environment-only pytest 9.0.2,
+Python version and the exact command. Derived fixtures are deliberately minimal,
+not exact live transcript replays; see
+`data/evals/agents/v1/calculator_regression_v1.md`. Grounding, lane policy and
+the historical PR6/PR5 evidence remain unchanged. At this before measurement,
+the expensive live gate had not been rerun; its later frozen-implementation
+result is recorded above.
+
 ## PR6 release exception PR6-CALC-001 — 2026-09-03
 
 The project owner explicitly approved merging PR6 with the single known

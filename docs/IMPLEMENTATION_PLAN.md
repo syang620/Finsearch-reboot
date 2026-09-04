@@ -27,17 +27,26 @@
   Structured mixed-outcome and exact request/result coverage were evaluated at
   `5762f51668016376746438c6dd5503e04b9c50c1`; final analyst-packet lane
   consistency was evaluated at `de0142ca89384aee9c1bad014879e7e83e94fc86`.
-- PR6 — approved for closure under explicit release exception `PR6-CALC-001`:
+- PR6 — merged as PR 23 at `6155034e4c1864e187a3318619524d9192024a78`
+  under explicit release exception `PR6-CALC-001`:
   implementation and deterministic grounding/degradation verification at
   `0f8e477c47b7f11a8e069720b3b089e81f25cf9d`; fresh review found no major issues.
   The secondary semantic assessment and unchanged 15-case live gate are recorded.
   The live gate failed on one inherited calculator-ambiguity case; the project
   owner explicitly accepted that known failure for PR6 only. The unchanged failed
   gate and exception are recorded in `docs/EVALUATION_BASELINES.md`.
-- Before PR7 — a separate narrow calculator-reliability PR must freeze a focused
-  before fixture, resolve `CALCULATION_RESULT_AMBIGUOUS`, measure before/after,
-  and rerun the unchanged live gate after freezing the fix. PR6 grounding policy
-  is outside that follow-up's scope.
+- PR24 — approved for merge under explicit exception `PR24-GROUNDING-001`, at
+  implementation
+  `7062f48c9d929f2925ffa6820cfd08e18c41ecac`. The owner-approved extension adds
+  precise bounded schema/claim-row repair feedback without changing PR6 validation.
+  Calculator behavior remains 4/20 → 20/20; new output-repair contracts improve
+  14/20 → 20/20 (injected terminal outcomes were already 20/20), grounding remains
+  37/37 and degradation 14/14. The unchanged live gate ran once after freeze and
+  failed with 12/15 non-critical rows: three remaining grounding failures,
+  including the calculator case. All failures and the failed strict gate remain
+  preserved; the owner accepted these three known failures for this merge only.
+  No PR6 exception carries forward and no PR7 failure is automatically waived.
+  PR7 is authorized for planning only; resolver implementation remains unstarted.
 
 ---
 

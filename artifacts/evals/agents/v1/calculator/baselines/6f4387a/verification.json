@@ -1,0 +1,168 @@
+{
+  "evaluated_implementation": "6f4387aa1a30f5a3fac7f88cadd44f4b4c3b1b54",
+  "merged_pr6": "6155034e4c1864e187a3318619524d9192024a78",
+  "release_exception": "PR6-CALC-001 (PR6 only)",
+  "before_fixture_freeze": "4e81d66acf6c478c015b6a5ea7ca1cc2bf149253",
+  "before_runtime_unchanged_from_pr6": true,
+  "dataset_harness_oracle_hashes_matched": true,
+  "strict_behavior_before_after": {
+    "before": 4,
+    "after": 20,
+    "denominator": 20
+  },
+  "terminal_status_error_before_after": {
+    "before": 10,
+    "after": 20,
+    "denominator": 20
+  },
+  "metric_note": "Strict behavior includes explicit repair feedback, exact candidate counts, preserved raw history, selected original computation, and grounding. The minimized replay is not an exact live transcript.",
+  "calculator": {
+    "cases": 20,
+    "behavior_passes": 20,
+    "gate_pass": true,
+    "history_preserved": 20,
+    "unexpected_successes": 0,
+    "successful_outputs": 11,
+    "successful_grounding_valid": 11
+  },
+  "grounding": {
+    "cases": 37,
+    "behavior_passes": 37,
+    "behavior_accuracy": 1.0,
+    "successful_outputs": 19,
+    "successful_output_integrity_rate": 1.0,
+    "gate_pass": true,
+    "metrics": {
+      "claim_citation_coverage": {
+        "passed": 18,
+        "denominator": 18,
+        "rate": 1.0
+      },
+      "valid_context_id": {
+        "passed": 40,
+        "denominator": 40,
+        "rate": 1.0
+      },
+      "citation_source_preservation": {
+        "passed": 20,
+        "denominator": 20,
+        "rate": 1.0
+      },
+      "citation_source_completeness": {
+        "passed": 20,
+        "denominator": 20,
+        "rate": 1.0
+      },
+      "structured_numeric_evidence_type_accuracy": {
+        "passed": 3,
+        "denominator": 3,
+        "rate": 1.0
+      },
+      "narrative_evidence_type_accuracy": {
+        "passed": 11,
+        "denominator": 11,
+        "rate": 1.0
+      },
+      "hybrid_claim_evidence_routing_accuracy": {
+        "passed": 1,
+        "denominator": 1,
+        "rate": 1.0
+      },
+      "invalid_citation_detection": {
+        "passed": 6,
+        "denominator": 6,
+        "rate": 1.0
+      },
+      "grounding_fail_closed": {
+        "passed": 18,
+        "denominator": 18,
+        "rate": 1.0
+      },
+      "runtime_evaluator_consistency": {
+        "passed": 37,
+        "denominator": 37,
+        "rate": 1.0
+      }
+    },
+    "semantic_judge": {
+      "status": "not_run",
+      "note": "Fixture annotations are not judge scores."
+    }
+  },
+  "degradation": {
+    "all_lanes_unusable_fail_closed_rate": 1.0,
+    "cases": 14,
+    "degradation_classification_accuracy": 1.0,
+    "degradation_disclosure_rate": 1.0,
+    "failure_containment_rate": 1.0,
+    "overall_graceful_degradation_behavior_accuracy": 1.0,
+    "runtime_evaluator_consistency_rate": 1.0
+  },
+  "tests": {
+    "focused_passed": 342,
+    "full_passed": 525,
+    "full_failed": 2,
+    "subtests_passed": 47,
+    "warnings": 1,
+    "known_failures": [
+      "tests/agents/planner/test_planner_routes.py::test_planner_routes_match_expected_routes (alias002 expected structured, got kb)",
+      "tests/agents/retrieval/test_retrieval_workflow_no_tool_call.py::test_retrieval_no_tool_call_increments_attempts_and_stops_on_budget (expected 2, got 1)"
+    ],
+    "prior_failure_evidence": "artifacts/evals/agents/v1/grounding/baselines/0f8e477/verification.json",
+    "full_command": "conda run -n finsearch-arm --no-capture-output python -c 'import pathlib,sys,types;p=types.ModuleType(\"tests\");p.__path__=[str(pathlib.Path.cwd()/\"tests\")];sys.modules[\"tests\"]=p;import pytest;raise SystemExit(pytest.main([\"-q\",\"--tb=short\"]))'",
+    "focused_command": "conda run -n finsearch-arm --no-capture-output python -c 'import pathlib,sys,types;p=types.ModuleType(\"tests\");p.__path__=[str(pathlib.Path.cwd()/\"tests\")];sys.modules[\"tests\"]=p;import pytest;raise SystemExit(pytest.main([\"-q\",\"--tb=short\",\"tests/agents/analyst\",\"tests/agents/orchestrator\",\"tests/evals/test_agent_eval_route_aware_v1.py\",\"tests/evals/test_agent_eval_degradation_v1.py\",\"tests/evals/test_agent_grounding_v1.py\",\"tests/evals/test_agent_calculator_v1.py\"]))'"
+  },
+  "review": {
+    "url": "https://github.com/syang620/Finsearch-reboot/pull/24#issuecomment-5532540546",
+    "reviewed_implementation": "6f4387aa1a30f5a3fac7f88cadd44f4b4c3b1b54"
+  },
+  "live_gate": {
+    "manifest": "artifacts/evals/agents/v1/baselines/6f4387a/manifest.json",
+    "gate": {
+      "deterministic_gate_pass": false,
+      "ragas_gate_pass": true,
+      "overall_pass": false
+    },
+    "critical_cases": [
+      "AGENT_V1_SF_004",
+      "AGENT_V1_HYBRID_002",
+      "AGENT_V1_HYBRID_003",
+      "AGENT_V1_ANALYST_001"
+    ]
+  },
+  "artifacts": [
+    {
+      "path": "artifacts/evals/agents/v1/calculator/baselines/6f4387a/manifest.json",
+      "sha256": "3255ffdff96c704d6ff7fae75492bb73c38b9b9ae96d58d90eec025719480700"
+    },
+    {
+      "path": "artifacts/evals/agents/v1/calculator/baselines/6f4387a/per_case.jsonl",
+      "sha256": "3a8660493c640b86cbd0f96f9e70c90f80eabe91698523ad898dc054588516ba"
+    },
+    {
+      "path": "artifacts/evals/agents/v1/calculator/baselines/6f4387a/summary.json",
+      "sha256": "a0da3e96c7d70cfc6ff1c2b461de02eff277d572a7d0b926f11c7b680cc09711"
+    },
+    {
+      "path": "artifacts/evals/agents/v1/grounding/baselines/6f4387a/manifest.json",
+      "sha256": "ba0e4a887424a54269e51139318b7be8f080d0ecf92f67b74cd21cb02c888d5a"
+    },
+    {
+      "path": "artifacts/evals/agents/v1/grounding/baselines/6f4387a/per_case.jsonl",
+      "sha256": "79fa5b0ae8c9c09e84577762c8cc256863bebed80d351a2b6d72b2cf138c1433"
+    },
+    {
+      "path": "artifacts/evals/agents/v1/grounding/baselines/6f4387a/summary.json",
+      "sha256": "e4a6a803b8896aafbef8910327155b6bfae74e250fce1d2f173589ece7c5ea67"
+    },
+    {
+      "path": "artifacts/evals/agents/v1/degradation/baselines/6f4387a/per_case.jsonl",
+      "sha256": "3010280cd4c17a905e4b6a003230cbba1efdef34eadd66bd16dac160f486404d"
+    },
+    {
+      "path": "artifacts/evals/agents/v1/degradation/baselines/6f4387a/summary.json",
+      "sha256": "df12eddaf88b8a9dc22a471537b0f91477072c3fa5c6e1961368f2842591fe11"
+    }
+  ],
+  "history": "All original PR5, PR6 and calculator-before evidence preserved; unrelated untracked files left untouched."
+}

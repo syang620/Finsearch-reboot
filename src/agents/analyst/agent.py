@@ -132,7 +132,14 @@ class AnalystStructuredAnswer(BaseModel):
     used_context_ids: List[str]
     missing_values: List[str]
     confidence: Optional[float] = None
-    calculation: Optional[AnalystComputation] = None
+    calculation: Optional[AnalystComputation] = Field(
+        default=None,
+        description=(
+            "Select one successful financial_evaluator computation: copy its expression, "
+            "variables and result. Required when distinct calculations were executed; "
+            "preserve this selection during answer repairs. Do not recompute existing results."
+        ),
+    )
     compare_rows: List[AnalystCompareRow]
     claims: List[GroundedClaim] = Field(default_factory=list)
 
@@ -713,6 +720,8 @@ def build_analyst_prompt(
         "- financial_evaluator accepts exactly one scalar arithmetic expression per call.\n"
         "- Do not use assignments, multiple lines, or invented variable names in the expression.\n"
         "- If several derived values are needed, compute them one scalar at a time, then call FinalAnswer.\n"
+        "- In FinalAnswer.calculation, select the successful expression, variables and result that answer the question. "
+        "Keep that calculation block during answer repairs; do not repeat successful calculations.\n"
         if tools_available
         else '- If arithmetic is required and financial_evaluator is unavailable, return status="tool_error" instead of inventing a calculation.\n'
     )
@@ -1041,7 +1050,7 @@ def _parse_agent_messages(messages: List[Any]) -> Dict[str, Any]:
                     final_answer_text = final_output.answer
                 except ValidationError as exc:
                     final_output = None
-                    final_output_error = str(exc)
+                    final_output_error = _schema_repair_feedback(exc)
 
         if isinstance(msg, ToolMessage) and getattr(msg, "name", None) == "financial_evaluator":
             used_financial_evaluator = True
@@ -1163,6 +1172,69 @@ def _retry_correction_message() -> str:
     )
 
 
+def _final_answer_repair_contract() -> str:
+    required = ", ".join(name for name, field in AnalystStructuredAnswer.model_fields.items() if field.is_required())
+    return (
+        "Return one complete FinalAnswer, not a patch or only the corrected fields. "
+        f"Required top-level fields: {required}. "
+        'Choose status from "ok", "insufficient_data", "tool_error" based on the evidence and tool outcome; never omit it. '
+        "compare_rows must be a list; use [] only when no rows are needed. "
+        "Every row requires label and context_ids, and filing rows must bind to a claim_id. "
+        "Preserve supported claim text, evidence IDs and the successful calculation selection. "
+        "Do not recompute successful calculations or invent evidence to satisfy validation."
+    )
+
+
+def _schema_repair_feedback(error: ValidationError) -> str:
+    details = []
+    for item in error.errors(include_url=False, include_input=False):
+        path = ""
+        for part in item["loc"]:
+            path += f"[{part}]" if isinstance(part, int) else ("." if path else "") + str(part)
+        details.append(f"{path or 'FinalAnswer'} is required" if item["type"] == "missing"
+                       else f"{path or 'FinalAnswer'}: {item['msg']}")
+    return "; ".join(details) + ". " + _final_answer_repair_contract()
+
+
+def _grounding_repair_feedback(packet: AnalystPacket, final: AnalystStructuredAnswer, *, limit: int) -> str:
+    """Describe rejected output, never edit claims or decide evidence truth."""
+    claims = {claim.claim_id: claim for claim in final.claims}
+    rows = []
+    for index, row in enumerate(final.compare_rows):
+        claim = claims.get(row.claim_id)
+        if claim is None:
+            rows.append({"field": f"compare_rows[{index}].claim_id", "value": row.claim_id,
+                         "error": "must identify an existing grounded claim"})
+            continue
+        for field in ("label", "value"):
+            value = str(getattr(row, field) or "").strip()
+            if value not in claim.text:
+                rows.append({"field": f"compare_rows[{index}].{field}", "value": value,
+                             "claim_id": claim.claim_id, "claim_text": claim.text,
+                             "error": "must occur verbatim (case-sensitive) in the bound claim text"})
+        if row.context_ids != claim.context_ids:
+            rows.append({"field": f"compare_rows[{index}].context_ids", "value": row.context_ids,
+                         "claim_id": claim.claim_id, "claim_context_ids": claim.context_ids})
+        if row.target_id:
+            rows.append({"field": f"compare_rows[{index}].target_id", "value": row.target_id,
+                         "claim_id": claim.claim_id, "claim_context_ids": claim.context_ids})
+    visible = [{"context_id": item.context_id, "kind": item.kind.value,
+                "metric_id": item.structured_fact.metric_id if item.structured_fact else None,
+                "target_id": item.target_id} for item in packet.context_items[:max(0, limit)]]
+    return (
+        "Produce one internally consistent grounded answer. Each row's label and value must already occur "
+        "verbatim (case-sensitive) in its bound claim text; align row context_ids with that claim's evidence IDs. "
+        "Use only visible evidence of the required type and metric. A row target must match its claim evidence. "
+        "Do not change factual assertions merely to satisfy string matching. "
+        + _final_answer_repair_contract()
+        + " Rejected-output diagnostics (not evidence): "
+        + json.dumps({"rows": rows, "claim_bindings": [
+            {"claim_id": claim.claim_id, "claim_type": claim.claim_type,
+             "context_ids": claim.context_ids, "metric_id": claim.metric_id} for claim in final.claims
+        ], "visible_contexts": visible}, ensure_ascii=False)
+    )
+
+
 _EXPRESSION_IDENTIFIER_RE = re.compile(r"\b[A-Za-z_][A-Za-z0-9_]*\b")
 _UNSUPPORTED_FUNCTION_NAMES = {"max", "min", "sum", "abs", "round"}
 
@@ -1232,9 +1304,7 @@ def _retry_reason_message(packet: Optional[AnalystPacket], parsed: Dict[str, Any
         if not grounding.valid:
             return (
                 "Your claim evidence bindings failed validation: " + ", ".join(grounding.issue_codes)
-                + ". Return corrected claims in FinalAnswer; every claim needs appropriate visible evidence. "
-                + "Allowed IDs: " + ", ".join(item.context_id for item in packet.context_items[:max_context_items])
-                + ". Preserve successful calculator results already available; do not recompute them merely to repair citations."
+                + ". " + _grounding_repair_feedback(packet, final, limit=max_context_items)
             )
     tool_error = str(parsed.get("tool_error") or "").strip()
     tool_error_code = str(parsed.get("tool_error_code") or "").strip().lower()
@@ -1275,6 +1345,15 @@ def _retry_reason_message(packet: Optional[AnalystPacket], parsed: Dict[str, Any
         return (
             "The calculation completed without a reliable numeric result. "
             "Call financial_evaluator again with corrected inputs, then finish with FinalAnswer."
+        )
+    if requires_calculation and _calculation_selection_is_ambiguous(final, parsed):
+        available = _distinct_successful_computations(_successful_computations_from_parsed_state(parsed))
+        return (
+            "CALCULATION_RESULT_AMBIGUOUS: select one successful calculation in "
+            "FinalAnswer.calculation by copying its expression, variables and result. "
+            "Do not infer the selection from prose or re-execute successful tools. "
+            "Preserve valid claim bindings. Available successful calculations: "
+            + json.dumps([item.model_dump(mode="json") for item in available], ensure_ascii=False)
         )
     if requires_calculation and parsed.get("numeric_result") is not None:
         return (
@@ -1429,14 +1508,53 @@ def _resolve_matching_successful_computation(
     if not numeric_matches:
         return None, False
 
-    provenance_matches = [
+    provenance_matches = _distinct_successful_computations([
         computation
         for computation in numeric_matches
         if _computation_provenance_matches(structured, computation)
-    ]
+    ])
     if len(provenance_matches) == 1:
         return provenance_matches[0], False
     return None, True
+
+
+def _distinct_successful_computations(
+    computations: List[AnalystComputation],
+) -> List[AnalystComputation]:
+    """Collapse equivalent executions for selection only; retain original records."""
+    distinct: List[AnalystComputation] = []
+    for computation in computations:
+        # Result tolerance is for final-answer rounding, not tool-result identity.
+        finite_inputs = all(
+            _normalized_computation_variable(computation.variables.get(name, "")) is not None
+            for name in _EXPRESSION_IDENTIFIER_RE.findall(str(computation.expression or ""))
+        )
+        equivalent = (
+            computation.result is not None and math.isfinite(computation.result)
+            and finite_inputs
+            and any(
+                previous.result == computation.result
+                and _computation_provenance_matches(computation, previous)
+                for previous in distinct
+            )
+        )
+        if not equivalent:
+            distinct.append(computation)
+    return distinct
+
+
+def _calculation_selection_is_ambiguous(
+    final: Optional[AnalystStructuredAnswer],
+    parsed: Dict[str, Any] | _SerializedAnalystParsedState,
+) -> bool:
+    if final is None or final.status == "tool_error" or parsed.get("tool_error"):
+        return False
+    if final.status == "insufficient_data" and not any(claim.claim_type == "calculation" for claim in final.claims):
+        return False
+    computations = _successful_computations_from_parsed_state(parsed)
+    if final.calculation is None:
+        return len(_distinct_successful_computations(computations)) > 1
+    return _resolve_matching_successful_computation(final.calculation, computations)[1]
 
 
 def _tool_error_is_retryable(
@@ -1502,7 +1620,7 @@ def _should_retry_response(
         return True
     if parsed.get("numeric_result") is None:
         return True
-    return False
+    return _calculation_selection_is_ambiguous(final_output, parsed)
 
 
 def _should_retry_compute(
@@ -2066,7 +2184,7 @@ class AnalystAgent:
                                 content = "FinalAnswer recorded."
                                 status = "success"
                             except ValidationError as exc:
-                                artifact = {"error": f"FinalAnswer validation failed: {exc}"}
+                                artifact = {"error": "FinalAnswer validation failed: " + _schema_repair_feedback(exc)}
                                 content = json.dumps(artifact, ensure_ascii=False)
                                 status = "error"
                         payload: _DeferredToolMessage = {
@@ -2518,13 +2636,10 @@ class AnalystAgent:
                     computation = matched_computation
                 else:
                     computation = None
-            elif len(successful_computations) == 1:
-                computation = successful_computations[0]
-            elif len(successful_computations) > 1:
-                calculation_ambiguous = True
-                computation = None
             else:
-                computation = None
+                distinct_computations = _distinct_successful_computations(successful_computations)
+                computation = distinct_computations[0] if len(distinct_computations) == 1 else None
+                calculation_ambiguous = len(distinct_computations) > 1
 
         if calculation_ambiguous:
             result_open_issues.append(

@@ -1,0 +1,224 @@
+{
+  "evaluated_implementation": "7062f48c9d929f2925ffa6820cfd08e18c41ecac",
+  "output_repair_fixture_freeze": "33b57b6eeed8abc99bdcfa4817cd447c02ab3f86",
+  "before_runtime": "6f4387aa1a30f5a3fac7f88cadd44f4b4c3b1b54",
+  "matched_before_after_fields": [
+    "dataset_sha256",
+    "sources_sha256",
+    "harness_sha256",
+    "oracle_sha256",
+    "grounding_validator_sha256"
+  ],
+  "output_repair_contract_before_after": {
+    "before": 14,
+    "after": 20,
+    "denominator": 20
+  },
+  "feedback_contract_before_after": {
+    "before": 0,
+    "after": 6,
+    "denominator": 6
+  },
+  "captured_live_shape_contract_before_after": {
+    "before": 0,
+    "after": 4,
+    "denominator": 4
+  },
+  "terminal_status_error_before_after": {
+    "before": 20,
+    "after": 20,
+    "denominator": 20
+  },
+  "measurement_note": "Unconditional injected candidate responses; precise diagnostic feedback improves while terminal repair was already possible. This is not measured live-model repair efficacy or semantic improvement.",
+  "calculator_original_contract_before_after": {
+    "before": 4,
+    "after": 20,
+    "denominator": 20
+  },
+  "output_repair": {
+    "cases": 20,
+    "behavior_passes": 20,
+    "terminal_passes": 20,
+    "feedback_contract_passes": 6,
+    "feedback_contract_cases": 6,
+    "live_shape_repair_contract_passes": 4,
+    "live_shape_repair_cases": 4,
+    "successful_outputs": 7,
+    "successful_grounding_valid": 7,
+    "unexpected_successes": 0,
+    "history_preserved": 20,
+    "inputs_unchanged": 20,
+    "gate_pass": true
+  },
+  "calculator": {
+    "cases": 20,
+    "behavior_passes": 20,
+    "gate_pass": true,
+    "history_preserved": 20,
+    "unexpected_successes": 0,
+    "successful_outputs": 11,
+    "successful_grounding_valid": 11
+  },
+  "grounding": {
+    "cases": 37,
+    "behavior_passes": 37,
+    "behavior_accuracy": 1.0,
+    "successful_outputs": 19,
+    "successful_output_integrity_rate": 1.0,
+    "gate_pass": true,
+    "metrics": {
+      "claim_citation_coverage": {
+        "passed": 18,
+        "denominator": 18,
+        "rate": 1.0
+      },
+      "valid_context_id": {
+        "passed": 40,
+        "denominator": 40,
+        "rate": 1.0
+      },
+      "citation_source_preservation": {
+        "passed": 20,
+        "denominator": 20,
+        "rate": 1.0
+      },
+      "citation_source_completeness": {
+        "passed": 20,
+        "denominator": 20,
+        "rate": 1.0
+      },
+      "structured_numeric_evidence_type_accuracy": {
+        "passed": 3,
+        "denominator": 3,
+        "rate": 1.0
+      },
+      "narrative_evidence_type_accuracy": {
+        "passed": 11,
+        "denominator": 11,
+        "rate": 1.0
+      },
+      "hybrid_claim_evidence_routing_accuracy": {
+        "passed": 1,
+        "denominator": 1,
+        "rate": 1.0
+      },
+      "invalid_citation_detection": {
+        "passed": 6,
+        "denominator": 6,
+        "rate": 1.0
+      },
+      "grounding_fail_closed": {
+        "passed": 18,
+        "denominator": 18,
+        "rate": 1.0
+      },
+      "runtime_evaluator_consistency": {
+        "passed": 37,
+        "denominator": 37,
+        "rate": 1.0
+      }
+    },
+    "semantic_judge": {
+      "status": "not_run",
+      "note": "Fixture annotations are not judge scores."
+    }
+  },
+  "degradation": {
+    "all_lanes_unusable_fail_closed_rate": 1.0,
+    "cases": 14,
+    "degradation_classification_accuracy": 1.0,
+    "degradation_disclosure_rate": 1.0,
+    "failure_containment_rate": 1.0,
+    "overall_graceful_degradation_behavior_accuracy": 1.0,
+    "runtime_evaluator_consistency_rate": 1.0
+  },
+  "tests": {
+    "focused_passed": 362,
+    "full_passed": 545,
+    "full_failed": 2,
+    "subtests_passed": 47,
+    "warnings": 1,
+    "known_failures": [
+      "tests/agents/planner/test_planner_routes.py::test_planner_routes_match_expected_routes (alias002 expected structured, got kb)",
+      "tests/agents/retrieval/test_retrieval_workflow_no_tool_call.py::test_retrieval_no_tool_call_increments_attempts_and_stops_on_budget (expected 2, got 1)"
+    ],
+    "prior_failure_evidence": "artifacts/evals/agents/v1/grounding/baselines/0f8e477/verification.json",
+    "full_command": "conda run -n finsearch-arm --no-capture-output python -c 'import pathlib,sys,types;p=types.ModuleType(\"tests\");p.__path__=[str(pathlib.Path.cwd()/\"tests\")];sys.modules[\"tests\"]=p;import pytest;raise SystemExit(pytest.main([\"-q\",\"--tb=short\"]))'",
+    "focused_command": "conda run -n finsearch-arm --no-capture-output python -c 'import pathlib,sys,types;p=types.ModuleType(\"tests\");p.__path__=[str(pathlib.Path.cwd()/\"tests\")];sys.modules[\"tests\"]=p;import pytest;raise SystemExit(pytest.main([\"-q\",\"--tb=short\",\"tests/agents/analyst\",\"tests/agents/orchestrator\",\"tests/evals/test_agent_eval_route_aware_v1.py\",\"tests/evals/test_agent_eval_degradation_v1.py\",\"tests/evals/test_agent_grounding_v1.py\",\"tests/evals/test_agent_calculator_v1.py\",\"tests/evals/test_agent_output_repair_v1.py\"]))'",
+    "focused_exit_code": 0,
+    "full_exit_code": 1
+  },
+  "review": {
+    "url": "https://github.com/syang620/Finsearch-reboot/pull/24#pullrequestreview-5108636765",
+    "reviewed_implementation": "7062f48c9d929f2925ffa6820cfd08e18c41ecac",
+    "findings": [
+      {
+        "priority": "P2",
+        "comment_id": 3930390671,
+        "summary": "Release notes need evaluation evidence for the final output-repair runtime.",
+        "resolution": "New SHA-keyed deterministic/live evidence and current release notes are recorded with this measurement; no runtime changes after freeze."
+      }
+    ]
+  },
+  "live_gate": {
+    "manifest": "artifacts/evals/agents/v1/baselines/7062f48/manifest.json",
+    "gate": {
+      "deterministic_gate_pass": false,
+      "ragas_gate_pass": true,
+      "overall_pass": false
+    },
+    "critical_cases": [
+      "AGENT_V1_HYBRID_001",
+      "AGENT_V1_HYBRID_003",
+      "AGENT_V1_ANALYST_001"
+    ]
+  },
+  "artifacts": [
+    {
+      "path": "artifacts/evals/agents/v1/output_repair/baselines/7062f48/manifest.json",
+      "sha256": "3d170537e279b13984cd96846574b7298e50d3e30600fc0a2fbf93f82545512b"
+    },
+    {
+      "path": "artifacts/evals/agents/v1/output_repair/baselines/7062f48/per_case.jsonl",
+      "sha256": "284d7d5e480eab3190a8db1cea64bea97b1122154635f2624ad784401daaf775"
+    },
+    {
+      "path": "artifacts/evals/agents/v1/output_repair/baselines/7062f48/summary.json",
+      "sha256": "77130f690f48cfb2d441a19d20329ae40d9e396b2c26823beaee74674d5191e8"
+    },
+    {
+      "path": "artifacts/evals/agents/v1/calculator/baselines/7062f48/manifest.json",
+      "sha256": "a16f874a054f7d38c3fff22f50b1c0047e3542c3010d5d475979431ac5f14992"
+    },
+    {
+      "path": "artifacts/evals/agents/v1/calculator/baselines/7062f48/per_case.jsonl",
+      "sha256": "70ccdc4206d8d499aa3d028badfc48ee080db3c664ee4c863aa9452d8a84af31"
+    },
+    {
+      "path": "artifacts/evals/agents/v1/calculator/baselines/7062f48/summary.json",
+      "sha256": "a0da3e96c7d70cfc6ff1c2b461de02eff277d572a7d0b926f11c7b680cc09711"
+    },
+    {
+      "path": "artifacts/evals/agents/v1/grounding/baselines/7062f48/manifest.json",
+      "sha256": "3d65f8fbf9b93251b252ef075368d36d1abc9e7bfe378bed0aa76ec47ba5e538"
+    },
+    {
+      "path": "artifacts/evals/agents/v1/grounding/baselines/7062f48/per_case.jsonl",
+      "sha256": "fd211ae7656bc6c437e1317bd4721eca8db6ae9273b1e63b8745c5b9455278f3"
+    },
+    {
+      "path": "artifacts/evals/agents/v1/grounding/baselines/7062f48/summary.json",
+      "sha256": "e4a6a803b8896aafbef8910327155b6bfae74e250fce1d2f173589ece7c5ea67"
+    },
+    {
+      "path": "artifacts/evals/agents/v1/degradation/baselines/7062f48/per_case.jsonl",
+      "sha256": "3010280cd4c17a905e4b6a003230cbba1efdef34eadd66bd16dac160f486404d"
+    },
+    {
+      "path": "artifacts/evals/agents/v1/degradation/baselines/7062f48/summary.json",
+      "sha256": "df12eddaf88b8a9dc22a471537b0f91477072c3fa5c6e1961368f2842591fe11"
+    }
+  ],
+  "history": "All earlier PR5, PR6, calculator and output-repair-before evidence preserved. Unrelated untracked files left untouched.",
+  "scope": "Only analyst output-contract feedback changed after fixture freeze. PR6 validation, factual prose assembly, retrieval, lane semantics, resolver, provider settings and retry budgets are untouched."
+}
