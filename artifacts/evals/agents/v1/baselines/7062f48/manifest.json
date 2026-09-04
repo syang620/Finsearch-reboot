@@ -1,0 +1,358 @@
+{
+  "evaluated_implementation": "7062f48c9d929f2925ffa6820cfd08e18c41ecac",
+  "recorded_at_utc": "2026-09-04T03:22:02.411249+00:00",
+  "measurement_finished_at_utc": "2026-09-04T03:21:11.432726+00:00",
+  "tracked_worktree_clean_at_measurement": true,
+  "run_count": 1,
+  "evaluator_exit_code": 0,
+  "python": "3.11.14",
+  "pytest_version": "9.0.2",
+  "pytest_installation": "Environment-only in finsearch-arm; no dependency or lockfile changes.",
+  "dataset": "data/evals/agents/v1/agent_eval_routing_v1.jsonl",
+  "dataset_sha256": "c0fbdd097d7fa1b3eb22953a3ba4e8c0e84aa70a8786e08ba78a3b305cabe6cd",
+  "model_provenance": {
+    "planner_model": "ollama/qwen2.5:14b-instruct",
+    "analyst_model": "ollama/qwen2.5:14b-instruct",
+    "ollama_model_digest": "7cdf5a0187d5c58cc5d369b255592f7841d1c4696d45a8c8a9489440385b22f6",
+    "embedding_model": "qwen3-embedding:8b",
+    "embedding_model_digest": "64b933495768fbd3b87c20583d379728a07471e0c66733a9df87cd1901b3c44b",
+    "reranker_model": "Qwen/Qwen3-Reranker-8B"
+  },
+  "qdrant": {
+    "version": "1.16.2",
+    "collection": "sec_docs_dense_bm25_pr2_63dcec0",
+    "image_id": "sha256:cc45a127ebb7113d2ffeb7e2e012e8029f8b0af31f7ea8d139f6ac89a5ac81a7",
+    "preflight_status": "green",
+    "before": {
+      "points": 582,
+      "sha256": "6c72627b05dbec1e7f65d2132b8572b9fa12c47af711f2a12b8b776967994cee",
+      "method": "sorted Qdrant Record JSON including payload and vectors; compact sorted keys"
+    },
+    "after": {
+      "points": 582,
+      "sha256": "6c72627b05dbec1e7f65d2132b8572b9fa12c47af711f2a12b8b776967994cee",
+      "method": "sorted Qdrant Record JSON including payload and vectors; compact sorted keys"
+    },
+    "unchanged": true,
+    "historical_equivalence": "Fingerprint method and fingerprint match preceding PR6 0f8e477 and calculator 6f4387a measurements."
+  },
+  "corpus_provenance": {
+    "source_html": "data/html_filings/AAPL/10-K/10-K_2024.html",
+    "source_html_sha256": "24a830a0f1256e371d36a1f7f72e5e85a38037d1de2f6f966eb8457db42ff6d6",
+    "sidecars": [
+      {
+        "path": "data/chunked/AAPL/10-K/10-K_2024.text.jsonl",
+        "rows": 101,
+        "sha256": "a2035e3048c9d69945a6851e9f92b6eb64d97ea15ef1ab8fe1812b25e8cd08e0"
+      },
+      {
+        "path": "data/chunked/AAPL/10-K/10-K_2024.tables.jsonl",
+        "rows": 48,
+        "sha256": "a60a91dd358656c3667b9700a4e3a2fde5558a67900f62c0a22893fdaf2a6b1d"
+      },
+      {
+        "path": "data/chunked/AAPL/10-K/10-K_2024.text.split.jsonl",
+        "rows": 107,
+        "sha256": "856f6aec30636750141a695d864eb08da182160e25143b393b49bc7769436f71"
+      }
+    ],
+    "embedding_sidecars": [
+      {
+        "path": "data/embedding/AAPL/10-K/AAPL_10-K_2024.tables.embedded.jsonl",
+        "sha256": "c37c5194988377935a2de56748bf06a7261d29dacc14a0442660428701d81942"
+      },
+      {
+        "path": "data/embedding/AAPL/10-K/AAPL_10-K_2024.tables.rows.embedded.jsonl",
+        "sha256": "8ffbf13766976fc45d7af0cbf3c2d9678aa88672e515df717d655315f75e5115"
+      },
+      {
+        "path": "data/embedding/AAPL/10-K/AAPL_10-K_2024.text.embedded.jsonl",
+        "sha256": "4918039fa559d692beabdb30c473b1cc2fcff9794818fc7369fe90194941a92e"
+      }
+    ]
+  },
+  "execution": {
+    "launch_command_redacted": "SEC_USER_AGENT='<SEC_CONTACT>' conda run -n finsearch-arm --no-capture-output env PYTHONPATH=.:src python <LOCAL_LIVE_DRIVER>",
+    "effective_evaluator_command": "DASHSCOPE_API_KEY='<RERANKER_CREDENTIAL>' QWEN3_RERANK_MODEL=Qwen/Qwen3-Reranker-8B SEC_RERANK_MODEL=Qwen/Qwen3-Reranker-8B QWEN3_EMBED_API_URL=http://127.0.0.1:11434/api/embed QWEN3_EMBED_MODEL=qwen3-embedding:8b QDRANT_URL=http://127.0.0.1:6333 QDRANT_HOST=127.0.0.1 QDRANT_PORT=6333 QDRANT_COLLECTION_NAME=sec_docs_dense_bm25_pr2_63dcec0 SEC_USER_AGENT='<SEC_CONTACT>' FINSEARCH_ORCHESTRATOR_CHECKPOINTER_PATH='<CHECKPOINTER_DB>' PYTHONPATH=.:src conda run -n finsearch-arm --no-capture-output python scripts/evals/agents/eval_agents_v1.py --eval-path data/evals/agents/v1/agent_eval_routing_v1.jsonl --out-dir artifacts/evals/agents/v1/baselines/7062f48 --planner-model ollama/qwen2.5:14b-instruct --analyst-model ollama/qwen2.5:14b-instruct --deterministic-threshold 0.90 --max-critical-failure-rate 0",
+    "driver_note": "Local driver loads repository .env, applies the recorded environment, asserts a clean tracked checkout and new output directory, fingerprints Qdrant before/after, and calls the unchanged CLI entry point with these arguments.",
+    "local_driver_sha256": "0d694c5371dd6b271b3a95aa46d19b829fb266a2ec6305b9e103709eb93dcede",
+    "sec_contact": "Real user-supplied contact passed via local process environment; omitted from committed files.",
+    "checkpointer": "Fresh local database dedicated to this implementation; local path omitted.",
+    "ragas_enabled": false,
+    "deterministic_threshold": 0.9,
+    "max_critical_failure_rate": 0
+  },
+  "result": {
+    "num_queries": 15,
+    "num_valid_queries": 15,
+    "num_failures": 0,
+    "deterministic": {
+      "score_mean": 0.9463937621832358,
+      "contract_valid_rate": 1.0,
+      "intent_match_rate": 1.0,
+      "route_match_rate": 1.0,
+      "metadata_match_rate": 1.0,
+      "kb_lane_match_rate": 1.0,
+      "structured_lane_match_rate": 1.0,
+      "structured_metric_match_rate": 1.0,
+      "structured_status_match_rate": 1.0,
+      "reported_status_match_rate": 0.8,
+      "effective_status_match_rate": 0.8,
+      "failure_stage_match_rate": 0.8,
+      "degradation_match_rate": 1.0,
+      "lane_status_consistent_rate": 1.0,
+      "effective_status_consistent_rate": 1.0,
+      "failure_stage_consistent_rate": 1.0,
+      "degradation_consistent_rate": 1.0,
+      "analyst_status_match_rate": 0.7692307692307693,
+      "tool_use_match_rate": 1.0,
+      "compute_match_rate": 0.0,
+      "citation_match_rate": 0.75,
+      "grounding_consistent_rate": 1.0,
+      "critical_failure_rate": 0.2,
+      "planner_ms_mean": 34127.73333333333,
+      "retrieval_ms_mean": 51475.2,
+      "structured_fact_ms_mean": 277.8666666666667,
+      "analyst_ms_mean": 100628.33333333333,
+      "total_ms_mean": 186594.33333333334,
+      "structured_successful_execution_results": 7.0,
+      "structured_typed_contexts": 7.0,
+      "structured_analyst_visible_typed_contexts": 7.0,
+      "structured_synthetic_text_contexts": 0.0,
+      "structured_typed_representation_rate": 1.0,
+      "structured_analyst_visibility_rate": 1.0,
+      "structured_metric_id_coverage_rate": 1.0,
+      "structured_numeric_value_coverage_rate": 1.0,
+      "structured_accession_coverage_rate": 1.0,
+      "structured_report_date_coverage_rate": 1.0,
+      "structured_filed_date_coverage_rate": 1.0,
+      "structured_source_url_coverage_rate": 1.0
+    },
+    "ragas": {},
+    "gate": {
+      "deterministic_gate_pass": false,
+      "ragas_gate_pass": true,
+      "overall_pass": false
+    },
+    "config": {
+      "mode": "route_aware_v1",
+      "eval_path": "data/evals/agents/v1/agent_eval_routing_v1.jsonl",
+      "analyst_model": "ollama/qwen2.5:14b-instruct",
+      "planner_model": "ollama/qwen2.5:14b-instruct",
+      "enable_ragas": false,
+      "thresholds": {
+        "deterministic_score_min": 0.9,
+        "max_critical_failure_rate": 0.0,
+        "ragas_faithfulness_min": 0.75,
+        "ragas_answer_relevancy_min": 0.75,
+        "max_ragas_error_rate": 0.1
+      },
+      "timing_ms": {
+        "total": 2799423
+      }
+    }
+  },
+  "critical_cases": [
+    {
+      "id": "AGENT_V1_HYBRID_001",
+      "critical_failures": [
+        "REPORTED_STATUS_MISMATCH",
+        "EFFECTIVE_STATUS_MISMATCH",
+        "FAILURE_STAGE_MISMATCH",
+        "ANALYST_STATUS_MISMATCH",
+        "CITATION_MINIMUM_NOT_MET"
+      ],
+      "reported_status": "failed",
+      "failure_stage": "analyst",
+      "analyst_status": "grounding_error",
+      "analyst_error": "ANALYST_GROUNDING_INVALID",
+      "analyst_issues": [
+        {
+          "code": "STRUCTURED_FACT_CAPABILITY_REJECTED",
+          "message": "The requested calculated metric is not a supported registry capability.",
+          "severity": "warning",
+          "metadata": {
+            "request_index": 1,
+            "question_class": "unsupported_derived_metric",
+            "metric_hint": null,
+            "subquestion": "what drove the change",
+            "original_route": "hybrid",
+            "effective_route": "hybrid",
+            "outcome": "partial_kb_fallback",
+            "reason": "The requested calculated metric is not a supported registry capability.",
+            "candidate_metric_ids": []
+          }
+        },
+        {
+          "code": "GROUNDING_EVIDENCE_TYPE_MISMATCH",
+          "message": "Analyst claim grounding validation failed.",
+          "severity": "error",
+          "metadata": null
+        },
+        {
+          "code": "GROUNDING_ROW_TEXT_MISMATCH",
+          "message": "Analyst claim grounding validation failed.",
+          "severity": "error",
+          "metadata": null
+        }
+      ],
+      "grounding": {
+        "consistent": true
+      }
+    },
+    {
+      "id": "AGENT_V1_HYBRID_003",
+      "critical_failures": [
+        "REPORTED_STATUS_MISMATCH",
+        "EFFECTIVE_STATUS_MISMATCH",
+        "FAILURE_STAGE_MISMATCH",
+        "ANALYST_STATUS_MISMATCH",
+        "CITATION_MINIMUM_NOT_MET"
+      ],
+      "reported_status": "failed",
+      "failure_stage": "analyst",
+      "analyst_status": "grounding_error",
+      "analyst_error": "ANALYST_GROUNDING_INVALID",
+      "analyst_issues": [
+        {
+          "code": "STRUCTURED_FACT_CAPABILITY_REJECTED",
+          "message": "A direct metric hint is required for structured execution.",
+          "severity": "warning",
+          "metadata": {
+            "request_index": 1,
+            "question_class": "unknown",
+            "metric_hint": null,
+            "subquestion": "what financing strategy did management discuss",
+            "original_route": "hybrid",
+            "effective_route": "hybrid",
+            "outcome": "partial_kb_fallback",
+            "reason": "A direct metric hint is required for structured execution.",
+            "candidate_metric_ids": []
+          }
+        },
+        {
+          "code": "GROUNDING_ROW_TEXT_MISMATCH",
+          "message": "Analyst claim grounding validation failed.",
+          "severity": "error",
+          "metadata": null
+        }
+      ],
+      "grounding": {
+        "consistent": true
+      }
+    },
+    {
+      "id": "AGENT_V1_ANALYST_001",
+      "critical_failures": [
+        "REPORTED_STATUS_MISMATCH",
+        "EFFECTIVE_STATUS_MISMATCH",
+        "FAILURE_STAGE_MISMATCH",
+        "ANALYST_STATUS_MISMATCH",
+        "CITATION_MINIMUM_NOT_MET"
+      ],
+      "reported_status": "failed",
+      "failure_stage": "analyst",
+      "analyst_status": "grounding_error",
+      "analyst_error": "ANALYST_GROUNDING_INVALID",
+      "analyst_issues": [
+        {
+          "code": "STRUCTURED_FACT_CAPABILITY_REJECTED",
+          "message": "The requested calculated metric is not a supported registry capability.",
+          "severity": "warning",
+          "metadata": {
+            "request_index": 0,
+            "question_class": "unsupported_derived_metric",
+            "metric_hint": "net sales",
+            "subquestion": "Services net sales in FY2023",
+            "original_route": "hybrid",
+            "effective_route": "kb",
+            "outcome": "kb_fallback",
+            "reason": "The requested calculated metric is not a supported registry capability.",
+            "candidate_metric_ids": []
+          }
+        },
+        {
+          "code": "GROUNDING_ROW_TEXT_MISMATCH",
+          "message": "Analyst claim grounding validation failed.",
+          "severity": "error",
+          "metadata": null
+        }
+      ],
+      "grounding": {
+        "consistent": true
+      }
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "artifacts/evals/agents/v1/baselines/7062f48/summary.json",
+      "sha256": "9be2a1946714f40a19d5674d5fca80f80343c46e393c8f39768af936f9fcbb83"
+    },
+    {
+      "path": "artifacts/evals/agents/v1/baselines/7062f48/per_query.jsonl",
+      "sha256": "0af2c06e141a24b7d69ed81fe7958f1f7c0f96a4efa4e38016f2a85250185b8b"
+    },
+    {
+      "path": "artifacts/evals/agents/v1/baselines/7062f48/errors.jsonl",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "review": {
+    "url": "https://github.com/syang620/Finsearch-reboot/pull/24#pullrequestreview-5108636765",
+    "reviewed_implementation": "7062f48c9d929f2925ffa6820cfd08e18c41ecac",
+    "findings": [
+      {
+        "priority": "P2",
+        "comment_id": 3930390671,
+        "summary": "Release notes need evaluation evidence for the final output-repair runtime.",
+        "resolution": "New SHA-keyed deterministic/live evidence and current release notes are recorded with this measurement; no runtime changes after freeze."
+      }
+    ]
+  },
+  "tests": {
+    "focused_passed": 362,
+    "full_passed": 545,
+    "full_failed": 2,
+    "subtests_passed": 47,
+    "warnings": 1,
+    "known_failures": [
+      "tests/agents/planner/test_planner_routes.py::test_planner_routes_match_expected_routes (alias002 expected structured, got kb)",
+      "tests/agents/retrieval/test_retrieval_workflow_no_tool_call.py::test_retrieval_no_tool_call_increments_attempts_and_stops_on_budget (expected 2, got 1)"
+    ],
+    "prior_failure_evidence": "artifacts/evals/agents/v1/grounding/baselines/0f8e477/verification.json",
+    "full_command": "conda run -n finsearch-arm --no-capture-output python -c 'import pathlib,sys,types;p=types.ModuleType(\"tests\");p.__path__=[str(pathlib.Path.cwd()/\"tests\")];sys.modules[\"tests\"]=p;import pytest;raise SystemExit(pytest.main([\"-q\",\"--tb=short\"]))'",
+    "focused_command": "conda run -n finsearch-arm --no-capture-output python -c 'import pathlib,sys,types;p=types.ModuleType(\"tests\");p.__path__=[str(pathlib.Path.cwd()/\"tests\")];sys.modules[\"tests\"]=p;import pytest;raise SystemExit(pytest.main([\"-q\",\"--tb=short\",\"tests/agents/analyst\",\"tests/agents/orchestrator\",\"tests/evals/test_agent_eval_route_aware_v1.py\",\"tests/evals/test_agent_eval_degradation_v1.py\",\"tests/evals/test_agent_grounding_v1.py\",\"tests/evals/test_agent_calculator_v1.py\",\"tests/evals/test_agent_output_repair_v1.py\"]))'",
+    "focused_exit_code": 0,
+    "full_exit_code": 1
+  },
+  "diagnosis": {
+    "noncritical_cases": 12,
+    "previous_failure_shapes_now_noncritical": [
+      "AGENT_V1_SF_004",
+      "AGENT_V1_HYBRID_002"
+    ],
+    "case_findings": {
+      "AGENT_V1_HYBRID_001": "Attribution claim cites only a structured fact, which is incompatible with that claim type; row labels also do not occur verbatim in bound claim text.",
+      "AGENT_V1_HYBRID_003": "Row labels differ in case and the numeric row value 96662000000.0 differs from the formatted value in claim text; the model did not repair them within the budget.",
+      "AGENT_V1_ANALYST_001": "Required schema fields and explicit calculation are present, but row label Services net sales increase percentage is not a verbatim substring of its bound claim. Grounding fails closed; no successful calculator answer is claimed."
+    },
+    "terminal_output_schema_errors": 0,
+    "interpretation": "The frozen diagnostic-feedback contracts improved; live model-output repair remains unreliable. The 11/15 to 12/15 noncritical change is not a controlled causal or semantic-quality improvement claim.",
+    "action": "Stop behavior changes and evaluations, preserve this failed gate, and keep PR24 draft. No new release exception or PR7 work."
+  },
+  "shutdown_note": "Known MCP/AnyIO asynchronous-generator shutdown warnings occurred; the evaluator exited zero, wrote all 15 rows, and completed the unchanged-index postflight. Gate outcome remains failed.",
+  "release": {
+    "live_gate_pass": false,
+    "pr6_exception_applies": false,
+    "pr7_started": false,
+    "failed_gate_action": "Preserve failures and stop; do not broaden PR24 again or selectively rerun cases."
+  },
+  "limitations": [
+    "The stochastic live gate is not a controlled semantic-quality benchmark; binding checks do not establish answer completeness or entailment.",
+    "The hosted reranker provides no immutable service-side digest.",
+    "PR6-CALC-001 applies only to merged PR6, not this follow-up.",
+    "No provider tuning, changed thresholds, expectations, retry budgets or PR6 grounding-policy changes were made.",
+    "No selective case reruns or extra full live attempts were performed at this implementation.",
+    "Evaluator exit zero is not a passing gate; the gate fields are authoritative."
+  ]
+}
