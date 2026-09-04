@@ -35,16 +35,18 @@
   The live gate failed on one inherited calculator-ambiguity case; the project
   owner explicitly accepted that known failure for PR6 only. The unchanged failed
   gate and exception are recorded in `docs/EVALUATION_BASELINES.md`.
-- Before PR7 — separate calculator PR 24 remains draft at implementation
+- PR24 — approved for merge under explicit exception `PR24-GROUNDING-001`, at
+  implementation
   `7062f48c9d929f2925ffa6820cfd08e18c41ecac`. The owner-approved extension adds
   precise bounded schema/claim-row repair feedback without changing PR6 validation.
   Calculator behavior remains 4/20 → 20/20; new output-repair contracts improve
   14/20 → 20/20 (injected terminal outcomes were already 20/20), grounding remains
   37/37 and degradation 14/14. The unchanged live gate ran once after freeze and
   failed with 12/15 non-critical rows: three remaining grounding failures,
-  including the calculator case. All failures are preserved. Per owner direction,
-  stop further changes/reruns rather than broaden PR24 again. No PR6 exception
-  carries forward; PR24 is not release ready and PR7 remains unstarted.
+  including the calculator case. All failures and the failed strict gate remain
+  preserved; the owner accepted these three known failures for this merge only.
+  No PR6 exception carries forward and no PR7 failure is automatically waived.
+  PR7 is authorized for planning only; resolver implementation remains unstarted.
 
 ---
 

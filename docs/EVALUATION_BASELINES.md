@@ -1,6 +1,43 @@
 # FinSearch Evaluation Baselines
 
+## PR24 release exception PR24-GROUNDING-001 — 2026-09-04
+
+After reviewing the failed 12/15 live-gate result, the project owner explicitly
+authorized merging PR24 and proceeding to PR7 planning. This is a new exception
+for PR24, not an extension of `PR6-CALC-001`. It applies to implementation
+`7062f48c9d929f2925ffa6820cfd08e18c41ecac` and its evidence recorded at
+`aebd4bede06df105e469bab69bea52fc3a5b3fc0`.
+
+The strict live gate **failed**: three critical rows, score `0.946394`, zero
+evaluator errors. The owner accepts the following known unavailable answers for
+this merge only:
+
+- `AGENT_V1_HYBRID_001`: incompatible attribution evidence type and row-text
+  mismatches.
+- `AGENT_V1_HYBRID_003`: persistent row-text mismatches.
+- `AGENT_V1_ANALYST_001`: persistent calculation-row text mismatch; this is not
+  a successful calculator answer.
+
+No claim is made that all three failures predate PR24. The runtime continues to
+fail closed; no unsupported answer, threshold change, validation relaxation,
+selective rerun or rewritten evidence is approved. The 20/20 calculator and
+output-repair matrices, 37/37 grounding, 14/14 degradation and 100% applicable
+runtime/shadow consistency remain as measured. The two documented pre-existing
+full-suite failures and semantic-quality limitations remain visible; this is not
+a blanket waiver for other regressions or a claim of full-suite/semantic success.
+
+The immutable failed live measurement remains under
+`artifacts/evals/agents/v1/baselines/7062f48/`; its contemporaneous draft/stop
+disposition is historical and is not rewritten. This owner-approved exception
+supersedes that release disposition only. PR7 is authorized for planning, not
+implementation. PR7 must preserve behavior and record its own evidence; this
+exception does not automatically waive any PR7 gate failure.
+
 ## PR24 output-contract repair — 2026-09-04 UTC
+
+Historical measurement and pre-exception disposition; see the release exception
+above for the subsequent owner-approved merge decision. All raw evidence remains
+unchanged.
 
 Current frozen implementation:
 `7062f48c9d929f2925ffa6820cfd08e18c41ecac`. The owner approved a narrow
