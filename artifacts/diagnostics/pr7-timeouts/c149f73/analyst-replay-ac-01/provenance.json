@@ -1,0 +1,37 @@
+{
+  "diagnostic_only": true,
+  "not_release_evidence": true,
+  "implementation": "c149f73d073a306cf34d938955ae6cc739191528",
+  "started_at_utc": "2026-09-05T12:47:31.403413+00:00",
+  "source_per_query_sha256": "55db9c8fe56439a95388449fa5fd1794dfa25eebb23956c5b4e61ec2f4369f7a",
+  "case_ids": [
+    "AGENT_V1_KB_002",
+    "AGENT_V1_KB_003",
+    "AGENT_V1_HYBRID_002",
+    "AGENT_V1_HYBRID_003",
+    "AGENT_V1_ANALYST_001",
+    "AGENT_V1_ANALYST_003"
+  ],
+  "python": "3.11.14",
+  "pytest": "9.0.2",
+  "model_digest": "7cdf5a0187d5c58cc5d369b255592f7841d1c4696d45a8c8a9489440385b22f6",
+  "provider_version": {
+    "version": "0.33.2"
+  },
+  "loaded_models_before": {
+    "models": []
+  },
+  "power_before": "Now drawing from 'AC Power'\n -InternalBattery-0 (id=23461987)\t54%; charging; 2:40 remaining present: true\n",
+  "power_settings": "Battery Power:\n Sleep On Power Button 1\n lowpowermode         1\n standby              1\n hibernatemode        3\n powernap             1\n hibernatefile        /var/vm/sleepimage\n ttyskeepawake        1\n displaysleep         2\n womp                 0\n networkoversleep     0\n sleep                1\n tcpkeepalive         1\n lessbright           1\n disksleep            10\nAC Power:\n Sleep On Power Button 1\n lowpowermode         0\n standby              1\n ttyskeepawake        1\n hibernatemode        3\n powernap             1\n hibernatefile        /var/vm/sleepimage\n displaysleep         0\n womp                 1\n networkoversleep     0\n sleep                1\n tcpkeepalive         1\n disksleep            10\n",
+  "provider_log_start_bytes": 4441302,
+  "runtime_changes": false,
+  "full_gate_reruns": 0,
+  "timeout_s": 120,
+  "max_attempts": 2,
+  "max_tool_rounds": 6,
+  "max_context_items": 5,
+  "temperature": 0.0,
+  "base_num_predict": 2048,
+  "conditions": "Sequential analyst-only replay; current machine state, cold provider initially; no power, timeout, cache, or provider tuning.",
+  "instrumentation": "Pass-through observer of the unchanged provider request function; records metadata without changing requests or returned responses."
+}

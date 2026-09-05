@@ -1,0 +1,459 @@
+{
+  "log_byte_start": 4396255,
+  "log_byte_end": 4440537,
+  "log_slice_sha256": "3f4e6ff390e905bd62d2f0dbd3bbc9a1bc1b20592878f8619e9c18176655f9f0",
+  "requests": [
+    {
+      "end_local": "2026-09-04T20:30:33-04:00",
+      "http_status": 500,
+      "reported_duration": "2m0s",
+      "line_start": 50187,
+      "line_end": 50466,
+      "task_prompts": [
+        {
+          "task_id": 0,
+          "tokens": 2593
+        }
+      ],
+      "generation_samples": [
+        {
+          "tokens": 100,
+          "tokens_per_second": 5.68
+        },
+        {
+          "tokens": 119,
+          "tokens_per_second": 5.78
+        },
+        {
+          "tokens": 139,
+          "tokens_per_second": 5.86
+        },
+        {
+          "tokens": 158,
+          "tokens_per_second": 5.88
+        },
+        {
+          "tokens": 175,
+          "tokens_per_second": 5.83
+        },
+        {
+          "tokens": 192,
+          "tokens_per_second": 5.8
+        },
+        {
+          "tokens": 210,
+          "tokens_per_second": 5.8
+        },
+        {
+          "tokens": 230,
+          "tokens_per_second": 5.84
+        },
+        {
+          "tokens": 248,
+          "tokens_per_second": 5.85
+        },
+        {
+          "tokens": 267,
+          "tokens_per_second": 5.88
+        },
+        {
+          "tokens": 286,
+          "tokens_per_second": 5.9
+        },
+        {
+          "tokens": 305,
+          "tokens_per_second": 5.91
+        },
+        {
+          "tokens": 325,
+          "tokens_per_second": 5.94
+        },
+        {
+          "tokens": 344,
+          "tokens_per_second": 5.95
+        },
+        {
+          "tokens": 363,
+          "tokens_per_second": 5.97
+        },
+        {
+          "tokens": 382,
+          "tokens_per_second": 5.99
+        },
+        {
+          "tokens": 400,
+          "tokens_per_second": 5.99
+        }
+      ],
+      "completed_prefills": [],
+      "completed_decodes": [],
+      "case_id": "AGENT_V1_KB_002"
+    },
+    {
+      "end_local": "2026-09-04T20:32:33-04:00",
+      "http_status": 500,
+      "reported_duration": "2m0s",
+      "line_start": 50467,
+      "line_end": 50513,
+      "task_prompts": [
+        {
+          "task_id": 418,
+          "tokens": 4304
+        }
+      ],
+      "generation_samples": [
+        {
+          "tokens": 100,
+          "tokens_per_second": 5.36
+        },
+        {
+          "tokens": 116,
+          "tokens_per_second": 5.33
+        },
+        {
+          "tokens": 132,
+          "tokens_per_second": 5.3
+        },
+        {
+          "tokens": 148,
+          "tokens_per_second": 5.3
+        },
+        {
+          "tokens": 165,
+          "tokens_per_second": 5.32
+        },
+        {
+          "tokens": 184,
+          "tokens_per_second": 5.38
+        },
+        {
+          "tokens": 200,
+          "tokens_per_second": 5.34
+        },
+        {
+          "tokens": 215,
+          "tokens_per_second": 5.31
+        },
+        {
+          "tokens": 230,
+          "tokens_per_second": 5.29
+        },
+        {
+          "tokens": 246,
+          "tokens_per_second": 5.28
+        },
+        {
+          "tokens": 264,
+          "tokens_per_second": 5.32
+        },
+        {
+          "tokens": 283,
+          "tokens_per_second": 5.36
+        },
+        {
+          "tokens": 302,
+          "tokens_per_second": 5.4
+        }
+      ],
+      "completed_prefills": [],
+      "completed_decodes": [],
+      "case_id": "AGENT_V1_KB_003"
+    },
+    {
+      "end_local": "2026-09-04T20:34:33-04:00",
+      "http_status": 500,
+      "reported_duration": "2m0s",
+      "line_start": 50514,
+      "line_end": 50567,
+      "task_prompts": [
+        {
+          "task_id": 739,
+          "tokens": 3029
+        }
+      ],
+      "generation_samples": [
+        {
+          "tokens": 100,
+          "tokens_per_second": 5.96
+        },
+        {
+          "tokens": 119,
+          "tokens_per_second": 5.99
+        },
+        {
+          "tokens": 137,
+          "tokens_per_second": 5.99
+        },
+        {
+          "tokens": 155,
+          "tokens_per_second": 5.99
+        },
+        {
+          "tokens": 175,
+          "tokens_per_second": 6.03
+        },
+        {
+          "tokens": 195,
+          "tokens_per_second": 6.06
+        },
+        {
+          "tokens": 213,
+          "tokens_per_second": 6.03
+        },
+        {
+          "tokens": 232,
+          "tokens_per_second": 6.04
+        },
+        {
+          "tokens": 250,
+          "tokens_per_second": 6.01
+        },
+        {
+          "tokens": 267,
+          "tokens_per_second": 5.97
+        },
+        {
+          "tokens": 285,
+          "tokens_per_second": 5.96
+        },
+        {
+          "tokens": 304,
+          "tokens_per_second": 5.96
+        },
+        {
+          "tokens": 323,
+          "tokens_per_second": 5.96
+        },
+        {
+          "tokens": 342,
+          "tokens_per_second": 5.98
+        },
+        {
+          "tokens": 361,
+          "tokens_per_second": 5.98
+        },
+        {
+          "tokens": 377,
+          "tokens_per_second": 5.93
+        },
+        {
+          "tokens": 394,
+          "tokens_per_second": 5.9
+        },
+        {
+          "tokens": 411,
+          "tokens_per_second": 5.88
+        },
+        {
+          "tokens": 427,
+          "tokens_per_second": 5.86
+        },
+        {
+          "tokens": 443,
+          "tokens_per_second": 5.83
+        },
+        {
+          "tokens": 460,
+          "tokens_per_second": 5.81
+        }
+      ],
+      "completed_prefills": [],
+      "completed_decodes": [],
+      "case_id": "AGENT_V1_HYBRID_002"
+    },
+    {
+      "end_local": "2026-09-04T20:36:33-04:00",
+      "http_status": 500,
+      "reported_duration": "2m0s",
+      "line_start": 50568,
+      "line_end": 50616,
+      "task_prompts": [
+        {
+          "task_id": 1219,
+          "tokens": 3880
+        }
+      ],
+      "generation_samples": [
+        {
+          "tokens": 100,
+          "tokens_per_second": 5.48
+        },
+        {
+          "tokens": 115,
+          "tokens_per_second": 5.37
+        },
+        {
+          "tokens": 130,
+          "tokens_per_second": 5.28
+        },
+        {
+          "tokens": 145,
+          "tokens_per_second": 5.25
+        },
+        {
+          "tokens": 162,
+          "tokens_per_second": 5.28
+        },
+        {
+          "tokens": 179,
+          "tokens_per_second": 5.3
+        },
+        {
+          "tokens": 196,
+          "tokens_per_second": 5.31
+        },
+        {
+          "tokens": 213,
+          "tokens_per_second": 5.31
+        },
+        {
+          "tokens": 230,
+          "tokens_per_second": 5.33
+        },
+        {
+          "tokens": 246,
+          "tokens_per_second": 5.33
+        },
+        {
+          "tokens": 263,
+          "tokens_per_second": 5.33
+        },
+        {
+          "tokens": 280,
+          "tokens_per_second": 5.33
+        },
+        {
+          "tokens": 297,
+          "tokens_per_second": 5.34
+        }
+      ],
+      "completed_prefills": [],
+      "completed_decodes": [],
+      "case_id": "AGENT_V1_HYBRID_003"
+    },
+    {
+      "end_local": "2026-09-04T20:38:33-04:00",
+      "http_status": 500,
+      "reported_duration": "2m0s",
+      "line_start": 50617,
+      "line_end": 50668,
+      "task_prompts": [
+        {
+          "task_id": 1538,
+          "tokens": 4099
+        }
+      ],
+      "generation_samples": [
+        {
+          "tokens": 100,
+          "tokens_per_second": 5.25
+        },
+        {
+          "tokens": 115,
+          "tokens_per_second": 5.19
+        },
+        {
+          "tokens": 131,
+          "tokens_per_second": 5.17
+        },
+        {
+          "tokens": 148,
+          "tokens_per_second": 5.2
+        },
+        {
+          "tokens": 165,
+          "tokens_per_second": 5.23
+        },
+        {
+          "tokens": 182,
+          "tokens_per_second": 5.25
+        },
+        {
+          "tokens": 199,
+          "tokens_per_second": 5.28
+        },
+        {
+          "tokens": 215,
+          "tokens_per_second": 5.27
+        },
+        {
+          "tokens": 231,
+          "tokens_per_second": 5.26
+        },
+        {
+          "tokens": 247,
+          "tokens_per_second": 5.25
+        },
+        {
+          "tokens": 264,
+          "tokens_per_second": 5.26
+        },
+        {
+          "tokens": 280,
+          "tokens_per_second": 5.25
+        }
+      ],
+      "completed_prefills": [],
+      "completed_decodes": [],
+      "case_id": "AGENT_V1_ANALYST_001"
+    },
+    {
+      "end_local": "2026-09-04T20:40:33-04:00",
+      "http_status": 500,
+      "reported_duration": "2m0s",
+      "line_start": 50669,
+      "line_end": 50721,
+      "task_prompts": [
+        {
+          "task_id": 1829,
+          "tokens": 4111
+        }
+      ],
+      "generation_samples": [
+        {
+          "tokens": 100,
+          "tokens_per_second": 4.94
+        },
+        {
+          "tokens": 113,
+          "tokens_per_second": 4.84
+        },
+        {
+          "tokens": 129,
+          "tokens_per_second": 4.89
+        },
+        {
+          "tokens": 146,
+          "tokens_per_second": 4.96
+        },
+        {
+          "tokens": 163,
+          "tokens_per_second": 5.01
+        },
+        {
+          "tokens": 179,
+          "tokens_per_second": 5.03
+        },
+        {
+          "tokens": 196,
+          "tokens_per_second": 5.07
+        },
+        {
+          "tokens": 213,
+          "tokens_per_second": 5.11
+        },
+        {
+          "tokens": 230,
+          "tokens_per_second": 5.13
+        },
+        {
+          "tokens": 247,
+          "tokens_per_second": 5.15
+        }
+      ],
+      "completed_prefills": [],
+      "completed_decodes": [],
+      "case_id": "AGENT_V1_ANALYST_003"
+    }
+  ]
+}

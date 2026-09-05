@@ -1,0 +1,348 @@
+{
+  "evaluated_implementation": "c149f73d073a306cf34d938955ae6cc739191528",
+  "merged_baseline": "2860c430036f3fa9e9488663fed9d086a03820af",
+  "fixture_freeze": "fae5bbf",
+  "snapshot": {
+    "path": "data/evals/agents/v1/structured_fact_resolver_pr24.json",
+    "sha256": "b7cb74ddfc15d2e2c0b7d72275ecf62ed2b9966c299927d926791fb403ac3e6c"
+  },
+  "before": {
+    "cases": 170,
+    "exact_replay_passes": 170,
+    "runtime": "merged PR24; source bytes checked before capture"
+  },
+  "after": {
+    "cases": 170,
+    "passed": 170,
+    "exact_parity": true
+  },
+  "live_old_path_replay": {
+    "method": "Actual merged-PR24 executor replay using captured live planner inputs and SEC responses, without external calls. Live call arguments are read from resolved result fields, which the unchanged client-call adapter passes verbatim.",
+    "source_commit": "2860c430036f3fa9e9488663fed9d086a03820af",
+    "old_orchestrator_sha256": "1469b591c7a51e1ee78404236d00da60c4d55fbd045939b101202ff2a5a817e4",
+    "cases": [
+      {
+        "id": "AGENT_V1_SF_001",
+        "old_results_match_live": true,
+        "old_arguments_match_live": true,
+        "arguments": [
+          {
+            "ticker": "AAPL",
+            "fiscal_year": 2024,
+            "metric_id": "revenue"
+          }
+        ],
+        "result_count": 1
+      },
+      {
+        "id": "AGENT_V1_SF_002",
+        "old_results_match_live": true,
+        "old_arguments_match_live": true,
+        "arguments": [
+          {
+            "ticker": "AAPL",
+            "fiscal_year": 2024,
+            "metric_id": "net_income"
+          }
+        ],
+        "result_count": 1
+      },
+      {
+        "id": "AGENT_V1_SF_003",
+        "old_results_match_live": true,
+        "old_arguments_match_live": true,
+        "arguments": [
+          {
+            "ticker": "AAPL",
+            "fiscal_year": 2024,
+            "metric_id": "operating_cash_flow"
+          }
+        ],
+        "result_count": 1
+      },
+      {
+        "id": "AGENT_V1_SF_004",
+        "old_results_match_live": true,
+        "old_arguments_match_live": true,
+        "arguments": [
+          {
+            "ticker": "AAPL",
+            "fiscal_year": 2024,
+            "metric_id": "total_debt"
+          }
+        ],
+        "result_count": 1
+      },
+      {
+        "id": "AGENT_V1_HYBRID_001",
+        "old_results_match_live": true,
+        "old_arguments_match_live": true,
+        "arguments": [
+          {
+            "ticker": "AAPL",
+            "fiscal_year": 2024,
+            "metric_id": "revenue"
+          }
+        ],
+        "result_count": 1
+      },
+      {
+        "id": "AGENT_V1_HYBRID_002",
+        "old_results_match_live": true,
+        "old_arguments_match_live": true,
+        "arguments": [
+          {
+            "ticker": "AAPL",
+            "fiscal_year": 2024,
+            "metric_id": "operating_cash_flow"
+          }
+        ],
+        "result_count": 1
+      },
+      {
+        "id": "AGENT_V1_HYBRID_003",
+        "old_results_match_live": true,
+        "old_arguments_match_live": true,
+        "arguments": [
+          {
+            "ticker": "AAPL",
+            "fiscal_year": 2024,
+            "metric_id": "total_debt"
+          }
+        ],
+        "result_count": 1
+      }
+    ],
+    "executed_calls": 7,
+    "exact_parity": true
+  },
+  "boundary": "Resolver owns existing target selection and opaque selected-target metadata; orchestration owns filing-form eligibility and capability permission.",
+  "tests": {
+    "full_passed": 719,
+    "full_failed": 2,
+    "subtests_passed": 47,
+    "warnings": 1,
+    "full_exit_code": 1,
+    "resolver_tests_passed": 174,
+    "timing": "Full suite executed before implementation freeze against identical runtime and test source bytes.",
+    "command": "PYTHONPATH=.:src conda run -n finsearch-arm --no-capture-output python -c 'import pathlib,sys,types;p=types.ModuleType(\"tests\");p.__path__=[str(pathlib.Path.cwd()/\"tests\")];sys.modules[\"tests\"]=p;import pytest;raise SystemExit(pytest.main([\"-q\",\"--tb=short\"]))'",
+    "known_PR24_failures": [
+      {
+        "test": "tests/agents/planner/test_planner_routes.py::test_planner_routes_match_expected_routes",
+        "reason": "alias_recognition/alias_002: expected structured_fact, got kb"
+      },
+      {
+        "test": "tests/agents/retrieval/test_retrieval_workflow_no_tool_call.py::test_retrieval_no_tool_call_increments_attempts_and_stops_on_budget",
+        "reason": "Expected two attempts, observed one."
+      }
+    ]
+  },
+  "review": {
+    "url": "https://github.com/syang620/Finsearch-reboot/pull/25#issuecomment-5546911177",
+    "reviewed_implementation": "c149f73d073a306cf34d938955ae6cc739191528",
+    "outcome": "Fresh review of c149f73 found no major issues; no inline findings."
+  },
+  "release": {
+    "live_gate_pass": false,
+    "pr24_exception_applies": false,
+    "pr7_exception_granted": false,
+    "resolver_routing_tool_argument_mismatch_blocks_release": true,
+    "observed_failure_classes": {
+      "ANALYST_MODEL_TIMEOUT": 6,
+      "ANALYST_GROUNDING_INVALID": 1
+    },
+    "grounding_only_exception_is_insufficient": true,
+    "failed_gate_action": "Stop PR7 changes and live evaluations. Preserve six analyst model timeouts and one grounding failure. The grounding-only exception scenario does not cover timeouts; any further investigation, live rerun or release exception needs new explicit owner direction."
+  },
+  "implementation_diff_numstat": [
+    "186\t0\tdata/evals/agents/v1/structured_fact_resolver_pr24.json",
+    "43\t0\tdata/evals/agents/v1/structured_fact_resolver_pr24.md",
+    "7\t6\tdocs/ARCHITECTURE.md",
+    "17\t0\tdocs/EVALUATION_AGENTS.md",
+    "30\t2\tdocs/IMPLEMENTATION_PLAN.md",
+    "5\t2\tdocs/adr/002-structured-fact-capability-policy.md",
+    "181\t0\tscripts/evals/agents/capture_resolver_pr24.py",
+    "115\t0\tscripts/evals/agents/eval_structured_fact_resolver_v1.py",
+    "17\t202\tsrc/agents/orchestrator/agent_orchestrator.py",
+    "18\t0\tsrc/structured_facts/models.py",
+    "226\t0\tsrc/structured_facts/resolver.py",
+    "3\t1\ttests/agents/orchestrator/test_orchestrator_planner_error.py",
+    "72\t0\ttests/structured_facts/test_resolver.py"
+  ],
+  "commands": [
+    "PYTHONPATH=.:src conda run -n finsearch-arm --no-capture-output python scripts/evals/agents/capture_resolver_pr24.py",
+    "PYTHONPATH=.:src conda run -n finsearch-arm --no-capture-output python -c 'import pathlib,sys,types;p=types.ModuleType(\"tests\");p.__path__=[str(pathlib.Path.cwd()/\"tests\")];sys.modules[\"tests\"]=p;import pytest;raise SystemExit(pytest.main([\"-q\",\"--tb=short\"]))'",
+    "PYTHONPATH=.:src conda run -n finsearch-arm --no-capture-output python scripts/evals/agents/eval_structured_fact_resolver_v1.py --out-dir artifacts/evals/agents/v1/resolver/baselines/c149f73",
+    "PYTHONPATH=.:src conda run -n finsearch-arm --no-capture-output python scripts/evals/agents/eval_agent_calculator_v1.py --out-dir artifacts/evals/agents/v1/calculator/baselines/c149f73",
+    "PYTHONPATH=.:src conda run -n finsearch-arm --no-capture-output python scripts/evals/agents/eval_agent_output_repair_v1.py --out-dir artifacts/evals/agents/v1/output_repair/baselines/c149f73",
+    "PYTHONPATH=.:src conda run -n finsearch-arm --no-capture-output python scripts/evals/agents/eval_agent_grounding_v1.py --out-dir artifacts/evals/agents/v1/grounding/baselines/c149f73",
+    "PYTHONPATH=.:src conda run -n finsearch-arm --no-capture-output python scripts/evals/agents/eval_agent_degradation_v1.py --out-dir artifacts/evals/agents/v1/degradation/baselines/c149f73",
+    "DASHSCOPE_API_KEY='<RERANKER_CREDENTIAL>' QWEN3_RERANK_MODEL=Qwen/Qwen3-Reranker-8B SEC_RERANK_MODEL=Qwen/Qwen3-Reranker-8B QWEN3_EMBED_API_URL=http://127.0.0.1:11434/api/embed QWEN3_EMBED_MODEL=qwen3-embedding:8b QDRANT_URL=http://127.0.0.1:6333 QDRANT_HOST=127.0.0.1 QDRANT_PORT=6333 QDRANT_COLLECTION_NAME=sec_docs_dense_bm25_pr2_63dcec0 SEC_USER_AGENT='<SEC_CONTACT>' FINSEARCH_ORCHESTRATOR_CHECKPOINTER_PATH='<CHECKPOINTER_DB>' PYTHONPATH=.:src conda run -n finsearch-arm --no-capture-output python scripts/evals/agents/eval_agents_v1.py --eval-path data/evals/agents/v1/agent_eval_routing_v1.jsonl --out-dir artifacts/evals/agents/v1/baselines/c149f73 --planner-model ollama/qwen2.5:14b-instruct --analyst-model ollama/qwen2.5:14b-instruct --deterministic-threshold 0.90 --max-critical-failure-rate 0",
+    "git diff --check"
+  ],
+  "regression_summaries": {
+    "calculator": {
+      "cases": 20,
+      "behavior_passes": 20,
+      "gate_pass": true,
+      "history_preserved": 20,
+      "unexpected_successes": 0,
+      "successful_outputs": 11,
+      "successful_grounding_valid": 11
+    },
+    "output_repair": {
+      "cases": 20,
+      "behavior_passes": 20,
+      "terminal_passes": 20,
+      "feedback_contract_passes": 6,
+      "feedback_contract_cases": 6,
+      "live_shape_repair_contract_passes": 4,
+      "live_shape_repair_cases": 4,
+      "successful_outputs": 7,
+      "successful_grounding_valid": 7,
+      "unexpected_successes": 0,
+      "history_preserved": 20,
+      "inputs_unchanged": 20,
+      "gate_pass": true
+    },
+    "grounding": {
+      "cases": 37,
+      "behavior_passes": 37,
+      "behavior_accuracy": 1.0,
+      "successful_outputs": 19,
+      "successful_output_integrity_rate": 1.0,
+      "gate_pass": true,
+      "metrics": {
+        "claim_citation_coverage": {
+          "passed": 18,
+          "denominator": 18,
+          "rate": 1.0
+        },
+        "valid_context_id": {
+          "passed": 40,
+          "denominator": 40,
+          "rate": 1.0
+        },
+        "citation_source_preservation": {
+          "passed": 20,
+          "denominator": 20,
+          "rate": 1.0
+        },
+        "citation_source_completeness": {
+          "passed": 20,
+          "denominator": 20,
+          "rate": 1.0
+        },
+        "structured_numeric_evidence_type_accuracy": {
+          "passed": 3,
+          "denominator": 3,
+          "rate": 1.0
+        },
+        "narrative_evidence_type_accuracy": {
+          "passed": 11,
+          "denominator": 11,
+          "rate": 1.0
+        },
+        "hybrid_claim_evidence_routing_accuracy": {
+          "passed": 1,
+          "denominator": 1,
+          "rate": 1.0
+        },
+        "invalid_citation_detection": {
+          "passed": 6,
+          "denominator": 6,
+          "rate": 1.0
+        },
+        "grounding_fail_closed": {
+          "passed": 18,
+          "denominator": 18,
+          "rate": 1.0
+        },
+        "runtime_evaluator_consistency": {
+          "passed": 37,
+          "denominator": 37,
+          "rate": 1.0
+        }
+      },
+      "semantic_judge": {
+        "status": "not_run",
+        "note": "Fixture annotations are not judge scores."
+      }
+    },
+    "degradation": {
+      "all_lanes_unusable_fail_closed_rate": 1.0,
+      "cases": 14,
+      "degradation_classification_accuracy": 1.0,
+      "degradation_disclosure_rate": 1.0,
+      "failure_containment_rate": 1.0,
+      "overall_graceful_degradation_behavior_accuracy": 1.0,
+      "runtime_evaluator_consistency_rate": 1.0
+    }
+  },
+  "unchanged_source_sha256": {
+    "src/agents/analyst/agent.py": "d8054f56042159f32205dd9979fcacd2fe76952fee40c7b66db3d0c792b5e092",
+    "src/structured_facts/capabilities.py": "632dd0d6ee742b4e0ca9f892c0979110beb3144348aa0a66260c4c651f437531",
+    "src/agents/contracts.py": "e11b87dec679c744cd8f0cc0931c8dc92b83e222cf93f4ede37acef7b40ca82d",
+    "src/evals/agent_eval_route_aware_v1.py": "c3e0d02b9ae6db373f119e3cab5cf04a4f12e5284a7427a63af45928cdf281e9"
+  },
+  "artifacts": [
+    {
+      "path": "artifacts/evals/agents/v1/resolver/baselines/c149f73/manifest.json",
+      "sha256": "c3eacc5dc10cb8f0f38c76664bc0aa7d62fe1d89babb7c43bea0252b8f4ff31e"
+    },
+    {
+      "path": "artifacts/evals/agents/v1/resolver/baselines/c149f73/per_case.jsonl",
+      "sha256": "fef30ad329c7c480773afbe1759a8c79cefa1a91e22b4eae7e0a2e1a880596ee"
+    },
+    {
+      "path": "artifacts/evals/agents/v1/resolver/baselines/c149f73/summary.json",
+      "sha256": "e4dc8d6872afe508b5bffab3c25861408f0f653e2917685037a438d80955851c"
+    },
+    {
+      "path": "artifacts/evals/agents/v1/calculator/baselines/c149f73/manifest.json",
+      "sha256": "5316d1b7e31a784ff4341e0b55b5c6b440a2bde14e5763267e1e2dc14d8c8013"
+    },
+    {
+      "path": "artifacts/evals/agents/v1/calculator/baselines/c149f73/per_case.jsonl",
+      "sha256": "1770daaaffd226fa2501b069ba1b8df7471b6d2068e1734e1f1bf4b2e1cd3295"
+    },
+    {
+      "path": "artifacts/evals/agents/v1/calculator/baselines/c149f73/summary.json",
+      "sha256": "a0da3e96c7d70cfc6ff1c2b461de02eff277d572a7d0b926f11c7b680cc09711"
+    },
+    {
+      "path": "artifacts/evals/agents/v1/output_repair/baselines/c149f73/manifest.json",
+      "sha256": "d578c6685b388ef480081eef2ab49fba9f2b8747c4da5aa5046ceeacab50d632"
+    },
+    {
+      "path": "artifacts/evals/agents/v1/output_repair/baselines/c149f73/per_case.jsonl",
+      "sha256": "890c3b4a60c35be4596e85709a48561e7f8ef1a0b3c663bd07c4c985e3fd4351"
+    },
+    {
+      "path": "artifacts/evals/agents/v1/output_repair/baselines/c149f73/summary.json",
+      "sha256": "77130f690f48cfb2d441a19d20329ae40d9e396b2c26823beaee74674d5191e8"
+    },
+    {
+      "path": "artifacts/evals/agents/v1/grounding/baselines/c149f73/manifest.json",
+      "sha256": "bab81ed7bce0776d3cd42379cfe744bf003a112c93be5f09c7d48da14c257cc7"
+    },
+    {
+      "path": "artifacts/evals/agents/v1/grounding/baselines/c149f73/per_case.jsonl",
+      "sha256": "1ba69d9cac637cee410b65fc8a525ebd0a5bae8ba080ca49c029889d99ebb200"
+    },
+    {
+      "path": "artifacts/evals/agents/v1/grounding/baselines/c149f73/summary.json",
+      "sha256": "e4a6a803b8896aafbef8910327155b6bfae74e250fce1d2f173589ece7c5ea67"
+    },
+    {
+      "path": "artifacts/evals/agents/v1/degradation/baselines/c149f73/per_case.jsonl",
+      "sha256": "3010280cd4c17a905e4b6a003230cbba1efdef34eadd66bd16dac160f486404d"
+    },
+    {
+      "path": "artifacts/evals/agents/v1/degradation/baselines/c149f73/summary.json",
+      "sha256": "df12eddaf88b8a9dc22a471537b0f91477072c3fa5c6e1961368f2842591fe11"
+    }
+  ],
+  "live_manifest": "artifacts/evals/agents/v1/baselines/c149f73/manifest.json",
+  "history": "Earlier PR5/PR6/PR24 evidence and unrelated untracked user files preserved."
+}

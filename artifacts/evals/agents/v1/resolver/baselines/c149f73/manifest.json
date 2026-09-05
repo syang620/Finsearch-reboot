@@ -1,0 +1,17 @@
+{
+  "evaluated_commit": "c149f73d073a306cf34d938955ae6cc739191528",
+  "snapshot_source_commit": "2860c430036f3fa9e9488663fed9d086a03820af",
+  "tracked_worktree_clean": true,
+  "created_at": "2026-09-04T21:53:56.094392+00:00",
+  "python": "3.11.14",
+  "pytest": "9.0.2",
+  "sha256": {
+    "data/evals/agents/v1/structured_fact_resolver_pr24.json": "b7cb74ddfc15d2e2c0b7d72275ecf62ed2b9966c299927d926791fb403ac3e6c",
+    "scripts/evals/agents/eval_structured_fact_resolver_v1.py": "9071690315dcc09cbb1a7dd55478904752b383ae047f724bd6929edfe6771c88",
+    "src/structured_facts/resolver.py": "7febd3e28c51408304e14a606ef6f3802b6efdcc0c6f600f407f17b07bf3b96c",
+    "src/structured_facts/models.py": "c665ff1046c3549dabaec6d6ebbba6019cfc1aee1b0c66358c3eb232a897b03a",
+    "src/agents/orchestrator/agent_orchestrator.py": "e0da1267772d4d2b9caef2b27482e5426d39bc6f53bf496b294e720ae33d69a2",
+    "src/structured_facts/capabilities.py": "632dd0d6ee742b4e0ca9f892c0979110beb3144348aa0a66260c4c651f437531"
+  },
+  "oracle": "Frozen observed merged-PR24 outputs; no expected values computed by current runtime."
+}

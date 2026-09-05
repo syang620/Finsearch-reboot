@@ -1,5 +1,22 @@
 # Agent Evaluation
 
+## PR7 resolver parity
+
+The 170 observed merged-PR24 cases in
+`data/evals/agents/v1/structured_fact_resolver_pr24.json` were frozen before
+extraction. They include isolated resolution and actual capability-gated execution
+with a recording SEC client. Expected values come only from that frozen snapshot.
+
+```bash
+PYTHONPATH=.:src conda run -n finsearch-arm python scripts/evals/agents/eval_structured_fact_resolver_v1.py --out-dir artifacts/evals/agents/v1/resolver/baselines/<SHA>
+```
+
+Exact equality includes selected-target metadata, reasons, complete legacy result
+objects and ordered SEC arguments. Any mismatch blocks PR7. After regression
+suites and fresh review, run the unchanged 15-case live gate once. Unrelated
+grounding failures must be preserved and need a new explicit PR7 release exception
+before merge; the PR24 exception does not apply.
+
 ## PR6 grounding evaluation
 
 The frozen dataset is `data/evals/agents/v1/agent_eval_grounding_v1.jsonl` (37
