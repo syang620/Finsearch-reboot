@@ -1,5 +1,87 @@
 # FinSearch Evaluation Baselines
 
+## PR7 resolver extraction — 2026-09-05 UTC
+
+PR7 is implemented in [PR25](https://github.com/syang620/Finsearch-reboot/pull/25)
+at frozen runtime `c149f73d073a306cf34d938955ae6cc739191528`. **Release is blocked;
+the PR remains draft and no PR7 exception has been granted.** The unchanged
+15-case live gate ran once and failed: **8/15 non-critical rows**, seven critical
+rows, deterministic score `0.859390` against `0.90`, and zero evaluator errors.
+Six failures are analyst model timeouts, so the approved plan's grounding-only
+exception scenario is insufficient. No further live run or behavior tuning was
+performed. Further investigation, rerun or release disposition needs new owner
+direction; `PR24-GROUNDING-001` does not carry forward.
+
+The characterization oracle was frozen first at `fae5bbf`, from actual merged-PR24
+runtime `2860c430036f3fa9e9488663fed9d086a03820af`. All **170/170** cases replay
+exactly before and after extraction, including status, metric ID, ticker, year,
+selected target, exact reason, capability decisions, complete legacy execution
+results and ordered SEC arguments. The capture script verifies old source bytes
+and refuses replacement. The current harness reads static expected observations;
+it never generates expected decisions from the new resolver.
+
+The pure resolver owns existing metric/target matching and ticker/year precedence.
+Selected-target metadata is returned unchanged; filing-form interpretation and
+execution permission remain in orchestration. First-match and single-target
+fallback behavior, dictionary compatibility, capability aliases, evidence admission,
+lane semantics and PR6 validation are preserved.
+
+Offline evidence at the clean tracked implementation passes:
+
+- Resolver/execution parity: **170/170**.
+- Calculator: **20/20**; analyst output repair: **20/20**.
+- Grounding: **37/37**; degradation: **14/14**, with applicable consistency rates
+  **100%**. These are behavior/contract checks, not semantic-quality guarantees.
+- Full pytest suite: **719 passed**, 47 subtests passed, two known PR24 failures,
+  one expected table-renderer warning. All 174 new resolver tests pass. The full
+  suite ran before freeze against identical runtime/test source bytes. The existing
+  failures remain planner `alias_recognition/alias_002` and retrieval no-tool-call
+  attempt count; no blanket full-suite success is claimed.
+
+[Fresh review](https://github.com/syang620/Finsearch-reboot/pull/25#issuecomment-5546911177)
+completed on `c149f73` before the live gate, with no major issues or inline findings.
+Python is 3.11.14 and pytest 9.0.2 remains environment-only; no dependency or
+lockfile changes were made.
+
+The live failures are preserved in full:
+
+- `ANALYST_MODEL_TIMEOUT after 120.0s`: `AGENT_V1_KB_002`, `AGENT_V1_KB_003`,
+  `AGENT_V1_HYBRID_002`, `AGENT_V1_HYBRID_003`, `AGENT_V1_ANALYST_001`, and
+  `AGENT_V1_ANALYST_003`. The model-call limit is unchanged and the analyst source
+  is byte-identical to merged PR24. The underlying timeout cause is not established.
+  In particular, the live calculation case timed out; no successful calculation
+  answer is claimed from this run.
+- `AGENT_V1_HYBRID_001`: `ANALYST_GROUNDING_INVALID`, with
+  `GROUNDING_EVIDENCE_TYPE_MISMATCH` and `GROUNDING_ROW_TEXT_MISMATCH`. Validation
+  continues to fail closed. This is the same failure class present in PR24, but
+  it does not account for or waive the six timeout failures.
+
+Routing, metadata, lane expectations, structured metric/status matching and all
+applicable status/degradation/grounding consistency checks remain **100%**. All
+seven successful structured executions produce analyst-visible typed evidence with
+complete measured provenance. A separate replay of the captured live planner
+inputs through the actual merged-PR24 executor, injecting captured SEC responses
+without external calls, reproduces **7/7 complete results and exact ordered SEC
+arguments**. No resolver or tool-argument mismatch was found.
+
+Model digests, corpus hashes, dataset and execution driver match PR24. The
+582-point index fingerprint is unchanged before/after. Execution timestamps contain
+a substantial wall-clock gap; its cause was not established, and timing is not
+used for a performance comparison. The single-run change from PR24's 12/15 to
+8/15 is not evidence of a causal resolver regression or a semantic-quality trend.
+
+New immutable evidence (all earlier PR5/PR6/PR24 evidence remains unchanged):
+
+- `artifacts/evals/agents/v1/resolver/baselines/c149f73/`: snapshot parity,
+  manifest and `verification.json` containing source diff/file list, exact commands,
+  test outcomes, hashes, live old-path replay and release disposition.
+- `artifacts/evals/agents/v1/calculator/baselines/c149f73/`
+- `artifacts/evals/agents/v1/output_repair/baselines/c149f73/`
+- `artifacts/evals/agents/v1/grounding/baselines/c149f73/`
+- `artifacts/evals/agents/v1/degradation/baselines/c149f73/`
+- `artifacts/evals/agents/v1/baselines/c149f73/`: all 15 raw rows, summary,
+  errors file and full live provenance/failed-gate manifest.
+
 ## PR24 release exception PR24-GROUNDING-001 — 2026-09-04
 
 After reviewing the failed 12/15 live-gate result, the project owner explicitly

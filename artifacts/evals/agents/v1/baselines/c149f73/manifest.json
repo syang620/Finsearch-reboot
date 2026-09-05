@@ -1,0 +1,551 @@
+{
+  "evaluated_implementation": "c149f73d073a306cf34d938955ae6cc739191528",
+  "recorded_at_utc": "2026-09-05T00:01:50.455946+00:00",
+  "measurement_finished_at_utc": "2026-09-05T00:00:43.318113+00:00",
+  "tracked_worktree_clean_at_measurement": true,
+  "run_count": 1,
+  "evaluator_exit_code": 0,
+  "python": "3.11.14",
+  "pytest_version": "9.0.2",
+  "pytest_installation": "Environment-only in finsearch-arm; dependency and lockfiles unchanged.",
+  "dataset": "data/evals/agents/v1/agent_eval_routing_v1.jsonl",
+  "dataset_sha256": "c0fbdd097d7fa1b3eb22953a3ba4e8c0e84aa70a8786e08ba78a3b305cabe6cd",
+  "model_provenance": {
+    "planner_model": "ollama/qwen2.5:14b-instruct",
+    "analyst_model": "ollama/qwen2.5:14b-instruct",
+    "ollama_model_digest": "7cdf5a0187d5c58cc5d369b255592f7841d1c4696d45a8c8a9489440385b22f6",
+    "embedding_model": "qwen3-embedding:8b",
+    "embedding_model_digest": "64b933495768fbd3b87c20583d379728a07471e0c66733a9df87cd1901b3c44b",
+    "reranker_model": "Qwen/Qwen3-Reranker-8B"
+  },
+  "qdrant": {
+    "version": "1.16.2",
+    "collection": "sec_docs_dense_bm25_pr2_63dcec0",
+    "image_id": "sha256:cc45a127ebb7113d2ffeb7e2e012e8029f8b0af31f7ea8d139f6ac89a5ac81a7",
+    "preflight_status": "green",
+    "before": {
+      "points": 582,
+      "sha256": "6c72627b05dbec1e7f65d2132b8572b9fa12c47af711f2a12b8b776967994cee",
+      "method": "sorted Qdrant Record JSON including payload and vectors; compact sorted keys"
+    },
+    "after": {
+      "points": 582,
+      "sha256": "6c72627b05dbec1e7f65d2132b8572b9fa12c47af711f2a12b8b776967994cee",
+      "method": "sorted Qdrant Record JSON including payload and vectors; compact sorted keys"
+    },
+    "unchanged": true,
+    "historical_equivalence": "Exact model/corpus/index preflight against PR24 7062f48; unchanged postflight."
+  },
+  "corpus_provenance": {
+    "source_html": "data/html_filings/AAPL/10-K/10-K_2024.html",
+    "source_html_sha256": "24a830a0f1256e371d36a1f7f72e5e85a38037d1de2f6f966eb8457db42ff6d6",
+    "sidecars": [
+      {
+        "path": "data/chunked/AAPL/10-K/10-K_2024.text.jsonl",
+        "rows": 101,
+        "sha256": "a2035e3048c9d69945a6851e9f92b6eb64d97ea15ef1ab8fe1812b25e8cd08e0"
+      },
+      {
+        "path": "data/chunked/AAPL/10-K/10-K_2024.tables.jsonl",
+        "rows": 48,
+        "sha256": "a60a91dd358656c3667b9700a4e3a2fde5558a67900f62c0a22893fdaf2a6b1d"
+      },
+      {
+        "path": "data/chunked/AAPL/10-K/10-K_2024.text.split.jsonl",
+        "rows": 107,
+        "sha256": "856f6aec30636750141a695d864eb08da182160e25143b393b49bc7769436f71"
+      }
+    ],
+    "embedding_sidecars": [
+      {
+        "path": "data/embedding/AAPL/10-K/AAPL_10-K_2024.tables.embedded.jsonl",
+        "sha256": "c37c5194988377935a2de56748bf06a7261d29dacc14a0442660428701d81942"
+      },
+      {
+        "path": "data/embedding/AAPL/10-K/AAPL_10-K_2024.tables.rows.embedded.jsonl",
+        "sha256": "8ffbf13766976fc45d7af0cbf3c2d9678aa88672e515df717d655315f75e5115"
+      },
+      {
+        "path": "data/embedding/AAPL/10-K/AAPL_10-K_2024.text.embedded.jsonl",
+        "sha256": "4918039fa559d692beabdb30c473b1cc2fcff9794818fc7369fe90194941a92e"
+      }
+    ]
+  },
+  "execution": {
+    "launch_command_redacted": "SEC_USER_AGENT='<SEC_CONTACT>' conda run -n finsearch-arm --no-capture-output env PYTHONPATH=.:src python <LOCAL_LIVE_DRIVER>",
+    "effective_evaluator_command": "DASHSCOPE_API_KEY='<RERANKER_CREDENTIAL>' QWEN3_RERANK_MODEL=Qwen/Qwen3-Reranker-8B SEC_RERANK_MODEL=Qwen/Qwen3-Reranker-8B QWEN3_EMBED_API_URL=http://127.0.0.1:11434/api/embed QWEN3_EMBED_MODEL=qwen3-embedding:8b QDRANT_URL=http://127.0.0.1:6333 QDRANT_HOST=127.0.0.1 QDRANT_PORT=6333 QDRANT_COLLECTION_NAME=sec_docs_dense_bm25_pr2_63dcec0 SEC_USER_AGENT='<SEC_CONTACT>' FINSEARCH_ORCHESTRATOR_CHECKPOINTER_PATH='<CHECKPOINTER_DB>' PYTHONPATH=.:src conda run -n finsearch-arm --no-capture-output python scripts/evals/agents/eval_agents_v1.py --eval-path data/evals/agents/v1/agent_eval_routing_v1.jsonl --out-dir artifacts/evals/agents/v1/baselines/c149f73 --planner-model ollama/qwen2.5:14b-instruct --analyst-model ollama/qwen2.5:14b-instruct --deterministic-threshold 0.90 --max-critical-failure-rate 0",
+    "driver_note": "Unchanged local driver, inherited reranker credential, recorded model/index overrides and user-supplied SEC contact. Clean tracked checkout, new output directory and fresh checkpoint database.",
+    "local_driver_sha256": "0d694c5371dd6b271b3a95aa46d19b829fb266a2ec6305b9e103709eb93dcede",
+    "sec_contact": "Real user-supplied contact passed via local process environment; omitted from committed files.",
+    "checkpointer": "Fresh local database dedicated to this implementation; local path omitted.",
+    "ragas_enabled": false,
+    "deterministic_threshold": 0.9,
+    "max_critical_failure_rate": 0
+  },
+  "result": {
+    "num_queries": 15,
+    "num_valid_queries": 15,
+    "num_failures": 0,
+    "deterministic": {
+      "score_mean": 0.8593896915491342,
+      "contract_valid_rate": 1.0,
+      "intent_match_rate": 1.0,
+      "route_match_rate": 1.0,
+      "metadata_match_rate": 1.0,
+      "kb_lane_match_rate": 1.0,
+      "structured_lane_match_rate": 1.0,
+      "structured_metric_match_rate": 1.0,
+      "structured_status_match_rate": 1.0,
+      "reported_status_match_rate": 0.5333333333333333,
+      "effective_status_match_rate": 0.5333333333333333,
+      "failure_stage_match_rate": 0.5333333333333333,
+      "degradation_match_rate": 1.0,
+      "lane_status_consistent_rate": 1.0,
+      "effective_status_consistent_rate": 1.0,
+      "failure_stage_consistent_rate": 1.0,
+      "degradation_consistent_rate": 1.0,
+      "analyst_status_match_rate": 0.46153846153846156,
+      "tool_use_match_rate": 0.0,
+      "compute_match_rate": 0.0,
+      "citation_match_rate": 0.4166666666666667,
+      "grounding_consistent_rate": 1.0,
+      "critical_failure_rate": 0.4666666666666667,
+      "planner_ms_mean": 59792.6,
+      "retrieval_ms_mean": 90485.6,
+      "structured_fact_ms_mean": 631.8666666666667,
+      "analyst_ms_mean": 101444.33333333333,
+      "total_ms_mean": 486792.06666666665,
+      "structured_successful_execution_results": 7.0,
+      "structured_typed_contexts": 7.0,
+      "structured_analyst_visible_typed_contexts": 7.0,
+      "structured_synthetic_text_contexts": 0.0,
+      "structured_typed_representation_rate": 1.0,
+      "structured_analyst_visibility_rate": 1.0,
+      "structured_metric_id_coverage_rate": 1.0,
+      "structured_numeric_value_coverage_rate": 1.0,
+      "structured_accession_coverage_rate": 1.0,
+      "structured_report_date_coverage_rate": 1.0,
+      "structured_filed_date_coverage_rate": 1.0,
+      "structured_source_url_coverage_rate": 1.0
+    },
+    "ragas": {},
+    "gate": {
+      "deterministic_gate_pass": false,
+      "ragas_gate_pass": true,
+      "overall_pass": false
+    },
+    "config": {
+      "mode": "route_aware_v1",
+      "eval_path": "data/evals/agents/v1/agent_eval_routing_v1.jsonl",
+      "analyst_model": "ollama/qwen2.5:14b-instruct",
+      "planner_model": "ollama/qwen2.5:14b-instruct",
+      "enable_ragas": false,
+      "thresholds": {
+        "deterministic_score_min": 0.9,
+        "max_critical_failure_rate": 0.0,
+        "ragas_faithfulness_min": 0.75,
+        "ragas_answer_relevancy_min": 0.75,
+        "max_ragas_error_rate": 0.1
+      },
+      "timing_ms": {
+        "total": 3788633
+      }
+    }
+  },
+  "critical_cases": [
+    {
+      "id": "AGENT_V1_KB_002",
+      "critical_failures": [
+        "REPORTED_STATUS_MISMATCH",
+        "EFFECTIVE_STATUS_MISMATCH",
+        "FAILURE_STAGE_MISMATCH",
+        "ANALYST_STATUS_MISMATCH",
+        "CITATION_MINIMUM_NOT_MET"
+      ],
+      "reported_status": "failed",
+      "failure_stage": "analyst",
+      "analyst_status": "error",
+      "analyst_error": "ANALYST_MODEL_TIMEOUT after 120.0s",
+      "analyst_issues": [
+        {
+          "code": "ANALYST_MODEL_TIMEOUT",
+          "message": "ANALYST_MODEL_TIMEOUT after 120.0s",
+          "severity": "error",
+          "metadata": null
+        }
+      ],
+      "grounding": {}
+    },
+    {
+      "id": "AGENT_V1_KB_003",
+      "critical_failures": [
+        "REPORTED_STATUS_MISMATCH",
+        "EFFECTIVE_STATUS_MISMATCH",
+        "FAILURE_STAGE_MISMATCH",
+        "ANALYST_STATUS_MISMATCH",
+        "CITATION_MINIMUM_NOT_MET"
+      ],
+      "reported_status": "failed",
+      "failure_stage": "analyst",
+      "analyst_status": "error",
+      "analyst_error": "ANALYST_MODEL_TIMEOUT after 120.0s",
+      "analyst_issues": [
+        {
+          "code": "ANALYST_MODEL_TIMEOUT",
+          "message": "ANALYST_MODEL_TIMEOUT after 120.0s",
+          "severity": "error",
+          "metadata": null
+        }
+      ],
+      "grounding": {}
+    },
+    {
+      "id": "AGENT_V1_HYBRID_001",
+      "critical_failures": [
+        "REPORTED_STATUS_MISMATCH",
+        "EFFECTIVE_STATUS_MISMATCH",
+        "FAILURE_STAGE_MISMATCH",
+        "ANALYST_STATUS_MISMATCH",
+        "CITATION_MINIMUM_NOT_MET"
+      ],
+      "reported_status": "failed",
+      "failure_stage": "analyst",
+      "analyst_status": "grounding_error",
+      "analyst_error": "ANALYST_GROUNDING_INVALID",
+      "analyst_issues": [
+        {
+          "code": "STRUCTURED_FACT_CAPABILITY_REJECTED",
+          "message": "The requested calculated metric is not a supported registry capability.",
+          "severity": "warning",
+          "metadata": {
+            "request_index": 1,
+            "question_class": "unsupported_derived_metric",
+            "metric_hint": null,
+            "subquestion": "what drove the change",
+            "original_route": "hybrid",
+            "effective_route": "hybrid",
+            "outcome": "partial_kb_fallback",
+            "reason": "The requested calculated metric is not a supported registry capability.",
+            "candidate_metric_ids": []
+          }
+        },
+        {
+          "code": "GROUNDING_EVIDENCE_TYPE_MISMATCH",
+          "message": "Analyst claim grounding validation failed.",
+          "severity": "error",
+          "metadata": null
+        },
+        {
+          "code": "GROUNDING_ROW_TEXT_MISMATCH",
+          "message": "Analyst claim grounding validation failed.",
+          "severity": "error",
+          "metadata": null
+        }
+      ],
+      "grounding": {
+        "consistent": true
+      }
+    },
+    {
+      "id": "AGENT_V1_HYBRID_002",
+      "critical_failures": [
+        "REPORTED_STATUS_MISMATCH",
+        "EFFECTIVE_STATUS_MISMATCH",
+        "FAILURE_STAGE_MISMATCH",
+        "ANALYST_STATUS_MISMATCH",
+        "CITATION_MINIMUM_NOT_MET"
+      ],
+      "reported_status": "failed",
+      "failure_stage": "analyst",
+      "analyst_status": "error",
+      "analyst_error": "ANALYST_MODEL_TIMEOUT after 120.0s",
+      "analyst_issues": [
+        {
+          "code": "STRUCTURED_FACT_CAPABILITY_REJECTED",
+          "message": "Narrative explanations are not executable by the structured-fact lane.",
+          "severity": "warning",
+          "metadata": {
+            "request_index": 1,
+            "question_class": "unsupported_derived_metric",
+            "metric_hint": null,
+            "subquestion": "how did management explain it",
+            "original_route": "hybrid",
+            "effective_route": "hybrid",
+            "outcome": "partial_kb_fallback",
+            "reason": "Narrative explanations are not executable by the structured-fact lane.",
+            "candidate_metric_ids": []
+          }
+        },
+        {
+          "code": "ANALYST_MODEL_TIMEOUT",
+          "message": "ANALYST_MODEL_TIMEOUT after 120.0s",
+          "severity": "error",
+          "metadata": null
+        }
+      ],
+      "grounding": {}
+    },
+    {
+      "id": "AGENT_V1_HYBRID_003",
+      "critical_failures": [
+        "REPORTED_STATUS_MISMATCH",
+        "EFFECTIVE_STATUS_MISMATCH",
+        "FAILURE_STAGE_MISMATCH",
+        "ANALYST_STATUS_MISMATCH",
+        "CITATION_MINIMUM_NOT_MET"
+      ],
+      "reported_status": "failed",
+      "failure_stage": "analyst",
+      "analyst_status": "error",
+      "analyst_error": "ANALYST_MODEL_TIMEOUT after 120.0s",
+      "analyst_issues": [
+        {
+          "code": "STRUCTURED_FACT_CAPABILITY_REJECTED",
+          "message": "A direct metric hint is required for structured execution.",
+          "severity": "warning",
+          "metadata": {
+            "request_index": 1,
+            "question_class": "unknown",
+            "metric_hint": null,
+            "subquestion": "what financing strategy did management discuss",
+            "original_route": "hybrid",
+            "effective_route": "hybrid",
+            "outcome": "partial_kb_fallback",
+            "reason": "A direct metric hint is required for structured execution.",
+            "candidate_metric_ids": []
+          }
+        },
+        {
+          "code": "ANALYST_MODEL_TIMEOUT",
+          "message": "ANALYST_MODEL_TIMEOUT after 120.0s",
+          "severity": "error",
+          "metadata": null
+        }
+      ],
+      "grounding": {}
+    },
+    {
+      "id": "AGENT_V1_ANALYST_001",
+      "critical_failures": [
+        "REPORTED_STATUS_MISMATCH",
+        "EFFECTIVE_STATUS_MISMATCH",
+        "FAILURE_STAGE_MISMATCH",
+        "ANALYST_STATUS_MISMATCH",
+        "COMPUTE_TOOL_NOT_USED",
+        "CITATION_MINIMUM_NOT_MET"
+      ],
+      "reported_status": "failed",
+      "failure_stage": "analyst",
+      "analyst_status": "tool_error",
+      "analyst_error": "ANALYST_MODEL_TIMEOUT after 120.0s",
+      "analyst_issues": [
+        {
+          "code": "STRUCTURED_FACT_CAPABILITY_REJECTED",
+          "message": "The requested calculated metric is not a supported registry capability.",
+          "severity": "warning",
+          "metadata": {
+            "request_index": 0,
+            "question_class": "unsupported_derived_metric",
+            "metric_hint": "net sales",
+            "subquestion": "Services net sales in FY2023",
+            "original_route": "hybrid",
+            "effective_route": "kb",
+            "outcome": "kb_fallback",
+            "reason": "The requested calculated metric is not a supported registry capability.",
+            "candidate_metric_ids": []
+          }
+        },
+        {
+          "code": "ANALYST_MODEL_TIMEOUT",
+          "message": "ANALYST_MODEL_TIMEOUT after 120.0s",
+          "severity": "error",
+          "metadata": null
+        }
+      ],
+      "grounding": {}
+    },
+    {
+      "id": "AGENT_V1_ANALYST_003",
+      "critical_failures": [
+        "REPORTED_STATUS_MISMATCH",
+        "EFFECTIVE_STATUS_MISMATCH",
+        "FAILURE_STAGE_MISMATCH",
+        "ANALYST_STATUS_MISMATCH",
+        "CITATION_MINIMUM_NOT_MET"
+      ],
+      "reported_status": "failed",
+      "failure_stage": "analyst",
+      "analyst_status": "error",
+      "analyst_error": "ANALYST_MODEL_TIMEOUT after 120.0s",
+      "analyst_issues": [
+        {
+          "code": "ANALYST_MODEL_TIMEOUT",
+          "message": "ANALYST_MODEL_TIMEOUT after 120.0s",
+          "severity": "error",
+          "metadata": null
+        }
+      ],
+      "grounding": {}
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "artifacts/evals/agents/v1/baselines/c149f73/summary.json",
+      "sha256": "78efd2a7bce5c4664a1bf1b54531a880a6869a44e418cc76996e33ad023ec073"
+    },
+    {
+      "path": "artifacts/evals/agents/v1/baselines/c149f73/per_query.jsonl",
+      "sha256": "55db9c8fe56439a95388449fa5fd1794dfa25eebb23956c5b4e61ec2f4369f7a"
+    },
+    {
+      "path": "artifacts/evals/agents/v1/baselines/c149f73/errors.jsonl",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "review": {
+    "url": "https://github.com/syang620/Finsearch-reboot/pull/25#issuecomment-5546911177",
+    "reviewed_implementation": "c149f73d073a306cf34d938955ae6cc739191528",
+    "outcome": "Fresh review of c149f73 found no major issues; no inline findings."
+  },
+  "tests": {
+    "full_passed": 719,
+    "full_failed": 2,
+    "subtests_passed": 47,
+    "warnings": 1,
+    "full_exit_code": 1,
+    "resolver_tests_passed": 174,
+    "timing": "Full suite executed before implementation freeze against identical runtime and test source bytes.",
+    "command": "PYTHONPATH=.:src conda run -n finsearch-arm --no-capture-output python -c 'import pathlib,sys,types;p=types.ModuleType(\"tests\");p.__path__=[str(pathlib.Path.cwd()/\"tests\")];sys.modules[\"tests\"]=p;import pytest;raise SystemExit(pytest.main([\"-q\",\"--tb=short\"]))'",
+    "known_PR24_failures": [
+      {
+        "test": "tests/agents/planner/test_planner_routes.py::test_planner_routes_match_expected_routes",
+        "reason": "alias_recognition/alias_002: expected structured_fact, got kb"
+      },
+      {
+        "test": "tests/agents/retrieval/test_retrieval_workflow_no_tool_call.py::test_retrieval_no_tool_call_increments_attempts_and_stops_on_budget",
+        "reason": "Expected two attempts, observed one."
+      }
+    ]
+  },
+  "release": {
+    "live_gate_pass": false,
+    "pr24_exception_applies": false,
+    "pr7_exception_granted": false,
+    "resolver_routing_tool_argument_mismatch_blocks_release": true,
+    "observed_failure_classes": {
+      "ANALYST_MODEL_TIMEOUT": 6,
+      "ANALYST_GROUNDING_INVALID": 1
+    },
+    "grounding_only_exception_is_insufficient": true,
+    "failed_gate_action": "Stop PR7 changes and live evaluations. Preserve six analyst model timeouts and one grounding failure. The grounding-only exception scenario does not cover timeouts; any further investigation, live rerun or release exception needs new explicit owner direction."
+  },
+  "live_old_path_replay": {
+    "method": "Actual merged-PR24 executor replay using captured live planner inputs and SEC responses, without external calls. Live call arguments are read from resolved result fields, which the unchanged client-call adapter passes verbatim.",
+    "source_commit": "2860c430036f3fa9e9488663fed9d086a03820af",
+    "old_orchestrator_sha256": "1469b591c7a51e1ee78404236d00da60c4d55fbd045939b101202ff2a5a817e4",
+    "cases": [
+      {
+        "id": "AGENT_V1_SF_001",
+        "old_results_match_live": true,
+        "old_arguments_match_live": true,
+        "arguments": [
+          {
+            "ticker": "AAPL",
+            "fiscal_year": 2024,
+            "metric_id": "revenue"
+          }
+        ],
+        "result_count": 1
+      },
+      {
+        "id": "AGENT_V1_SF_002",
+        "old_results_match_live": true,
+        "old_arguments_match_live": true,
+        "arguments": [
+          {
+            "ticker": "AAPL",
+            "fiscal_year": 2024,
+            "metric_id": "net_income"
+          }
+        ],
+        "result_count": 1
+      },
+      {
+        "id": "AGENT_V1_SF_003",
+        "old_results_match_live": true,
+        "old_arguments_match_live": true,
+        "arguments": [
+          {
+            "ticker": "AAPL",
+            "fiscal_year": 2024,
+            "metric_id": "operating_cash_flow"
+          }
+        ],
+        "result_count": 1
+      },
+      {
+        "id": "AGENT_V1_SF_004",
+        "old_results_match_live": true,
+        "old_arguments_match_live": true,
+        "arguments": [
+          {
+            "ticker": "AAPL",
+            "fiscal_year": 2024,
+            "metric_id": "total_debt"
+          }
+        ],
+        "result_count": 1
+      },
+      {
+        "id": "AGENT_V1_HYBRID_001",
+        "old_results_match_live": true,
+        "old_arguments_match_live": true,
+        "arguments": [
+          {
+            "ticker": "AAPL",
+            "fiscal_year": 2024,
+            "metric_id": "revenue"
+          }
+        ],
+        "result_count": 1
+      },
+      {
+        "id": "AGENT_V1_HYBRID_002",
+        "old_results_match_live": true,
+        "old_arguments_match_live": true,
+        "arguments": [
+          {
+            "ticker": "AAPL",
+            "fiscal_year": 2024,
+            "metric_id": "operating_cash_flow"
+          }
+        ],
+        "result_count": 1
+      },
+      {
+        "id": "AGENT_V1_HYBRID_003",
+        "old_results_match_live": true,
+        "old_arguments_match_live": true,
+        "arguments": [
+          {
+            "ticker": "AAPL",
+            "fiscal_year": 2024,
+            "metric_id": "total_debt"
+          }
+        ],
+        "result_count": 1
+      }
+    ],
+    "executed_calls": 7,
+    "exact_parity": true
+  },
+  "timeout_observation": "Six model calls reached the unchanged AnalystAgent 120-second limit. Analyst source is byte-identical to merged PR24; no timeout override is supplied by orchestration. The underlying cause was not established and cannot be inferred from the wall-clock gap alone.",
+  "limitations": [
+    "One stochastic live run does not establish semantic quality or a causal change in analyst reliability.",
+    "Execution timestamps show a substantial wall-clock gap during the run; timing is not used for a performance comparison, and the cause of the gap was not established.",
+    "The hosted reranker has no immutable service-side digest.",
+    "Semantic judge not rerun for behavior-preserving resolver extraction.",
+    "Evaluator exit zero does not imply a passing gate; explicit gate fields are authoritative.",
+    "No selective reruns, changed expectations, provider tuning or grounding-policy changes."
+  ]
+}

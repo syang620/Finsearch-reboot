@@ -50,9 +50,14 @@
 - PR7 — resolver extraction implemented after the owner-approved refinements.
   The merged-PR24 oracle was frozen first at `fae5bbf`; all 170 cases reproduce
   the complete resolution and execution snapshots exactly. The full suite has
-  719 passing tests and the same two documented PR24 failures. SHA-keyed
-  regression evidence, fresh review and the single live gate follow the freeze;
-  release is pending those results and no exception is assumed.
+  719 passing tests and the same two documented PR24 failures. Frozen runtime
+  `c149f73d073a306cf34d938955ae6cc739191528` passes all five offline suites and
+  fresh review. The single unchanged live gate failed at 8/15 non-critical rows:
+  six analyst model timeouts and one grounding failure. All seven captured live
+  structured results and SEC argument sets exactly replay through merged PR24.
+  PR25 remains draft; the grounding-only exception scenario does not cover the
+  timeouts. No PR7 exception, tuning or rerun is authorized. See the new SHA-keyed
+  evidence and release disposition in `docs/EVALUATION_BASELINES.md`.
 
 ---
 
