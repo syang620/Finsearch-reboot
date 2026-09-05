@@ -1,0 +1,206 @@
+{
+  "evaluated_implementation": "99cf1b20e2796741df735365e78e241ea6667c2d",
+  "merged_baseline": "f09e8844a2c12c0b74d003e1ab9b601353a62a04",
+  "recorded_at": "2026-09-05T14:17:13.359578+00:00",
+  "tracked_worktree_clean": true,
+  "fixture_freeze": "e5ac8cf",
+  "pre_runtime_label_correction": "434012c",
+  "fixture_note": "Two expected capex labels corrected to the existing registry before runtime edits; original observed outputs unchanged.",
+  "first_runtime": "2933a5f",
+  "current_change": "562e01e strengthens independent provenance/parity checks; 99cf1b2 fixes reviewed analyst start-date rendering and tests actual prompt visibility. No other analyst behavior changed.",
+  "python": "3.11.14",
+  "pytest": "9.0.2",
+  "pytest_environment_only": true,
+  "summaries": {
+    "filing_period": {
+      "cases": 49,
+      "approved_change_accuracy": 1.0,
+      "unexpected_difference_rate": 0.0,
+      "unchanged_cases": 18,
+      "unchanged_case_parity": 1.0,
+      "intentional_semantic_changes": 31,
+      "order_invariance_rate": 1.0,
+      "provenance_consistency_rate": 1.0,
+      "network_call_contract_rate": 1.0,
+      "analyst_visibility_rate": 1.0,
+      "passed": true
+    },
+    "resolver": {
+      "cases": 170,
+      "passed": 170,
+      "exact_parity": true
+    },
+    "calculator": {
+      "cases": 20,
+      "behavior_passes": 20,
+      "gate_pass": true,
+      "history_preserved": 20,
+      "unexpected_successes": 0,
+      "successful_outputs": 11,
+      "successful_grounding_valid": 11
+    },
+    "output_repair": {
+      "cases": 20,
+      "behavior_passes": 20,
+      "terminal_passes": 20,
+      "feedback_contract_passes": 6,
+      "feedback_contract_cases": 6,
+      "live_shape_repair_contract_passes": 4,
+      "live_shape_repair_cases": 4,
+      "successful_outputs": 7,
+      "successful_grounding_valid": 7,
+      "unexpected_successes": 0,
+      "history_preserved": 20,
+      "inputs_unchanged": 20,
+      "gate_pass": true
+    },
+    "grounding": {
+      "cases": 37,
+      "behavior_passes": 37,
+      "behavior_accuracy": 1.0,
+      "successful_outputs": 19,
+      "successful_output_integrity_rate": 1.0,
+      "gate_pass": true,
+      "metrics": {
+        "claim_citation_coverage": {
+          "passed": 18,
+          "denominator": 18,
+          "rate": 1.0
+        },
+        "valid_context_id": {
+          "passed": 40,
+          "denominator": 40,
+          "rate": 1.0
+        },
+        "citation_source_preservation": {
+          "passed": 20,
+          "denominator": 20,
+          "rate": 1.0
+        },
+        "citation_source_completeness": {
+          "passed": 20,
+          "denominator": 20,
+          "rate": 1.0
+        },
+        "structured_numeric_evidence_type_accuracy": {
+          "passed": 3,
+          "denominator": 3,
+          "rate": 1.0
+        },
+        "narrative_evidence_type_accuracy": {
+          "passed": 11,
+          "denominator": 11,
+          "rate": 1.0
+        },
+        "hybrid_claim_evidence_routing_accuracy": {
+          "passed": 1,
+          "denominator": 1,
+          "rate": 1.0
+        },
+        "invalid_citation_detection": {
+          "passed": 6,
+          "denominator": 6,
+          "rate": 1.0
+        },
+        "grounding_fail_closed": {
+          "passed": 18,
+          "denominator": 18,
+          "rate": 1.0
+        },
+        "runtime_evaluator_consistency": {
+          "passed": 37,
+          "denominator": 37,
+          "rate": 1.0
+        }
+      },
+      "semantic_judge": {
+        "status": "not_run",
+        "note": "Fixture annotations are not judge scores."
+      }
+    },
+    "degradation": {
+      "all_lanes_unusable_fail_closed_rate": 1.0,
+      "cases": 14,
+      "degradation_classification_accuracy": 1.0,
+      "degradation_disclosure_rate": 1.0,
+      "failure_containment_rate": 1.0,
+      "overall_graceful_degradation_behavior_accuracy": 1.0,
+      "runtime_evaluator_consistency_rate": 1.0
+    }
+  },
+  "full_suite": {
+    "passed": 832,
+    "failed": 2,
+    "subtests_passed": 47,
+    "warnings": 1,
+    "seconds": 15.77,
+    "known_failures": [
+      "tests/agents/planner/test_planner_routes.py::test_planner_routes_match_expected_routes (alias_002)",
+      "tests/agents/retrieval/test_retrieval_workflow_no_tool_call.py::test_retrieval_no_tool_call_increments_attempts_and_stops_on_budget"
+    ],
+    "collection_note": "Direct pytest invocation initially hit the pre-existing tests namespace import collision. Reused the documented PR7 namespace bootstrap; no repository packaging or dependency changes."
+  },
+  "files_changed": [
+    "data/evals/agents/v1/filing_period_pr8.json",
+    "docs/ARCHITECTURE.md",
+    "docs/EVALUATION_BASELINES.md",
+    "docs/IMPLEMENTATION_PLAN.md",
+    "docs/adr/005-filing-anchor-and-amendments.md",
+    "docs/adr/README.md",
+    "scripts/evals/agents/eval_filing_period_pr8.py",
+    "scripts/evals/agents/freeze_filing_period_pr8.py",
+    "src/agents/analyst/agent.py",
+    "src/agents/contracts.py",
+    "src/agents/orchestrator/agent_orchestrator.py",
+    "src/mcp_server/tools/sec_metric.py",
+    "tests/tools/sec_metric/test_filing_period_pr8.py"
+  ],
+  "sha256": {
+    "data/evals/agents/v1/filing_period_pr8.json": "e894be63418d7ac68c8d93a54cd30067f15dd5170d618d61f5099af5c9a71b67",
+    "docs/ARCHITECTURE.md": "54e2f07ace43d171b4fab58bfb3e009ece2f497406c2b519f0fa2de2fd3a6cd3",
+    "docs/EVALUATION_BASELINES.md": "ca0a403c0ac5dfd0edcf4d52abd0da17b53480296ead452177aa6ed1ad0287d5",
+    "docs/IMPLEMENTATION_PLAN.md": "5b563ab3f3f41da8140a7e20598748d2ad936ea6fb1b8ff1bde692693489766d",
+    "docs/adr/005-filing-anchor-and-amendments.md": "20fac64b688129fa7909aef0189b0a7d543f42057d88c0f57cef93557de2ac86",
+    "docs/adr/README.md": "a2ab0093236b7da7e11944c6c3fe80f704c623ca722eea0ac9a9ce0f6473749c",
+    "scripts/evals/agents/eval_filing_period_pr8.py": "db2a2e5d0f76039951ee036ea63c1dda1c18a20294208b33f26810ea3fd7e1eb",
+    "scripts/evals/agents/freeze_filing_period_pr8.py": "b761cc5ff2f6e2885a0c0e9c6b4815cb4b36bd2ad1e06e24d901689f7e961a1a",
+    "src/agents/analyst/agent.py": "2a4d28a977d88ea4322fc2db3c9d4d0dc08ad64f0de45729f8c406cc334994e6",
+    "src/agents/contracts.py": "a56ea354cdcf937a98164cfc8f5a1b05f813398a720441f0ff31d1d7c311e00c",
+    "src/agents/orchestrator/agent_orchestrator.py": "26c4f201053b3218a28679da2f831613a93986b3af11ed71cfc2d0006ef22f35",
+    "src/mcp_server/tools/sec_metric.py": "1a1b47912ea6f24e98f673f612138f1fecb6c8c6f49d9171208800f88a758964",
+    "tests/tools/sec_metric/test_filing_period_pr8.py": "e2ce7151753e56d1167304ec9161199e672eeb3ebedfdf26764eaeaeeeae12b9"
+  },
+  "commands": [
+    "PYTHONPATH=.:src conda run -n finsearch-arm python scripts/evals/agents/eval_filing_period_pr8.py --out-dir artifacts/evals/agents/v1/filing_period/baselines/99cf1b2",
+    "PYTHONPATH=.:src conda run -n finsearch-arm python scripts/evals/agents/eval_structured_fact_resolver_v1.py --out-dir artifacts/evals/agents/v1/resolver/baselines/99cf1b2",
+    "PYTHONPATH=.:src conda run -n finsearch-arm python scripts/evals/agents/eval_agent_calculator_v1.py --out-dir artifacts/evals/agents/v1/calculator/baselines/99cf1b2",
+    "PYTHONPATH=.:src conda run -n finsearch-arm python scripts/evals/agents/eval_agent_output_repair_v1.py --out-dir artifacts/evals/agents/v1/output_repair/baselines/99cf1b2",
+    "PYTHONPATH=.:src conda run -n finsearch-arm python scripts/evals/agents/eval_agent_grounding_v1.py --out-dir artifacts/evals/agents/v1/grounding/baselines/99cf1b2",
+    "PYTHONPATH=.:src conda run -n finsearch-arm python scripts/evals/agents/eval_agent_degradation_v1.py --out-dir artifacts/evals/agents/v1/degradation/baselines/99cf1b2"
+  ],
+  "full_suite_command": "PYTHONPATH=.:src conda run -n finsearch-arm python -c 'import pathlib,sys,types;p=types.ModuleType(\"tests\");p.__path__=[str(pathlib.Path.cwd()/\"tests\")];sys.modules[\"tests\"]=p;import pytest;raise SystemExit(pytest.main([\"-q\",\"--tb=short\"]))'",
+  "command_note": "Executed with the existing finsearch-arm Python binary directly; equivalent portable conda commands shown. Absolute local paths excluded.",
+  "review_correction": {
+    "reviewed_commit": "2933a5f",
+    "finding": "P1 duration start omitted by analyst renderer",
+    "url": "https://github.com/syang620/Finsearch-reboot/pull/26#discussion_r3940879916",
+    "regression_before_fix": "Original atomic duration prompt case failed; three other selected original cases passed.",
+    "after_fix": "113 focused PR8 tests pass; independent analyst visibility 49/49.",
+    "fix_commit": "99cf1b2",
+    "fresh_review_requested": "https://github.com/syang620/Finsearch-reboot/pull/26#issuecomment-5552405649"
+  },
+  "preflight": {
+    "same_index": true,
+    "points": 582,
+    "index_sha256": "6c72627b05dbec1e7f65d2132b8572b9fa12c47af711f2a12b8b776967994cee",
+    "model_corpus_dataset_match_PR7": true,
+    "retrieval_service": "Existing stopped evaluation container restored; same image and data. No index rebuild."
+  },
+  "release": {
+    "live_gate_runs": 0,
+    "fresh_review": "pending",
+    "exceptions_inherited": false,
+    "ready_to_merge": false,
+    "live_precondition": "Await fresh review and owner confirmation of browser/workload isolation."
+  }
+}

@@ -1,5 +1,34 @@
 # FinSearch Evaluation Baselines
 
+## PR8 review correction — 99cf1b2, live gate not yet run
+
+Current evaluated implementation:
+`99cf1b20e2796741df735365e78e241ea6667c2d` in draft
+[PR26](https://github.com/syang620/Finsearch-reboot/pull/26).
+The reviewed renderer omission is corrected with an additive start-date field;
+the independent evaluator now checks actual analyst-visible provenance and has
+a mutation test proving dropped starts fail the gate. Prompt instructions,
+grounding rules, providers, timeouts and retry budgets remain unchanged.
+
+- PR8 **49/49**, including analyst visibility, provenance, approved changes,
+  unchanged parity and order invariance **100%**; unexpected differences **0%**.
+- Resolver **170/170**, calculator **20/20**, output repair **20/20**,
+  grounding **37/37**, degradation **14/14**, applicable consistency **100%**.
+- Full suite: **832 passed**, **47 subtests**, **two unchanged known failures**,
+  one known warning. All **113** focused PR8 tests pass.
+- Python 3.11.14 and environment-only pytest 9.0.2; dependency files untouched.
+
+[Current verification](../artifacts/evals/agents/v1/filing_period/baselines/99cf1b2/verification.json)
+records source hashes, complete commands, changed files, test results and the
+review correction. Previous 2933a5f/562e01e measurements are retained separately.
+The fixture source and all frozen old/expected tool outputs remain unchanged.
+
+Fresh review of `99cf1b2` is pending. **No PR8 live gate has run.** Browser/workload
+isolation must be established before the single controlled live run. The existing
+retrieval service has been restored and its unchanged index/model/corpus/dataset
+preflight passes. PR26 remains draft and is not approved to merge; no PR7/PR24
+release exception applies.
+
 ## PR8 original-as-filed selection — pre-review offline verification, 2026-09-05
 
 [PR26](https://github.com/syang620/Finsearch-reboot/pull/26) implements ADR 005

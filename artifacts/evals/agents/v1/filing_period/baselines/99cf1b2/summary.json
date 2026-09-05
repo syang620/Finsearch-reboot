@@ -1,0 +1,13 @@
+{
+  "cases": 49,
+  "approved_change_accuracy": 1.0,
+  "unexpected_difference_rate": 0.0,
+  "unchanged_cases": 18,
+  "unchanged_case_parity": 1.0,
+  "intentional_semantic_changes": 31,
+  "order_invariance_rate": 1.0,
+  "provenance_consistency_rate": 1.0,
+  "network_call_contract_rate": 1.0,
+  "analyst_visibility_rate": 1.0,
+  "passed": true
+}
