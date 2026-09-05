@@ -55,9 +55,14 @@
   fresh review. The single unchanged live gate failed at 8/15 non-critical rows:
   six analyst model timeouts and one grounding failure. All seven captured live
   structured results and SEC argument sets exactly replay through merged PR24.
-  PR25 remains draft; the grounding-only exception scenario does not cover the
-  timeouts. No PR7 exception, tuning or rerun is authorized. See the new SHA-keyed
-  evidence and release disposition in `docs/EVALUATION_BASELINES.md`.
+  PR25 merged at `f09e884` under the owner's explicit PR7-TIMEOUT-001 and
+  PR7-GROUNDING-001 exceptions. The original 8/15 failed gate remains unchanged;
+  separate AC/awake and isolated analyst replays support the timeout disposition.
+  Neither exception carries forward. See `docs/EVALUATION_BASELINES.md`.
+- PR8 — original-as-filed selection and exact annual-period semantics implemented
+  on `codex/pr8-filing-period-semantics`; release evaluation/review is pending.
+  ADR 005 and the independent 49-case before/after oracle were frozen before
+  runtime changes. No earlier release exception applies.
 
 ---
 
@@ -1206,6 +1211,22 @@ Avoid selecting YTD or quarter-only facts solely because end date matches.
 - Annual duration selection is explicitly tested.
 - Amendment behavior is documented and deterministic.
 - SEC metric result trace explains selection reason.
+
+Owner-approved refinements are authoritative in ADR 005: original-as-filed only;
+amendment observations limited to supplied inputs (absence means unknown); exact
+accession AND period end; inclusive annual lengths 364/365/366/371 confirmed from
+supplied filing contexts; fail closed on unresolved fiscal labels and conflicting
+eligible facts; no mixed component provenance. No history discovery is added.
+
+The frozen matrix at `data/evals/agents/v1/filing_period_pr8.json` stores complete
+old and independently specified new results, allowed field differences and
+per-case reasons. Its evaluator requires 100% approved-change accuracy,
+unchanged-case parity, order invariance and provenance consistency, and 0%
+unexpected differences. Preserve resolver 170-case parity; run calculator 20,
+output repair 20, grounding 37, degradation 14, SEC tests and the full suite.
+Freeze clean implementation, complete fresh review, then run the unchanged live
+gate once under recorded AC/awake/LPM-off/workload-controlled conditions. Any
+filing/period/provenance error blocks release. No PR7 or PR24 exception applies.
 
 ---
 

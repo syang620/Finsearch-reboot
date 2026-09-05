@@ -2203,6 +2203,7 @@ def _structured_fact_evidence_from_result(
         else packet.metadata.form_type
     )
     components = [dict(component) for component in (raw_components or [])]
+    primary_fact = tool_result.get("primary_fact")
     try:
         evidence = StructuredFactEvidence(
             metric_id=resolved_metric_id,
@@ -2225,6 +2226,10 @@ def _structured_fact_evidence_from_result(
             report_date=_normalize_text(tool_result.get("report_date")),
             filed_date=_normalize_text(tool_result.get("filed_date")),
             source_url=_normalize_text(tool_result.get("source_url")),
+            start_date=(
+                _normalize_text(primary_fact.get("start_date"))
+                if isinstance(primary_fact, dict) else None
+            ),
             components=components,
             missing_component_groups=missing_component_groups,
         )
