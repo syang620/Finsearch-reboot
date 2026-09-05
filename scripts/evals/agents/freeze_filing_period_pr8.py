@@ -21,7 +21,7 @@ CAPEX = ["PaymentsToAcquirePropertyPlantAndEquipment", "PaymentsToAcquireProduct
 LABELS = {DEBT[0]: ("current_debt", "Current debt carrying amount"),
           DEBT[1]: ("noncurrent_debt", "Noncurrent debt carrying amount"),
           CAPEX[0]: ("primary_cash_capex", "Primary cash capital expenditures"),
-          CAPEX[1]: ("productive_assets_additional", "Additional productive asset purchases")}
+          CAPEX[1]: ("productive_assets_additional", "Additional productive assets cash outflows")}
 
 
 def fact(**updates):

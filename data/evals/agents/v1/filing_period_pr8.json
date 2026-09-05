@@ -9677,7 +9677,7 @@
             "matched_by_accession": true,
             "matched_by_report_date": true,
             "group_id": "productive_assets_additional",
-            "group_label": "Additional productive asset purchases"
+            "group_label": "Additional productive assets cash outflows"
           }
         ],
         "missing_component_groups": [],
@@ -9966,7 +9966,7 @@
             "matched_by_accession": true,
             "matched_by_report_date": true,
             "group_id": "productive_assets_additional",
-            "group_label": "Additional productive asset purchases"
+            "group_label": "Additional productive assets cash outflows"
           }
         ],
         "missing_component_groups": [],
