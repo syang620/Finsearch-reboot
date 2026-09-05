@@ -1,6 +1,54 @@
 # FinSearch Evaluation Baselines
 
+## PR7 release exceptions — owner approved 2026-09-05
+
+The project owner explicitly approved both PR7 exceptions and instructed:
+"Approve. please proceed with commit, push, and merge."
+This authorizes closure of [PR25](https://github.com/syang620/Finsearch-reboot/pull/25)
+only, with frozen runtime `c149f73d073a306cf34d938955ae6cc739191528`.
+Diagnostic evidence is committed at `59d3ac0ca6bedbbfb33f01d72c4f051cdaa0e39a`.
+
+**The strict live gate remains failed: 8/15 non-critical rows, seven critical
+rows, score 0.859390, zero evaluator errors.** No raw baseline, gate result,
+threshold, runtime behavior or historical stop disposition is rewritten.
+
+- **PR7-TIMEOUT-001:** accepts the six original analyst timeouts for this merge.
+  The battery analyst-only replay reproduced 0/6 timeout-free cases; the AC/awake
+  batch recovered 5/6, with browser-workload caveats preserved. A subsequent
+  single browser-closed KB_002 run succeeded with a valid grounded answer in
+  109.629 seconds at 10.613 tokens/s, under the unchanged 120-second limit.
+  Its power/browser controls held, and no competing >=50%-of-one-core process
+  was sampled. This supports environmental contamination, not a resolver bug.
+  These separate diagnostics are not a replacement six- or fifteen-case gate.
+- **PR7-GROUNDING-001:** accepts the original `AGENT_V1_HYBRID_001`
+  `ANALYST_GROUNDING_INVALID`, with evidence-type and row-text mismatches, for
+  this merge. It is the known PR24 failure class in unchanged analyst/validation
+  code. The answer remains unavailable and fail-closed; no correct answer is
+  claimed. This is a new, explicitly approved PR7 exception, not an inherited
+  `PR24-GROUNDING-001` waiver.
+
+Exact resolver parity (170/170), captured SEC execution/argument parity (7/7),
+grounding (37/37), degradation (14/14) and applicable consistency checks remain
+as originally measured. The two known full-suite failures and semantic-quality
+limitations remain visible; neither exception waives an unobserved regression.
+Any resolver, routing or tool-argument mismatch would remain a real blocker.
+
+The [release disposition](../artifacts/diagnostics/pr7-timeouts/c149f73/RELEASE_DISPOSITION.md)
+defines the case-level scope and residual risk. The [isolated follow-up](../artifacts/diagnostics/pr7-timeouts/c149f73/kb002-isolated-01/REPORT.md)
+and preceding [AC comparison](../artifacts/diagnostics/pr7-timeouts/c149f73/AC_COMPARISON.md)
+retain their complete measurements and limitations. Their contemporaneous
+"blocked / no exception granted" statements are historical and are superseded
+only by this owner-approved disposition.
+
+No runtime change or full-gate rerun accompanied release closure. PR8 planning
+may start from the merged PR25 baseline; neither exception carries forward to
+PR8 or authorizes changes to grounding, timeouts, retry budgets or provider
+settings. PR8 implementation is not part of this closure.
+
 ## PR7 resolver extraction — 2026-09-05 UTC
+
+Historical measurement and pre-exception stop disposition; see the subsequent
+owner-approved exceptions above. The failed measurement below is unchanged.
 
 PR7 is implemented in [PR25](https://github.com/syang620/Finsearch-reboot/pull/25)
 at frozen runtime `c149f73d073a306cf34d938955ae6cc739191528`. **Release is blocked;
