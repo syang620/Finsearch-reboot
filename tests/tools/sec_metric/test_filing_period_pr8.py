@@ -96,6 +96,21 @@ def test_shadow_rejects_forged_period_even_if_flags_claim_match():
     assert not oracle.provenance_consistent(c, forged)
 
 
+@pytest.mark.parametrize("field", ["source_url", "filed_date"])
+def test_shadow_checks_anchor_provenance_against_submissions(field):
+    c = CASES[0]
+    forged = deepcopy(c["expected_pr8_result"])
+    forged[field] = "forged"
+    assert not oracle.provenance_consistent(c, forged)
+
+
+def test_shadow_gate_requires_unchanged_parity_independently():
+    row = {"exact_expected": True, "unexpected_differences": [], "order_invariant": True,
+           "provenance_consistent": True, "calls_correct": True, "unchanged_case": True,
+           "unchanged_parity": False, "semantic_change_expected": False}
+    assert not oracle.summarize([row])["passed"]
+
+
 def test_unsupported_metric_preserves_old_contract_without_calls():
     c = deepcopy(CASES[0])
     client = oracle.FixtureClient(c)

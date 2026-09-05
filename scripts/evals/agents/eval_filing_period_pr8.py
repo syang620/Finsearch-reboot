@@ -32,9 +32,25 @@ def differences(a, b, path=""):
 def provenance_consistent(case, result):
     """Verify returned facts against raw records, never selection's own truth flags."""
     chosen = result["components"] + ([result["primary_fact"]] if result["primary_fact"] else [])
+    if result["accession_number"]:
+        history = case["submissions"]["filings"]["recent"]
+        filing_rows = [dict(zip(history, values)) for values in zip(*history.values())]
+        matches = [f for f in filing_rows if f["accessionNumber"] == result["accession_number"]
+                   and f["form"] == result["form_type"] == "10-K"
+                   and f["reportDate"] == result["report_date"]
+                   and f["filingDate"] == result["filed_date"]]
+        if not matches:
+            return False
+        f = matches[0]
+        expected_url = (f"https://www.sec.gov/Archives/edgar/data/{int(result['cik'])}/"
+                        f"{f['accessionNumber'].replace('-', '')}/{f['primaryDocument']}")
+        if result["source_url"] != expected_url:
+            return False
     signatures = set()
     instant = case["request"]["metric_id"] == "total_debt"
     for c in chosen:
+        if c["source_url"] != f"https://data.sec.gov/api/xbrl/companyfacts/CIK{result['cik']}.json":
+            return False
         raw = case["companyfacts"]["facts"].get(c["taxonomy"], {}).get(c["concept_name"], {}).get("units", {}).get(c["unit"], [])
         if not any(f.get("accn") == c["accession_number"] and f.get("end") == c["report_date"]
                    and f.get("form") == c["form_type"] and f.get("start") == c["start_date"]
@@ -107,7 +123,7 @@ def summarize(rows):
             "order_invariance_rate": sum(r["order_invariant"] for r in rows)/n,
             "provenance_consistency_rate": sum(r["provenance_consistent"] for r in rows)/n,
             "network_call_contract_rate": sum(r["calls_correct"] for r in rows)/n,
-            "passed": all(r["exact_expected"] and not r["unexpected_differences"] and r["order_invariant"]
+            "passed": all(r["exact_expected"] and r["unchanged_parity"] and not r["unexpected_differences"] and r["order_invariant"]
                           and r["provenance_consistent"] and r["calls_correct"] for r in rows)}
 
 
