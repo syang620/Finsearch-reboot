@@ -1,5 +1,54 @@
 # FinSearch Evaluation Baselines
 
+## PR8 original-as-filed selection — pre-review offline verification, 2026-09-05
+
+[PR26](https://github.com/syang620/Finsearch-reboot/pull/26) implements ADR 005
+from merged PR25 `f09e884`. Evaluated implementation is
+`562e01ebc4b387fc7a38bd3a2131e8ae11c01a51`. This measurement predates the review
+correction: review of `2933a5f` found P1 missing start-date rendering in the actual
+analyst prompt. The typed field alone was insufficient. A failing prompt regression
+was reproduced before the additive renderer correction; the independent matrix
+now also checks analyst visibility. **These results are historical, not final
+release evidence. No PR8 live gate has run and no exception applies.**
+
+The 49-case oracle was frozen at `e5ac8cf` before runtime edits. Two independently
+specified capex labels were corrected to the unchanged registry at `434012c`,
+also before runtime changes; no old observed results were altered. Exact expected
+responses and allowed field paths distinguish 31 intentional core semantic
+changes from 18 unchanged core outcomes. All responses receive explicitly
+specified trace/start-date provenance additions; unchanged parity does not claim
+byte equality for those approved additions.
+
+At `562e01e`:
+
+- PR8 matrix **49/49**: approved-change accuracy, unchanged-case parity,
+  five-seed order invariance, independently checked provenance and network-call
+  contract rates **100%**; unexpected differences **0%**.
+- Resolver/execution snapshot parity **170/170**; calculator **20/20**;
+  output repair **20/20**; grounding **37/37**; degradation **14/14**, consistency
+  **100%**. The PR8 matrix, not the live gate, establishes period semantics.
+- Full suite **831 passed**, **47 subtests passed**, **two known baseline
+  failures**, one known table-renderer warning. Failures remain planner
+  `alias_recognition/alias_002` and retrieval no-tool-call attempt count. No new
+  failing tests and no blanket full-suite pass are claimed.
+- Python 3.11.14 / pytest 9.0.2 in `finsearch-arm`; dependencies unchanged.
+  The documented PR7 test-namespace bootstrap was required again; initial direct
+  pytest collection errors were invocation/environment issues, not passing tests.
+
+Source code is unchanged between initial implementation `2933a5f` and `562e01e`;
+the latter strengthens independent evaluator checks and adds three tests. Both
+sets of SHA-keyed offline evidence are preserved. The
+[verification record](../artifacts/evals/agents/v1/filing_period/baselines/562e01e/verification.json)
+contains hashes, commands, changed files and measured results. Other suites live
+under their existing `artifacts/evals/agents/v1/<suite>/baselines/562e01e/` paths.
+
+Live preflight restored the existing stopped evaluation Qdrant container and
+verified the same 582-point index, model digests, corpus and dataset as PR7.
+No index rebuild or new discovery call was added. Browser/workload isolation and
+fresh review must be confirmed before the one live run. PR7-TIMEOUT-001,
+PR7-GROUNDING-001 and PR24-GROUNDING-001 do not carry forward. PR26 is not ready
+to merge while review/live evaluation remain outstanding.
+
 ## PR7 release exceptions — owner approved 2026-09-05
 
 The project owner explicitly approved both PR7 exceptions and instructed:

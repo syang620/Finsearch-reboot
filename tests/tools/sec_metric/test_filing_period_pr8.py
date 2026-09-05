@@ -50,6 +50,16 @@ def test_actual_tool_results_admitted_iff_usable(c):
         assert evidence.components == actual["components"]
         if actual["primary_fact"]:
             assert evidence.start_date == actual["primary_fact"]["start_date"]
+        from agents.analyst import build_analyst_prompt
+        from agents.contracts import ContextItem, ContextItemKind
+        packet.context_items = [ContextItem(context_id="pr8_evidence", kind=ContextItemKind.STRUCTURED_FACT,
+                                            structured_fact=evidence)]
+        prompt = build_analyst_prompt(packet)
+        if actual["primary_fact"] and actual["primary_fact"]["start_date"]:
+            assert f'"start_date":"{actual["primary_fact"]["start_date"]}"' in prompt
+        for component in actual["components"]:
+            if component["start_date"]:
+                assert f'"start_date":"{component["start_date"]}"' in prompt
     else:
         assert evidence is None and issue is not None
 
@@ -107,8 +117,16 @@ def test_shadow_checks_anchor_provenance_against_submissions(field):
 def test_shadow_gate_requires_unchanged_parity_independently():
     row = {"exact_expected": True, "unexpected_differences": [], "order_invariant": True,
            "provenance_consistent": True, "calls_correct": True, "unchanged_case": True,
-           "unchanged_parity": False, "semantic_change_expected": False}
+           "unchanged_parity": False, "semantic_change_expected": False, "analyst_visibility": True}
     assert not oracle.summarize([row])["passed"]
+
+
+def test_shadow_gate_detects_renderer_dropping_start(monkeypatch):
+    from agents.analyst import agent
+    original = agent.render_structured_fact_evidence
+    monkeypatch.setattr(agent, "render_structured_fact_evidence", lambda evidence:
+                        original(evidence.model_copy(update={"start_date": None})))
+    assert not oracle.analyst_visibility(CASES[0], CASES[0]["expected_pr8_result"])
 
 
 def test_unsupported_metric_preserves_old_contract_without_calls():

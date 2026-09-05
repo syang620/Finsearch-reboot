@@ -82,6 +82,32 @@ def shuffled(case, seed):
     return c
 
 
+def analyst_visibility(case, result):
+    """Check actual rendered analyst input against the independently frozen periods."""
+    from agents.contracts import AnalystPacket, AnalysisTask, FilingMetadata, PlannerIntent
+    from agents.orchestrator.agent_orchestrator import _build_structured_fact_context_items
+    from agents.analyst import build_analyst_prompt
+    packet = AnalystPacket(plan_id="pr8-eval", user_query="What was the annual metric?",
+                           intent=PlannerIntent.FILING_FACT,
+                           metadata=FilingMetadata(ticker="AAPL", fiscal_year=2025, form_type="10-K"),
+                           analysis_task=AnalysisTask(metric=case["request"]["metric_id"]))
+    items, issues = _build_structured_fact_context_items(packet=packet, structured_fact_results=[{
+        "resolver_status": "resolved", "resolved_metric_id": case["request"]["metric_id"],
+        "resolved_ticker": "AAPL", "resolved_fiscal_year": 2025, "tool_result": result,
+    }])
+    if not case["expected_pr8_result"]["ok"]:
+        return not items and bool(issues)
+    if len(items) != 1 or issues:
+        return False
+    packet.context_items = items
+    prompt = build_analyst_prompt(packet)
+    expected = case["expected_pr8_result"]
+    facts = expected["components"] + ([expected["primary_fact"]] if expected["primary_fact"] else [])
+    return all(f'"{key}":{json.dumps(f[key])}' in prompt
+               for f in facts for key in ("start_date", "report_date", "accession_number")
+               if f[key] is not None)
+
+
 async def evaluate():
     # Import only the public entrypoint under test, not a runtime selection helper.
     from mcp_server.tools.sec_metric import get_metric
@@ -109,6 +135,7 @@ async def evaluate():
                      "provenance_consistent": provenance_consistent(c, actual),
                      "unchanged_case": unchanged, "unchanged_parity": parity,
                      "calls_correct": client.calls == expected_calls,
+                     "analyst_visibility": analyst_visibility(c, actual),
                      "semantic_change_expected": c["semantic_change_expected"], "actual": actual})
     return rows
 
@@ -123,8 +150,9 @@ def summarize(rows):
             "order_invariance_rate": sum(r["order_invariant"] for r in rows)/n,
             "provenance_consistency_rate": sum(r["provenance_consistent"] for r in rows)/n,
             "network_call_contract_rate": sum(r["calls_correct"] for r in rows)/n,
+            "analyst_visibility_rate": sum(r["analyst_visibility"] for r in rows)/n,
             "passed": all(r["exact_expected"] and r["unchanged_parity"] and not r["unexpected_differences"] and r["order_invariant"]
-                          and r["provenance_consistent"] and r["calls_correct"] for r in rows)}
+                          and r["provenance_consistent"] and r["calls_correct"] and r["analyst_visibility"] for r in rows)}
 
 
 def main():
@@ -138,6 +166,7 @@ def main():
     summary = summarize(rows)
     files = [DATASET, Path(__file__).resolve().relative_to(Path.cwd()), Path("src/mcp_server/tools/sec_metric.py"),
              Path("src/agents/contracts.py"), Path("src/agents/orchestrator/agent_orchestrator.py")]
+    files.append(Path("src/agents/analyst/agent.py"))
     manifest = {"evaluated_commit": subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip(),
                 "tracked_worktree_clean": not subprocess.check_output(["git", "status", "--porcelain", "--untracked-files=no"], text=True).strip(),
                 "created_at": datetime.now(timezone.utc).isoformat(), "python": platform.python_version(),
