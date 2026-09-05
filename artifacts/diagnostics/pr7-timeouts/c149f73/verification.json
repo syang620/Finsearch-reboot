@@ -1,0 +1,17 @@
+{
+  "checks_passed": [
+    "exact six captured packets",
+    "exact initial request messages and tool schemas",
+    "unchanged per-task options and 120s timeout",
+    "six first-call timeouts; no retries/tools/grounding",
+    "six corresponding provider HTTP 500 cancellations",
+    "exact c149f73 runtime at start and finish"
+  ],
+  "replay_cases": 6,
+  "timeouts_reproduced": 6,
+  "release_gate_runs": 0,
+  "runtime_diff": "",
+  "completion_utc": "2026-09-05T00:40:33.939457+00:00",
+  "source_files_unchanged": true,
+  "full_gate_result_unchanged": "8/15 noncritical; strict gate failed"
+}

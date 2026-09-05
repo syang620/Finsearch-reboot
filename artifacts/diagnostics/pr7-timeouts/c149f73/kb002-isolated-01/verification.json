@@ -1,0 +1,162 @@
+{
+  "implementation": "c149f73d073a306cf34d938955ae6cc739191528",
+  "diagnostic_only": true,
+  "case_id": "AGENT_V1_KB_002",
+  "run_count": 1,
+  "status": "ok",
+  "ok": true,
+  "model_calls": 1,
+  "retries": 0,
+  "timeout_s": 120,
+  "model_call_wall_s": 109.629,
+  "case_wall_s": 110.542,
+  "provider_total_s": 109.625109375,
+  "generation_s": 79.523893,
+  "generated_tokens": 844,
+  "generation_tokens_per_second": 10.613162512051566,
+  "prompt_eval_s": 23.227898,
+  "prompt_eval_tokens": 2593,
+  "load_s": 6.864633459,
+  "provider_request": {
+    "end_local": "2026-09-05T09:18:26-04:00",
+    "http_status": 200,
+    "reported_duration": "1m49s",
+    "line_start": 51671,
+    "line_end": 51957,
+    "task_prompts": [
+      {
+        "task_id": 0,
+        "tokens": 2593
+      }
+    ],
+    "generation_samples": [
+      {
+        "tokens": 100,
+        "tokens_per_second": 10.72
+      },
+      {
+        "tokens": 133,
+        "tokens_per_second": 10.73
+      },
+      {
+        "tokens": 166,
+        "tokens_per_second": 10.72
+      },
+      {
+        "tokens": 198,
+        "tokens_per_second": 10.71
+      },
+      {
+        "tokens": 230,
+        "tokens_per_second": 10.69
+      },
+      {
+        "tokens": 263,
+        "tokens_per_second": 10.7
+      },
+      {
+        "tokens": 295,
+        "tokens_per_second": 10.7
+      },
+      {
+        "tokens": 328,
+        "tokens_per_second": 10.7
+      },
+      {
+        "tokens": 361,
+        "tokens_per_second": 10.69
+      },
+      {
+        "tokens": 394,
+        "tokens_per_second": 10.7
+      },
+      {
+        "tokens": 427,
+        "tokens_per_second": 10.69
+      },
+      {
+        "tokens": 460,
+        "tokens_per_second": 10.69
+      },
+      {
+        "tokens": 493,
+        "tokens_per_second": 10.69
+      },
+      {
+        "tokens": 526,
+        "tokens_per_second": 10.69
+      },
+      {
+        "tokens": 558,
+        "tokens_per_second": 10.67
+      },
+      {
+        "tokens": 589,
+        "tokens_per_second": 10.65
+      },
+      {
+        "tokens": 620,
+        "tokens_per_second": 10.64
+      },
+      {
+        "tokens": 651,
+        "tokens_per_second": 10.62
+      },
+      {
+        "tokens": 683,
+        "tokens_per_second": 10.61
+      },
+      {
+        "tokens": 715,
+        "tokens_per_second": 10.61
+      },
+      {
+        "tokens": 747,
+        "tokens_per_second": 10.61
+      },
+      {
+        "tokens": 779,
+        "tokens_per_second": 10.6
+      },
+      {
+        "tokens": 811,
+        "tokens_per_second": 10.6
+      },
+      {
+        "tokens": 843,
+        "tokens_per_second": 10.6
+      }
+    ],
+    "completed_prefills": [
+      {
+        "ms": 23227.9,
+        "tokens": 2593,
+        "tokens_per_second": 111.63
+      }
+    ],
+    "completed_decodes": [
+      {
+        "ms": 79523.89,
+        "tokens": 844,
+        "tokens_per_second": 10.6
+      }
+    ]
+  },
+  "provider_log_slice_sha256": "68f90e7c2fc9045853a59f20d092bc7da9e3873919d5113ca1c40edcf97e3b1f",
+  "input_messages_schema_settings_exact": true,
+  "all_power_browser_samples_valid": true,
+  "sample_count": 13,
+  "during_sample_count": 10,
+  "cpu_idle_percent": {
+    "min": 84.6,
+    "median": 89.72999999999999,
+    "max": 93.32
+  },
+  "other_process_samples_ge_50_cpu": [],
+  "controls_violated": false,
+  "awake_guard_released": true,
+  "runtime_diff": "",
+  "original_gate_result": "8/15, failed; unchanged",
+  "full_gate_runs": 0,
+  "exception_granted": false
+}

@@ -1,0 +1,35 @@
+{
+  "command": [
+    "/usr/bin/log",
+    "show",
+    "--start",
+    "2026-09-02 17:30:00",
+    "--end",
+    "2026-09-04 20:01:00",
+    "--style",
+    "compact",
+    "--predicate",
+    "process == \"powerd\" AND (eventMessage CONTAINS[c] \"lowpowermode\" OR eventMessage CONTAINS[c] \"Power Source change.\")"
+  ],
+  "exit_code": 0,
+  "stdout_sha256": "aa8a2fcefc1724567e552057933db3514008b3b13d02f185263770b6a8b166d7",
+  "events": [
+    "2026-09-02 17:33:49.997 Df powerd[531:13fa3eb] [com.apple.powerd:battery] Power Source change. Source:Batt",
+    "2026-09-02 17:33:50.007 Df powerd[531:13fa5f3] [com.apple.powerd:lowPowerMode] PMH: com.apple.system.lowpowermode current state: 0, new state: 1, pluggedin: 0, gamingOverrideProvided: 0supported on AC: 1, chosen on AC: 0 supported on batt: 1, chosen on batt: 1, chosen while gaming: 0",
+    "2026-09-02 17:33:50.007 Df powerd[531:13fa5f3] [com.apple.powerd:lowPowerMode] PMH: com.apple.system.lowpowermode = 1",
+    "2026-09-02 17:33:50.029 Df powerd[531:13fa5f3] [com.apple.powerd:lowPowerMode] PMH: Saved state=1 date=2026-Sep-02 17:33:50 GMT-04:00 to defaults com.apple.powerd.lowpowermode.state",
+    "2026-09-02 17:33:56.827 Df powerd[531:13fa1c7] [com.apple.powerd:battery] Power Source change. Source:AC",
+    "2026-09-02 17:33:56.841 Df powerd[531:13fa874] [com.apple.powerd:lowPowerMode] PMH: com.apple.system.lowpowermode current state: 1, new state: 0, pluggedin: 1, gamingOverrideProvided: 0supported on AC: 1, chosen on AC: 0 supported on batt: 1, chosen on batt: 1, chosen while gaming: 0",
+    "2026-09-02 17:33:56.841 Df powerd[531:13fa874] [com.apple.powerd:lowPowerMode] PMH: com.apple.system.lowpowermode = 0",
+    "2026-09-02 17:33:56.869 Df powerd[531:13fa874] [com.apple.powerd:lowPowerMode] PMH: Saved state=0 date=2026-Sep-02 17:33:56 GMT-04:00 to defaults com.apple.powerd.lowpowermode.state",
+    "2026-09-02 18:15:32.801 Df powerd[52:959] [com.apple.powerd:battery] Power Source change. Source:AC",
+    "2026-09-02 19:44:31.273 Df powerd[358:1302] [com.apple.powerd:battery] Power Source change. Source:AC",
+    "2026-09-02 19:44:39.249 Df powerd[358:1456] [com.apple.powerd:battery] Power Source change. Source:Batt",
+    "2026-09-02 19:44:40.521 Df powerd[358:1456] [com.apple.powerd:battery] Power Source change. Source:AC",
+    "2026-09-04 08:36:36.502 Df powerd[358:332516] [com.apple.powerd:battery] Power Source change. Source:Batt",
+    "2026-09-04 08:36:36.505 Df powerd[358:3330ee] [com.apple.powerd:lowPowerMode] PMH: com.apple.system.lowpowermode current state: 0, new state: 1, pluggedin: 0, gamingOverrideProvided: 0supported on AC: 1, chosen on AC: 0 supported on batt: 1, chosen on batt: 1, chosen while gaming: 0",
+    "2026-09-04 08:36:36.506 Df powerd[358:3330ee] [com.apple.powerd:lowPowerMode] PMH: com.apple.system.lowpowermode = 1",
+    "2026-09-04 08:36:36.527 Df powerd[358:3330ee] [com.apple.powerd:lowPowerMode] PMH: Saved state=1 date=2026-Sep-04 08:36:36 GMT-04:00 to defaults com.apple.powerd.lowpowermode.state"
+  ],
+  "interpretation": "Recorded power/Low Power Mode transitions, not an A/B experiment. PR24 and PR25 measurement windows fall on opposite sides of the Sep 4 transition."
+}

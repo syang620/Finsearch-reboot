@@ -1,0 +1,2728 @@
+{
+  "recorded_at_utc": "2026-09-05T00:29:36.694342+00:00",
+  "source_hashes": {
+    "src/agents/analyst/agent.py": {
+      "7062f48": "d8054f56042159f32205dd9979fcacd2fe76952fee40c7b66db3d0c792b5e092",
+      "2860c43": "d8054f56042159f32205dd9979fcacd2fe76952fee40c7b66db3d0c792b5e092",
+      "c149f73d073a306cf34d938955ae6cc739191528": "d8054f56042159f32205dd9979fcacd2fe76952fee40c7b66db3d0c792b5e092"
+    },
+    "src/agents/analyst/grounding.py": {
+      "7062f48": "a6d93a735c3d72a478df023c1308e2118b4b95865a625d0ffd8718697bfa2bf8",
+      "2860c43": "a6d93a735c3d72a478df023c1308e2118b4b95865a625d0ffd8718697bfa2bf8",
+      "c149f73d073a306cf34d938955ae6cc739191528": "a6d93a735c3d72a478df023c1308e2118b4b95865a625d0ffd8718697bfa2bf8"
+    },
+    "src/agents/contracts.py": {
+      "7062f48": "e11b87dec679c744cd8f0cc0931c8dc92b83e222cf93f4ede37acef7b40ca82d",
+      "2860c43": "e11b87dec679c744cd8f0cc0931c8dc92b83e222cf93f4ede37acef7b40ca82d",
+      "c149f73d073a306cf34d938955ae6cc739191528": "e11b87dec679c744cd8f0cc0931c8dc92b83e222cf93f4ede37acef7b40ca82d"
+    },
+    "src/llm_client.py": {
+      "7062f48": "67c591d3ca5d169d7e5f289f55e48a2cc816484b8cfc8c8fef324f9e43ebbd9d",
+      "2860c43": "67c591d3ca5d169d7e5f289f55e48a2cc816484b8cfc8c8fef324f9e43ebbd9d",
+      "c149f73d073a306cf34d938955ae6cc739191528": "67c591d3ca5d169d7e5f289f55e48a2cc816484b8cfc8c8fef324f9e43ebbd9d"
+    },
+    "src/structured_facts/capabilities.py": {
+      "7062f48": "632dd0d6ee742b4e0ca9f892c0979110beb3144348aa0a66260c4c651f437531",
+      "2860c43": "632dd0d6ee742b4e0ca9f892c0979110beb3144348aa0a66260c4c651f437531",
+      "c149f73d073a306cf34d938955ae6cc739191528": "632dd0d6ee742b4e0ca9f892c0979110beb3144348aa0a66260c4c651f437531"
+    }
+  },
+  "all_selected_sources_identical": true,
+  "packet_comparisons": {
+    "AGENT_V1_KB_002": {
+      "packet_sha256": {
+        "7062f48": "729921412b88aeb962d616a4ca1355d006ee53662400f2b7688dd71c7465fc76",
+        "c149f73": "d20ae8d5f4b1100da6fc26aa3205c9064a7d7e6f7438bd5f4abe46d73ae54baf"
+      },
+      "changed_packet_fields": [
+        "context_items",
+        "plan_id"
+      ],
+      "contexts": {
+        "7062f48": [
+          {
+            "context_id": "ctx_1",
+            "source": {
+              "ticker": "AAPL",
+              "fiscal_year": 2024,
+              "form_type": "10-K",
+              "filing_date": null,
+              "accession_no": null,
+              "report_date": null,
+              "source_url": null,
+              "section_path": "Item 1. Business > Segments",
+              "doc_id": "AAPL_10-K_2024::text::3",
+              "table_id": null
+            },
+            "payload_sha256": "6252a27e3bccb562a0e675dd2d16c519332dd14d5cb60eeeed1e6375e88fa340"
+          },
+          {
+            "context_id": "ctx_2",
+            "source": {
+              "ticker": "AAPL",
+              "fiscal_year": 2024,
+              "form_type": "10-K",
+              "filing_date": null,
+              "accession_no": null,
+              "report_date": null,
+              "source_url": null,
+              "section_path": "Item 6. [Reserved] > Segment Operating Performance",
+              "doc_id": "AAPL_10-K_2024::text::31",
+              "table_id": null
+            },
+            "payload_sha256": "c46a2ef15dea6663ed358ef1cf960a69440b498b93530f3f633d10bb9b5e8986"
+          },
+          {
+            "context_id": "ctx_3",
+            "source": {
+              "ticker": "AAPL",
+              "fiscal_year": 2024,
+              "form_type": "10-K",
+              "filing_date": null,
+              "accession_no": null,
+              "report_date": null,
+              "source_url": null,
+              "section_path": "Item 6. [Reserved] > Note 13 \u2013 Segment Information and Geographic Data",
+              "doc_id": "AAPL_10-K_2024::text::76",
+              "table_id": null
+            },
+            "payload_sha256": "b8708b417a56f91c95bd46d49a09a908ac4c630843ede967c3b7aa7c8cb11b51"
+          }
+        ],
+        "c149f73": [
+          {
+            "context_id": "ctx_1",
+            "source": {
+              "ticker": "AAPL",
+              "fiscal_year": 2024,
+              "form_type": "10-K",
+              "filing_date": null,
+              "accession_no": null,
+              "report_date": null,
+              "source_url": null,
+              "section_path": "Item 6. [Reserved] > Segment Operating Performance",
+              "doc_id": "AAPL_10-K_2024::text::31",
+              "table_id": null
+            },
+            "payload_sha256": "937d4efa0c6ca12d51307787e9dda2e67fc3b287e3a411a308484ca36dd53bc3"
+          },
+          {
+            "context_id": "ctx_2",
+            "source": {
+              "ticker": "AAPL",
+              "fiscal_year": 2024,
+              "form_type": "10-K",
+              "filing_date": null,
+              "accession_no": null,
+              "report_date": null,
+              "source_url": null,
+              "section_path": "Item 1. Business > Segments",
+              "doc_id": "AAPL_10-K_2024::text::3",
+              "table_id": null
+            },
+            "payload_sha256": "0865a21d0068f95024ee253e9a0c7e24687427841bea8bc1793ca18b710aa8a6"
+          },
+          {
+            "context_id": "ctx_3",
+            "source": {
+              "ticker": "AAPL",
+              "fiscal_year": 2024,
+              "form_type": "10-K",
+              "filing_date": null,
+              "accession_no": null,
+              "report_date": null,
+              "source_url": null,
+              "section_path": "Item 6. [Reserved] > Note 13 \u2013 Segment Information and Geographic Data",
+              "doc_id": "AAPL_10-K_2024::text::76",
+              "table_id": null
+            },
+            "payload_sha256": "30a0653385934356d1e726d90513b57bda5369ac887bbd0b46cae35be4437b27"
+          }
+        ]
+      },
+      "route": "kb"
+    },
+    "AGENT_V1_KB_003": {
+      "packet_sha256": {
+        "7062f48": "3b3d34a60330874925f8959eadfdcce66afa17f7bf606869f435665abc9cf3f9",
+        "c149f73": "036a5cc5592017f81948c482f2733976cfe57552871b0a57944c21f7e0a0a914"
+      },
+      "changed_packet_fields": [
+        "plan_id"
+      ],
+      "contexts": {
+        "7062f48": [
+          {
+            "context_id": "ctx_1",
+            "source": {
+              "ticker": "AAPL",
+              "fiscal_year": 2024,
+              "form_type": "10-K",
+              "filing_date": null,
+              "accession_no": null,
+              "report_date": null,
+              "source_url": null,
+              "section_path": "Item 1. Business > Macroeconomic and Industry Risks",
+              "doc_id": "AAPL_10-K_2024::text::13::split::0",
+              "table_id": null
+            },
+            "payload_sha256": "422f42c4d187c7494e48aa3db7ed4129b14754b923eaab2ceb01f6f37e532e83"
+          },
+          {
+            "context_id": "ctx_2",
+            "source": {
+              "ticker": "AAPL",
+              "fiscal_year": 2024,
+              "form_type": "10-K",
+              "filing_date": null,
+              "accession_no": null,
+              "report_date": null,
+              "source_url": null,
+              "section_path": "Item 1. Business > Macroeconomic and Industry Risks",
+              "doc_id": "AAPL_10-K_2024::text::13::split::1",
+              "table_id": null
+            },
+            "payload_sha256": "b4d24984828041e2077c1a1532b9acb7f7da4bb3cb7f3cfd6ff96930a65ef1a5"
+          },
+          {
+            "context_id": "ctx_3",
+            "source": {
+              "ticker": "AAPL",
+              "fiscal_year": 2024,
+              "form_type": "10-K",
+              "filing_date": null,
+              "accession_no": null,
+              "report_date": null,
+              "source_url": null,
+              "section_path": "Item 1. Business > Business Risks",
+              "doc_id": "AAPL_10-K_2024::text::14::split::1",
+              "table_id": null
+            },
+            "payload_sha256": "029fa3e3f8313fb0f9b2fcea4c1746b5a8f7794bb442f9003775711a9a749cc1"
+          }
+        ],
+        "c149f73": [
+          {
+            "context_id": "ctx_1",
+            "source": {
+              "ticker": "AAPL",
+              "fiscal_year": 2024,
+              "form_type": "10-K",
+              "filing_date": null,
+              "accession_no": null,
+              "report_date": null,
+              "source_url": null,
+              "section_path": "Item 1. Business > Macroeconomic and Industry Risks",
+              "doc_id": "AAPL_10-K_2024::text::13::split::0",
+              "table_id": null
+            },
+            "payload_sha256": "422f42c4d187c7494e48aa3db7ed4129b14754b923eaab2ceb01f6f37e532e83"
+          },
+          {
+            "context_id": "ctx_2",
+            "source": {
+              "ticker": "AAPL",
+              "fiscal_year": 2024,
+              "form_type": "10-K",
+              "filing_date": null,
+              "accession_no": null,
+              "report_date": null,
+              "source_url": null,
+              "section_path": "Item 1. Business > Macroeconomic and Industry Risks",
+              "doc_id": "AAPL_10-K_2024::text::13::split::1",
+              "table_id": null
+            },
+            "payload_sha256": "b4d24984828041e2077c1a1532b9acb7f7da4bb3cb7f3cfd6ff96930a65ef1a5"
+          },
+          {
+            "context_id": "ctx_3",
+            "source": {
+              "ticker": "AAPL",
+              "fiscal_year": 2024,
+              "form_type": "10-K",
+              "filing_date": null,
+              "accession_no": null,
+              "report_date": null,
+              "source_url": null,
+              "section_path": "Item 1. Business > Business Risks",
+              "doc_id": "AAPL_10-K_2024::text::14::split::1",
+              "table_id": null
+            },
+            "payload_sha256": "029fa3e3f8313fb0f9b2fcea4c1746b5a8f7794bb442f9003775711a9a749cc1"
+          }
+        ]
+      },
+      "route": "kb"
+    },
+    "AGENT_V1_HYBRID_002": {
+      "packet_sha256": {
+        "7062f48": "c650665d7fc1e94f473eb276e17dda0a6318cd2dfbc87cf8be7cc2265d0e3dc4",
+        "c149f73": "665dafc04000ef4a62202acf7d511476f122560ee149515d2ba49d232615c251"
+      },
+      "changed_packet_fields": [
+        "plan_id"
+      ],
+      "contexts": {
+        "7062f48": [
+          {
+            "context_id": "ctx_1",
+            "source": {
+              "ticker": "AAPL",
+              "fiscal_year": 2024,
+              "form_type": "10-K",
+              "filing_date": "2024-11-01",
+              "accession_no": "0000320193-24-000123",
+              "report_date": "2024-09-28",
+              "source_url": "https://www.sec.gov/Archives/edgar/data/320193/000032019324000123/aapl-20240928.htm",
+              "section_path": null,
+              "doc_id": null,
+              "table_id": null
+            },
+            "payload_sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+          },
+          {
+            "context_id": "ctx_2",
+            "source": {
+              "ticker": "AAPL",
+              "fiscal_year": 2024,
+              "form_type": "10-K",
+              "filing_date": null,
+              "accession_no": null,
+              "report_date": null,
+              "source_url": null,
+              "section_path": "Item 6. [Reserved] > Item 7. Management\u2019s Discussion and Analysis of Financial Condition and Results of Operations",
+              "doc_id": "AAPL_10-K_2024::text::27",
+              "table_id": null
+            },
+            "payload_sha256": "f3dac6ed14dd7d15ed080b26aa8e9c10075b11e5b963ea0f0d09f793c0487bb6"
+          },
+          {
+            "context_id": "ctx_3",
+            "source": {
+              "ticker": "AAPL",
+              "fiscal_year": 2024,
+              "form_type": "10-K",
+              "filing_date": null,
+              "accession_no": null,
+              "report_date": null,
+              "source_url": null,
+              "section_path": "Item 1. Business > Item 1A. Risk Factors",
+              "doc_id": "AAPL_10-K_2024::text::12",
+              "table_id": null
+            },
+            "payload_sha256": "ee523e58ebd2030af3e158924c3f98e43717bab49e5efe6e88fde0f55d0195b3"
+          },
+          {
+            "context_id": "ctx_4",
+            "source": {
+              "ticker": "AAPL",
+              "fiscal_year": 2024,
+              "form_type": "10-K",
+              "filing_date": null,
+              "accession_no": null,
+              "report_date": null,
+              "source_url": null,
+              "section_path": "Item 6. [Reserved] > Opinion on the Financial Statements",
+              "doc_id": "AAPL_10-K_2024::text::77",
+              "table_id": null
+            },
+            "payload_sha256": "d46cf80232ccddf58bbd79ad58fde841d30fe702b90e14c6b99bffbf7e9b648e"
+          }
+        ],
+        "c149f73": [
+          {
+            "context_id": "ctx_1",
+            "source": {
+              "ticker": "AAPL",
+              "fiscal_year": 2024,
+              "form_type": "10-K",
+              "filing_date": "2024-11-01",
+              "accession_no": "0000320193-24-000123",
+              "report_date": "2024-09-28",
+              "source_url": "https://www.sec.gov/Archives/edgar/data/320193/000032019324000123/aapl-20240928.htm",
+              "section_path": null,
+              "doc_id": null,
+              "table_id": null
+            },
+            "payload_sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+          },
+          {
+            "context_id": "ctx_2",
+            "source": {
+              "ticker": "AAPL",
+              "fiscal_year": 2024,
+              "form_type": "10-K",
+              "filing_date": null,
+              "accession_no": null,
+              "report_date": null,
+              "source_url": null,
+              "section_path": "Item 6. [Reserved] > Item 7. Management\u2019s Discussion and Analysis of Financial Condition and Results of Operations",
+              "doc_id": "AAPL_10-K_2024::text::27",
+              "table_id": null
+            },
+            "payload_sha256": "f3dac6ed14dd7d15ed080b26aa8e9c10075b11e5b963ea0f0d09f793c0487bb6"
+          },
+          {
+            "context_id": "ctx_3",
+            "source": {
+              "ticker": "AAPL",
+              "fiscal_year": 2024,
+              "form_type": "10-K",
+              "filing_date": null,
+              "accession_no": null,
+              "report_date": null,
+              "source_url": null,
+              "section_path": "Item 1. Business > Item 1A. Risk Factors",
+              "doc_id": "AAPL_10-K_2024::text::12",
+              "table_id": null
+            },
+            "payload_sha256": "ee523e58ebd2030af3e158924c3f98e43717bab49e5efe6e88fde0f55d0195b3"
+          },
+          {
+            "context_id": "ctx_4",
+            "source": {
+              "ticker": "AAPL",
+              "fiscal_year": 2024,
+              "form_type": "10-K",
+              "filing_date": null,
+              "accession_no": null,
+              "report_date": null,
+              "source_url": null,
+              "section_path": "Item 6. [Reserved] > Opinion on the Financial Statements",
+              "doc_id": "AAPL_10-K_2024::text::77",
+              "table_id": null
+            },
+            "payload_sha256": "d46cf80232ccddf58bbd79ad58fde841d30fe702b90e14c6b99bffbf7e9b648e"
+          }
+        ]
+      },
+      "route": "hybrid"
+    },
+    "AGENT_V1_HYBRID_003": {
+      "packet_sha256": {
+        "7062f48": "ff887cde09a326aa62cf9133a829807a21f31670050b9b4adb2d641efbbd5532",
+        "c149f73": "d763462bb735b43282f2f698cd446dcb8ffbb5f570dd4cc2991d1664dbec25ce"
+      },
+      "changed_packet_fields": [
+        "plan_id"
+      ],
+      "contexts": {
+        "7062f48": [
+          {
+            "context_id": "ctx_1",
+            "source": {
+              "ticker": "AAPL",
+              "fiscal_year": 2024,
+              "form_type": "10-K",
+              "filing_date": "2024-11-01",
+              "accession_no": "0000320193-24-000123",
+              "report_date": "2024-09-28",
+              "source_url": "https://www.sec.gov/Archives/edgar/data/320193/000032019324000123/aapl-20240928.htm",
+              "section_path": null,
+              "doc_id": null,
+              "table_id": null
+            },
+            "payload_sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+          },
+          {
+            "context_id": "ctx_2",
+            "source": {
+              "ticker": "AAPL",
+              "fiscal_year": 2024,
+              "form_type": "10-K",
+              "filing_date": null,
+              "accession_no": null,
+              "report_date": null,
+              "source_url": null,
+              "section_path": "Item 6. [Reserved] > Liquidity and Capital Resources",
+              "doc_id": "AAPL_10-K_2024::text::36",
+              "table_id": null
+            },
+            "payload_sha256": "b83c8eccc288401f0d9813d0dd0374ce513d26fdb4bf26a5bd24fef223ea9277"
+          },
+          {
+            "context_id": "ctx_3",
+            "source": {
+              "ticker": "AAPL",
+              "fiscal_year": 2024,
+              "form_type": "10-K",
+              "filing_date": null,
+              "accession_no": null,
+              "report_date": null,
+              "source_url": null,
+              "section_path": "Item 6. [Reserved] > Term Debt",
+              "doc_id": "AAPL_10-K_2024::text::66",
+              "table_id": null
+            },
+            "payload_sha256": "82dd131c6048dffbdd9e2768a872ffc161eafb4ddbbacf62a23595a23402f9e2"
+          },
+          {
+            "context_id": "ctx_4",
+            "source": {
+              "ticker": "AAPL",
+              "fiscal_year": 2024,
+              "form_type": "10-K",
+              "filing_date": null,
+              "accession_no": null,
+              "report_date": null,
+              "source_url": null,
+              "section_path": "Item 6. [Reserved] > Item 7. Management\u2019s Discussion and Analysis of Financial Condition and Results of Operations",
+              "doc_id": "AAPL_10-K_2024::text::27",
+              "table_id": null
+            },
+            "payload_sha256": "7b98b4a114d71ce2f043a06c4a274126451bb0031e755128be29bebc9fdc7ac7"
+          }
+        ],
+        "c149f73": [
+          {
+            "context_id": "ctx_1",
+            "source": {
+              "ticker": "AAPL",
+              "fiscal_year": 2024,
+              "form_type": "10-K",
+              "filing_date": "2024-11-01",
+              "accession_no": "0000320193-24-000123",
+              "report_date": "2024-09-28",
+              "source_url": "https://www.sec.gov/Archives/edgar/data/320193/000032019324000123/aapl-20240928.htm",
+              "section_path": null,
+              "doc_id": null,
+              "table_id": null
+            },
+            "payload_sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+          },
+          {
+            "context_id": "ctx_2",
+            "source": {
+              "ticker": "AAPL",
+              "fiscal_year": 2024,
+              "form_type": "10-K",
+              "filing_date": null,
+              "accession_no": null,
+              "report_date": null,
+              "source_url": null,
+              "section_path": "Item 6. [Reserved] > Liquidity and Capital Resources",
+              "doc_id": "AAPL_10-K_2024::text::36",
+              "table_id": null
+            },
+            "payload_sha256": "b83c8eccc288401f0d9813d0dd0374ce513d26fdb4bf26a5bd24fef223ea9277"
+          },
+          {
+            "context_id": "ctx_3",
+            "source": {
+              "ticker": "AAPL",
+              "fiscal_year": 2024,
+              "form_type": "10-K",
+              "filing_date": null,
+              "accession_no": null,
+              "report_date": null,
+              "source_url": null,
+              "section_path": "Item 6. [Reserved] > Term Debt",
+              "doc_id": "AAPL_10-K_2024::text::66",
+              "table_id": null
+            },
+            "payload_sha256": "82dd131c6048dffbdd9e2768a872ffc161eafb4ddbbacf62a23595a23402f9e2"
+          },
+          {
+            "context_id": "ctx_4",
+            "source": {
+              "ticker": "AAPL",
+              "fiscal_year": 2024,
+              "form_type": "10-K",
+              "filing_date": null,
+              "accession_no": null,
+              "report_date": null,
+              "source_url": null,
+              "section_path": "Item 6. [Reserved] > Item 7. Management\u2019s Discussion and Analysis of Financial Condition and Results of Operations",
+              "doc_id": "AAPL_10-K_2024::text::27",
+              "table_id": null
+            },
+            "payload_sha256": "7b98b4a114d71ce2f043a06c4a274126451bb0031e755128be29bebc9fdc7ac7"
+          }
+        ]
+      },
+      "route": "hybrid"
+    },
+    "AGENT_V1_ANALYST_001": {
+      "packet_sha256": {
+        "7062f48": "f4847419de2e865d25587bde66422a57be8cf886771ef6ba86460602edb8c6b0",
+        "c149f73": "b4d7c541f767306004c3239c7108975edf8344d6a1fe8f62574b58479d660ef4"
+      },
+      "changed_packet_fields": [
+        "plan_id"
+      ],
+      "contexts": {
+        "7062f48": [
+          {
+            "context_id": "ctx_1",
+            "source": {
+              "ticker": "AAPL",
+              "fiscal_year": 2024,
+              "form_type": "10-K",
+              "filing_date": null,
+              "accession_no": null,
+              "report_date": null,
+              "source_url": null,
+              "section_path": "PART II > Item 6. [Reserved] > Note 2 \u2013 Revenue",
+              "doc_id": "AAPL_10-K_2024::table::15::row::4",
+              "table_id": "15"
+            },
+            "payload_sha256": "1176e63506ae917140a83dfebdd71f14a50a72990bc42520ba64f3c43ac0c185"
+          },
+          {
+            "context_id": "ctx_2",
+            "source": {
+              "ticker": "AAPL",
+              "fiscal_year": 2024,
+              "form_type": "10-K",
+              "filing_date": null,
+              "accession_no": null,
+              "report_date": null,
+              "source_url": null,
+              "section_path": "PART II > Item 6. [Reserved] > Item 8. Financial Statements and Supplementary Data > CONSOLIDATED STATEMENTS OF OPERATIONS",
+              "doc_id": "AAPL_10-K_2024::table::10::row::1",
+              "table_id": "10"
+            },
+            "payload_sha256": "571636dd680eb39d6b68bf5a285c13579ee65b7f332827783ab641539712bba3"
+          },
+          {
+            "context_id": "ctx_3",
+            "source": {
+              "ticker": "AAPL",
+              "fiscal_year": 2024,
+              "form_type": "10-K",
+              "filing_date": null,
+              "accession_no": null,
+              "report_date": null,
+              "source_url": null,
+              "section_path": "PART II > Item 6. [Reserved] > Note 13 \u2013 Segment Information and Geographic Data",
+              "doc_id": "AAPL_10-K_2024::table::39",
+              "table_id": "39"
+            },
+            "payload_sha256": "0f738d49d86b4b357b209e0db3f5fe90d96cfefe3c7eda9ed3b5fec907921b9d"
+          }
+        ],
+        "c149f73": [
+          {
+            "context_id": "ctx_1",
+            "source": {
+              "ticker": "AAPL",
+              "fiscal_year": 2024,
+              "form_type": "10-K",
+              "filing_date": null,
+              "accession_no": null,
+              "report_date": null,
+              "source_url": null,
+              "section_path": "PART II > Item 6. [Reserved] > Note 2 \u2013 Revenue",
+              "doc_id": "AAPL_10-K_2024::table::15::row::4",
+              "table_id": "15"
+            },
+            "payload_sha256": "1176e63506ae917140a83dfebdd71f14a50a72990bc42520ba64f3c43ac0c185"
+          },
+          {
+            "context_id": "ctx_2",
+            "source": {
+              "ticker": "AAPL",
+              "fiscal_year": 2024,
+              "form_type": "10-K",
+              "filing_date": null,
+              "accession_no": null,
+              "report_date": null,
+              "source_url": null,
+              "section_path": "PART II > Item 6. [Reserved] > Item 8. Financial Statements and Supplementary Data > CONSOLIDATED STATEMENTS OF OPERATIONS",
+              "doc_id": "AAPL_10-K_2024::table::10::row::1",
+              "table_id": "10"
+            },
+            "payload_sha256": "571636dd680eb39d6b68bf5a285c13579ee65b7f332827783ab641539712bba3"
+          },
+          {
+            "context_id": "ctx_3",
+            "source": {
+              "ticker": "AAPL",
+              "fiscal_year": 2024,
+              "form_type": "10-K",
+              "filing_date": null,
+              "accession_no": null,
+              "report_date": null,
+              "source_url": null,
+              "section_path": "PART II > Item 6. [Reserved] > Note 13 \u2013 Segment Information and Geographic Data",
+              "doc_id": "AAPL_10-K_2024::table::39",
+              "table_id": "39"
+            },
+            "payload_sha256": "0f738d49d86b4b357b209e0db3f5fe90d96cfefe3c7eda9ed3b5fec907921b9d"
+          }
+        ]
+      },
+      "route": "kb"
+    },
+    "AGENT_V1_ANALYST_003": {
+      "packet_sha256": {
+        "7062f48": "5ffc09c65c2161e1e014499c1dc060d64a01378848d06bf1b542f2efd43fb780",
+        "c149f73": "117108727fc62d6295874c501fb6e5abb5f15f99a84b77c50484232c47326e7d"
+      },
+      "changed_packet_fields": [
+        "plan_id"
+      ],
+      "contexts": {
+        "7062f48": [
+          {
+            "context_id": "ctx_1",
+            "source": {
+              "ticker": "AAPL",
+              "fiscal_year": 2024,
+              "form_type": "10-K",
+              "filing_date": null,
+              "accession_no": null,
+              "report_date": null,
+              "source_url": null,
+              "section_path": "Item 1. Business > Macroeconomic and Industry Risks",
+              "doc_id": "AAPL_10-K_2024::text::13::split::1",
+              "table_id": null
+            },
+            "payload_sha256": "9d0d0bda8a6abd69528b3144a182621a41f96c68c5fdf6a1d6ea4ec4caf0842c"
+          },
+          {
+            "context_id": "ctx_2",
+            "source": {
+              "ticker": "AAPL",
+              "fiscal_year": 2024,
+              "form_type": "10-K",
+              "filing_date": null,
+              "accession_no": null,
+              "report_date": null,
+              "source_url": null,
+              "section_path": "Item 1. Business > Item 1A. Risk Factors",
+              "doc_id": "AAPL_10-K_2024::text::12",
+              "table_id": null
+            },
+            "payload_sha256": "19e3f7e7bfa1e7d7ca0b3323f9d7edcbb7a9d1af7bc50cdf87d39d821f0e3dd5"
+          },
+          {
+            "context_id": "ctx_3",
+            "source": {
+              "ticker": "AAPL",
+              "fiscal_year": 2024,
+              "form_type": "10-K",
+              "filing_date": null,
+              "accession_no": null,
+              "report_date": null,
+              "source_url": null,
+              "section_path": "Item 1. Business > Business Risks",
+              "doc_id": "AAPL_10-K_2024::text::14::split::1",
+              "table_id": null
+            },
+            "payload_sha256": "a73ffec915af33f7c3d2098f2975fcba8bea88acf96e70c2680759e586f5c5dd"
+          }
+        ],
+        "c149f73": [
+          {
+            "context_id": "ctx_1",
+            "source": {
+              "ticker": "AAPL",
+              "fiscal_year": 2024,
+              "form_type": "10-K",
+              "filing_date": null,
+              "accession_no": null,
+              "report_date": null,
+              "source_url": null,
+              "section_path": "Item 1. Business > Macroeconomic and Industry Risks",
+              "doc_id": "AAPL_10-K_2024::text::13::split::1",
+              "table_id": null
+            },
+            "payload_sha256": "9d0d0bda8a6abd69528b3144a182621a41f96c68c5fdf6a1d6ea4ec4caf0842c"
+          },
+          {
+            "context_id": "ctx_2",
+            "source": {
+              "ticker": "AAPL",
+              "fiscal_year": 2024,
+              "form_type": "10-K",
+              "filing_date": null,
+              "accession_no": null,
+              "report_date": null,
+              "source_url": null,
+              "section_path": "Item 1. Business > Item 1A. Risk Factors",
+              "doc_id": "AAPL_10-K_2024::text::12",
+              "table_id": null
+            },
+            "payload_sha256": "19e3f7e7bfa1e7d7ca0b3323f9d7edcbb7a9d1af7bc50cdf87d39d821f0e3dd5"
+          },
+          {
+            "context_id": "ctx_3",
+            "source": {
+              "ticker": "AAPL",
+              "fiscal_year": 2024,
+              "form_type": "10-K",
+              "filing_date": null,
+              "accession_no": null,
+              "report_date": null,
+              "source_url": null,
+              "section_path": "Item 1. Business > Business Risks",
+              "doc_id": "AAPL_10-K_2024::text::14::split::1",
+              "table_id": null
+            },
+            "payload_sha256": "a73ffec915af33f7c3d2098f2975fcba8bea88acf96e70c2680759e586f5c5dd"
+          }
+        ]
+      },
+      "route": "kb"
+    }
+  },
+  "power_log_sha256_at_read": "6ac72639bc000bfe6642f0d791f07a54cf115a3d89007f2f76ba10f43045ebe0",
+  "sleep_wake_events": [
+    "2026-09-04 18:19:02 -0400 Sleep               \tEntering Sleep state due to 'Clamshell Sleep':TCPKeepAlive=active Using Batt (Charge:94%) 955 secs  ",
+    "2026-09-04 18:34:57 -0400 DarkWake            \tDarkWake from Deep Idle [CDNP] : due to NUB.SPMI0.SW3 nub-spmi0.0x02 rtc/SleepService Using BATT (Charge:94%) 2 secs    ",
+    "2026-09-04 18:34:59 -0400 Sleep               \tEntering Sleep state due to 'Sleep Service Back to Sleep':TCPKeepAlive=active Using Batt (Charge:94%) 2565 secs ",
+    "2026-09-04 19:17:44 -0400 Wake                \tWake from Deep Idle [CDNVA] : due to smc.sysState.Wake(0x70070000) lid SMC.OutboxNotEmpty RTP.multi-touch/HID Activity Using BATT (Charge:94%)           "
+  ],
+  "service_load_records": [
+    {
+      "line": 42366,
+      "text": "time=2026-09-03T22:34:32.052-04:00 level=INFO source=sched.go:613 msg=\"system memory\" total=\"32.0 GiB\" free=\"8.0 GiB\" free_swap=\"0 B\""
+    },
+    {
+      "line": 42367,
+      "text": "time=2026-09-03T22:34:32.052-04:00 level=INFO source=sched.go:620 msg=\"gpu memory\" id=0 library=Metal available=\"24.5 GiB\" free=\"25.0 GiB\" minimum=\"512.0 MiB\" overhead=\"0 B\""
+    },
+    {
+      "line": 42521,
+      "text": "load_tensors: offloaded 49/49 layers to GPU"
+    },
+    {
+      "line": 42575,
+      "text": "slot   load_model: id  0 | task -1 | new slot, n_ctx = 32768"
+    },
+    {
+      "line": 46214,
+      "text": "time=2026-09-04T17:59:00.108-04:00 level=INFO source=sched.go:613 msg=\"system memory\" total=\"32.0 GiB\" free=\"8.8 GiB\" free_swap=\"0 B\""
+    },
+    {
+      "line": 46215,
+      "text": "time=2026-09-04T17:59:00.108-04:00 level=INFO source=sched.go:620 msg=\"gpu memory\" id=0 library=Metal available=\"24.5 GiB\" free=\"25.0 GiB\" minimum=\"512.0 MiB\" overhead=\"0 B\""
+    },
+    {
+      "line": 46369,
+      "text": "load_tensors: offloaded 49/49 layers to GPU"
+    },
+    {
+      "line": 46423,
+      "text": "slot   load_model: id  0 | task -1 | new slot, n_ctx = 32768"
+    },
+    {
+      "line": 47236,
+      "text": "time=2026-09-04T18:16:20.661-04:00 level=INFO source=sched.go:551 msg=\"llama-server model predicted to exceed available memory, evicting\" predicted=\"8.9 GiB\" predicted_num_ctx=32768 num_batch=2048 available=\"2.9 GiB\" gpu_free=\"10.8 GiB\" system_free=\"2.9 GiB\" system_limited=true"
+    },
+    {
+      "line": 47239,
+      "text": "time=2026-09-04T18:16:20.985-04:00 level=INFO source=sched.go:613 msg=\"system memory\" total=\"32.0 GiB\" free=\"9.3 GiB\" free_swap=\"0 B\""
+    },
+    {
+      "line": 47240,
+      "text": "time=2026-09-04T18:16:20.985-04:00 level=INFO source=sched.go:620 msg=\"gpu memory\" id=0 library=Metal available=\"24.5 GiB\" free=\"25.0 GiB\" minimum=\"512.0 MiB\" overhead=\"0 B\""
+    },
+    {
+      "line": 47396,
+      "text": "load_tensors: offloaded 37/37 layers to GPU"
+    },
+    {
+      "line": 47451,
+      "text": "slot   load_model: id  0 | task -1 | new slot, n_ctx = 32768"
+    },
+    {
+      "line": 47501,
+      "text": "time=2026-09-04T18:16:27.772-04:00 level=INFO source=sched.go:551 msg=\"llama-server model predicted to exceed available memory, evicting\" predicted=\"14.4 GiB\" predicted_num_ctx=32768 num_batch=512 available=\"8.7 GiB\" gpu_free=\"14.8 GiB\" system_free=\"8.7 GiB\" system_limited=true"
+    },
+    {
+      "line": 47505,
+      "text": "time=2026-09-04T18:16:27.843-04:00 level=INFO source=sched.go:613 msg=\"system memory\" total=\"32.0 GiB\" free=\"8.8 GiB\" free_swap=\"0 B\""
+    },
+    {
+      "line": 47506,
+      "text": "time=2026-09-04T18:16:27.843-04:00 level=INFO source=sched.go:620 msg=\"gpu memory\" id=0 library=Metal available=\"24.5 GiB\" free=\"25.0 GiB\" minimum=\"512.0 MiB\" overhead=\"0 B\""
+    },
+    {
+      "line": 47660,
+      "text": "load_tensors: offloaded 49/49 layers to GPU"
+    },
+    {
+      "line": 47714,
+      "text": "slot   load_model: id  0 | task -1 | new slot, n_ctx = 32768"
+    }
+  ],
+  "provider_excerpts": {
+    "AGENT_V1_ANALYST_003": {
+      "7062f48": [
+        {
+          "line": 46174,
+          "text": "slot   operator(): id  0 | task 18828 | new prompt, n_ctx_slot = 32768, n_keep = 4, task.n_tokens = 4111"
+        },
+        {
+          "line": 46177,
+          "text": "slot print_timing: id  0 | task 18828 | prompt processing, n_tokens =   1024, progress = 0.45, t =   4.68 s / 219.02 tokens per second"
+        },
+        {
+          "line": 46179,
+          "text": "slot print_timing: id  0 | task 18828 | prompt processing, n_tokens =   1536, progress = 0.57, t =   9.52 s / 161.32 tokens per second"
+        },
+        {
+          "line": 46181,
+          "text": "slot print_timing: id  0 | task 18828 | prompt processing, n_tokens =   2048, progress = 0.70, t =  14.51 s / 141.13 tokens per second"
+        },
+        {
+          "line": 46183,
+          "text": "slot print_timing: id  0 | task 18828 | prompt processing, n_tokens =   2560, progress = 0.82, t =  19.62 s / 130.48 tokens per second"
+        },
+        {
+          "line": 46185,
+          "text": "slot print_timing: id  0 | task 18828 | prompt processing, n_tokens =   3072, progress = 0.94, t =  24.85 s / 123.64 tokens per second"
+        },
+        {
+          "line": 46188,
+          "text": "slot print_timing: id  0 | task 18828 | n_gen =    100, tg =  10.16 t/s, tg_3s =  10.26 t/s"
+        },
+        {
+          "line": 46189,
+          "text": "slot print_timing: id  0 | task 18828 | n_gen =    131, tg =  10.14 t/s, tg_3s =  10.07 t/s"
+        },
+        {
+          "line": 46190,
+          "text": "slot print_timing: id  0 | task 18828 | n_gen =    162, tg =  10.16 t/s, tg_3s =  10.22 t/s"
+        },
+        {
+          "line": 46191,
+          "text": "slot print_timing: id  0 | task 18828 | n_gen =    193, tg =  10.18 t/s, tg_3s =  10.30 t/s"
+        },
+        {
+          "line": 46192,
+          "text": "slot print_timing: id  0 | task 18828 | n_gen =    224, tg =  10.18 t/s, tg_3s =  10.16 t/s"
+        },
+        {
+          "line": 46193,
+          "text": "slot print_timing: id  0 | task 18828 | n_gen =    255, tg =  10.19 t/s, tg_3s =  10.27 t/s"
+        },
+        {
+          "line": 46194,
+          "text": "slot print_timing: id  0 | task 18828 | n_gen =    286, tg =  10.19 t/s, tg_3s =  10.21 t/s"
+        },
+        {
+          "line": 46195,
+          "text": "slot print_timing: id  0 | task 18828 | n_gen =    317, tg =  10.19 t/s, tg_3s =  10.19 t/s"
+        },
+        {
+          "line": 46196,
+          "text": "slot print_timing: id  0 | task 18828 | n_gen =    348, tg =  10.20 t/s, tg_3s =  10.25 t/s"
+        },
+        {
+          "line": 46197,
+          "text": "slot print_timing: id  0 | task 18828 | n_gen =    379, tg =  10.20 t/s, tg_3s =  10.25 t/s"
+        },
+        {
+          "line": 46198,
+          "text": "slot print_timing: id  0 | task 18828 | prompt eval time =   32847.64 ms /  3301 tokens (    9.95 ms per token,   100.49 tokens per second)"
+        },
+        {
+          "line": 46199,
+          "text": "slot print_timing: id  0 | task 18828 |        eval time =   37653.76 ms /   385 tokens (   98.06 ms per token,    10.20 tokens per second)"
+        },
+        {
+          "line": 46202,
+          "text": "slot      release: id  0 | task 18828 | stop processing: n_tokens = 4495, truncated = 0"
+        },
+        {
+          "line": 46204,
+          "text": "[GIN] 2026/09/03 - 23:21:11 | 200 |         1m10s |       127.0.0.1 | POST     \"/api/chat\""
+        }
+      ],
+      "c149f73": [
+        {
+          "line": 50150,
+          "text": "slot   operator(): id  0 | task 9257 | new prompt, n_ctx_slot = 32768, n_keep = 4, task.n_tokens = 4111"
+        },
+        {
+          "line": 50153,
+          "text": "slot print_timing: id  0 | task 9257 | prompt processing, n_tokens =   1024, progress = 0.45, t =   9.31 s / 109.99 tokens per second"
+        },
+        {
+          "line": 50155,
+          "text": "slot print_timing: id  0 | task 9257 | prompt processing, n_tokens =   1536, progress = 0.57, t =  18.22 s / 84.32 tokens per second"
+        },
+        {
+          "line": 50157,
+          "text": "slot print_timing: id  0 | task 9257 | prompt processing, n_tokens =   2048, progress = 0.70, t =  27.47 s / 74.57 tokens per second"
+        },
+        {
+          "line": 50159,
+          "text": "slot print_timing: id  0 | task 9257 | prompt processing, n_tokens =   2560, progress = 0.82, t =  36.48 s / 70.17 tokens per second"
+        },
+        {
+          "line": 50161,
+          "text": "slot print_timing: id  0 | task 9257 | prompt processing, n_tokens =   3072, progress = 0.94, t =  45.25 s / 67.88 tokens per second"
+        },
+        {
+          "line": 50164,
+          "text": "slot print_timing: id  0 | task 9257 | n_gen =    100, tg =   5.35 t/s, tg_3s =   5.41 t/s"
+        },
+        {
+          "line": 50165,
+          "text": "slot print_timing: id  0 | task 9257 | n_gen =    116, tg =   5.34 t/s, tg_3s =   5.27 t/s"
+        },
+        {
+          "line": 50166,
+          "text": "slot print_timing: id  0 | task 9257 | n_gen =    134, tg =   5.40 t/s, tg_3s =   5.82 t/s"
+        },
+        {
+          "line": 50167,
+          "text": "slot print_timing: id  0 | task 9257 | n_gen =    153, tg =   5.48 t/s, tg_3s =   6.09 t/s"
+        },
+        {
+          "line": 50168,
+          "text": "slot print_timing: id  0 | task 9257 | n_gen =    170, tg =   5.49 t/s, tg_3s =   5.56 t/s"
+        },
+        {
+          "line": 50169,
+          "text": "slot print_timing: id  0 | task 9257 | n_gen =    188, tg =   5.53 t/s, tg_3s =   5.99 t/s"
+        },
+        {
+          "line": 50170,
+          "text": "slot print_timing: id  0 | task 9257 | n_gen =    205, tg =   5.54 t/s, tg_3s =   5.62 t/s"
+        },
+        {
+          "line": 50171,
+          "text": "slot print_timing: id  0 | task 9257 | n_gen =    222, tg =   5.54 t/s, tg_3s =   5.53 t/s"
+        },
+        {
+          "line": 50172,
+          "text": "slot print_timing: id  0 | task 9257 | n_gen =    240, tg =   5.57 t/s, tg_3s =   5.98 t/s"
+        },
+        {
+          "line": 50173,
+          "text": "slot print_timing: id  0 | task 9257 | n_gen =    259, tg =   5.61 t/s, tg_3s =   6.10 t/s"
+        },
+        {
+          "line": 50174,
+          "text": "slot print_timing: id  0 | task 9257 | n_gen =    277, tg =   5.62 t/s, tg_3s =   5.75 t/s"
+        },
+        {
+          "line": 50175,
+          "text": "slot print_timing: id  0 | task 9257 | n_gen =    294, tg =   5.61 t/s, tg_3s =   5.52 t/s"
+        },
+        {
+          "line": 50176,
+          "text": "slot print_timing: id  0 | task 9257 | n_gen =    311, tg =   5.61 t/s, tg_3s =   5.62 t/s"
+        },
+        {
+          "line": 50177,
+          "text": "slot print_timing: id  0 | task 9257 | n_gen =    328, tg =   5.61 t/s, tg_3s =   5.56 t/s"
+        },
+        {
+          "line": 50178,
+          "text": "[GIN] 2026/09/04 - 20:00:42 | 500 |          2m0s |       127.0.0.1 | POST     \"/api/chat\""
+        },
+        {
+          "line": 50179,
+          "text": "srv          stop: cancel task, id_task = 9257"
+        },
+        {
+          "line": 50180,
+          "text": "slot      release: id  0 | task 9257 | stop processing: n_tokens = 4448, truncated = 0"
+        }
+      ]
+    },
+    "AGENT_V1_ANALYST_001": {
+      "7062f48": [
+        {
+          "line": 45317,
+          "text": "slot   operator(): id  0 | task 14835 | new prompt, n_ctx_slot = 32768, n_keep = 4, task.n_tokens = 4099"
+        },
+        {
+          "line": 45320,
+          "text": "slot print_timing: id  0 | task 14835 | prompt processing, n_tokens =   1024, progress = 0.25, t =   4.48 s / 228.46 tokens per second"
+        },
+        {
+          "line": 45322,
+          "text": "slot print_timing: id  0 | task 14835 | prompt processing, n_tokens =   1536, progress = 0.38, t =   9.14 s / 168.05 tokens per second"
+        },
+        {
+          "line": 45324,
+          "text": "slot print_timing: id  0 | task 14835 | prompt processing, n_tokens =   2048, progress = 0.50, t =  13.93 s / 147.02 tokens per second"
+        },
+        {
+          "line": 45326,
+          "text": "slot print_timing: id  0 | task 14835 | prompt processing, n_tokens =   2560, progress = 0.63, t =  18.85 s / 135.79 tokens per second"
+        },
+        {
+          "line": 45328,
+          "text": "slot print_timing: id  0 | task 14835 | prompt processing, n_tokens =   3072, progress = 0.75, t =  23.88 s / 128.63 tokens per second"
+        },
+        {
+          "line": 45330,
+          "text": "slot print_timing: id  0 | task 14835 | prompt processing, n_tokens =   3584, progress = 0.88, t =  29.03 s / 123.45 tokens per second"
+        },
+        {
+          "line": 45333,
+          "text": "slot print_timing: id  0 | task 14835 | n_gen =    100, tg =  10.23 t/s, tg_3s =  10.33 t/s"
+        },
+        {
+          "line": 45334,
+          "text": "slot print_timing: id  0 | task 14835 | n_gen =    131, tg =  10.22 t/s, tg_3s =  10.20 t/s"
+        },
+        {
+          "line": 45335,
+          "text": "slot print_timing: id  0 | task 14835 | n_gen =    162, tg =  10.19 t/s, tg_3s =  10.05 t/s"
+        },
+        {
+          "line": 45336,
+          "text": "slot print_timing: id  0 | task 14835 | n_gen =    193, tg =  10.20 t/s, tg_3s =  10.25 t/s"
+        },
+        {
+          "line": 45337,
+          "text": "slot print_timing: id  0 | task 14835 | n_gen =    224, tg =  10.20 t/s, tg_3s =  10.21 t/s"
+        },
+        {
+          "line": 45338,
+          "text": "slot print_timing: id  0 | task 14835 | n_gen =    255, tg =  10.20 t/s, tg_3s =  10.17 t/s"
+        },
+        {
+          "line": 45339,
+          "text": "slot print_timing: id  0 | task 14835 | n_gen =    286, tg =  10.20 t/s, tg_3s =  10.21 t/s"
+        },
+        {
+          "line": 45340,
+          "text": "slot print_timing: id  0 | task 14835 | prompt eval time =   39717.90 ms /  4094 tokens (    9.70 ms per token,   103.08 tokens per second)"
+        },
+        {
+          "line": 45341,
+          "text": "slot print_timing: id  0 | task 14835 |        eval time =   29693.19 ms /   304 tokens (   98.00 ms per token,    10.20 tokens per second)"
+        },
+        {
+          "line": 45344,
+          "text": "slot      release: id  0 | task 14835 | stop processing: n_tokens = 4402, truncated = 0"
+        },
+        {
+          "line": 45346,
+          "text": "[GIN] 2026/09/03 - 23:11:55 | 200 |          1m9s |       127.0.0.1 | POST     \"/api/chat\""
+        },
+        {
+          "line": 45357,
+          "text": "slot   operator(): id  0 | task 15147 | new prompt, n_ctx_slot = 32768, n_keep = 4, task.n_tokens = 4694"
+        },
+        {
+          "line": 45361,
+          "text": "slot print_timing: id  0 | task 15147 | prompt eval time =    6420.82 ms /   595 tokens (   10.79 ms per token,    92.67 tokens per second)"
+        },
+        {
+          "line": 45362,
+          "text": "slot print_timing: id  0 | task 15147 |        eval time =    7967.99 ms /    82 tokens (   98.37 ms per token,    10.17 tokens per second)"
+        },
+        {
+          "line": 45365,
+          "text": "slot      release: id  0 | task 15147 | stop processing: n_tokens = 4775, truncated = 0"
+        },
+        {
+          "line": 45367,
+          "text": "[GIN] 2026/09/03 - 23:12:09 | 200 | 14.411461792s |       127.0.0.1 | POST     \"/api/chat\""
+        },
+        {
+          "line": 45378,
+          "text": "slot   operator(): id  0 | task 15231 | new prompt, n_ctx_slot = 32768, n_keep = 4, task.n_tokens = 4811"
+        },
+        {
+          "line": 45381,
+          "text": "slot print_timing: id  0 | task 15231 | n_gen =    100, tg =  10.20 t/s, tg_3s =  10.31 t/s"
+        },
+        {
+          "line": 45382,
+          "text": "slot print_timing: id  0 | task 15231 | n_gen =    129, tg =  10.02 t/s, tg_3s =   9.46 t/s"
+        },
+        {
+          "line": 45383,
+          "text": "slot print_timing: id  0 | task 15231 | n_gen =    159, tg =   9.96 t/s, tg_3s =   9.70 t/s"
+        },
+        {
+          "line": 45384,
+          "text": "slot print_timing: id  0 | task 15231 | n_gen =    188, tg =   9.86 t/s, tg_3s =   9.32 t/s"
+        },
+        {
+          "line": 45385,
+          "text": "slot print_timing: id  0 | task 15231 | n_gen =    218, tg =   9.85 t/s, tg_3s =   9.84 t/s"
+        },
+        {
+          "line": 45386,
+          "text": "slot print_timing: id  0 | task 15231 | n_gen =    248, tg =   9.86 t/s, tg_3s =   9.89 t/s"
+        },
+        {
+          "line": 45387,
+          "text": "slot print_timing: id  0 | task 15231 | n_gen =    279, tg =   9.88 t/s, tg_3s =  10.04 t/s"
+        },
+        {
+          "line": 45388,
+          "text": "slot print_timing: id  0 | task 15231 | n_gen =    309, tg =   9.88 t/s, tg_3s =   9.87 t/s"
+        },
+        {
+          "line": 45389,
+          "text": "slot print_timing: id  0 | task 15231 | n_gen =    339, tg =   9.89 t/s, tg_3s =   9.97 t/s"
+        },
+        {
+          "line": 45390,
+          "text": "slot print_timing: id  0 | task 15231 | n_gen =    370, tg =   9.90 t/s, tg_3s =  10.07 t/s"
+        },
+        {
+          "line": 45391,
+          "text": "slot print_timing: id  0 | task 15231 | n_gen =    401, tg =   9.91 t/s, tg_3s =  10.03 t/s"
+        },
+        {
+          "line": 45392,
+          "text": "slot print_timing: id  0 | task 15231 | prompt eval time =    1346.27 ms /   117 tokens (   11.51 ms per token,    86.91 tokens per second)"
+        },
+        {
+          "line": 45393,
+          "text": "slot print_timing: id  0 | task 15231 |        eval time =   40460.13 ms /   402 tokens (  100.90 ms per token,     9.91 tokens per second)"
+        },
+        {
+          "line": 45396,
+          "text": "slot      release: id  0 | task 15231 | stop processing: n_tokens = 5212, truncated = 0"
+        },
+        {
+          "line": 45398,
+          "text": "[GIN] 2026/09/03 - 23:12:51 | 200 | 41.819415375s |       127.0.0.1 | POST     \"/api/chat\""
+        },
+        {
+          "line": 45409,
+          "text": "slot   operator(): id  0 | task 15634 | new prompt, n_ctx_slot = 32768, n_keep = 4, task.n_tokens = 4966"
+        },
+        {
+          "line": 45412,
+          "text": "slot print_timing: id  0 | task 15634 | n_gen =    100, tg =  10.08 t/s, tg_3s =  10.19 t/s"
+        },
+        {
+          "line": 45413,
+          "text": "slot print_timing: id  0 | task 15634 | n_gen =    131, tg =  10.09 t/s, tg_3s =  10.12 t/s"
+        },
+        {
+          "line": 45414,
+          "text": "slot print_timing: id  0 | task 15634 | n_gen =    161, tg =  10.07 t/s, tg_3s =   9.98 t/s"
+        },
+        {
+          "line": 45415,
+          "text": "slot print_timing: id  0 | task 15634 | n_gen =    192, tg =  10.08 t/s, tg_3s =  10.11 t/s"
+        },
+        {
+          "line": 45416,
+          "text": "slot print_timing: id  0 | task 15634 | n_gen =    223, tg =  10.08 t/s, tg_3s =  10.12 t/s"
+        },
+        {
+          "line": 45417,
+          "text": "slot print_timing: id  0 | task 15634 | n_gen =    254, tg =  10.08 t/s, tg_3s =  10.08 t/s"
+        },
+        {
+          "line": 45418,
+          "text": "slot print_timing: id  0 | task 15634 | n_gen =    285, tg =  10.08 t/s, tg_3s =  10.06 t/s"
+        },
+        {
+          "line": 45419,
+          "text": "slot print_timing: id  0 | task 15634 | n_gen =    314, tg =  10.01 t/s, tg_3s =   9.33 t/s"
+        },
+        {
+          "line": 45420,
+          "text": "slot print_timing: id  0 | task 15634 | n_gen =    343, tg =   9.97 t/s, tg_3s =   9.56 t/s"
+        },
+        {
+          "line": 45421,
+          "text": "slot print_timing: id  0 | task 15634 | n_gen =    373, tg =   9.95 t/s, tg_3s =   9.76 t/s"
+        },
+        {
+          "line": 45422,
+          "text": "slot print_timing: id  0 | task 15634 | n_gen =    403, tg =   9.95 t/s, tg_3s =   9.96 t/s"
+        },
+        {
+          "line": 45423,
+          "text": "slot print_timing: id  0 | task 15634 | n_gen =    434, tg =   9.95 t/s, tg_3s =   9.99 t/s"
+        },
+        {
+          "line": 45424,
+          "text": "slot print_timing: id  0 | task 15634 | prompt eval time =    1709.36 ms /   155 tokens (   11.03 ms per token,    90.68 tokens per second)"
+        },
+        {
+          "line": 45425,
+          "text": "slot print_timing: id  0 | task 15634 |        eval time =   45318.67 ms /   452 tokens (  100.48 ms per token,     9.95 tokens per second)"
+        },
+        {
+          "line": 45428,
+          "text": "slot      release: id  0 | task 15634 | stop processing: n_tokens = 5417, truncated = 0"
+        },
+        {
+          "line": 45430,
+          "text": "[GIN] 2026/09/03 - 23:13:38 | 200 | 47.049453542s |       127.0.0.1 | POST     \"/api/chat\""
+        },
+        {
+          "line": 45441,
+          "text": "slot   operator(): id  0 | task 16087 | new prompt, n_ctx_slot = 32768, n_keep = 4, task.n_tokens = 5121"
+        },
+        {
+          "line": 45444,
+          "text": "slot print_timing: id  0 | task 16087 | n_gen =    100, tg =  10.02 t/s, tg_3s =  10.12 t/s"
+        },
+        {
+          "line": 45445,
+          "text": "slot print_timing: id  0 | task 16087 | n_gen =    130, tg =  10.01 t/s, tg_3s =   9.98 t/s"
+        },
+        {
+          "line": 45446,
+          "text": "slot print_timing: id  0 | task 16087 | n_gen =    161, tg =  10.02 t/s, tg_3s =  10.05 t/s"
+        },
+        {
+          "line": 45447,
+          "text": "slot print_timing: id  0 | task 16087 | n_gen =    192, tg =  10.03 t/s, tg_3s =  10.10 t/s"
+        },
+        {
+          "line": 45448,
+          "text": "slot print_timing: id  0 | task 16087 | n_gen =    223, tg =  10.03 t/s, tg_3s =  10.00 t/s"
+        },
+        {
+          "line": 45449,
+          "text": "slot print_timing: id  0 | task 16087 | n_gen =    254, tg =  10.04 t/s, tg_3s =  10.10 t/s"
+        },
+        {
+          "line": 45450,
+          "text": "slot print_timing: id  0 | task 16087 | n_gen =    285, tg =  10.04 t/s, tg_3s =  10.11 t/s"
+        },
+        {
+          "line": 45451,
+          "text": "slot print_timing: id  0 | task 16087 | n_gen =    315, tg =  10.04 t/s, tg_3s =   9.96 t/s"
+        },
+        {
+          "line": 45452,
+          "text": "slot print_timing: id  0 | task 16087 | prompt eval time =    1734.19 ms /   155 tokens (   11.19 ms per token,    89.38 tokens per second)"
+        },
+        {
+          "line": 45453,
+          "text": "slot print_timing: id  0 | task 16087 |        eval time =   31494.44 ms /   317 tokens (   99.67 ms per token,    10.03 tokens per second)"
+        },
+        {
+          "line": 45456,
+          "text": "slot      release: id  0 | task 16087 | stop processing: n_tokens = 5437, truncated = 0"
+        },
+        {
+          "line": 45458,
+          "text": "[GIN] 2026/09/03 - 23:14:11 | 200 | 33.249728708s |       127.0.0.1 | POST     \"/api/chat\""
+        },
+        {
+          "line": 45469,
+          "text": "slot   operator(): id  0 | task 16405 | new prompt, n_ctx_slot = 32768, n_keep = 4, task.n_tokens = 5607"
+        },
+        {
+          "line": 45472,
+          "text": "slot print_timing: id  0 | task 16405 | n_gen =    100, tg =   9.67 t/s, tg_3s =   9.76 t/s"
+        },
+        {
+          "line": 45473,
+          "text": "slot print_timing: id  0 | task 16405 | n_gen =    130, tg =   9.70 t/s, tg_3s =   9.81 t/s"
+        },
+        {
+          "line": 45474,
+          "text": "slot print_timing: id  0 | task 16405 | n_gen =    160, tg =   9.74 t/s, tg_3s =   9.94 t/s"
+        },
+        {
+          "line": 45475,
+          "text": "slot print_timing: id  0 | task 16405 | n_gen =    190, tg =   9.77 t/s, tg_3s =   9.89 t/s"
+        },
+        {
+          "line": 45476,
+          "text": "slot print_timing: id  0 | task 16405 | n_gen =    220, tg =   9.77 t/s, tg_3s =   9.78 t/s"
+        },
+        {
+          "line": 45477,
+          "text": "slot print_timing: id  0 | task 16405 | n_gen =    250, tg =   9.76 t/s, tg_3s =   9.74 t/s"
+        },
+        {
+          "line": 45478,
+          "text": "slot print_timing: id  0 | task 16405 | n_gen =    280, tg =   9.78 t/s, tg_3s =   9.87 t/s"
+        },
+        {
+          "line": 45479,
+          "text": "slot print_timing: id  0 | task 16405 | n_gen =    310, tg =   9.78 t/s, tg_3s =   9.80 t/s"
+        },
+        {
+          "line": 45480,
+          "text": "slot print_timing: id  0 | task 16405 | prompt eval time =    5547.27 ms /   486 tokens (   11.41 ms per token,    87.61 tokens per second)"
+        },
+        {
+          "line": 45481,
+          "text": "slot print_timing: id  0 | task 16405 |        eval time =   32248.67 ms /   316 tokens (  102.38 ms per token,     9.77 tokens per second)"
+        },
+        {
+          "line": 45484,
+          "text": "slot      release: id  0 | task 16405 | stop processing: n_tokens = 5922, truncated = 0"
+        },
+        {
+          "line": 45486,
+          "text": "[GIN] 2026/09/03 - 23:14:49 | 200 | 37.810927375s |       127.0.0.1 | POST     \"/api/chat\""
+        },
+        {
+          "line": 45497,
+          "text": "slot   operator(): id  0 | task 16722 | new prompt, n_ctx_slot = 32768, n_keep = 4, task.n_tokens = 6093"
+        },
+        {
+          "line": 45500,
+          "text": "slot print_timing: id  0 | task 16722 | n_gen =    100, tg =   9.47 t/s, tg_3s =   9.56 t/s"
+        },
+        {
+          "line": 45501,
+          "text": "slot print_timing: id  0 | task 16722 | n_gen =    130, tg =   9.55 t/s, tg_3s =   9.82 t/s"
+        },
+        {
+          "line": 45502,
+          "text": "slot print_timing: id  0 | task 16722 | n_gen =    160, tg =   9.58 t/s, tg_3s =   9.76 t/s"
+        },
+        {
+          "line": 45503,
+          "text": "slot print_timing: id  0 | task 16722 | n_gen =    190, tg =   9.62 t/s, tg_3s =   9.84 t/s"
+        },
+        {
+          "line": 45504,
+          "text": "slot print_timing: id  0 | task 16722 | n_gen =    220, tg =   9.65 t/s, tg_3s =   9.80 t/s"
+        },
+        {
+          "line": 45505,
+          "text": "slot print_timing: id  0 | task 16722 | n_gen =    250, tg =   9.65 t/s, tg_3s =   9.71 t/s"
+        },
+        {
+          "line": 45506,
+          "text": "slot print_timing: id  0 | task 16722 | n_gen =    278, tg =   9.60 t/s, tg_3s =   9.15 t/s"
+        },
+        {
+          "line": 45507,
+          "text": "slot print_timing: id  0 | task 16722 | n_gen =    307, tg =   9.59 t/s, tg_3s =   9.47 t/s"
+        },
+        {
+          "line": 45508,
+          "text": "slot print_timing: id  0 | task 16722 | prompt eval time =    5699.29 ms /   486 tokens (   11.73 ms per token,    85.27 tokens per second)"
+        },
+        {
+          "line": 45509,
+          "text": "slot print_timing: id  0 | task 16722 |        eval time =   32972.90 ms /   317 tokens (  104.34 ms per token,     9.58 tokens per second)"
+        },
+        {
+          "line": 45512,
+          "text": "slot      release: id  0 | task 16722 | stop processing: n_tokens = 6409, truncated = 0"
+        },
+        {
+          "line": 45514,
+          "text": "[GIN] 2026/09/03 - 23:15:28 | 200 | 38.701522375s |       127.0.0.1 | POST     \"/api/chat\""
+        }
+      ],
+      "c149f73": [
+        {
+          "line": 49478,
+          "text": "slot   operator(): id  0 | task 7297 | new prompt, n_ctx_slot = 32768, n_keep = 4, task.n_tokens = 4099"
+        },
+        {
+          "line": 49481,
+          "text": "slot print_timing: id  0 | task 7297 | prompt processing, n_tokens =   1024, progress = 0.25, t =   8.22 s / 124.58 tokens per second"
+        },
+        {
+          "line": 49483,
+          "text": "slot print_timing: id  0 | task 7297 | prompt processing, n_tokens =   1536, progress = 0.38, t =  16.47 s / 93.28 tokens per second"
+        },
+        {
+          "line": 49485,
+          "text": "slot print_timing: id  0 | task 7297 | prompt processing, n_tokens =   2048, progress = 0.50, t =  25.22 s / 81.20 tokens per second"
+        },
+        {
+          "line": 49487,
+          "text": "slot print_timing: id  0 | task 7297 | prompt processing, n_tokens =   2560, progress = 0.63, t =  34.82 s / 73.51 tokens per second"
+        },
+        {
+          "line": 49489,
+          "text": "slot print_timing: id  0 | task 7297 | prompt processing, n_tokens =   3072, progress = 0.75, t =  45.39 s / 67.68 tokens per second"
+        },
+        {
+          "line": 49491,
+          "text": "slot print_timing: id  0 | task 7297 | prompt processing, n_tokens =   3584, progress = 0.88, t =  55.17 s / 64.97 tokens per second"
+        },
+        {
+          "line": 49494,
+          "text": "slot print_timing: id  0 | task 7297 | n_gen =    100, tg =   5.97 t/s, tg_3s =   6.03 t/s"
+        },
+        {
+          "line": 49495,
+          "text": "slot print_timing: id  0 | task 7297 | n_gen =    117, tg =   5.92 t/s, tg_3s =   5.63 t/s"
+        },
+        {
+          "line": 49496,
+          "text": "slot print_timing: id  0 | task 7297 | n_gen =    134, tg =   5.86 t/s, tg_3s =   5.48 t/s"
+        },
+        {
+          "line": 49497,
+          "text": "slot print_timing: id  0 | task 7297 | n_gen =    152, tg =   5.85 t/s, tg_3s =   5.80 t/s"
+        },
+        {
+          "line": 49498,
+          "text": "slot print_timing: id  0 | task 7297 | n_gen =    169, tg =   5.79 t/s, tg_3s =   5.32 t/s"
+        },
+        {
+          "line": 49499,
+          "text": "slot print_timing: id  0 | task 7297 | n_gen =    183, tg =   5.66 t/s, tg_3s =   4.42 t/s"
+        },
+        {
+          "line": 49500,
+          "text": "slot print_timing: id  0 | task 7297 | n_gen =    198, tg =   5.59 t/s, tg_3s =   4.87 t/s"
+        },
+        {
+          "line": 49501,
+          "text": "slot print_timing: id  0 | task 7297 | n_gen =    214, tg =   5.56 t/s, tg_3s =   5.25 t/s"
+        },
+        {
+          "line": 49502,
+          "text": "slot print_timing: id  0 | task 7297 | n_gen =    230, tg =   5.54 t/s, tg_3s =   5.23 t/s"
+        },
+        {
+          "line": 49503,
+          "text": "[GIN] 2026/09/04 - 19:50:48 | 500 |          2m0s |       127.0.0.1 | POST     \"/api/chat\""
+        },
+        {
+          "line": 49504,
+          "text": "srv          stop: cancel task, id_task = 7297"
+        },
+        {
+          "line": 49506,
+          "text": "slot      release: id  0 | task 7297 | stop processing: n_tokens = 4343, truncated = 0"
+        }
+      ]
+    },
+    "AGENT_V1_HYBRID_003": {
+      "7062f48": [
+        {
+          "line": 44816,
+          "text": "slot   operator(): id  0 | task 11192 | new prompt, n_ctx_slot = 32768, n_keep = 4, task.n_tokens = 3880"
+        },
+        {
+          "line": 44819,
+          "text": "slot print_timing: id  0 | task 11192 | prompt processing, n_tokens =   1024, progress = 0.27, t =   4.44 s / 230.66 tokens per second"
+        },
+        {
+          "line": 44821,
+          "text": "slot print_timing: id  0 | task 11192 | prompt processing, n_tokens =   1536, progress = 0.40, t =   9.09 s / 168.91 tokens per second"
+        },
+        {
+          "line": 44823,
+          "text": "slot print_timing: id  0 | task 11192 | prompt processing, n_tokens =   2048, progress = 0.53, t =  13.93 s / 147.07 tokens per second"
+        },
+        {
+          "line": 44825,
+          "text": "slot print_timing: id  0 | task 11192 | prompt processing, n_tokens =   2560, progress = 0.66, t =  18.85 s / 135.79 tokens per second"
+        },
+        {
+          "line": 44827,
+          "text": "slot print_timing: id  0 | task 11192 | prompt processing, n_tokens =   3072, progress = 0.79, t =  23.89 s / 128.61 tokens per second"
+        },
+        {
+          "line": 44829,
+          "text": "slot print_timing: id  0 | task 11192 | prompt processing, n_tokens =   3584, progress = 0.93, t =  29.04 s / 123.43 tokens per second"
+        },
+        {
+          "line": 44832,
+          "text": "slot print_timing: id  0 | task 11192 | n_gen =    100, tg =  10.22 t/s, tg_3s =  10.32 t/s"
+        },
+        {
+          "line": 44833,
+          "text": "slot print_timing: id  0 | task 11192 | n_gen =    132, tg =  10.25 t/s, tg_3s =  10.35 t/s"
+        },
+        {
+          "line": 44834,
+          "text": "slot print_timing: id  0 | task 11192 | n_gen =    164, tg =  10.28 t/s, tg_3s =  10.39 t/s"
+        },
+        {
+          "line": 44835,
+          "text": "slot print_timing: id  0 | task 11192 | n_gen =    196, tg =  10.29 t/s, tg_3s =  10.34 t/s"
+        },
+        {
+          "line": 44836,
+          "text": "slot print_timing: id  0 | task 11192 | n_gen =    228, tg =  10.30 t/s, tg_3s =  10.34 t/s"
+        },
+        {
+          "line": 44837,
+          "text": "slot print_timing: id  0 | task 11192 | n_gen =    260, tg =  10.30 t/s, tg_3s =  10.35 t/s"
+        },
+        {
+          "line": 44838,
+          "text": "slot print_timing: id  0 | task 11192 | n_gen =    291, tg =  10.30 t/s, tg_3s =  10.32 t/s"
+        },
+        {
+          "line": 44839,
+          "text": "slot print_timing: id  0 | task 11192 | n_gen =    322, tg =  10.30 t/s, tg_3s =  10.29 t/s"
+        },
+        {
+          "line": 44840,
+          "text": "slot print_timing: id  0 | task 11192 | n_gen =    352, tg =  10.25 t/s, tg_3s =   9.71 t/s"
+        },
+        {
+          "line": 44841,
+          "text": "slot print_timing: id  0 | task 11192 | n_gen =    382, tg =  10.22 t/s, tg_3s =   9.85 t/s"
+        },
+        {
+          "line": 44842,
+          "text": "slot print_timing: id  0 | task 11192 | n_gen =    413, tg =  10.22 t/s, tg_3s =  10.25 t/s"
+        },
+        {
+          "line": 44843,
+          "text": "slot print_timing: id  0 | task 11192 | prompt eval time =   37617.85 ms /  3875 tokens (    9.71 ms per token,   103.01 tokens per second)"
+        },
+        {
+          "line": 44844,
+          "text": "slot print_timing: id  0 | task 11192 |        eval time =   42067.47 ms /   431 tokens (   97.83 ms per token,    10.22 tokens per second)"
+        },
+        {
+          "line": 44847,
+          "text": "slot      release: id  0 | task 11192 | stop processing: n_tokens = 4310, truncated = 0"
+        },
+        {
+          "line": 44849,
+          "text": "[GIN] 2026/09/03 - 23:04:29 | 200 |         1m19s |       127.0.0.1 | POST     \"/api/chat\""
+        },
+        {
+          "line": 44860,
+          "text": "slot   operator(): id  0 | task 11631 | new prompt, n_ctx_slot = 32768, n_keep = 4, task.n_tokens = 4070"
+        },
+        {
+          "line": 44863,
+          "text": "slot print_timing: id  0 | task 11631 | n_gen =    100, tg =  10.21 t/s, tg_3s =  10.31 t/s"
+        },
+        {
+          "line": 44864,
+          "text": "slot print_timing: id  0 | task 11631 | n_gen =    130, tg =  10.15 t/s, tg_3s =   9.96 t/s"
+        },
+        {
+          "line": 44865,
+          "text": "slot print_timing: id  0 | task 11631 | n_gen =    161, tg =  10.13 t/s, tg_3s =  10.06 t/s"
+        },
+        {
+          "line": 44866,
+          "text": "slot print_timing: id  0 | task 11631 | n_gen =    192, tg =  10.13 t/s, tg_3s =  10.10 t/s"
+        },
+        {
+          "line": 44867,
+          "text": "slot print_timing: id  0 | task 11631 | n_gen =    223, tg =  10.15 t/s, tg_3s =  10.27 t/s"
+        },
+        {
+          "line": 44868,
+          "text": "slot print_timing: id  0 | task 11631 | prompt eval time =    1987.54 ms /   190 tokens (   10.46 ms per token,    95.60 tokens per second)"
+        },
+        {
+          "line": 44869,
+          "text": "slot print_timing: id  0 | task 11631 |        eval time =   23816.10 ms /   243 tokens (   98.41 ms per token,    10.16 tokens per second)"
+        },
+        {
+          "line": 44872,
+          "text": "slot      release: id  0 | task 11631 | stop processing: n_tokens = 4312, truncated = 0"
+        },
+        {
+          "line": 44874,
+          "text": "[GIN] 2026/09/03 - 23:04:55 | 200 | 25.824779042s |       127.0.0.1 | POST     \"/api/chat\""
+        },
+        {
+          "line": 44885,
+          "text": "slot   operator(): id  0 | task 11875 | new prompt, n_ctx_slot = 32768, n_keep = 4, task.n_tokens = 4393"
+        },
+        {
+          "line": 44888,
+          "text": "slot print_timing: id  0 | task 11875 | n_gen =    100, tg =  10.17 t/s, tg_3s =  10.27 t/s"
+        },
+        {
+          "line": 44889,
+          "text": "slot print_timing: id  0 | task 11875 | n_gen =    131, tg =  10.16 t/s, tg_3s =  10.16 t/s"
+        },
+        {
+          "line": 44890,
+          "text": "slot print_timing: id  0 | task 11875 | n_gen =    162, tg =  10.17 t/s, tg_3s =  10.17 t/s"
+        },
+        {
+          "line": 44891,
+          "text": "slot print_timing: id  0 | task 11875 | n_gen =    193, tg =  10.15 t/s, tg_3s =  10.09 t/s"
+        },
+        {
+          "line": 44892,
+          "text": "slot print_timing: id  0 | task 11875 | n_gen =    223, tg =  10.09 t/s, tg_3s =   9.72 t/s"
+        },
+        {
+          "line": 44893,
+          "text": "slot print_timing: id  0 | task 11875 | n_gen =    253, tg =  10.04 t/s, tg_3s =   9.65 t/s"
+        },
+        {
+          "line": 44894,
+          "text": "slot print_timing: id  0 | task 11875 | n_gen =    283, tg =  10.03 t/s, tg_3s =   9.95 t/s"
+        },
+        {
+          "line": 44895,
+          "text": "slot print_timing: id  0 | task 11875 | prompt eval time =    3292.11 ms /   295 tokens (   11.16 ms per token,    89.61 tokens per second)"
+        },
+        {
+          "line": 44896,
+          "text": "slot print_timing: id  0 | task 11875 |        eval time =   29433.04 ms /   296 tokens (   99.77 ms per token,    10.02 tokens per second)"
+        },
+        {
+          "line": 44899,
+          "text": "slot      release: id  0 | task 11875 | stop processing: n_tokens = 4688, truncated = 0"
+        },
+        {
+          "line": 44901,
+          "text": "[GIN] 2026/09/03 - 23:05:28 | 200 |  32.73752725s |       127.0.0.1 | POST     \"/api/chat\""
+        },
+        {
+          "line": 44912,
+          "text": "slot   operator(): id  0 | task 12172 | new prompt, n_ctx_slot = 32768, n_keep = 4, task.n_tokens = 4534"
+        },
+        {
+          "line": 44915,
+          "text": "slot print_timing: id  0 | task 12172 | n_gen =    100, tg =   9.92 t/s, tg_3s =  10.02 t/s"
+        },
+        {
+          "line": 44916,
+          "text": "slot print_timing: id  0 | task 12172 | n_gen =    130, tg =   9.90 t/s, tg_3s =   9.84 t/s"
+        },
+        {
+          "line": 44917,
+          "text": "slot print_timing: id  0 | task 12172 | n_gen =    160, tg =   9.91 t/s, tg_3s =   9.96 t/s"
+        },
+        {
+          "line": 44918,
+          "text": "slot print_timing: id  0 | task 12172 | n_gen =    191, tg =   9.94 t/s, tg_3s =  10.09 t/s"
+        },
+        {
+          "line": 44919,
+          "text": "slot print_timing: id  0 | task 12172 | n_gen =    221, tg =   9.95 t/s, tg_3s =   9.97 t/s"
+        },
+        {
+          "line": 44920,
+          "text": "slot print_timing: id  0 | task 12172 | n_gen =    252, tg =   9.98 t/s, tg_3s =  10.20 t/s"
+        },
+        {
+          "line": 44921,
+          "text": "slot print_timing: id  0 | task 12172 | n_gen =    282, tg =   9.97 t/s, tg_3s =   9.87 t/s"
+        },
+        {
+          "line": 44922,
+          "text": "slot print_timing: id  0 | task 12172 | n_gen =    313, tg =   9.98 t/s, tg_3s =  10.06 t/s"
+        },
+        {
+          "line": 44923,
+          "text": "slot print_timing: id  0 | task 12172 | n_gen =    344, tg =   9.99 t/s, tg_3s =  10.13 t/s"
+        },
+        {
+          "line": 44924,
+          "text": "slot print_timing: id  0 | task 12172 | n_gen =    375, tg =  10.00 t/s, tg_3s =  10.15 t/s"
+        },
+        {
+          "line": 44925,
+          "text": "slot print_timing: id  0 | task 12172 | n_gen =    406, tg =  10.01 t/s, tg_3s =  10.10 t/s"
+        },
+        {
+          "line": 44926,
+          "text": "slot print_timing: id  0 | task 12172 | n_gen =    437, tg =  10.01 t/s, tg_3s =  10.02 t/s"
+        },
+        {
+          "line": 44927,
+          "text": "slot print_timing: id  0 | task 12172 | n_gen =    468, tg =  10.02 t/s, tg_3s =  10.12 t/s"
+        },
+        {
+          "line": 44928,
+          "text": "slot print_timing: id  0 | task 12172 | n_gen =    498, tg =  10.02 t/s, tg_3s =  10.00 t/s"
+        },
+        {
+          "line": 44929,
+          "text": "slot print_timing: id  0 | task 12172 | n_gen =    527, tg =   9.99 t/s, tg_3s =   9.55 t/s"
+        },
+        {
+          "line": 44930,
+          "text": "slot print_timing: id  0 | task 12172 | prompt eval time =    1649.16 ms /   141 tokens (   11.70 ms per token,    85.50 tokens per second)"
+        },
+        {
+          "line": 44931,
+          "text": "slot print_timing: id  0 | task 12172 |        eval time =   55020.60 ms /   550 tokens (  100.22 ms per token,     9.98 tokens per second)"
+        },
+        {
+          "line": 44934,
+          "text": "slot      release: id  0 | task 12172 | stop processing: n_tokens = 5083, truncated = 0"
+        },
+        {
+          "line": 44936,
+          "text": "[GIN] 2026/09/03 - 23:06:24 | 200 | 56.690175583s |       127.0.0.1 | POST     \"/api/chat\""
+        },
+        {
+          "line": 44947,
+          "text": "slot   operator(): id  0 | task 12723 | new prompt, n_ctx_slot = 32768, n_keep = 4, task.n_tokens = 4963"
+        },
+        {
+          "line": 44950,
+          "text": "slot print_timing: id  0 | task 12723 | n_gen =    100, tg =   9.95 t/s, tg_3s =  10.05 t/s"
+        },
+        {
+          "line": 44951,
+          "text": "slot print_timing: id  0 | task 12723 | n_gen =    130, tg =   9.91 t/s, tg_3s =   9.79 t/s"
+        },
+        {
+          "line": 44952,
+          "text": "slot print_timing: id  0 | task 12723 | n_gen =    161, tg =   9.94 t/s, tg_3s =  10.04 t/s"
+        },
+        {
+          "line": 44953,
+          "text": "slot print_timing: id  0 | task 12723 | n_gen =    191, tg =   9.94 t/s, tg_3s =   9.96 t/s"
+        },
+        {
+          "line": 44954,
+          "text": "slot print_timing: id  0 | task 12723 | n_gen =    221, tg =   9.95 t/s, tg_3s =   9.99 t/s"
+        },
+        {
+          "line": 44955,
+          "text": "slot print_timing: id  0 | task 12723 | n_gen =    251, tg =   9.95 t/s, tg_3s =   9.99 t/s"
+        },
+        {
+          "line": 44956,
+          "text": "slot print_timing: id  0 | task 12723 | n_gen =    282, tg =   9.96 t/s, tg_3s =  10.00 t/s"
+        },
+        {
+          "line": 44957,
+          "text": "slot print_timing: id  0 | task 12723 | n_gen =    312, tg =   9.96 t/s, tg_3s =   9.99 t/s"
+        },
+        {
+          "line": 44958,
+          "text": "slot print_timing: id  0 | task 12723 | n_gen =    343, tg =   9.97 t/s, tg_3s =  10.07 t/s"
+        },
+        {
+          "line": 44959,
+          "text": "slot print_timing: id  0 | task 12723 | n_gen =    374, tg =   9.98 t/s, tg_3s =  10.09 t/s"
+        },
+        {
+          "line": 44960,
+          "text": "slot print_timing: id  0 | task 12723 | n_gen =    405, tg =   9.99 t/s, tg_3s =  10.09 t/s"
+        },
+        {
+          "line": 44961,
+          "text": "slot print_timing: id  0 | task 12723 | n_gen =    435, tg =   9.99 t/s, tg_3s =   9.94 t/s"
+        },
+        {
+          "line": 44962,
+          "text": "slot print_timing: id  0 | task 12723 | n_gen =    466, tg =   9.99 t/s, tg_3s =  10.06 t/s"
+        },
+        {
+          "line": 44963,
+          "text": "slot print_timing: id  0 | task 12723 | prompt eval time =    3749.20 ms /   332 tokens (   11.29 ms per token,    88.55 tokens per second)"
+        },
+        {
+          "line": 44964,
+          "text": "slot print_timing: id  0 | task 12723 |        eval time =   46938.70 ms /   470 tokens (  100.08 ms per token,     9.99 tokens per second)"
+        },
+        {
+          "line": 44967,
+          "text": "slot      release: id  0 | task 12723 | stop processing: n_tokens = 5432, truncated = 0"
+        },
+        {
+          "line": 44969,
+          "text": "[GIN] 2026/09/03 - 23:07:15 | 200 | 50.712142042s |       127.0.0.1 | POST     \"/api/chat\""
+        },
+        {
+          "line": 44980,
+          "text": "slot   operator(): id  0 | task 13194 | new prompt, n_ctx_slot = 32768, n_keep = 4, task.n_tokens = 5674"
+        },
+        {
+          "line": 44984,
+          "text": "slot print_timing: id  0 | task 13194 | n_gen =    100, tg =   9.89 t/s, tg_3s =   9.99 t/s"
+        },
+        {
+          "line": 44985,
+          "text": "slot print_timing: id  0 | task 13194 | n_gen =    130, tg =   9.87 t/s, tg_3s =   9.83 t/s"
+        },
+        {
+          "line": 44986,
+          "text": "slot print_timing: id  0 | task 13194 | n_gen =    160, tg =   9.82 t/s, tg_3s =   9.59 t/s"
+        },
+        {
+          "line": 44987,
+          "text": "slot print_timing: id  0 | task 13194 | n_gen =    190, tg =   9.80 t/s, tg_3s =   9.70 t/s"
+        },
+        {
+          "line": 44988,
+          "text": "slot print_timing: id  0 | task 13194 | n_gen =    220, tg =   9.79 t/s, tg_3s =   9.76 t/s"
+        },
+        {
+          "line": 44989,
+          "text": "slot print_timing: id  0 | task 13194 | n_gen =    250, tg =   9.80 t/s, tg_3s =   9.84 t/s"
+        },
+        {
+          "line": 44990,
+          "text": "slot print_timing: id  0 | task 13194 | n_gen =    280, tg =   9.81 t/s, tg_3s =   9.91 t/s"
+        },
+        {
+          "line": 44991,
+          "text": "slot print_timing: id  0 | task 13194 | n_gen =    310, tg =   9.82 t/s, tg_3s =   9.91 t/s"
+        },
+        {
+          "line": 44992,
+          "text": "slot print_timing: id  0 | task 13194 | n_gen =    340, tg =   9.83 t/s, tg_3s =   9.93 t/s"
+        },
+        {
+          "line": 44993,
+          "text": "slot print_timing: id  0 | task 13194 | n_gen =    370, tg =   9.83 t/s, tg_3s =   9.81 t/s"
+        },
+        {
+          "line": 44994,
+          "text": "slot print_timing: id  0 | task 13194 | n_gen =    400, tg =   9.84 t/s, tg_3s =   9.93 t/s"
+        },
+        {
+          "line": 44995,
+          "text": "slot print_timing: id  0 | task 13194 | n_gen =    430, tg =   9.84 t/s, tg_3s =   9.91 t/s"
+        },
+        {
+          "line": 44996,
+          "text": "slot print_timing: id  0 | task 13194 | n_gen =    460, tg =   9.84 t/s, tg_3s =   9.87 t/s"
+        },
+        {
+          "line": 44997,
+          "text": "slot print_timing: id  0 | task 13194 | n_gen =    490, tg =   9.83 t/s, tg_3s =   9.69 t/s"
+        },
+        {
+          "line": 44998,
+          "text": "slot print_timing: id  0 | task 13194 | prompt eval time =    8052.37 ms /   711 tokens (   11.33 ms per token,    88.30 tokens per second)"
+        },
+        {
+          "line": 44999,
+          "text": "slot print_timing: id  0 | task 13194 |        eval time =   51339.96 ms /   506 tokens (  101.66 ms per token,     9.84 tokens per second)"
+        },
+        {
+          "line": 45002,
+          "text": "slot      release: id  0 | task 13194 | stop processing: n_tokens = 6179, truncated = 0"
+        },
+        {
+          "line": 45004,
+          "text": "[GIN] 2026/09/03 - 23:08:15 | 200 | 59.413158875s |       127.0.0.1 | POST     \"/api/chat\""
+        }
+      ],
+      "c149f73": [
+        {
+          "line": 49136,
+          "text": "slot   operator(): id  0 | task 5885 | new prompt, n_ctx_slot = 32768, n_keep = 4, task.n_tokens = 3880"
+        },
+        {
+          "line": 49139,
+          "text": "slot print_timing: id  0 | task 5885 | prompt processing, n_tokens =   1024, progress = 0.27, t =   8.25 s / 124.07 tokens per second"
+        },
+        {
+          "line": 49141,
+          "text": "slot print_timing: id  0 | task 5885 | prompt processing, n_tokens =   1536, progress = 0.40, t =  19.01 s / 80.81 tokens per second"
+        },
+        {
+          "line": 49143,
+          "text": "slot print_timing: id  0 | task 5885 | prompt processing, n_tokens =   2048, progress = 0.53, t =  29.51 s / 69.40 tokens per second"
+        },
+        {
+          "line": 49145,
+          "text": "slot print_timing: id  0 | task 5885 | prompt processing, n_tokens =   2560, progress = 0.66, t =  39.91 s / 64.14 tokens per second"
+        },
+        {
+          "line": 49147,
+          "text": "slot print_timing: id  0 | task 5885 | prompt processing, n_tokens =   3072, progress = 0.79, t =  49.82 s / 61.66 tokens per second"
+        },
+        {
+          "line": 49149,
+          "text": "slot print_timing: id  0 | task 5885 | prompt processing, n_tokens =   3584, progress = 0.93, t =  59.33 s / 60.41 tokens per second"
+        },
+        {
+          "line": 49152,
+          "text": "slot print_timing: id  0 | task 5885 | n_gen =    100, tg =   5.78 t/s, tg_3s =   5.84 t/s"
+        },
+        {
+          "line": 49153,
+          "text": "slot print_timing: id  0 | task 5885 | n_gen =    118, tg =   5.80 t/s, tg_3s =   5.92 t/s"
+        },
+        {
+          "line": 49154,
+          "text": "slot print_timing: id  0 | task 5885 | n_gen =    137, tg =   5.85 t/s, tg_3s =   6.20 t/s"
+        },
+        {
+          "line": 49155,
+          "text": "slot print_timing: id  0 | task 5885 | n_gen =    156, tg =   5.85 t/s, tg_3s =   5.86 t/s"
+        },
+        {
+          "line": 49156,
+          "text": "slot print_timing: id  0 | task 5885 | n_gen =    175, tg =   5.88 t/s, tg_3s =   6.11 t/s"
+        },
+        {
+          "line": 49157,
+          "text": "slot print_timing: id  0 | task 5885 | n_gen =    195, tg =   5.93 t/s, tg_3s =   6.41 t/s"
+        },
+        {
+          "line": 49158,
+          "text": "slot print_timing: id  0 | task 5885 | n_gen =    215, tg =   5.98 t/s, tg_3s =   6.44 t/s"
+        },
+        {
+          "line": 49159,
+          "text": "slot print_timing: id  0 | task 5885 | n_gen =    233, tg =   5.98 t/s, tg_3s =   5.98 t/s"
+        },
+        {
+          "line": 49160,
+          "text": "slot print_timing: id  0 | task 5885 | n_gen =    251, tg =   5.97 t/s, tg_3s =   5.86 t/s"
+        },
+        {
+          "line": 49161,
+          "text": "[GIN] 2026/09/04 - 19:44:22 | 500 |          2m0s |       127.0.0.1 | POST     \"/api/chat\""
+        },
+        {
+          "line": 49164,
+          "text": "srv          stop: cancel task, id_task = 5885"
+        }
+      ]
+    },
+    "AGENT_V1_HYBRID_002": {
+      "7062f48": [
+        {
+          "line": 44407,
+          "text": "slot   operator(): id  0 | task 8942 | new prompt, n_ctx_slot = 32768, n_keep = 4, task.n_tokens = 3029"
+        },
+        {
+          "line": 44410,
+          "text": "slot print_timing: id  0 | task 8942 | prompt processing, n_tokens =   1024, progress = 0.34, t =   4.50 s / 227.77 tokens per second"
+        },
+        {
+          "line": 44412,
+          "text": "slot print_timing: id  0 | task 8942 | prompt processing, n_tokens =   1536, progress = 0.51, t =   9.23 s / 166.42 tokens per second"
+        },
+        {
+          "line": 44414,
+          "text": "slot print_timing: id  0 | task 8942 | prompt processing, n_tokens =   2048, progress = 0.68, t =  14.06 s / 145.63 tokens per second"
+        },
+        {
+          "line": 44416,
+          "text": "slot print_timing: id  0 | task 8942 | prompt processing, n_tokens =   2560, progress = 0.85, t =  18.99 s / 134.84 tokens per second"
+        },
+        {
+          "line": 44419,
+          "text": "slot print_timing: id  0 | task 8942 | n_gen =    100, tg =  10.50 t/s, tg_3s =  10.61 t/s"
+        },
+        {
+          "line": 44420,
+          "text": "slot print_timing: id  0 | task 8942 | n_gen =    132, tg =  10.51 t/s, tg_3s =  10.56 t/s"
+        },
+        {
+          "line": 44421,
+          "text": "slot print_timing: id  0 | task 8942 | n_gen =    164, tg =  10.53 t/s, tg_3s =  10.57 t/s"
+        },
+        {
+          "line": 44422,
+          "text": "slot print_timing: id  0 | task 8942 | n_gen =    196, tg =  10.53 t/s, tg_3s =  10.57 t/s"
+        },
+        {
+          "line": 44423,
+          "text": "slot print_timing: id  0 | task 8942 | n_gen =    228, tg =  10.53 t/s, tg_3s =  10.53 t/s"
+        },
+        {
+          "line": 44424,
+          "text": "slot print_timing: id  0 | task 8942 | n_gen =    260, tg =  10.51 t/s, tg_3s =  10.39 t/s"
+        },
+        {
+          "line": 44425,
+          "text": "slot print_timing: id  0 | task 8942 | n_gen =    292, tg =  10.52 t/s, tg_3s =  10.58 t/s"
+        },
+        {
+          "line": 44426,
+          "text": "slot print_timing: id  0 | task 8942 | n_gen =    324, tg =  10.52 t/s, tg_3s =  10.54 t/s"
+        },
+        {
+          "line": 44427,
+          "text": "slot print_timing: id  0 | task 8942 | n_gen =    356, tg =  10.52 t/s, tg_3s =  10.48 t/s"
+        },
+        {
+          "line": 44428,
+          "text": "slot print_timing: id  0 | task 8942 | n_gen =    386, tg =  10.47 t/s, tg_3s =   9.88 t/s"
+        },
+        {
+          "line": 44429,
+          "text": "slot print_timing: id  0 | task 8942 | n_gen =    417, tg =  10.45 t/s, tg_3s =  10.20 t/s"
+        },
+        {
+          "line": 44430,
+          "text": "slot print_timing: id  0 | task 8942 | n_gen =    448, tg =  10.43 t/s, tg_3s =  10.27 t/s"
+        },
+        {
+          "line": 44431,
+          "text": "slot print_timing: id  0 | task 8942 | n_gen =    480, tg =  10.43 t/s, tg_3s =  10.40 t/s"
+        },
+        {
+          "line": 44432,
+          "text": "slot print_timing: id  0 | task 8942 | n_gen =    512, tg =  10.43 t/s, tg_3s =  10.42 t/s"
+        },
+        {
+          "line": 44433,
+          "text": "slot print_timing: id  0 | task 8942 | n_gen =    544, tg =  10.43 t/s, tg_3s =  10.39 t/s"
+        },
+        {
+          "line": 44434,
+          "text": "slot print_timing: id  0 | task 8942 | n_gen =    576, tg =  10.43 t/s, tg_3s =  10.38 t/s"
+        },
+        {
+          "line": 44435,
+          "text": "slot print_timing: id  0 | task 8942 | n_gen =    607, tg =  10.42 t/s, tg_3s =  10.33 t/s"
+        },
+        {
+          "line": 44436,
+          "text": "slot print_timing: id  0 | task 8942 | n_gen =    639, tg =  10.42 t/s, tg_3s =  10.35 t/s"
+        },
+        {
+          "line": 44437,
+          "text": "slot print_timing: id  0 | task 8942 | prompt eval time =   28840.60 ms /  3024 tokens (    9.54 ms per token,   104.85 tokens per second)"
+        },
+        {
+          "line": 44438,
+          "text": "slot print_timing: id  0 | task 8942 |        eval time =   62790.00 ms /   655 tokens (   96.01 ms per token,    10.42 tokens per second)"
+        },
+        {
+          "line": 44441,
+          "text": "slot      release: id  0 | task 8942 | stop processing: n_tokens = 3683, truncated = 0"
+        },
+        {
+          "line": 44443,
+          "text": "[GIN] 2026/09/03 - 22:59:45 | 200 |         1m31s |       127.0.0.1 | POST     \"/api/chat\""
+        },
+        {
+          "line": 44454,
+          "text": "slot   operator(): id  0 | task 9603 | new prompt, n_ctx_slot = 32768, n_keep = 4, task.n_tokens = 3959"
+        },
+        {
+          "line": 44457,
+          "text": "slot print_timing: id  0 | task 9603 | n_gen =    100, tg =  10.23 t/s, tg_3s =  10.33 t/s"
+        },
+        {
+          "line": 44458,
+          "text": "slot print_timing: id  0 | task 9603 | n_gen =    131, tg =  10.24 t/s, tg_3s =  10.27 t/s"
+        },
+        {
+          "line": 44459,
+          "text": "slot print_timing: id  0 | task 9603 | n_gen =    162, tg =  10.24 t/s, tg_3s =  10.24 t/s"
+        },
+        {
+          "line": 44460,
+          "text": "slot print_timing: id  0 | task 9603 | n_gen =    194, tg =  10.26 t/s, tg_3s =  10.38 t/s"
+        },
+        {
+          "line": 44461,
+          "text": "slot print_timing: id  0 | task 9603 | n_gen =    225, tg =  10.26 t/s, tg_3s =  10.27 t/s"
+        },
+        {
+          "line": 44462,
+          "text": "slot print_timing: id  0 | task 9603 | n_gen =    257, tg =  10.27 t/s, tg_3s =  10.35 t/s"
+        },
+        {
+          "line": 44463,
+          "text": "slot print_timing: id  0 | task 9603 | n_gen =    288, tg =  10.24 t/s, tg_3s =  10.00 t/s"
+        },
+        {
+          "line": 44464,
+          "text": "slot print_timing: id  0 | task 9603 | n_gen =    317, tg =  10.18 t/s, tg_3s =   9.65 t/s"
+        },
+        {
+          "line": 44465,
+          "text": "slot print_timing: id  0 | task 9603 | n_gen =    345, tg =  10.09 t/s, tg_3s =   9.13 t/s"
+        },
+        {
+          "line": 44466,
+          "text": "slot print_timing: id  0 | task 9603 | n_gen =    376, tg =  10.11 t/s, tg_3s =  10.28 t/s"
+        },
+        {
+          "line": 44467,
+          "text": "slot print_timing: id  0 | task 9603 | n_gen =    407, tg =  10.11 t/s, tg_3s =  10.19 t/s"
+        },
+        {
+          "line": 44468,
+          "text": "slot print_timing: id  0 | task 9603 | n_gen =    437, tg =  10.10 t/s, tg_3s =   9.95 t/s"
+        },
+        {
+          "line": 44469,
+          "text": "slot print_timing: id  0 | task 9603 | n_gen =    468, tg =  10.10 t/s, tg_3s =  10.11 t/s"
+        },
+        {
+          "line": 44470,
+          "text": "slot print_timing: id  0 | task 9603 | n_gen =    499, tg =  10.11 t/s, tg_3s =  10.20 t/s"
+        },
+        {
+          "line": 44471,
+          "text": "slot print_timing: id  0 | task 9603 | n_gen =    530, tg =  10.10 t/s, tg_3s =  10.06 t/s"
+        },
+        {
+          "line": 44472,
+          "text": "slot print_timing: id  0 | task 9603 | n_gen =    561, tg =  10.11 t/s, tg_3s =  10.18 t/s"
+        },
+        {
+          "line": 44473,
+          "text": "slot print_timing: id  0 | task 9603 | n_gen =    592, tg =  10.11 t/s, tg_3s =  10.19 t/s"
+        },
+        {
+          "line": 44474,
+          "text": "slot print_timing: id  0 | task 9603 | n_gen =    623, tg =  10.12 t/s, tg_3s =  10.17 t/s"
+        },
+        {
+          "line": 44475,
+          "text": "slot print_timing: id  0 | task 9603 | n_gen =    654, tg =  10.12 t/s, tg_3s =  10.12 t/s"
+        },
+        {
+          "line": 44476,
+          "text": "slot print_timing: id  0 | task 9603 | prompt eval time =    5274.94 ms /   512 tokens (   10.30 ms per token,    97.06 tokens per second)"
+        },
+        {
+          "line": 44477,
+          "text": "slot print_timing: id  0 | task 9603 |        eval time =   66229.66 ms /   671 tokens (   98.85 ms per token,    10.12 tokens per second)"
+        },
+        {
+          "line": 44480,
+          "text": "slot      release: id  0 | task 9603 | stop processing: n_tokens = 4629, truncated = 0"
+        },
+        {
+          "line": 44482,
+          "text": "[GIN] 2026/09/03 - 23:00:57 | 200 |         1m11s |       127.0.0.1 | POST     \"/api/chat\""
+        }
+      ],
+      "c149f73": [
+        {
+          "line": 48779,
+          "text": "slot   operator(): id  0 | task 4534 | new prompt, n_ctx_slot = 32768, n_keep = 4, task.n_tokens = 3029"
+        },
+        {
+          "line": 48782,
+          "text": "slot print_timing: id  0 | task 4534 | prompt processing, n_tokens =   1024, progress = 0.34, t =   8.74 s / 117.13 tokens per second"
+        },
+        {
+          "line": 48784,
+          "text": "slot print_timing: id  0 | task 4534 | prompt processing, n_tokens =   1536, progress = 0.51, t =  17.45 s / 88.02 tokens per second"
+        },
+        {
+          "line": 48786,
+          "text": "slot print_timing: id  0 | task 4534 | prompt processing, n_tokens =   2048, progress = 0.68, t =  26.34 s / 77.76 tokens per second"
+        },
+        {
+          "line": 48788,
+          "text": "slot print_timing: id  0 | task 4534 | prompt processing, n_tokens =   2560, progress = 0.85, t =  34.75 s / 73.66 tokens per second"
+        },
+        {
+          "line": 48791,
+          "text": "slot print_timing: id  0 | task 4534 | n_gen =    100, tg =   5.92 t/s, tg_3s =   5.98 t/s"
+        },
+        {
+          "line": 48792,
+          "text": "slot print_timing: id  0 | task 4534 | n_gen =    119, tg =   5.97 t/s, tg_3s =   6.26 t/s"
+        },
+        {
+          "line": 48793,
+          "text": "slot print_timing: id  0 | task 4534 | n_gen =    137, tg =   5.97 t/s, tg_3s =   5.98 t/s"
+        },
+        {
+          "line": 48794,
+          "text": "slot print_timing: id  0 | task 4534 | n_gen =    157, tg =   6.03 t/s, tg_3s =   6.45 t/s"
+        },
+        {
+          "line": 48795,
+          "text": "slot print_timing: id  0 | task 4534 | n_gen =    177, tg =   6.09 t/s, tg_3s =   6.58 t/s"
+        },
+        {
+          "line": 48796,
+          "text": "slot print_timing: id  0 | task 4534 | n_gen =    196, tg =   6.11 t/s, tg_3s =   6.26 t/s"
+        },
+        {
+          "line": 48797,
+          "text": "slot print_timing: id  0 | task 4534 | n_gen =    217, tg =   6.16 t/s, tg_3s =   6.74 t/s"
+        },
+        {
+          "line": 48798,
+          "text": "slot print_timing: id  0 | task 4534 | n_gen =    238, tg =   6.21 t/s, tg_3s =   6.70 t/s"
+        },
+        {
+          "line": 48799,
+          "text": "slot print_timing: id  0 | task 4534 | n_gen =    258, tg =   6.24 t/s, tg_3s =   6.61 t/s"
+        },
+        {
+          "line": 48800,
+          "text": "slot print_timing: id  0 | task 4534 | n_gen =    279, tg =   6.27 t/s, tg_3s =   6.78 t/s"
+        },
+        {
+          "line": 48801,
+          "text": "slot print_timing: id  0 | task 4534 | n_gen =    300, tg =   6.30 t/s, tg_3s =   6.71 t/s"
+        },
+        {
+          "line": 48802,
+          "text": "slot print_timing: id  0 | task 4534 | n_gen =    320, tg =   6.32 t/s, tg_3s =   6.58 t/s"
+        },
+        {
+          "line": 48803,
+          "text": "slot print_timing: id  0 | task 4534 | n_gen =    340, tg =   6.34 t/s, tg_3s =   6.61 t/s"
+        },
+        {
+          "line": 48804,
+          "text": "slot print_timing: id  0 | task 4534 | n_gen =    360, tg =   6.35 t/s, tg_3s =   6.61 t/s"
+        },
+        {
+          "line": 48805,
+          "text": "slot print_timing: id  0 | task 4534 | n_gen =    377, tg =   6.31 t/s, tg_3s =   5.53 t/s"
+        },
+        {
+          "line": 48806,
+          "text": "slot print_timing: id  0 | task 4534 | n_gen =    397, tg =   6.31 t/s, tg_3s =   6.39 t/s"
+        },
+        {
+          "line": 48807,
+          "text": "slot print_timing: id  0 | task 4534 | n_gen =    418, tg =   6.33 t/s, tg_3s =   6.61 t/s"
+        },
+        {
+          "line": 48808,
+          "text": "[GIN] 2026/09/04 - 19:38:26 | 500 |          2m0s |       127.0.0.1 | POST     \"/api/chat\""
+        },
+        {
+          "line": 48809,
+          "text": "srv          stop: cancel task, id_task = 4534"
+        },
+        {
+          "line": 48811,
+          "text": "slot      release: id  0 | task 4534 | stop processing: n_tokens = 3455, truncated = 0"
+        }
+      ]
+    },
+    "AGENT_V1_KB_003": {
+      "7062f48": [
+        {
+          "line": 43641,
+          "text": "slot   operator(): id  0 | task 5326 | new prompt, n_ctx_slot = 32768, n_keep = 4, task.n_tokens = 4304"
+        },
+        {
+          "line": 43644,
+          "text": "slot print_timing: id  0 | task 5326 | prompt processing, n_tokens =   1024, progress = 0.24, t =   5.14 s / 199.19 tokens per second"
+        },
+        {
+          "line": 43646,
+          "text": "slot print_timing: id  0 | task 5326 | prompt processing, n_tokens =   1536, progress = 0.36, t =  10.39 s / 147.83 tokens per second"
+        },
+        {
+          "line": 43648,
+          "text": "slot print_timing: id  0 | task 5326 | prompt processing, n_tokens =   2048, progress = 0.48, t =  15.78 s / 129.80 tokens per second"
+        },
+        {
+          "line": 43650,
+          "text": "slot print_timing: id  0 | task 5326 | prompt processing, n_tokens =   2560, progress = 0.60, t =  21.31 s / 120.16 tokens per second"
+        },
+        {
+          "line": 43652,
+          "text": "slot print_timing: id  0 | task 5326 | prompt processing, n_tokens =   3072, progress = 0.71, t =  26.99 s / 113.82 tokens per second"
+        },
+        {
+          "line": 43654,
+          "text": "slot print_timing: id  0 | task 5326 | prompt processing, n_tokens =   3584, progress = 0.83, t =  32.75 s / 109.44 tokens per second"
+        },
+        {
+          "line": 43656,
+          "text": "slot print_timing: id  0 | task 5326 | prompt processing, n_tokens =   4096, progress = 0.95, t =  38.63 s / 106.02 tokens per second"
+        },
+        {
+          "line": 43659,
+          "text": "slot print_timing: id  0 | task 5326 | n_gen =    100, tg =   8.82 t/s, tg_3s =   8.90 t/s"
+        },
+        {
+          "line": 43660,
+          "text": "slot print_timing: id  0 | task 5326 | n_gen =    127, tg =   8.83 t/s, tg_3s =   8.88 t/s"
+        },
+        {
+          "line": 43661,
+          "text": "slot print_timing: id  0 | task 5326 | n_gen =    154, tg =   8.83 t/s, tg_3s =   8.85 t/s"
+        },
+        {
+          "line": 43662,
+          "text": "slot print_timing: id  0 | task 5326 | n_gen =    181, tg =   8.84 t/s, tg_3s =   8.86 t/s"
+        },
+        {
+          "line": 43663,
+          "text": "slot print_timing: id  0 | task 5326 | n_gen =    208, tg =   8.83 t/s, tg_3s =   8.77 t/s"
+        },
+        {
+          "line": 43664,
+          "text": "slot print_timing: id  0 | task 5326 | n_gen =    235, tg =   8.82 t/s, tg_3s =   8.74 t/s"
+        },
+        {
+          "line": 43665,
+          "text": "slot print_timing: id  0 | task 5326 | n_gen =    262, tg =   8.82 t/s, tg_3s =   8.86 t/s"
+        },
+        {
+          "line": 43666,
+          "text": "slot print_timing: id  0 | task 5326 | n_gen =    289, tg =   8.83 t/s, tg_3s =   8.89 t/s"
+        },
+        {
+          "line": 43667,
+          "text": "slot print_timing: id  0 | task 5326 | n_gen =    314, tg =   8.78 t/s, tg_3s =   8.19 t/s"
+        },
+        {
+          "line": 43668,
+          "text": "slot print_timing: id  0 | task 5326 | n_gen =    340, tg =   8.75 t/s, tg_3s =   8.48 t/s"
+        },
+        {
+          "line": 43669,
+          "text": "slot print_timing: id  0 | task 5326 | n_gen =    366, tg =   8.74 t/s, tg_3s =   8.58 t/s"
+        },
+        {
+          "line": 43670,
+          "text": "slot print_timing: id  0 | task 5326 | n_gen =    392, tg =   8.73 t/s, tg_3s =   8.65 t/s"
+        },
+        {
+          "line": 43671,
+          "text": "slot print_timing: id  0 | task 5326 | n_gen =    419, tg =   8.74 t/s, tg_3s =   8.81 t/s"
+        },
+        {
+          "line": 43672,
+          "text": "slot print_timing: id  0 | task 5326 | n_gen =    446, tg =   8.74 t/s, tg_3s =   8.69 t/s"
+        },
+        {
+          "line": 43673,
+          "text": "slot print_timing: id  0 | task 5326 | n_gen =    472, tg =   8.73 t/s, tg_3s =   8.57 t/s"
+        },
+        {
+          "line": 43674,
+          "text": "slot print_timing: id  0 | task 5326 | prompt eval time =   47262.67 ms /  4299 tokens (   10.99 ms per token,    90.96 tokens per second)"
+        },
+        {
+          "line": 43675,
+          "text": "slot print_timing: id  0 | task 5326 |        eval time =   55797.44 ms /   488 tokens (  114.57 ms per token,     8.73 tokens per second)"
+        },
+        {
+          "line": 43678,
+          "text": "slot      release: id  0 | task 5326 | stop processing: n_tokens = 4791, truncated = 0"
+        },
+        {
+          "line": 43680,
+          "text": "[GIN] 2026/09/03 - 22:50:36 | 200 |         1m43s |       127.0.0.1 | POST     \"/api/chat\""
+        }
+      ],
+      "c149f73": [
+        {
+          "line": 48021,
+          "text": "slot   operator(): id  0 | task 1089 | new prompt, n_ctx_slot = 32768, n_keep = 4, task.n_tokens = 4304"
+        },
+        {
+          "line": 48024,
+          "text": "slot print_timing: id  0 | task 1089 | prompt processing, n_tokens =   1024, progress = 0.43, t =   8.78 s / 116.59 tokens per second"
+        },
+        {
+          "line": 48026,
+          "text": "slot print_timing: id  0 | task 1089 | prompt processing, n_tokens =   1536, progress = 0.55, t =  19.11 s / 80.38 tokens per second"
+        },
+        {
+          "line": 48028,
+          "text": "slot print_timing: id  0 | task 1089 | prompt processing, n_tokens =   2048, progress = 0.66, t =  28.87 s / 70.94 tokens per second"
+        },
+        {
+          "line": 48030,
+          "text": "slot print_timing: id  0 | task 1089 | prompt processing, n_tokens =   2560, progress = 0.78, t =  37.59 s / 68.10 tokens per second"
+        },
+        {
+          "line": 48032,
+          "text": "slot print_timing: id  0 | task 1089 | prompt processing, n_tokens =   3072, progress = 0.90, t =  46.43 s / 66.17 tokens per second"
+        },
+        {
+          "line": 48035,
+          "text": "slot print_timing: id  0 | task 1089 | n_gen =    100, tg =   5.33 t/s, tg_3s =   5.39 t/s"
+        },
+        {
+          "line": 48036,
+          "text": "slot print_timing: id  0 | task 1089 | n_gen =    118, tg =   5.41 t/s, tg_3s =   5.83 t/s"
+        },
+        {
+          "line": 48037,
+          "text": "slot print_timing: id  0 | task 1089 | n_gen =    134, tg =   5.37 t/s, tg_3s =   5.14 t/s"
+        },
+        {
+          "line": 48038,
+          "text": "slot print_timing: id  0 | task 1089 | n_gen =    151, tg =   5.40 t/s, tg_3s =   5.65 t/s"
+        },
+        {
+          "line": 48039,
+          "text": "slot print_timing: id  0 | task 1089 | n_gen =    169, tg =   5.45 t/s, tg_3s =   5.89 t/s"
+        },
+        {
+          "line": 48040,
+          "text": "slot print_timing: id  0 | task 1089 | n_gen =    189, tg =   5.54 t/s, tg_3s =   6.36 t/s"
+        },
+        {
+          "line": 48041,
+          "text": "slot print_timing: id  0 | task 1089 | n_gen =    207, tg =   5.57 t/s, tg_3s =   5.97 t/s"
+        },
+        {
+          "line": 48042,
+          "text": "slot print_timing: id  0 | task 1089 | n_gen =    224, tg =   5.55 t/s, tg_3s =   5.35 t/s"
+        },
+        {
+          "line": 48043,
+          "text": "slot print_timing: id  0 | task 1089 | n_gen =    240, tg =   5.52 t/s, tg_3s =   5.11 t/s"
+        },
+        {
+          "line": 48044,
+          "text": "slot print_timing: id  0 | task 1089 | n_gen =    260, tg =   5.59 t/s, tg_3s =   6.51 t/s"
+        },
+        {
+          "line": 48045,
+          "text": "slot print_timing: id  0 | task 1089 | n_gen =    277, tg =   5.59 t/s, tg_3s =   5.58 t/s"
+        },
+        {
+          "line": 48046,
+          "text": "slot print_timing: id  0 | task 1089 | n_gen =    294, tg =   5.59 t/s, tg_3s =   5.66 t/s"
+        },
+        {
+          "line": 48047,
+          "text": "slot print_timing: id  0 | task 1089 | n_gen =    311, tg =   5.59 t/s, tg_3s =   5.60 t/s"
+        },
+        {
+          "line": 48048,
+          "text": "[GIN] 2026/09/04 - 19:23:05 | 500 |          2m0s |       127.0.0.1 | POST     \"/api/chat\""
+        },
+        {
+          "line": 48049,
+          "text": "srv          stop: cancel task, id_task = 1089"
+        },
+        {
+          "line": 48051,
+          "text": "slot      release: id  0 | task 1089 | stop processing: n_tokens = 4621, truncated = 0"
+        }
+      ]
+    },
+    "AGENT_V1_KB_002": {
+      "7062f48": [
+        {
+          "line": 43408,
+          "text": "slot   operator(): id  0 | task 4086 | new prompt, n_ctx_slot = 32768, n_keep = 4, task.n_tokens = 2593"
+        },
+        {
+          "line": 43411,
+          "text": "slot print_timing: id  0 | task 4086 | prompt processing, n_tokens =   1024, progress = 0.71, t =   5.34 s / 191.93 tokens per second"
+        },
+        {
+          "line": 43413,
+          "text": "slot print_timing: id  0 | task 4086 | prompt processing, n_tokens =   1536, progress = 0.90, t =  10.79 s / 142.42 tokens per second"
+        },
+        {
+          "line": 43416,
+          "text": "slot print_timing: id  0 | task 4086 | n_gen =    100, tg =   9.00 t/s, tg_3s =   9.09 t/s"
+        },
+        {
+          "line": 43417,
+          "text": "slot print_timing: id  0 | task 4086 | n_gen =    128, tg =   8.99 t/s, tg_3s =   8.99 t/s"
+        },
+        {
+          "line": 43418,
+          "text": "slot print_timing: id  0 | task 4086 | n_gen =    156, tg =   9.03 t/s, tg_3s =   9.17 t/s"
+        },
+        {
+          "line": 43419,
+          "text": "slot print_timing: id  0 | task 4086 | n_gen =    184, tg =   9.05 t/s, tg_3s =   9.19 t/s"
+        },
+        {
+          "line": 43420,
+          "text": "slot print_timing: id  0 | task 4086 | n_gen =    212, tg =   9.06 t/s, tg_3s =   9.11 t/s"
+        },
+        {
+          "line": 43421,
+          "text": "slot print_timing: id  0 | task 4086 | n_gen =    240, tg =   9.07 t/s, tg_3s =   9.15 t/s"
+        },
+        {
+          "line": 43422,
+          "text": "slot print_timing: id  0 | task 4086 | n_gen =    268, tg =   9.07 t/s, tg_3s =   9.10 t/s"
+        },
+        {
+          "line": 43423,
+          "text": "slot print_timing: id  0 | task 4086 | n_gen =    296, tg =   9.07 t/s, tg_3s =   9.07 t/s"
+        },
+        {
+          "line": 43424,
+          "text": "slot print_timing: id  0 | task 4086 | n_gen =    324, tg =   9.07 t/s, tg_3s =   9.04 t/s"
+        },
+        {
+          "line": 43425,
+          "text": "slot print_timing: id  0 | task 4086 | n_gen =    352, tg =   9.07 t/s, tg_3s =   9.06 t/s"
+        },
+        {
+          "line": 43426,
+          "text": "slot print_timing: id  0 | task 4086 | n_gen =    380, tg =   9.08 t/s, tg_3s =   9.22 t/s"
+        },
+        {
+          "line": 43427,
+          "text": "slot print_timing: id  0 | task 4086 | n_gen =    408, tg =   9.09 t/s, tg_3s =   9.20 t/s"
+        },
+        {
+          "line": 43428,
+          "text": "slot print_timing: id  0 | task 4086 | n_gen =    436, tg =   9.09 t/s, tg_3s =   9.10 t/s"
+        },
+        {
+          "line": 43429,
+          "text": "slot print_timing: id  0 | task 4086 | n_gen =    464, tg =   9.10 t/s, tg_3s =   9.20 t/s"
+        },
+        {
+          "line": 43430,
+          "text": "slot print_timing: id  0 | task 4086 | n_gen =    492, tg =   9.10 t/s, tg_3s =   9.16 t/s"
+        },
+        {
+          "line": 43431,
+          "text": "slot print_timing: id  0 | task 4086 | n_gen =    520, tg =   9.11 t/s, tg_3s =   9.22 t/s"
+        },
+        {
+          "line": 43432,
+          "text": "slot print_timing: id  0 | task 4086 | n_gen =    548, tg =   9.11 t/s, tg_3s =   9.11 t/s"
+        },
+        {
+          "line": 43433,
+          "text": "slot print_timing: id  0 | task 4086 | n_gen =    576, tg =   9.11 t/s, tg_3s =   9.17 t/s"
+        },
+        {
+          "line": 43434,
+          "text": "slot print_timing: id  0 | task 4086 | n_gen =    604, tg =   9.11 t/s, tg_3s =   9.19 t/s"
+        },
+        {
+          "line": 43435,
+          "text": "slot print_timing: id  0 | task 4086 | n_gen =    629, tg =   9.08 t/s, tg_3s =   8.31 t/s"
+        },
+        {
+          "line": 43436,
+          "text": "slot print_timing: id  0 | task 4086 | n_gen =    655, tg =   9.06 t/s, tg_3s =   8.63 t/s"
+        },
+        {
+          "line": 43437,
+          "text": "slot print_timing: id  0 | task 4086 | n_gen =    682, tg =   9.06 t/s, tg_3s =   8.98 t/s"
+        },
+        {
+          "line": 43438,
+          "text": "slot print_timing: id  0 | task 4086 | prompt eval time =   19193.90 ms /  1783 tokens (   10.76 ms per token,    92.89 tokens per second)"
+        },
+        {
+          "line": 43439,
+          "text": "slot print_timing: id  0 | task 4086 |        eval time =   76213.58 ms /   691 tokens (  110.45 ms per token,     9.05 tokens per second)"
+        },
+        {
+          "line": 43442,
+          "text": "slot      release: id  0 | task 4086 | stop processing: n_tokens = 3283, truncated = 0"
+        },
+        {
+          "line": 43444,
+          "text": "[GIN] 2026/09/03 - 22:47:23 | 200 |         1m35s |       127.0.0.1 | POST     \"/api/chat\""
+        }
+      ],
+      "c149f73": [
+        {
+          "line": 47786,
+          "text": "slot   operator(): id  0 | task 107 | new prompt, n_ctx_slot = 32768, n_keep = 4, task.n_tokens = 2593"
+        },
+        {
+          "line": 47789,
+          "text": "slot print_timing: id  0 | task 107 | prompt processing, n_tokens =   1024, progress = 0.40, t =   8.18 s / 125.12 tokens per second"
+        },
+        {
+          "line": 47791,
+          "text": "slot print_timing: id  0 | task 107 | prompt processing, n_tokens =   1536, progress = 0.59, t =  17.20 s / 89.29 tokens per second"
+        },
+        {
+          "line": 47793,
+          "text": "slot print_timing: id  0 | task 107 | prompt processing, n_tokens =   2048, progress = 0.79, t =  26.33 s / 77.77 tokens per second"
+        },
+        {
+          "line": 47795,
+          "text": "slot print_timing: id  0 | task 107 | prompt processing, n_tokens =   2560, progress = 0.99, t =  35.51 s / 72.10 tokens per second"
+        },
+        {
+          "line": 47798,
+          "text": "slot print_timing: id  0 | task 107 | n_gen =    100, tg =   6.47 t/s, tg_3s =   6.53 t/s"
+        },
+        {
+          "line": 47799,
+          "text": "slot print_timing: id  0 | task 107 | n_gen =    116, tg =   6.27 t/s, tg_3s =   5.30 t/s"
+        },
+        {
+          "line": 47800,
+          "text": "slot print_timing: id  0 | task 107 | n_gen =    135, tg =   6.27 t/s, tg_3s =   6.25 t/s"
+        },
+        {
+          "line": 47801,
+          "text": "slot print_timing: id  0 | task 107 | n_gen =    153, tg =   6.24 t/s, tg_3s =   5.98 t/s"
+        },
+        {
+          "line": 47802,
+          "text": "slot print_timing: id  0 | task 107 | n_gen =    172, tg =   6.23 t/s, tg_3s =   6.16 t/s"
+        },
+        {
+          "line": 47803,
+          "text": "slot print_timing: id  0 | task 107 | n_gen =    190, tg =   6.20 t/s, tg_3s =   5.99 t/s"
+        },
+        {
+          "line": 47804,
+          "text": "slot print_timing: id  0 | task 107 | n_gen =    206, tg =   6.12 t/s, tg_3s =   5.33 t/s"
+        },
+        {
+          "line": 47805,
+          "text": "slot print_timing: id  0 | task 107 | n_gen =    223, tg =   6.07 t/s, tg_3s =   5.50 t/s"
+        },
+        {
+          "line": 47806,
+          "text": "slot print_timing: id  0 | task 107 | n_gen =    240, tg =   6.04 t/s, tg_3s =   5.62 t/s"
+        },
+        {
+          "line": 47807,
+          "text": "slot print_timing: id  0 | task 107 | n_gen =    258, tg =   6.03 t/s, tg_3s =   5.96 t/s"
+        },
+        {
+          "line": 47808,
+          "text": "slot print_timing: id  0 | task 107 | n_gen =    276, tg =   6.03 t/s, tg_3s =   5.95 t/s"
+        },
+        {
+          "line": 47809,
+          "text": "slot print_timing: id  0 | task 107 | n_gen =    294, tg =   6.01 t/s, tg_3s =   5.78 t/s"
+        },
+        {
+          "line": 47810,
+          "text": "slot print_timing: id  0 | task 107 | n_gen =    309, tg =   5.95 t/s, tg_3s =   4.96 t/s"
+        },
+        {
+          "line": 47811,
+          "text": "slot print_timing: id  0 | task 107 | n_gen =    321, tg =   0.32 t/s, tg_3s =   0.01 t/s"
+        },
+        {
+          "line": 47812,
+          "text": "slot print_timing: id  0 | task 107 | n_gen =    340, tg =   0.34 t/s, tg_3s =   6.25 t/s"
+        },
+        {
+          "line": 47813,
+          "text": "slot print_timing: id  0 | task 107 | n_gen =    356, tg =   0.10 t/s, tg_3s =   0.01 t/s"
+        },
+        {
+          "line": 47814,
+          "text": "slot print_timing: id  0 | task 107 | n_gen =    370, tg =   0.10 t/s, tg_3s =   4.36 t/s"
+        },
+        {
+          "line": 47815,
+          "text": "slot print_timing: id  0 | task 107 | n_gen =    387, tg =   0.11 t/s, tg_3s =   5.57 t/s"
+        },
+        {
+          "line": 47816,
+          "text": "slot print_timing: id  0 | task 107 | n_gen =    402, tg =   0.11 t/s, tg_3s =   4.88 t/s"
+        },
+        {
+          "line": 47817,
+          "text": "slot print_timing: id  0 | task 107 | n_gen =    415, tg =   0.12 t/s, tg_3s =   4.23 t/s"
+        },
+        {
+          "line": 47818,
+          "text": "[GIN] 2026/09/04 - 19:17:58 | 500 |          2m0s |       127.0.0.1 | POST     \"/api/chat\""
+        },
+        {
+          "line": 47819,
+          "text": "srv          stop: cancel task, id_task = 107"
+        },
+        {
+          "line": 47820,
+          "text": "slot      release: id  0 | task 107 | stop processing: n_tokens = 3018, truncated = 0"
+        }
+      ]
+    }
+  },
+  "current_thermal_status": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded\n",
+  "limits": [
+    "Current power/thermal readings are not historical measurements.",
+    "Historical per-call thermal, CPU/GPU frequency and process-load samples were not captured.",
+    "Provider request timestamps are matched from final measurement time minus sequential case durations (two-second tolerance).",
+    "Only control-case root checkpoints survive in both SQLite checkpoint stores; analyst message checkpoints are unavailable."
+  ]
+}

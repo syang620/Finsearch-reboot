@@ -1,0 +1,7 @@
+{
+  "finished_at_utc": "2026-09-05T13:18:26.792771+00:00",
+  "provider_log_end_bytes": 4544938,
+  "power_after": "Now drawing from 'AC Power'\n -InternalBattery-0 (id=23461987)\t53%; AC attached; not charging present: true\n",
+  "head": "c149f73d073a306cf34d938955ae6cc739191528",
+  "runtime_diff": ""
+}

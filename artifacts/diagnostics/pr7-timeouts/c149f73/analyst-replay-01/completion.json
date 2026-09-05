@@ -1,0 +1,7 @@
+{
+  "finished_at_utc": "2026-09-05T00:40:33.939457+00:00",
+  "provider_log_end_bytes": 4440537,
+  "power_after": "Now drawing from 'Battery Power'\n -InternalBattery-0 (id=23461987)\t71%; discharging; 6:04 remaining present: true\n",
+  "head": "c149f73d073a306cf34d938955ae6cc739191528",
+  "runtime_diff": ""
+}

@@ -1,0 +1,144 @@
+{
+  "runtime_frozen": true,
+  "original_gate_evidence_unchanged": true,
+  "sleep_events_during_run": [],
+  "power_log_sha256_at_read": "7a5a363105011dd93a002d71954c4345017e7249de7b4ac6e0af4ba573fda7cb",
+  "per_call_generated_count_comparison": [
+    {
+      "id": "AGENT_V1_KB_002",
+      "ac_generated_counts": [
+        null
+      ],
+      "pr24_generated_counts": [
+        691
+      ],
+      "counts_equal": false
+    },
+    {
+      "id": "AGENT_V1_KB_003",
+      "ac_generated_counts": [
+        488
+      ],
+      "pr24_generated_counts": [
+        488
+      ],
+      "counts_equal": true
+    },
+    {
+      "id": "AGENT_V1_HYBRID_002",
+      "ac_generated_counts": [
+        655,
+        671
+      ],
+      "pr24_generated_counts": [
+        655,
+        671
+      ],
+      "counts_equal": true
+    },
+    {
+      "id": "AGENT_V1_HYBRID_003",
+      "ac_generated_counts": [
+        431,
+        243,
+        296,
+        550,
+        470,
+        506
+      ],
+      "pr24_generated_counts": [
+        431,
+        243,
+        296,
+        550,
+        470,
+        506
+      ],
+      "counts_equal": true
+    },
+    {
+      "id": "AGENT_V1_ANALYST_001",
+      "ac_generated_counts": [
+        304,
+        82,
+        402,
+        452,
+        317,
+        316,
+        317
+      ],
+      "pr24_generated_counts": [
+        304,
+        82,
+        402,
+        452,
+        317,
+        316,
+        317
+      ],
+      "counts_equal": true
+    },
+    {
+      "id": "AGENT_V1_ANALYST_003",
+      "ac_generated_counts": [
+        385
+      ],
+      "pr24_generated_counts": [
+        385
+      ],
+      "counts_equal": true
+    }
+  ],
+  "five_timeout_free_cases_generated_counts_match_pr24": true,
+  "during_run_cpu_idle": {
+    "min": 69.93,
+    "median": 84.51,
+    "max": 94.8
+  },
+  "nonmodel_process_samples_above_preflight_threshold": [
+    {
+      "utc": "2026-09-05T12:54:54.829451+00:00",
+      "process": {
+        "pid": 5006,
+        "name": "Safari",
+        "cpu_percent_one_core": 93.6
+      }
+    },
+    {
+      "utc": "2026-09-05T12:58:36.303522+00:00",
+      "process": {
+        "pid": 11216,
+        "name": "Google Chrome He",
+        "cpu_percent_one_core": 53.2
+      }
+    },
+    {
+      "utc": "2026-09-05T13:01:46.019347+00:00",
+      "process": {
+        "pid": 83077,
+        "name": "ChatGPT",
+        "cpu_percent_one_core": 52.8
+      }
+    },
+    {
+      "utc": "2026-09-05T13:04:55.812928+00:00",
+      "process": {
+        "pid": 5006,
+        "name": "Safari",
+        "cpu_percent_one_core": 87.6
+      }
+    },
+    {
+      "utc": "2026-09-05T13:04:55.812928+00:00",
+      "process": {
+        "pid": 0,
+        "name": "kernel_task",
+        "cpu_percent_one_core": 59.1
+      }
+    }
+  ],
+  "workload_isolation": "Imperfect: Safari/Chrome and UI CPU bursts were recorded. Do not present as fully idle/isolated.",
+  "ac_and_low_power_conditions_held": true,
+  "full_gate_runs": 0,
+  "repeat_batches": 0
+}
