@@ -1,0 +1,38 @@
+{
+  "benchmark_id": "sec_retrieval_benchmark_v2",
+  "version": 2,
+  "base_commit": "9ec25f568402d700c88a5fa35b7e5e750bc36d5f",
+  "query_count": 126,
+  "answerable_count": 120,
+  "strata": {
+    "business_growth": 12,
+    "direct_fact": 18,
+    "hard_negative": 12,
+    "mda": 12,
+    "multi_evidence": 12,
+    "narrative": 12,
+    "paraphrase": 12,
+    "risk_factors": 18,
+    "section_specific": 12,
+    "unanswerable": 6
+  },
+  "files": {
+    "corpus.jsonl": "39c8d01ee5c71710e443e49698957d2aa991e71c16ad79905e7bd07d6a11fe4d",
+    "corpus_manifest.json": "23fe45dcaf640eba7bdab1342e680e892c0468025ad09204416d8b6b5a6fae29",
+    "queries.jsonl": "e356eab5c78f027c570daa05945b4688e152ab3e54c79070862d9759fc2cc9d9",
+    "seed_compatibility.json": "35a7197fc4784500f4aad6c8d9b16d4d0d703c9983d8a26d0c6669559ab08fea"
+  },
+  "annotation_specs_sha256": "566149a25f2aae5031d97c4d80a5f2b67ddd018eec6f88f5ac7201644de3fecf",
+  "historical_seed": {
+    "path": "data/evals/retrieval/text/aapl_2024_10k_text_retrieval_eval_split_with_uids.jsonl",
+    "sha256": "a44b51bc2cf733e757116a3ca79c4ef0fca7dc5c3ea2e7e6a7f320be78a1b888",
+    "unchanged": true
+  },
+  "freeze_rule": "Commit before any ranked retrieval measurement; immutable thereafter. No query selected from mode outcomes.",
+  "limitations": [
+    "Three large technology/commerce companies; six annual filings; paired topic templates across years are correlated, not 120 independent intents.",
+    "AI source-inspected annotations, not double-blind human labels; known-gold recall, incomplete judgments outside explicitly labeled spans.",
+    "Existing parser heading mistakes retained; table corpus contains raw tables, no model summaries or table-row documents.",
+    "Metadata-filtered single-filing KB retrieval, not company/year resolution, answer generation or XBRL execution."
+  ]
+}
