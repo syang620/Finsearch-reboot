@@ -200,9 +200,36 @@ def test_offline_verifier_recomputes_metrics(tmp_path,monkeypatch):
               "raw_sha256":{name:mod.sha256(out/name) for name in ("summary.json","per_query.jsonl")}}
     (out/"manifest.json").write_text(json.dumps(manifest))
     assert mod.verify(dataset,out)["hashes_and_metrics_verified"]
+    # Simulate another platform's libm without rewriting frozen artifacts.
+    def rounded(value):
+        if isinstance(value,float):return math.nextafter(value,math.inf)
+        if isinstance(value,dict):return {k:rounded(v) for k,v in value.items()}
+        return value
+    with monkeypatch.context() as patch:
+        patch.setattr(mod,"metrics",lambda *a:rounded(metrics(*a)))
+        patch.setattr(mod,"aggregate",lambda *a:rounded(aggregate(*a)))
+        assert mod.verify(dataset,out)["hashes_and_metrics_verified"]
     row["metrics"]["recall@5"]=0.0
     (out/"per_query.jsonl").write_text(json.dumps(row)+"\n")
     with pytest.raises(ValueError,match="hash mismatch"):mod.verify(dataset,out)
     manifest["raw_sha256"]["per_query.jsonl"]=mod.sha256(out/"per_query.jsonl")
     (out/"manifest.json").write_text(json.dumps(manifest))
     with pytest.raises(ValueError,match="metric mismatch"):mod.verify(dataset,out)
+
+
+@pytest.mark.parametrize("actual,recorded,expected",[
+    (0.7991748853900112,0.7991748853900114,True),
+    ({"metrics":{"ndcg@10":0.7991748853900112},"queries":120},
+     {"metrics":{"ndcg@10":0.7991748853900114},"queries":120},True),
+    (0.7991748853900112,0.7991748854,False),
+    (120,121,False), (120,120.0,False), (True,1,False),
+    ("id-a","id-b",False), (None,0,False),
+    ({"n":120},{"n":120,"extra":None},False),
+    ([0.5],[0.5,0.5],False),
+    (float("nan"),float("nan"),False),
+    (float("inf"),float("inf"),False),
+])
+def test_verifier_float_tolerance_preserves_exact_fields(actual,recorded,expected):
+    spec=importlib.util.spec_from_file_location("verifier",ROOT/"scripts/evals/retrieval/verify_benchmark_v2.py")
+    mod=importlib.util.module_from_spec(spec);spec.loader.exec_module(mod)
+    assert mod.values_match(actual,recorded) is expected

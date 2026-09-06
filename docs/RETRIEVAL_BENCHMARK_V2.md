@@ -111,6 +111,13 @@ No credentials or absolute local paths belong in committed artifacts. Each run
 records raw ranked IDs/scores, per-case metrics/timings, errors, exact source
 hashes, dataset/config/index provenance and aggregate strata. The offline
 verifier recomputes quality/latency aggregates from the preserved raw rows.
+Following PR27 review, recomputed floating-point values use `1e-12` relative
+and absolute tolerances to accommodate Python/libm rounding differences.
+Structure, counts, IDs, non-floating values and file hashes remain exact;
+non-finite numbers are rejected. This changes verification acceptance only,
+not ranking, metric formulas, labels or retrieval settings. The original
+`2d50cfe` baseline remains immutable; review follow-up evidence is separately
+SHA-keyed after the verifier/test implementation is re-frozen.
 
 ## Verification and release status
 

@@ -4,9 +4,26 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 from pathlib import Path
 
 from evals.retrieval_benchmark_v2 import METRICS,aggregate,load_dataset,metrics,read_jsonl,sha256
+
+
+def values_match(actual, recorded):
+    """Allow libm rounding only; preserve exact structure and non-float fields."""
+    if type(actual) is not type(recorded):
+        return False
+    if isinstance(actual, float):
+        return (math.isfinite(actual) and math.isfinite(recorded)
+                and math.isclose(actual, recorded, rel_tol=1e-12, abs_tol=1e-12))
+    if isinstance(actual, dict):
+        return actual.keys() == recorded.keys() and all(
+            values_match(value, recorded[key]) for key, value in actual.items())
+    if isinstance(actual, list):
+        return len(actual) == len(recorded) and all(
+            values_match(a, b) for a, b in zip(actual, recorded))
+    return actual == recorded
 
 
 def verify(dataset: Path,baseline: Path):
@@ -33,15 +50,15 @@ def verify(dataset: Path,baseline: Path):
         if any(r[k]!=c[k] for k in ("query","stratum","ticker","fiscal_year")):
             raise ValueError("Case metadata mismatch")
         actual=metrics(r["ranked_ids"],c) if r["error"] is None else {k:0.0 for k in METRICS}
-        if actual!=r["metrics"]:raise ValueError("Per-query metric mismatch")
+        if not values_match(actual,r["metrics"]):raise ValueError("Per-query metric mismatch")
     for mode,reported in summary["modes"].items():
         subset=[r for r in rows if r["mode"]==mode]
-        if aggregate(subset)!=reported["overall"]:raise ValueError("Overall metric mismatch")
+        if not values_match(aggregate(subset),reported["overall"]):raise ValueError("Overall metric mismatch")
         for stratum,value in reported["by_stratum"].items():
-            if aggregate([r for r in subset if r["stratum"]==stratum])!=value:
+            if not values_match(aggregate([r for r in subset if r["stratum"]==stratum]),value):
                 raise ValueError("Stratum metric mismatch")
         for company,value in reported["by_company"].items():
-            if aggregate([r for r in subset if r["ticker"]==company])!=value:
+            if not values_match(aggregate([r for r in subset if r["ticker"]==company]),value):
                 raise ValueError("Company metric mismatch")
     return {"pairs":len(rows),"complete":summary["complete"],"missing_labels":validation["missing_labels"],"hashes_and_metrics_verified":True}
 
