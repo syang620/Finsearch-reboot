@@ -118,8 +118,33 @@ Before baseline measurement, focused benchmark + unchanged PR20 tests passed
 55 tests. The full suite passed 860 tests and 47 subtests with the two unchanged
 known failures (planner `alias_002`, retrieval no-tool-call attempt count), plus
 one existing table-renderer warning. These are not a blanket full-suite pass.
-Final implementation identity and current-system results will be recorded in
-SHA-keyed evidence after index construction and the frozen comparison complete.
+The implementation was frozen at
+`2d50cfe0dc7b624676b472b7407aab7dc11f9648` with a clean worktree. Its one-pass
+baseline completed on 2026-09-06: **480/480 pairs, zero errors, zero missing
+labels**, with unchanged benchmark/historical indexes and embedding identity.
+The offline verifier confirmed raw hashes, pair coverage, individual metrics
+and aggregate metrics. No evaluation rerun or optimization followed.
+
+| Mode | Recall@5 | Recall@10 | MRR@10 | nDCG@5 | nDCG@10 | Total p50 / p95 ms |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| BM25 | 0.7215 | 0.8014 | 0.6014 | 0.6002 | 0.6310 | 13.8 / 17.0 |
+| Dense | 0.6861 | 0.8104 | 0.5934 | 0.5713 | 0.6170 | 140.1 / 278.3 |
+| Hybrid | 0.7368 | 0.8660 | 0.6883 | 0.6485 | 0.6989 | 124.1 / 295.4 |
+| Hybrid + Qwen3 | 0.7681 | 0.8660 | 0.7202 | 0.6778 | 0.7147 | 1333.3 / 2127.7 |
+
+Reranker-only p50/p95: **1172 / 1873 ms** (120 calls). Each embedding-enabled
+mode recorded 120 cache misses and zero hits. The reranker reorders the same
+ten candidates, so identical hybrid Recall@10 is expected, not evidence of a
+recall improvement. It improves aggregate ranking here but loses to hybrid in
+business/growth, paraphrase and section-specific nDCG@10. Dense leads the
+multi-evidence stratum; BM25 leads narrative. Do not claim universal superiority.
+
+See the immutable [run report](../artifacts/evals/retrieval/benchmark_v2/baselines/2d50cfe0dc7b624676b472b7407aab7dc11f9648/REPORT.md),
+[complete overall/stratum/company metrics](../artifacts/evals/retrieval/benchmark_v2/baselines/2d50cfe0dc7b624676b472b7407aab7dc11f9648/summary.json)
+and [provenance](../artifacts/evals/retrieval/benchmark_v2/baselines/2d50cfe0dc7b624676b472b7407aab7dc11f9648/manifest.json).
+All 960 per-call power/browser samples satisfied the controls. Background
+desktop/system CPU bursts were still recorded, so these are observed local
+latencies, not isolated-laboratory timings or production SLOs.
 
 ## Honest claims
 
