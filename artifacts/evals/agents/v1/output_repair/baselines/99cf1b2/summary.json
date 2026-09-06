@@ -1,0 +1,15 @@
+{
+  "cases": 20,
+  "behavior_passes": 20,
+  "terminal_passes": 20,
+  "feedback_contract_passes": 6,
+  "feedback_contract_cases": 6,
+  "live_shape_repair_contract_passes": 4,
+  "live_shape_repair_cases": 4,
+  "successful_outputs": 7,
+  "successful_grounding_valid": 7,
+  "unexpected_successes": 0,
+  "history_preserved": 20,
+  "inputs_unchanged": 20,
+  "gate_pass": true
+}

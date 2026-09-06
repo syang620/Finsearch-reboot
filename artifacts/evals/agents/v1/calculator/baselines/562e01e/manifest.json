@@ -1,0 +1,14 @@
+{
+  "evaluated_commit": "562e01ebc4b387fc7a38bd3a2131e8ae11c01a51",
+  "tracked_worktree_clean": true,
+  "dataset": "data/evals/agents/v1/agent_eval_calculator_v1.jsonl",
+  "dataset_sha256": "8d15a700df4d6686dc555388c77fa20b0f4494abfc848091dfee365dc36b9b83",
+  "harness_sha256": "6d4e9f84f16b8caacb786b7fa884ef790ad8b1e36c13bc0883f7338dee595532",
+  "grounding_oracle_sha256": "a33c27bf7ecb8fbb6bd9f98249978eb4294006284d18940e9b7695bfc111379b",
+  "runtime_source_sha256": "d8054f56042159f32205dd9979fcacd2fe76952fee40c7b66db3d0c792b5e092",
+  "python": "3.11.14",
+  "pytest": "9.0.2",
+  "measurement": "Frozen synthetic calculator-message and FinalAnswer replay through the real analyst graph; not an exact live transcript or a semantic benchmark.",
+  "command": "PYTHONPATH=.:src conda run -n finsearch-arm python scripts/evals/agents/eval_agent_calculator_v1.py --eval-path data/evals/agents/v1/agent_eval_calculator_v1.jsonl --out-dir artifacts/evals/agents/v1/calculator/baselines/562e01e",
+  "created_at": "2026-09-05T14:12:57.659596+00:00"
+}

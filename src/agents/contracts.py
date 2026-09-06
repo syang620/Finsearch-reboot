@@ -664,6 +664,7 @@ class StructuredFactEvidence(BaseModel):
     report_date: Optional[str] = None
     filed_date: Optional[str] = None
     source_url: Optional[str] = None
+    start_date: Optional[str] = None
 
     components: List[Dict[str, Any]] = Field(default_factory=list)
     missing_component_groups: List[str] = Field(default_factory=list)
@@ -674,6 +675,7 @@ class StructuredFactEvidence(BaseModel):
         "report_date",
         "filed_date",
         "source_url",
+        "start_date",
     )
     @classmethod
     def _normalize_optional_text(cls, value: Optional[str]) -> Optional[str]:

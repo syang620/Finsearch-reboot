@@ -2,8 +2,11 @@ from __future__ import annotations
 
 import argparse
 from dataclasses import dataclass
-from datetime import date, datetime
+from datetime import date
 from pathlib import Path
+import json
+import math
+import re
 import sys
 from typing import Any, Callable, Dict, List, Literal, Optional, Sequence
 
@@ -74,6 +77,7 @@ class MetricFactResult(BaseModel):
     source_url: Optional[str] = None
     matched_by_accession: bool = False
     matched_by_report_date: bool = False
+    start_date: Optional[str] = None
 
 
 class MetricComponentResult(MetricFactResult):
@@ -128,14 +132,15 @@ class FactCandidate:
     fp: Optional[str]
     frame: Optional[str]
     source_url: Optional[str]
+    start_date: Optional[str] = None
 
 
 def _parse_iso_date(value: Optional[str]) -> Optional[date]:
     text = str(value or "").strip()
-    if not text:
+    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", text):
         return None
     try:
-        return datetime.fromisoformat(text).date()
+        return date.fromisoformat(text)
     except Exception:
         return None
 
@@ -152,43 +157,33 @@ def _build_filing_source_url(*, cik: str, accession_number: str, primary_documen
     )
 
 
-def _extract_filing_anchor(*, submissions: Dict[str, Any], ticker: str, cik: str, fiscal_year: int) -> FilingAnchor | None:
+def _filing_rows(submissions: Dict[str, Any]) -> List[Dict[str, str]]:
     recent = ((submissions or {}).get("filings") or {}).get("recent") or {}
-    forms = list(recent.get("form") or [])
-    accession_numbers = list(recent.get("accessionNumber") or [])
-    report_dates = list(recent.get("reportDate") or [])
-    filing_dates = list(recent.get("filingDate") or [])
-    primary_documents = list(recent.get("primaryDocument") or [])
+    names = {"accession_number": "accessionNumber", "report_date": "reportDate",
+             "filed_date": "filingDate", "form_type": "form", "primary_document": "primaryDocument"}
+    columns = {key: value if isinstance(value := recent.get(name), list) else []
+               for key, name in names.items()}
+    return [{key: str(values[i] or "").strip() if i < len(values) else ""
+             for key, values in columns.items()} for i in range(len(columns["form_type"]))]
 
-    candidates: List[Dict[str, Any]] = []
-    for index, form_type in enumerate(forms):
-        form_text = str(form_type or "").strip().upper()
-        report_date = str(report_dates[index] or "").strip() if index < len(report_dates) else ""
-        if form_text not in {"10-K", "10-K/A"}:
-            continue
-        if not report_date.startswith(f"{fiscal_year}-"):
-            continue
-        candidates.append(
-            {
-                "accession_number": str(accession_numbers[index] or "").strip(),
-                "report_date": report_date,
-                "filed_date": str(filing_dates[index] or "").strip(),
-                "form_type": form_text,
-                "primary_document": str(primary_documents[index] or "").strip(),
-            }
-        )
 
-    if not candidates:
-        return None
-
-    def _candidate_sort_key(candidate: Dict[str, Any]) -> tuple[int, date, date]:
-        return (
-            1 if candidate["form_type"] == "10-K" else 0,
-            _parse_iso_date(candidate.get("report_date")) or date.min,
-            _parse_iso_date(candidate.get("filed_date")) or date.min,
-        )
-
-    selected = max(candidates, key=_candidate_sort_key)
+def _filing_anchor_decision(*, submissions: Dict[str, Any], ticker: str, cik: str,
+                            fiscal_year: int) -> tuple[FilingAnchor | None, str]:
+    rows = _filing_rows(submissions)
+    annual = [row for row in rows if row["form_type"].upper() == "10-K"
+              and row["report_date"].startswith(f"{fiscal_year}-")]
+    if any(not row["accession_number"] or not _parse_iso_date(row["report_date"])
+           or not _parse_iso_date(row["filed_date"]) for row in annual):
+        return None, "INVALID_FILING_METADATA"
+    unique = {json.dumps(row, sort_keys=True): row for row in annual}
+    if len(unique) > 1:
+        return None, "FISCAL_YEAR_UNRESOLVED"
+    if not unique:
+        amended = any(row["form_type"].upper() == "10-K/A"
+                      and row["report_date"].startswith(f"{fiscal_year}-")
+                      and _parse_iso_date(row["report_date"]) for row in rows)
+        return None, "AMENDMENT_ONLY" if amended else "NO_ORIGINAL_FILING"
+    selected = next(iter(unique.values()))
     return FilingAnchor(
         cik=str(cik).zfill(10),
         ticker=str(ticker).strip().upper(),
@@ -196,13 +191,18 @@ def _extract_filing_anchor(*, submissions: Dict[str, Any], ticker: str, cik: str
         accession_number=selected["accession_number"],
         report_date=selected["report_date"],
         filed_date=selected["filed_date"],
-        form_type=selected["form_type"],
+        form_type="10-K",
         source_url=_build_filing_source_url(
             cik=str(cik).zfill(10),
             accession_number=selected["accession_number"],
             primary_document=selected["primary_document"],
         ),
-    )
+    ), "ORIGINAL_FILING_SELECTED"
+
+
+def _extract_filing_anchor(*, submissions: Dict[str, Any], ticker: str, cik: str, fiscal_year: int) -> FilingAnchor | None:
+    return _filing_anchor_decision(submissions=submissions, ticker=ticker, cik=cik,
+                                   fiscal_year=fiscal_year)[0]
 
 
 def _iter_companyfacts_candidates(
@@ -226,13 +226,11 @@ def _iter_companyfacts_candidates(
             if not isinstance(item, dict):
                 continue
             form_type = str(item.get("form") or "").strip().upper()
-            if form_type not in {"10-K", "10-K/A"}:
-                continue
-            if item.get("frame"):
-                continue
             try:
                 numeric_value = float(item.get("val"))
             except Exception:
+                continue
+            if isinstance(item.get("val"), bool) or not math.isfinite(numeric_value):
                 continue
             accession_number = str(item.get("accn") or "").strip()
             report_date = str(item.get("end") or "").strip() or None
@@ -242,10 +240,7 @@ def _iter_companyfacts_candidates(
             try:
                 candidate_fiscal_year = int(candidate_fiscal_year) if candidate_fiscal_year is not None else None
             except Exception:
-                candidate_fiscal_year = None
-            report_year = _parse_iso_date(report_date).year if _parse_iso_date(report_date) else None
-            if candidate_fiscal_year not in {None, fiscal_year} and report_year != fiscal_year:
-                continue
+                candidate_fiscal_year = -1
             results.append(
                 FactCandidate(
                     taxonomy=candidate.taxonomy,
@@ -260,9 +255,33 @@ def _iter_companyfacts_candidates(
                     fp=fp,
                     frame=str(item.get("frame") or "").strip() or None,
                     source_url=source_url,
+                    start_date=str(item.get("start")).strip() if item.get("start") is not None else None,
                 )
             )
     return results
+
+
+ANNUAL_DURATION_DAYS = frozenset({364, 365, 366, 371})
+
+
+def _fact_rejection(candidate: FactCandidate, anchor: FilingAnchor,
+                    period_type: Literal["instant", "duration"]) -> str:
+    if candidate.accession_number != anchor.accession_number:
+        return "ACCESSION_MISMATCH"
+    if candidate.form_type != anchor.form_type:
+        return "FORM_MISMATCH"
+    if candidate.report_date != anchor.report_date:
+        return "END_DATE_MISMATCH"
+    if candidate.fiscal_year not in {None, anchor.fiscal_year}:
+        return "FISCAL_YEAR_UNRESOLVED"
+    if period_type == "instant":
+        return "PERIOD_TYPE_MISMATCH" if candidate.start_date is not None else "ELIGIBLE"
+    start, end = _parse_iso_date(candidate.start_date), _parse_iso_date(candidate.report_date)
+    if start is None or end is None:
+        return "INVALID_DURATION_START"
+    if start >= end or (end - start).days + 1 not in ANNUAL_DURATION_DAYS:
+        return "NON_ANNUAL_DURATION"
+    return "ELIGIBLE"
 
 
 def _select_best_anchored_fact(
@@ -274,44 +293,16 @@ def _select_best_anchored_fact(
     anchored = [
         candidate
         for candidate in candidates
-        if candidate.accession_number == anchor.accession_number or candidate.report_date == anchor.report_date
+        if _fact_rejection(candidate, anchor, period_type) == "ELIGIBLE"
     ]
     if not anchored:
         return None, False
 
-    def _sort_key(candidate: FactCandidate) -> tuple[int, int, int, int, int, date]:
-        accession_match = 1 if candidate.accession_number == anchor.accession_number else 0
-        annual_form_match = 1 if (candidate.form_type or "").upper() in {"10-K", "10-K/A"} else 0
-        fy_match = 1 if (candidate.fp or "").upper() == "FY" else 0
-        report_date_match = 1 if candidate.report_date == anchor.report_date else 0
-        fiscal_year_match = 1 if candidate.fiscal_year == anchor.fiscal_year else 0
-        filed_date = _parse_iso_date(candidate.filed_date) or date.min
-        if period_type == "duration":
-            return (
-                accession_match,
-                annual_form_match,
-                fy_match,
-                report_date_match,
-                fiscal_year_match,
-                filed_date,
-            )
-        return (
-            accession_match,
-            report_date_match,
-            annual_form_match,
-            fiscal_year_match,
-            fy_match,
-            filed_date,
-        )
-
-    ordered = sorted(anchored, key=_sort_key, reverse=True)
-    best = ordered[0]
-    best_key = _sort_key(best)
-    tied = [candidate for candidate in ordered if _sort_key(candidate) == best_key]
-    distinct_values = {round(candidate.value, 8) for candidate in tied}
-    if len(distinct_values) > 1:
+    if len({(candidate.value, candidate.start_date) for candidate in anchored}) > 1:
         return None, True
-    return best, False
+    # Metadata only breaks ties after factual identity agrees; never input order.
+    return min(anchored, key=lambda c: (c.filed_date or "", c.fp or "",
+                                       str(c.fiscal_year), c.frame or "")), False
 
 
 def _to_fact_result(candidate: FactCandidate) -> MetricFactResult:
@@ -326,6 +317,7 @@ def _to_fact_result(candidate: FactCandidate) -> MetricFactResult:
         form_type=candidate.form_type,
         fp=candidate.fp,
         source_url=candidate.source_url,
+        start_date=candidate.start_date,
     )
 
 
@@ -343,6 +335,7 @@ def _to_component_result(*, candidate: FactCandidate, group: MetricComponentGrou
         form_type=candidate.form_type,
         fp=candidate.fp,
         source_url=candidate.source_url,
+        start_date=candidate.start_date,
         matched_by_accession=candidate.accession_number == anchor.accession_number,
         matched_by_report_date=candidate.report_date == anchor.report_date,
     )
@@ -537,7 +530,7 @@ def _execute_total_debt_metric(
             )
             if ambiguous:
                 ambiguous_groups.append(group.group_id)
-                continue
+                break
             if chosen is None:
                 continue
             selected_component = _to_component_result(candidate=chosen, group=group, anchor=anchor)
@@ -549,10 +542,11 @@ def _execute_total_debt_metric(
         elif group.required:
             missing_groups.append(group.group_id)
 
-    if ambiguous_groups and not component_results:
+    if ambiguous_groups:
         return SecGetMetricResult(
             ok=False,
             status="ambiguous",
+            components=component_results,
             missing_component_groups=missing_groups,
             error="Ambiguous anchored fact candidates prevented metric resolution.",
             trace={
@@ -639,6 +633,100 @@ def _execute_derived_metric(
     )
 
 
+def _amendment_observation(submissions: Dict[str, Any], companyfacts: Dict[str, Any],
+                           fiscal_year: int, report_date: Optional[str]) -> Dict[str, Any]:
+    def same_period(end: Any) -> bool:
+        parsed = _parse_iso_date(end)
+        return bool(parsed and (str(end) == report_date if report_date else parsed.year == fiscal_year))
+
+    history = sorted({r["accession_number"] for r in _filing_rows(submissions)
+                      if r["form_type"].upper() == "10-K/A" and r["accession_number"]
+                      and same_period(r["report_date"])})
+    facts = sorted({str(f["accn"]) for taxonomy in (companyfacts.get("facts") or {}).values()
+                    for concept in taxonomy.values() for records in (concept.get("units") or {}).values()
+                    for f in records if isinstance(f, dict) and f.get("accn")
+                    and str(f.get("form", "")).upper() == "10-K/A" and same_period(f.get("end"))})
+    return {"state": "observed" if history or facts else "unknown", "coverage": "supplied_inputs_only",
+            "filing_metadata_accessions": history, "fact_candidate_accessions": facts}
+
+
+def _selection_audit(companyfacts: Dict[str, Any], definition: MetricDefinition,
+                     anchor: FilingAnchor) -> List[Dict[str, Any]]:
+    concepts = set(definition.atomic_candidates)
+    for group in definition.component_groups:
+        concepts.update(group.candidates)
+    audit = []
+    for concept in sorted(concepts, key=lambda c: (c.taxonomy, c.concept_name)):
+        units = (((companyfacts.get("facts") or {}).get(concept.taxonomy) or {}).get(
+            concept.concept_name) or {}).get("units") or {}
+        for unit, records in units.items():
+            for item in records:
+                if not isinstance(item, dict):
+                    continue
+                single = {"facts": {concept.taxonomy: {concept.concept_name: {"units": {unit: [item]}}}}}
+                candidates = _iter_companyfacts_candidates(companyfacts=single, candidate=concept,
+                    cik=anchor.cik, fiscal_year=anchor.fiscal_year, expected_unit=None)
+                if definition.unit and unit.upper() != definition.unit.upper():
+                    reason = "UNIT_MISMATCH"
+                elif not candidates:
+                    reason = "INVALID_NUMERIC_VALUE"
+                else:
+                    reason = _fact_rejection(candidates[0], anchor, definition.period_type)
+                value = item.get("val")
+                if isinstance(value, float) and not math.isfinite(value):
+                    value = str(value)
+                audit.append({"taxonomy": concept.taxonomy, "concept_name": concept.concept_name,
+                              "unit": unit, "value": value, "accession_number": item.get("accn"),
+                              "report_date": item.get("end"), "start_date": item.get("start"),
+                              "form_type": item.get("form"), "reason": reason})
+    return sorted(audit, key=lambda row: json.dumps(row, sort_keys=True))
+
+
+def _finalize_selection(result: SecGetMetricResult, *, definition: MetricDefinition,
+                         submissions: Dict[str, Any], companyfacts: Dict[str, Any],
+                         anchor: Optional[FilingAnchor], reason: Optional[str] = None) -> SecGetMetricResult:
+    audit = _selection_audit(companyfacts, definition, anchor) if anchor else []
+    if any(row["reason"] == "FISCAL_YEAR_UNRESOLVED" for row in audit):
+        reason = "FISCAL_YEAR_UNRESOLVED"
+        result.ok, result.status, result.value, result.unit = False, "not_found", None, None
+        result.primary_fact, result.components, result.missing_component_groups = None, [], []
+    # Arithmetic is never sufficient to establish compatible evidence provenance.
+    if result.ok and result.components:
+        identities = {(c.accession_number, c.form_type, c.report_date,
+                       "duration" if c.start_date is not None else "instant", c.start_date)
+                      for c in result.components}
+        if len(identities) != 1:
+            reason = "INCOMPATIBLE_COMPONENT_PERIODS"
+            result.ok, result.status, result.value, result.unit = False, "ambiguous", None, None
+    if reason is None:
+        if result.ok:
+            reason = "SELECTED_ORIGINAL_ANNUAL_FACT" if definition.period_type == "duration" else "SELECTED_ORIGINAL_INSTANT_FACT"
+        elif result.status == "ambiguous":
+            reason = "OVERLAPPING_COMPONENTS" if "overlaps" in (result.error or "") else "CONFLICTING_ELIGIBLE_FACTS"
+        elif result.status == "partial":
+            reason = "MISSING_COMPONENTS"
+        else:
+            reason = "NO_ELIGIBLE_ANNUAL_PERIOD" if audit and definition.period_type == "duration" else "NO_ELIGIBLE_FACT"
+    trace: Dict[str, Any] = {
+        "policy": "original_as_filed_v1", "reason": reason,
+        "amendments": _amendment_observation(submissions, companyfacts, result.fiscal_year,
+                                              anchor.report_date if anchor else None),
+        "selection": audit,
+    }
+    if anchor:
+        trace["anchor"] = {"accession_number": anchor.accession_number, "report_date": anchor.report_date,
+                           "filed_date": anchor.filed_date, "form_type": anchor.form_type}
+        if result.metric_id == "total_debt":
+            trace["missing_groups_from_selection"] = list(result.missing_component_groups)
+    result.trace = trace
+    if not result.ok:
+        result.error = {
+            "MISSING_COMPONENTS": "Missing carrying-amount components: " + ", ".join(result.missing_component_groups),
+            "OVERLAPPING_COMPONENTS": "Fallback capex total overlaps with additive capex components.",
+        }.get(reason, f"No anchored fact found for requested original annual filing: {reason}.")
+    return result
+
+
 async def get_metric(
     *,
     ticker: str,
@@ -659,14 +747,14 @@ async def get_metric(
     active_client = client or SecCompanyFactsClient()
     cik = await active_client.resolve_cik(request.ticker)
     submissions = await active_client.get_submissions(cik)
-    anchor = _extract_filing_anchor(
+    anchor, anchor_reason = _filing_anchor_decision(
         submissions=submissions,
         ticker=request.ticker,
         cik=cik,
         fiscal_year=request.fiscal_year,
     )
     if anchor is None:
-        return SecGetMetricResult(
+        return _finalize_selection(SecGetMetricResult(
             ok=False,
             status="not_found",
             metric_id=request.metric_id,
@@ -674,29 +762,33 @@ async def get_metric(
             cik=cik,
             fiscal_year=request.fiscal_year,
             error=f"No annual filing anchor found for {request.ticker} fiscal year {request.fiscal_year}.",
-        )
+        ), definition=metric_definition, submissions=submissions, companyfacts={},
+            anchor=None, reason=anchor_reason)
 
     companyfacts = await active_client.get_companyfacts(cik)
     if metric_definition.kind == "atomic":
-        return _execute_atomic_metric(
+        result = _execute_atomic_metric(
             request=request,
             metric_definition=metric_definition,
             anchor=anchor,
             cik=cik,
             companyfacts=companyfacts,
         )
-    if metric_definition.kind == "derived":
-        return _execute_derived_metric(
+    elif metric_definition.kind == "derived":
+        result = _execute_derived_metric(
             request=request,
             metric_definition=metric_definition,
             anchor=anchor,
             cik=cik,
             companyfacts=companyfacts,
         )
-    return _unsupported_metric_result(
-        request=request,
-        error=f"Metric '{request.metric_id}' is registered with unsupported kind '{metric_definition.kind}'.",
-    )
+    else:
+        return _unsupported_metric_result(
+            request=request,
+            error=f"Metric '{request.metric_id}' is registered with unsupported kind '{metric_definition.kind}'.",
+        )
+    return _finalize_selection(result, definition=metric_definition, submissions=submissions,
+                                companyfacts=companyfacts, anchor=anchor)
 
 
 def compute_capex_value(
@@ -783,7 +875,7 @@ def _select_component_for_group(
         )
         if candidate_ambiguous:
             ambiguous = True
-            continue
+            break
         if chosen is None:
             continue
         selected_component = _to_component_result(candidate=chosen, group=group, anchor=anchor)

@@ -1,0 +1,8 @@
+{
+  "finished_at": "2026-09-06T12:59:33.724685+00:00",
+  "wall_seconds": 3070.7656140000036,
+  "returncode": 0,
+  "control_violations": [],
+  "completed_under_controls": true,
+  "gate_runs": 1
+}

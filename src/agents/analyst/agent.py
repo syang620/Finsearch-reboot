@@ -646,6 +646,8 @@ def render_structured_fact_evidence(evidence: StructuredFactEvidence) -> str:
         "components": evidence.components,
         "missing_component_groups": evidence.missing_component_groups,
     }
+    if evidence.start_date is not None:
+        fields["start_date"] = evidence.start_date
     return "structured_fact:\n" + json.dumps(
         fields,
         ensure_ascii=False,

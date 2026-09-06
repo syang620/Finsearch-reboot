@@ -1,0 +1,31 @@
+{
+  "implementation": "99cf1b20e2796741df735365e78e241ea6667c2d",
+  "started_at": "2026-09-06T12:08:22.915533+00:00",
+  "gate_runs": 1,
+  "driver_sha256": "0d694c5371dd6b271b3a95aa46d19b829fb266a2ec6305b9e103709eb93dcede",
+  "dataset": "data/evals/agents/v1/agent_eval_routing_v1.jsonl",
+  "controls": "AC power, low-power mode off, browsers closed, caffeinate -dimsu; 15-second sampling",
+  "preflight_samples": [
+    {
+      "at": "2026-09-06T12:08:21.617096+00:00",
+      "ac_power": true,
+      "low_power_mode": 0,
+      "browser_process_count": 0,
+      "heavy_non_model_processes": [],
+      "cpu_idle_percent": 82.46
+    },
+    {
+      "at": "2026-09-06T12:08:22.912742+00:00",
+      "ac_power": true,
+      "low_power_mode": 0,
+      "browser_process_count": 0,
+      "heavy_non_model_processes": [],
+      "cpu_idle_percent": 77.51
+    }
+  ],
+  "timeout_seconds": 120,
+  "runtime_settings_changed": false,
+  "abort_policy": "Stop and preserve partial evidence on power/browser-control loss, or three consecutive heavy competing-workload samples. Never automatically rerun.",
+  "reviewed_implementation": "99cf1b2",
+  "documentation_finding_addressed_by": "2803adf"
+}

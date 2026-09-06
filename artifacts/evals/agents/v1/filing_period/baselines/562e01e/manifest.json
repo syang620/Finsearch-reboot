@@ -1,0 +1,15 @@
+{
+  "evaluated_commit": "562e01ebc4b387fc7a38bd3a2131e8ae11c01a51",
+  "tracked_worktree_clean": true,
+  "created_at": "2026-09-05T14:12:54.994956+00:00",
+  "python": "3.11.14",
+  "pytest": "9.0.2",
+  "snapshot_source": "f09e8844a2c12c0b74d003e1ab9b601353a62a04",
+  "sha256": {
+    "data/evals/agents/v1/filing_period_pr8.json": "e894be63418d7ac68c8d93a54cd30067f15dd5170d618d61f5099af5c9a71b67",
+    "scripts/evals/agents/eval_filing_period_pr8.py": "59a67ac30a90d6dc1849c389aa18831038d18073fdef956630f32d24c0aeee86",
+    "src/mcp_server/tools/sec_metric.py": "1a1b47912ea6f24e98f673f612138f1fecb6c8c6f49d9171208800f88a758964",
+    "src/agents/contracts.py": "a56ea354cdcf937a98164cfc8f5a1b05f813398a720441f0ff31d1d7c311e00c",
+    "src/agents/orchestrator/agent_orchestrator.py": "26c4f201053b3218a28679da2f831613a93986b3af11ed71cfc2d0006ef22f35"
+  }
+}

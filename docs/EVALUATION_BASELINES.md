@@ -1,5 +1,167 @@
 # FinSearch Evaluation Baselines
 
+## PR8 release exception — owner approved 2026-09-06
+
+The project owner explicitly authorized **PR8-GROUNDING-001** for
+`AGENT_V1_ANALYST_001` and instructed final review of evidence/documentation head
+`4a55cff`, merge of PR26 and refresh of `master`. Final Codex review of that
+exact head completed on 2026-09-06 at 13:35:35 UTC. Its sole finding required
+this superseding exception record before merging; this documentation addresses
+that finding without changing runtime or evaluation results.
+
+**The strict live gate failed and remains failed: 14/15 non-critical rows, one
+critical row, score 0.981481 and zero evaluator errors.** This new exception
+accepts only the unrelated analyst claim/row grounding failure
+`ANALYST_GROUNDING_INVALID` / `GROUNDING_ROW_TEXT_MISMATCH` for the PR26 merge.
+The answer remains unavailable and fail-closed; the exception does not make it a
+correct calculation answer or convert the gate into a pass.
+
+The exception does not cover filing/period selection, provenance, resolver,
+routing, admission, lane semantics, timeouts or any other regression. It does not
+weaken PR6 validation, extend retries or carry forward any PR7/PR24 waiver. It
+expires with this PR8 merge and does not apply to PR9 or subsequent releases.
+
+Runtime remains frozen at `99cf1b20e2796741df735365e78e241ea6667c2d`. Closure
+changes only release documentation; no evaluation rerun is needed or performed.
+The original raw evidence, manifest, controls and contemporaneous blocked
+disposition below remain unchanged. Their historical "no exception/merge
+authorized" statements are superseded only by this explicit owner approval.
+See the [release disposition](../artifacts/diagnostics/pr8-live-controls/99cf1b2/RELEASE_DISPOSITION.md)
+for scope, residual risk and final-review tracking.
+
+## PR8 controlled live gate — 99cf1b2, 2026-09-06
+
+Historical measurement and pre-exception stop disposition; see the subsequent
+owner-approved PR8-only exception above. The failed measurement is unchanged.
+
+**Release blocked: the unchanged strict gate failed, with 14/15 non-critical
+rows.** The single run evaluated exact implementation
+`99cf1b20e2796741df735365e78e241ea6667c2d` after fresh review, from a clean tracked
+checkout. Deterministic score was **0.981481** against 0.90, but one critical row
+violated the unchanged zero-critical-failure threshold. All 15 rows were valid;
+there were zero evaluator errors and no terminal analyst timeouts. RAGAS was
+disabled; no semantic-quality pass is claimed.
+
+The sole critical case, `AGENT_V1_ANALYST_001`, failed closed with
+`ANALYST_GROUNDING_INVALID` / `GROUNDING_ROW_TEXT_MISMATCH`. The calculator was
+used, but the claim's full calculation sentence and its bound comparison row
+remained inconsistent through the initial grounding decision and both retries.
+The analyst returned no accepted answer/citations. This is not a recurrence of
+`CALCULATION_RESULT_AMBIGUOUS`, nor a passing calculator answer: the live
+compute-match rate is zero for this case. The failure class has prior PR24/PR7
+history, but no prior exception applies and causal equivalence is not assumed.
+
+Route, metadata, KB/structured lane matching, structured metric/status, lane
+truthfulness, degradation and grounding consistency were **100%**. All seven
+successful structured results became typed, analyst-visible evidence with full
+measured provenance coverage; no synthetic structured-text contexts were used.
+The dedicated 49-case PR8 matrix below remains the authority for annual-period
+and amendment semantics, rather than this integration gate.
+
+The run lasted **3,063,972 ms** (about 51 minutes); controller wall time was
+3,070.766 seconds. All **188** samples reported AC power, Low Power Mode off and
+no Chrome/Safari processes, with an owned awake assertion maintained throughout.
+No control violation occurred; maximum sampling gap was 16.399 seconds. Workload
+isolation was sampled, not exclusive: **40** samples contained transient heavy
+non-model processes, but none reached the three-consecutive-sample abort rule.
+Those samples are retained, not excluded. Model digests, dataset and corpus
+matched preflight; the same 582-point index fingerprint matched before/after:
+`6c72627b05dbec1e7f65d2132b8572b9fa12c47af711f2a12b8b776967994cee`.
+The hosted reranker still exposes no immutable service-side digest.
+
+Fresh review of `99cf1b2` completed before the run. The first review's P1
+start-date renderer omission was fixed at that SHA; the subsequent P2 missing
+verification-artifact reference was addressed by evidence commit `2803adf` and
+verified remotely. Both review threads were resolved before launch. No runtime,
+provider, retry, timeout, grounding or threshold change accompanied this run.
+
+- [Live manifest and provenance](../artifacts/evals/agents/v1/baselines/99cf1b2/manifest.json)
+- [Unchanged raw summary](../artifacts/evals/agents/v1/baselines/99cf1b2/summary.json)
+- [Per-query traces and failed candidates](../artifacts/evals/agents/v1/baselines/99cf1b2/per_query.jsonl)
+- [Execution controls and disposition](../artifacts/diagnostics/pr8-live-controls/99cf1b2/REPORT.md)
+
+PR26 remains draft. **No rerun, scope expansion, exception or merge is
+authorized by this result.** Preserve the original failed gate and stop pending
+owner direction. Earlier SHA-keyed evidence, including PR7's 8/15 gate, is
+unchanged.
+
+## PR8 review correction — 99cf1b2, offline verification
+
+Current evaluated implementation:
+`99cf1b20e2796741df735365e78e241ea6667c2d` in draft
+[PR26](https://github.com/syang620/Finsearch-reboot/pull/26).
+The reviewed renderer omission is corrected with an additive start-date field;
+the independent evaluator now checks actual analyst-visible provenance and has
+a mutation test proving dropped starts fail the gate. Prompt instructions,
+grounding rules, providers, timeouts and retry budgets remain unchanged.
+
+- PR8 **49/49**, including analyst visibility, provenance, approved changes,
+  unchanged parity and order invariance **100%**; unexpected differences **0%**.
+- Resolver **170/170**, calculator **20/20**, output repair **20/20**,
+  grounding **37/37**, degradation **14/14**, applicable consistency **100%**.
+- Full suite: **832 passed**, **47 subtests**, **two unchanged known failures**,
+  one known warning. All **113** focused PR8 tests pass.
+- Python 3.11.14 and environment-only pytest 9.0.2; dependency files untouched.
+
+[Current verification](../artifacts/evals/agents/v1/filing_period/baselines/99cf1b2/verification.json)
+records source hashes, complete commands, changed files, test results and the
+review correction. Previous 2933a5f/562e01e measurements are retained separately.
+The fixture source and all frozen old/expected tool outputs remain unchanged.
+
+At this offline measurement, fresh review and the live gate were still pending.
+Their subsequent completion and failed-live-gate disposition are recorded above.
+PR26 remains draft and is not approved to merge; no PR7/PR24 release exception
+applies. The offline verification file remains the original measurement record.
+
+## PR8 original-as-filed selection — pre-review offline verification, 2026-09-05
+
+[PR26](https://github.com/syang620/Finsearch-reboot/pull/26) implements ADR 005
+from merged PR25 `f09e884`. Evaluated implementation is
+`562e01ebc4b387fc7a38bd3a2131e8ae11c01a51`. This measurement predates the review
+correction: review of `2933a5f` found P1 missing start-date rendering in the actual
+analyst prompt. The typed field alone was insufficient. A failing prompt regression
+was reproduced before the additive renderer correction; the independent matrix
+now also checks analyst visibility. **These results are historical, not final
+release evidence. No PR8 live gate has run and no exception applies.**
+
+The 49-case oracle was frozen at `e5ac8cf` before runtime edits. Two independently
+specified capex labels were corrected to the unchanged registry at `434012c`,
+also before runtime changes; no old observed results were altered. Exact expected
+responses and allowed field paths distinguish 31 intentional core semantic
+changes from 18 unchanged core outcomes. All responses receive explicitly
+specified trace/start-date provenance additions; unchanged parity does not claim
+byte equality for those approved additions.
+
+At `562e01e`:
+
+- PR8 matrix **49/49**: approved-change accuracy, unchanged-case parity,
+  five-seed order invariance, independently checked provenance and network-call
+  contract rates **100%**; unexpected differences **0%**.
+- Resolver/execution snapshot parity **170/170**; calculator **20/20**;
+  output repair **20/20**; grounding **37/37**; degradation **14/14**, consistency
+  **100%**. The PR8 matrix, not the live gate, establishes period semantics.
+- Full suite **831 passed**, **47 subtests passed**, **two known baseline
+  failures**, one known table-renderer warning. Failures remain planner
+  `alias_recognition/alias_002` and retrieval no-tool-call attempt count. No new
+  failing tests and no blanket full-suite pass are claimed.
+- Python 3.11.14 / pytest 9.0.2 in `finsearch-arm`; dependencies unchanged.
+  The documented PR7 test-namespace bootstrap was required again; initial direct
+  pytest collection errors were invocation/environment issues, not passing tests.
+
+Source code is unchanged between initial implementation `2933a5f` and `562e01e`;
+the latter strengthens independent evaluator checks and adds three tests. Both
+sets of SHA-keyed offline evidence are preserved. The
+[verification record](../artifacts/evals/agents/v1/filing_period/baselines/562e01e/verification.json)
+contains hashes, commands, changed files and measured results. Other suites live
+under their existing `artifacts/evals/agents/v1/<suite>/baselines/562e01e/` paths.
+
+Live preflight restored the existing stopped evaluation Qdrant container and
+verified the same 582-point index, model digests, corpus and dataset as PR7.
+No index rebuild or new discovery call was added. Browser/workload isolation and
+fresh review must be confirmed before the one live run. PR7-TIMEOUT-001,
+PR7-GROUNDING-001 and PR24-GROUNDING-001 do not carry forward. PR26 is not ready
+to merge while review/live evaluation remain outstanding.
+
 ## PR7 release exceptions — owner approved 2026-09-05
 
 The project owner explicitly approved both PR7 exceptions and instructed:

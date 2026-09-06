@@ -186,11 +186,18 @@ supported-looking component decomposition.
 The metric tool uses SEC submissions and company-facts data to:
 
 - Resolve the company CIK.
-- Anchor the request to an annual `10-K` or `10-K/A` filing.
-- Select facts associated with the requested filing and fiscal year.
+- Anchor the request to a unique supplied original `10-K`, never an amendment.
+- Require exact accession and period end. Duration facts additionally require
+  valid start dates and inclusive lengths 364, 365, 366 or 371 days; instant
+  facts cannot carry duration starts. Fiscal-label conflicts fail closed.
 - Return direct metrics or explicitly registered derived metrics.
 - Preserve result status, value, unit, filing identifiers, components, and source URL
   in the tool result.
+
+[ADR 005](adr/005-filing-anchor-and-amendments.md) defines original-as-filed
+semantics, duplicate conflicts, compatible component periods and stable trace
+reasons. Amendment observations cover supplied inputs only, not complete history.
+Duration starts survive in native analyst evidence; no discovery calls are added.
 
 Unsupported, ambiguous, missing, and error results use explicit statuses rather than
 inventing a value. The client applies SEC request identification, rate limiting,
