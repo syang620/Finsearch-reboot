@@ -130,7 +130,9 @@ The implementation was frozen at
 baseline completed on 2026-09-06: **480/480 pairs, zero errors, zero missing
 labels**, with unchanged benchmark/historical indexes and embedding identity.
 The offline verifier confirmed raw hashes, pair coverage, individual metrics
-and aggregate metrics. No evaluation rerun or optimization followed.
+and aggregate metrics. This original complete baseline remains immutable;
+the review-driven verification follow-up is recorded below. No retrieval
+optimization has occurred.
 
 | Mode | Recall@5 | Recall@10 | MRR@10 | nDCG@5 | nDCG@10 | Total p50 / p95 ms |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
@@ -152,6 +154,28 @@ and [provenance](../artifacts/evals/retrieval/benchmark_v2/baselines/2d50cfe0dc7
 All 960 per-call power/browser samples satisfied the controls. Background
 desktop/system CPU bursts were still recorded, so these are observed local
 latencies, not isolated-laboratory timings or production SLOs.
+
+## PR27 review follow-up
+
+The review of `9efc707` found one P2 portability issue: exact floating-point
+comparison can reject equivalent nDCG calculations on another Python/libm.
+The narrow verifier/test fix was frozen at
+`4784e134967fae5cd2b1e253c99ef95e0852602c`. Ranking, source data, metric formulas,
+comparison settings and all original evidence are unchanged. The old verifier
+rejects an injected one-ULP difference; the fixed verifier accepts it, while
+rejecting substantive differences and non-finite/type/structure/count changes.
+Tests: 67 focused passes; full suite 872 passes, 47 subtests, the same two known
+failures and one existing warning. The original 480-pair evidence passes the
+new verifier without any artifact edits.
+
+A new one-pass measurement at `4784e13` stopped at **90/480 pairs** when Chrome
+reopened during pair 90. AC and Low Power Mode remained correct; the historical
+and benchmark indexes and embedding digest stayed unchanged. This is an
+incomplete, control-contaminated attempt, not a replacement baseline or a
+release pass. Its [raw evidence and interruption report](../artifacts/evals/retrieval/benchmark_v2/baselines/4784e134967fae5cd2b1e253c99ef95e0852602c/REPORT.md)
+are preserved under that SHA. No partial results are selected for comparison.
+Resume only after workload isolation, with a clean new freeze/output identity;
+never overwrite either recorded run. PR27 remains unmerged pending completion.
 
 ## Honest claims
 
