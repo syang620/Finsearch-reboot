@@ -60,9 +60,14 @@
   separate AC/awake and isolated analyst replays support the timeout disposition.
   Neither exception carries forward. See `docs/EVALUATION_BASELINES.md`.
 - PR8 — original-as-filed selection and exact annual-period semantics implemented
-  on `codex/pr8-filing-period-semantics`; release evaluation/review is pending.
+  at frozen `99cf1b2` in PR26; review findings addressed, release blocked.
   ADR 005 and the independent 49-case before/after oracle were frozen before
-  runtime changes. No earlier release exception applies.
+  runtime changes. PR8 49/49, resolver 170/170, calculator/output repair 20/20
+  each, grounding 37/37 and degradation 14/14 pass. The single controlled live
+  gate finished with 14/15 non-critical rows and one fail-closed analyst
+  `GROUNDING_ROW_TEXT_MISMATCH`; no terminal analyst timeouts. The strict gate
+  remains failed and preserved. No rerun or earlier release exception applies.
+  See `docs/EVALUATION_BASELINES.md` for the stop disposition and controls.
 
 ---
 

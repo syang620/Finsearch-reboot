@@ -1,0 +1,235 @@
+{
+  "evaluated_implementation": "99cf1b20e2796741df735365e78e241ea6667c2d",
+  "recorded_at_utc": "2026-09-06T12:59:39.145932+00:00",
+  "measurement_finished_at_utc": "2026-09-06T12:59:33.724685+00:00",
+  "tracked_worktree_clean_at_measurement": true,
+  "run_count": 1,
+  "evaluator_exit_code": 0,
+  "python": "3.11.14",
+  "pytest_version": "9.0.2",
+  "pytest_installation": "Environment-only in finsearch-arm; dependency files unchanged.",
+  "dataset": "data/evals/agents/v1/agent_eval_routing_v1.jsonl",
+  "dataset_sha256": "c0fbdd097d7fa1b3eb22953a3ba4e8c0e84aa70a8786e08ba78a3b305cabe6cd",
+  "model_provenance": {
+    "planner_model": "ollama/qwen2.5:14b-instruct",
+    "analyst_model": "ollama/qwen2.5:14b-instruct",
+    "ollama_model_digest": "7cdf5a0187d5c58cc5d369b255592f7841d1c4696d45a8c8a9489440385b22f6",
+    "embedding_model": "qwen3-embedding:8b",
+    "embedding_model_digest": "64b933495768fbd3b87c20583d379728a07471e0c66733a9df87cd1901b3c44b",
+    "reranker_model": "Qwen/Qwen3-Reranker-8B"
+  },
+  "model_provenance_verification": "Exact local model digest equality checked against PR7/PR24 before run; unchanged evaluator driver.",
+  "qdrant": {
+    "version": "1.16.2",
+    "collection": "sec_docs_dense_bm25_pr2_63dcec0",
+    "image_id": "sha256:cc45a127ebb7113d2ffeb7e2e012e8029f8b0af31f7ea8d139f6ac89a5ac81a7",
+    "preflight_status": "green",
+    "before": {
+      "points": 582,
+      "sha256": "6c72627b05dbec1e7f65d2132b8572b9fa12c47af711f2a12b8b776967994cee",
+      "method": "sorted Qdrant Record JSON including payload and vectors; compact sorted keys"
+    },
+    "after": {
+      "points": 582,
+      "sha256": "6c72627b05dbec1e7f65d2132b8572b9fa12c47af711f2a12b8b776967994cee",
+      "method": "sorted Qdrant Record JSON including payload and vectors; compact sorted keys"
+    },
+    "unchanged": true,
+    "historical_equivalence": "Exact model/corpus/index preflight against PR24 7062f48; unchanged postflight."
+  },
+  "corpus_provenance": {
+    "source_html": "data/html_filings/AAPL/10-K/10-K_2024.html",
+    "source_html_sha256": "24a830a0f1256e371d36a1f7f72e5e85a38037d1de2f6f966eb8457db42ff6d6",
+    "sidecars": [
+      {
+        "path": "data/chunked/AAPL/10-K/10-K_2024.text.jsonl",
+        "rows": 101,
+        "sha256": "a2035e3048c9d69945a6851e9f92b6eb64d97ea15ef1ab8fe1812b25e8cd08e0"
+      },
+      {
+        "path": "data/chunked/AAPL/10-K/10-K_2024.tables.jsonl",
+        "rows": 48,
+        "sha256": "a60a91dd358656c3667b9700a4e3a2fde5558a67900f62c0a22893fdaf2a6b1d"
+      },
+      {
+        "path": "data/chunked/AAPL/10-K/10-K_2024.text.split.jsonl",
+        "rows": 107,
+        "sha256": "856f6aec30636750141a695d864eb08da182160e25143b393b49bc7769436f71"
+      }
+    ],
+    "embedding_sidecars": [
+      {
+        "path": "data/embedding/AAPL/10-K/AAPL_10-K_2024.tables.embedded.jsonl",
+        "sha256": "c37c5194988377935a2de56748bf06a7261d29dacc14a0442660428701d81942"
+      },
+      {
+        "path": "data/embedding/AAPL/10-K/AAPL_10-K_2024.tables.rows.embedded.jsonl",
+        "sha256": "8ffbf13766976fc45d7af0cbf3c2d9678aa88672e515df717d655315f75e5115"
+      },
+      {
+        "path": "data/embedding/AAPL/10-K/AAPL_10-K_2024.text.embedded.jsonl",
+        "sha256": "4918039fa559d692beabdb30c473b1cc2fcff9794818fc7369fe90194941a92e"
+      }
+    ]
+  },
+  "execution": {
+    "launch_command_redacted": "PYTHONPATH=.:src conda run -n finsearch-arm python <LOCAL_PR8_CONTROL_DRIVER>",
+    "effective_evaluator_command": "DASHSCOPE_API_KEY='<RERANKER_CREDENTIAL>' QWEN3_RERANK_MODEL=Qwen/Qwen3-Reranker-8B SEC_RERANK_MODEL=Qwen/Qwen3-Reranker-8B QWEN3_EMBED_API_URL=http://127.0.0.1:11434/api/embed QWEN3_EMBED_MODEL=qwen3-embedding:8b QDRANT_URL=http://127.0.0.1:6333 QDRANT_HOST=127.0.0.1 QDRANT_PORT=6333 QDRANT_COLLECTION_NAME=sec_docs_dense_bm25_pr2_63dcec0 SEC_USER_AGENT='<SEC_CONTACT>' FINSEARCH_ORCHESTRATOR_CHECKPOINTER_PATH='<CHECKPOINTER_DB>' PYTHONPATH=.:src conda run -n finsearch-arm --no-capture-output python scripts/evals/agents/eval_agents_v1.py --eval-path data/evals/agents/v1/agent_eval_routing_v1.jsonl --out-dir artifacts/evals/agents/v1/baselines/99cf1b2 --planner-model ollama/qwen2.5:14b-instruct --analyst-model ollama/qwen2.5:14b-instruct --deterministic-threshold 0.90 --max-critical-failure-rate 0",
+    "driver_note": "Unchanged live evaluator driver invoked once at exact detached implementation SHA, with fresh checkpoint DB and new output directory; outer power/workload monitor only.",
+    "local_driver_sha256": "0d694c5371dd6b271b3a95aa46d19b829fb266a2ec6305b9e103709eb93dcede",
+    "sec_contact": "Real user-supplied contact passed via local process environment; omitted from committed files.",
+    "checkpointer": "Fresh local database dedicated to this implementation; local path omitted.",
+    "ragas_enabled": false,
+    "deterministic_threshold": 0.9,
+    "max_critical_failure_rate": 0,
+    "local_control_driver_sha256": "845e6d8aa2bb77cc1bf1b0990ef88e3ad38ebc4ac6c82d8d4641fd20e3a5b01d"
+  },
+  "system_controls": {
+    "provenance_path": "artifacts/diagnostics/pr8-live-controls/99cf1b2/provenance.json",
+    "samples_path": "artifacts/diagnostics/pr8-live-controls/99cf1b2/system_samples.jsonl",
+    "sample_count": 188,
+    "completion": {
+      "finished_at": "2026-09-06T12:59:33.724685+00:00",
+      "wall_seconds": 3070.7656140000036,
+      "returncode": 0,
+      "control_violations": [],
+      "completed_under_controls": true,
+      "gate_runs": 1
+    },
+    "all_samples_ac_lpm_off_browser_closed": true,
+    "heavy_non_model_samples": 40,
+    "cpu_idle_min": 69.55,
+    "cpu_idle_median": 83.17500000000001,
+    "cpu_idle_max": 89.62,
+    "limitation": "Sampled controls, not exclusive hardware. Transient non-model CPU bursts retained; three consecutive heavy samples would abort rather than silently rerun.",
+    "max_sample_gap_seconds": 16.398933
+  },
+  "review": {
+    "implementation_reviewed": "99cf1b2",
+    "completed_at": "2026-09-05T14:26:05.003698Z",
+    "summary_url": "https://github.com/syang620/Finsearch-reboot/pull/26#issuecomment-5552377529",
+    "first_P1": "Atomic start-date renderer omission; fixed at 99cf1b2 with failing-before/passing-after prompt regression.",
+    "remaining_P2": "Referenced verification artifacts; addressed by evidence commit 2803adf and verified remotely before live run.",
+    "unresolved_findings_at_launch": 0
+  },
+  "result": {
+    "num_queries": 15,
+    "num_valid_queries": 15,
+    "num_failures": 0,
+    "deterministic": {
+      "score_mean": 0.9814814814814814,
+      "contract_valid_rate": 1.0,
+      "intent_match_rate": 1.0,
+      "route_match_rate": 1.0,
+      "metadata_match_rate": 1.0,
+      "kb_lane_match_rate": 1.0,
+      "structured_lane_match_rate": 1.0,
+      "structured_metric_match_rate": 1.0,
+      "structured_status_match_rate": 1.0,
+      "reported_status_match_rate": 0.9333333333333333,
+      "effective_status_match_rate": 0.9333333333333333,
+      "failure_stage_match_rate": 0.9333333333333333,
+      "degradation_match_rate": 1.0,
+      "lane_status_consistent_rate": 1.0,
+      "effective_status_consistent_rate": 1.0,
+      "failure_stage_consistent_rate": 1.0,
+      "degradation_consistent_rate": 1.0,
+      "analyst_status_match_rate": 0.9230769230769231,
+      "tool_use_match_rate": 1.0,
+      "compute_match_rate": 0.0,
+      "citation_match_rate": 0.9166666666666666,
+      "grounding_consistent_rate": 1.0,
+      "critical_failure_rate": 0.06666666666666667,
+      "planner_ms_mean": 37498.933333333334,
+      "retrieval_ms_mean": 58149.26666666667,
+      "structured_fact_ms_mean": 501.46666666666664,
+      "analyst_ms_mean": 108019.86666666667,
+      "total_ms_mean": 204239.2,
+      "structured_successful_execution_results": 7.0,
+      "structured_typed_contexts": 7.0,
+      "structured_analyst_visible_typed_contexts": 7.0,
+      "structured_synthetic_text_contexts": 0.0,
+      "structured_typed_representation_rate": 1.0,
+      "structured_analyst_visibility_rate": 1.0,
+      "structured_metric_id_coverage_rate": 1.0,
+      "structured_numeric_value_coverage_rate": 1.0,
+      "structured_accession_coverage_rate": 1.0,
+      "structured_report_date_coverage_rate": 1.0,
+      "structured_filed_date_coverage_rate": 1.0,
+      "structured_source_url_coverage_rate": 1.0
+    },
+    "ragas": {},
+    "gate": {
+      "deterministic_gate_pass": false,
+      "ragas_gate_pass": true,
+      "overall_pass": false
+    },
+    "config": {
+      "mode": "route_aware_v1",
+      "eval_path": "data/evals/agents/v1/agent_eval_routing_v1.jsonl",
+      "analyst_model": "ollama/qwen2.5:14b-instruct",
+      "planner_model": "ollama/qwen2.5:14b-instruct",
+      "enable_ragas": false,
+      "thresholds": {
+        "deterministic_score_min": 0.9,
+        "max_critical_failure_rate": 0.0,
+        "ragas_faithfulness_min": 0.75,
+        "ragas_answer_relevancy_min": 0.75,
+        "max_ragas_error_rate": 0.1
+      },
+      "timing_ms": {
+        "total": 3063972
+      }
+    }
+  },
+  "critical_cases": [
+    {
+      "id": "AGENT_V1_ANALYST_001",
+      "critical_failures": [
+        "REPORTED_STATUS_MISMATCH",
+        "EFFECTIVE_STATUS_MISMATCH",
+        "FAILURE_STAGE_MISMATCH",
+        "ANALYST_STATUS_MISMATCH",
+        "CITATION_MINIMUM_NOT_MET"
+      ],
+      "reported_status": "failed",
+      "effective_status": "failed",
+      "failure_stage": "analyst",
+      "analyst_status": "grounding_error",
+      "analyst_error": "ANALYST_GROUNDING_INVALID",
+      "grounding": {
+        "consistent": true
+      }
+    }
+  ],
+  "noncritical_cases": 14,
+  "source_sha256": {
+    "data/evals/agents/v1/filing_period_pr8.json": "e894be63418d7ac68c8d93a54cd30067f15dd5170d618d61f5099af5c9a71b67",
+    "docs/ARCHITECTURE.md": "54e2f07ace43d171b4fab58bfb3e009ece2f497406c2b519f0fa2de2fd3a6cd3",
+    "docs/EVALUATION_BASELINES.md": "ca0a403c0ac5dfd0edcf4d52abd0da17b53480296ead452177aa6ed1ad0287d5",
+    "docs/IMPLEMENTATION_PLAN.md": "5b563ab3f3f41da8140a7e20598748d2ad936ea6fb1b8ff1bde692693489766d",
+    "docs/adr/005-filing-anchor-and-amendments.md": "20fac64b688129fa7909aef0189b0a7d543f42057d88c0f57cef93557de2ac86",
+    "docs/adr/README.md": "a2ab0093236b7da7e11944c6c3fe80f704c623ca722eea0ac9a9ce0f6473749c",
+    "scripts/evals/agents/eval_filing_period_pr8.py": "db2a2e5d0f76039951ee036ea63c1dda1c18a20294208b33f26810ea3fd7e1eb",
+    "scripts/evals/agents/freeze_filing_period_pr8.py": "b761cc5ff2f6e2885a0c0e9c6b4815cb4b36bd2ad1e06e24d901689f7e961a1a",
+    "src/agents/analyst/agent.py": "2a4d28a977d88ea4322fc2db3c9d4d0dc08ad64f0de45729f8c406cc334994e6",
+    "src/agents/contracts.py": "a56ea354cdcf937a98164cfc8f5a1b05f813398a720441f0ff31d1d7c311e00c",
+    "src/agents/orchestrator/agent_orchestrator.py": "26c4f201053b3218a28679da2f831613a93986b3af11ed71cfc2d0006ef22f35",
+    "src/mcp_server/tools/sec_metric.py": "1a1b47912ea6f24e98f673f612138f1fecb6c8c6f49d9171208800f88a758964",
+    "tests/tools/sec_metric/test_filing_period_pr8.py": "e2ce7151753e56d1167304ec9161199e672eeb3ebedfdf26764eaeaeeeae12b9"
+  },
+  "raw_evidence_sha256": {
+    "summary.json": "5a241cf819a90711d90fc06f37a3c4e10116ac39331163d0dd435d92449b0fce",
+    "per_query.jsonl": "97e20581183535c219099c301f2bb62c5f973c1aff74b4aab98b46f2ef645f42",
+    "errors.jsonl": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "release": {
+    "live_gate_pass": false,
+    "prior_exceptions_apply": false,
+    "control_conditions_valid": true,
+    "PR8_exception_granted": false,
+    "reruns": 0,
+    "runtime_tuning_after_gate": false,
+    "action": "Record once; no merge without owner authorization. If failed, preserve failures and stop without broadening scope."
+  }
+}

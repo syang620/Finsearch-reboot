@@ -1,6 +1,59 @@
 # FinSearch Evaluation Baselines
 
-## PR8 review correction — 99cf1b2, live gate not yet run
+## PR8 controlled live gate — 99cf1b2, 2026-09-06
+
+**Release blocked: the unchanged strict gate failed, with 14/15 non-critical
+rows.** The single run evaluated exact implementation
+`99cf1b20e2796741df735365e78e241ea6667c2d` after fresh review, from a clean tracked
+checkout. Deterministic score was **0.981481** against 0.90, but one critical row
+violated the unchanged zero-critical-failure threshold. All 15 rows were valid;
+there were zero evaluator errors and no terminal analyst timeouts. RAGAS was
+disabled; no semantic-quality pass is claimed.
+
+The sole critical case, `AGENT_V1_ANALYST_001`, failed closed with
+`ANALYST_GROUNDING_INVALID` / `GROUNDING_ROW_TEXT_MISMATCH`. The calculator was
+used, but the claim's full calculation sentence and its bound comparison row
+remained inconsistent through the initial grounding decision and both retries.
+The analyst returned no accepted answer/citations. This is not a recurrence of
+`CALCULATION_RESULT_AMBIGUOUS`, nor a passing calculator answer: the live
+compute-match rate is zero for this case. The failure class has prior PR24/PR7
+history, but no prior exception applies and causal equivalence is not assumed.
+
+Route, metadata, KB/structured lane matching, structured metric/status, lane
+truthfulness, degradation and grounding consistency were **100%**. All seven
+successful structured results became typed, analyst-visible evidence with full
+measured provenance coverage; no synthetic structured-text contexts were used.
+The dedicated 49-case PR8 matrix below remains the authority for annual-period
+and amendment semantics, rather than this integration gate.
+
+The run lasted **3,063,972 ms** (about 51 minutes); controller wall time was
+3,070.766 seconds. All **188** samples reported AC power, Low Power Mode off and
+no Chrome/Safari processes, with an owned awake assertion maintained throughout.
+No control violation occurred; maximum sampling gap was 16.399 seconds. Workload
+isolation was sampled, not exclusive: **40** samples contained transient heavy
+non-model processes, but none reached the three-consecutive-sample abort rule.
+Those samples are retained, not excluded. Model digests, dataset and corpus
+matched preflight; the same 582-point index fingerprint matched before/after:
+`6c72627b05dbec1e7f65d2132b8572b9fa12c47af711f2a12b8b776967994cee`.
+The hosted reranker still exposes no immutable service-side digest.
+
+Fresh review of `99cf1b2` completed before the run. The first review's P1
+start-date renderer omission was fixed at that SHA; the subsequent P2 missing
+verification-artifact reference was addressed by evidence commit `2803adf` and
+verified remotely. Both review threads were resolved before launch. No runtime,
+provider, retry, timeout, grounding or threshold change accompanied this run.
+
+- [Live manifest and provenance](../artifacts/evals/agents/v1/baselines/99cf1b2/manifest.json)
+- [Unchanged raw summary](../artifacts/evals/agents/v1/baselines/99cf1b2/summary.json)
+- [Per-query traces and failed candidates](../artifacts/evals/agents/v1/baselines/99cf1b2/per_query.jsonl)
+- [Execution controls and disposition](../artifacts/diagnostics/pr8-live-controls/99cf1b2/REPORT.md)
+
+PR26 remains draft. **No rerun, scope expansion, exception or merge is
+authorized by this result.** Preserve the original failed gate and stop pending
+owner direction. Earlier SHA-keyed evidence, including PR7's 8/15 gate, is
+unchanged.
+
+## PR8 review correction — 99cf1b2, offline verification
 
 Current evaluated implementation:
 `99cf1b20e2796741df735365e78e241ea6667c2d` in draft
@@ -23,11 +76,10 @@ records source hashes, complete commands, changed files, test results and the
 review correction. Previous 2933a5f/562e01e measurements are retained separately.
 The fixture source and all frozen old/expected tool outputs remain unchanged.
 
-Fresh review of `99cf1b2` is pending. **No PR8 live gate has run.** Browser/workload
-isolation must be established before the single controlled live run. The existing
-retrieval service has been restored and its unchanged index/model/corpus/dataset
-preflight passes. PR26 remains draft and is not approved to merge; no PR7/PR24
-release exception applies.
+At this offline measurement, fresh review and the live gate were still pending.
+Their subsequent completion and failed-live-gate disposition are recorded above.
+PR26 remains draft and is not approved to merge; no PR7/PR24 release exception
+applies. The offline verification file remains the original measurement record.
 
 ## PR8 original-as-filed selection — pre-review offline verification, 2026-09-05
 

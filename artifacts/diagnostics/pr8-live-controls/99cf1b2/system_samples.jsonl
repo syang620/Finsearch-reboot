@@ -1,0 +1,188 @@
+{"at": "2026-09-06T12:08:24.306052+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [{"process": "Docker Desktop Helper (Renderer)", "cpu": 62.5}], "cpu_idle_percent": 69.55}
+{"at": "2026-09-06T12:08:40.667978+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 88.29}
+{"at": "2026-09-06T12:08:57.023680+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [{"process": "Codex (Renderer)", "cpu": 229.5}], "cpu_idle_percent": 82.9}
+{"at": "2026-09-06T12:09:13.365761+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 75.72}
+{"at": "2026-09-06T12:09:29.694482+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [{"process": "ChatGPT", "cpu": 56.3}], "cpu_idle_percent": 88.54}
+{"at": "2026-09-06T12:09:46.060364+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 84.15}
+{"at": "2026-09-06T12:10:02.407979+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [{"process": "ChatGPT", "cpu": 58.6}], "cpu_idle_percent": 83.13}
+{"at": "2026-09-06T12:10:18.764050+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 81.49}
+{"at": "2026-09-06T12:10:35.129991+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [{"process": "Docker Desktop Helper (Renderer)", "cpu": 75.4}], "cpu_idle_percent": 83.3}
+{"at": "2026-09-06T12:10:51.487120+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 86.96}
+{"at": "2026-09-06T12:11:07.860328+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 82.24}
+{"at": "2026-09-06T12:11:24.219960+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [{"process": "Docker Desktop Helper (Renderer)", "cpu": 57.3}, {"process": "ChatGPT", "cpu": 63.6}], "cpu_idle_percent": 82.8}
+{"at": "2026-09-06T12:11:40.612891+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 86.77}
+{"at": "2026-09-06T12:11:56.989182+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 82.79}
+{"at": "2026-09-06T12:12:13.331067+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 77.33}
+{"at": "2026-09-06T12:12:29.693909+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 86.57}
+{"at": "2026-09-06T12:12:46.053827+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 83.68}
+{"at": "2026-09-06T12:13:02.438011+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 80.81}
+{"at": "2026-09-06T12:13:18.820438+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 78.49}
+{"at": "2026-09-06T12:13:35.180070+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 82.47}
+{"at": "2026-09-06T12:13:51.525223+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 83.7}
+{"at": "2026-09-06T12:14:07.881374+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [{"process": "ChatGPT", "cpu": 62.1}], "cpu_idle_percent": 77.87}
+{"at": "2026-09-06T12:14:24.267020+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 80.89}
+{"at": "2026-09-06T12:14:40.605742+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 82.77}
+{"at": "2026-09-06T12:14:56.997153+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 84.71}
+{"at": "2026-09-06T12:15:13.379226+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 82.44}
+{"at": "2026-09-06T12:15:29.735246+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [{"process": "ChatGPT", "cpu": 63.8}], "cpu_idle_percent": 86.4}
+{"at": "2026-09-06T12:15:46.112733+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 82.26}
+{"at": "2026-09-06T12:16:02.492710+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 84.54}
+{"at": "2026-09-06T12:16:18.869917+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 82.17}
+{"at": "2026-09-06T12:16:35.201862+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 82.71}
+{"at": "2026-09-06T12:16:51.570317+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 77.1}
+{"at": "2026-09-06T12:17:07.931007+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 82.2}
+{"at": "2026-09-06T12:17:24.305524+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 83.5}
+{"at": "2026-09-06T12:17:40.671806+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 86.1}
+{"at": "2026-09-06T12:17:57.028391+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 83.8}
+{"at": "2026-09-06T12:18:13.398405+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 77.17}
+{"at": "2026-09-06T12:18:29.753962+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 84.22}
+{"at": "2026-09-06T12:18:46.138601+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [{"process": "ChatGPT", "cpu": 54.8}], "cpu_idle_percent": 82.66}
+{"at": "2026-09-06T12:19:02.506554+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 84.28}
+{"at": "2026-09-06T12:19:18.860377+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 81.18}
+{"at": "2026-09-06T12:19:35.242411+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 86.85}
+{"at": "2026-09-06T12:19:51.604683+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 78.11}
+{"at": "2026-09-06T12:20:07.968388+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 83.34}
+{"at": "2026-09-06T12:20:24.291800+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 82.67}
+{"at": "2026-09-06T12:20:40.646193+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 88.74}
+{"at": "2026-09-06T12:20:57.009231+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 85.67}
+{"at": "2026-09-06T12:21:13.329434+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 84.35}
+{"at": "2026-09-06T12:21:29.690473+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 85.96}
+{"at": "2026-09-06T12:21:46.067765+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 83.45}
+{"at": "2026-09-06T12:22:02.405482+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [{"process": "ChatGPT", "cpu": 56.2}], "cpu_idle_percent": 83.27}
+{"at": "2026-09-06T12:22:18.789326+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 81.67}
+{"at": "2026-09-06T12:22:35.152539+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 82.99}
+{"at": "2026-09-06T12:22:51.504628+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 86.34}
+{"at": "2026-09-06T12:23:07.883781+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 81.61}
+{"at": "2026-09-06T12:23:24.246864+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [{"process": "Docker Desktop Helper (Renderer)", "cpu": 56.4}], "cpu_idle_percent": 81.41}
+{"at": "2026-09-06T12:23:40.606564+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [{"process": "ChatGPT", "cpu": 54.3}], "cpu_idle_percent": 87.4}
+{"at": "2026-09-06T12:23:56.971956+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 84.75}
+{"at": "2026-09-06T12:24:13.321550+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [{"process": "ChatGPT", "cpu": 55.2}], "cpu_idle_percent": 85.1}
+{"at": "2026-09-06T12:24:29.718908+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 88.4}
+{"at": "2026-09-06T12:24:46.095262+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 85.43}
+{"at": "2026-09-06T12:25:02.494195+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 85.6}
+{"at": "2026-09-06T12:25:18.869155+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 81.45}
+{"at": "2026-09-06T12:25:35.207035+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [{"process": "ChatGPT", "cpu": 76.7}], "cpu_idle_percent": 83.9}
+{"at": "2026-09-06T12:25:51.594128+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 83.18}
+{"at": "2026-09-06T12:26:07.916263+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 84.22}
+{"at": "2026-09-06T12:26:24.283760+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [{"process": "Docker Desktop Helper (Renderer)", "cpu": 61.7}], "cpu_idle_percent": 77.57}
+{"at": "2026-09-06T12:26:40.619940+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [{"process": "ChatGPT", "cpu": 68.5}], "cpu_idle_percent": 83.45}
+{"at": "2026-09-06T12:26:56.966999+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 82.21}
+{"at": "2026-09-06T12:27:13.290414+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 82.32}
+{"at": "2026-09-06T12:27:29.630691+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 87.31}
+{"at": "2026-09-06T12:27:45.987702+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 81.16}
+{"at": "2026-09-06T12:28:02.314383+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [{"process": "ChatGPT", "cpu": 52.3}], "cpu_idle_percent": 83.45}
+{"at": "2026-09-06T12:28:18.677153+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 86.75}
+{"at": "2026-09-06T12:28:35.006932+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 87.24}
+{"at": "2026-09-06T12:28:51.335862+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 86.61}
+{"at": "2026-09-06T12:29:07.679668+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 89.62}
+{"at": "2026-09-06T12:29:24.035521+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 71.64}
+{"at": "2026-09-06T12:29:40.349446+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 83.8}
+{"at": "2026-09-06T12:29:56.679071+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 84.13}
+{"at": "2026-09-06T12:30:13.029440+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 80.69}
+{"at": "2026-09-06T12:30:29.382912+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 82.35}
+{"at": "2026-09-06T12:30:45.736669+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 85.5}
+{"at": "2026-09-06T12:31:02.067108+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 83.31}
+{"at": "2026-09-06T12:31:18.403690+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [{"process": "ChatGPT", "cpu": 90.9}], "cpu_idle_percent": 88.65}
+{"at": "2026-09-06T12:31:34.759670+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 82.22}
+{"at": "2026-09-06T12:31:51.082120+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [{"process": "ChatGPT", "cpu": 54.6}], "cpu_idle_percent": 84.7}
+{"at": "2026-09-06T12:32:07.427144+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 84.19}
+{"at": "2026-09-06T12:32:23.741062+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 82.86}
+{"at": "2026-09-06T12:32:40.094155+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 82.76}
+{"at": "2026-09-06T12:32:56.405309+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 87.12}
+{"at": "2026-09-06T12:33:12.776306+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 84.9}
+{"at": "2026-09-06T12:33:29.133832+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 82.14}
+{"at": "2026-09-06T12:33:45.454158+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [{"process": "ChatGPT", "cpu": 96.3}], "cpu_idle_percent": 84.4}
+{"at": "2026-09-06T12:34:01.823572+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 82.7}
+{"at": "2026-09-06T12:34:18.187915+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 83.2}
+{"at": "2026-09-06T12:34:34.514644+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [{"process": "ChatGPT", "cpu": 60.0}], "cpu_idle_percent": 83.6}
+{"at": "2026-09-06T12:34:50.884864+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 77.88}
+{"at": "2026-09-06T12:35:07.238042+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 80.59}
+{"at": "2026-09-06T12:35:23.582714+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 79.66}
+{"at": "2026-09-06T12:35:39.939232+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 83.2}
+{"at": "2026-09-06T12:35:56.261692+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 87.69}
+{"at": "2026-09-06T12:36:12.621201+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 79.51}
+{"at": "2026-09-06T12:36:28.946563+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 82.88}
+{"at": "2026-09-06T12:36:45.298820+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [{"process": "Docker Desktop Helper (Renderer)", "cpu": 66.6}], "cpu_idle_percent": 84.5}
+{"at": "2026-09-06T12:37:01.631357+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [{"process": "ChatGPT", "cpu": 61.6}], "cpu_idle_percent": 82.71}
+{"at": "2026-09-06T12:37:18.002596+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 82.64}
+{"at": "2026-09-06T12:37:34.334080+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [{"process": "ChatGPT", "cpu": 58.5}], "cpu_idle_percent": 81.46}
+{"at": "2026-09-06T12:37:50.693217+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 87.32}
+{"at": "2026-09-06T12:38:07.046651+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 82.1}
+{"at": "2026-09-06T12:38:23.408971+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 79.96}
+{"at": "2026-09-06T12:38:39.746782+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 84.48}
+{"at": "2026-09-06T12:38:56.070257+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [{"process": "ChatGPT", "cpu": 58.8}], "cpu_idle_percent": 83.13}
+{"at": "2026-09-06T12:39:12.423635+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 83.33}
+{"at": "2026-09-06T12:39:28.763659+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 81.36}
+{"at": "2026-09-06T12:39:45.087350+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [{"process": "ChatGPT", "cpu": 51.3}], "cpu_idle_percent": 84.51}
+{"at": "2026-09-06T12:40:01.436026+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 85.98}
+{"at": "2026-09-06T12:40:17.753694+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [{"process": "ChatGPT", "cpu": 102.0}], "cpu_idle_percent": 85.41}
+{"at": "2026-09-06T12:40:34.117477+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 85.75}
+{"at": "2026-09-06T12:40:50.458961+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 82.47}
+{"at": "2026-09-06T12:41:06.817861+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 85.26}
+{"at": "2026-09-06T12:41:23.179923+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 82.7}
+{"at": "2026-09-06T12:41:39.547992+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 82.62}
+{"at": "2026-09-06T12:41:55.872649+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 84.73}
+{"at": "2026-09-06T12:42:12.228413+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 80.83}
+{"at": "2026-09-06T12:42:28.570583+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [{"process": "ChatGPT", "cpu": 58.8}, {"process": "Codex (Renderer)", "cpu": 105.6}], "cpu_idle_percent": 82.1}
+{"at": "2026-09-06T12:42:44.940087+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 78.72}
+{"at": "2026-09-06T12:43:01.266063+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [{"process": "ChatGPT", "cpu": 86.3}], "cpu_idle_percent": 84.79}
+{"at": "2026-09-06T12:43:17.605628+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [{"process": "WeatherWidget", "cpu": 63.2}], "cpu_idle_percent": 70.0}
+{"at": "2026-09-06T12:43:33.930203+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 83.94}
+{"at": "2026-09-06T12:43:50.290055+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 82.98}
+{"at": "2026-09-06T12:44:06.634614+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [{"process": "ChatGPT", "cpu": 50.6}], "cpu_idle_percent": 85.55}
+{"at": "2026-09-06T12:44:23.002083+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 82.14}
+{"at": "2026-09-06T12:44:39.350325+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 78.55}
+{"at": "2026-09-06T12:44:55.708538+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 85.71}
+{"at": "2026-09-06T12:45:12.017903+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [{"process": "ChatGPT", "cpu": 57.4}], "cpu_idle_percent": 85.15}
+{"at": "2026-09-06T12:45:28.348419+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 87.19}
+{"at": "2026-09-06T12:45:44.717352+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 81.54}
+{"at": "2026-09-06T12:46:01.072155+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 80.42}
+{"at": "2026-09-06T12:46:17.403805+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 89.38}
+{"at": "2026-09-06T12:46:33.799586+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 82.21}
+{"at": "2026-09-06T12:46:50.144048+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 83.41}
+{"at": "2026-09-06T12:47:06.490078+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 80.31}
+{"at": "2026-09-06T12:47:22.818695+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 86.15}
+{"at": "2026-09-06T12:47:39.193767+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 85.83}
+{"at": "2026-09-06T12:47:55.535298+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 82.75}
+{"at": "2026-09-06T12:48:11.899561+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 82.59}
+{"at": "2026-09-06T12:48:28.219387+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 81.37}
+{"at": "2026-09-06T12:48:44.562765+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 82.41}
+{"at": "2026-09-06T12:49:00.918028+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 83.47}
+{"at": "2026-09-06T12:49:17.259831+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 80.88}
+{"at": "2026-09-06T12:49:33.587294+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 80.72}
+{"at": "2026-09-06T12:49:49.938312+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 83.37}
+{"at": "2026-09-06T12:50:06.264166+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [{"process": "ChatGPT", "cpu": 64.2}], "cpu_idle_percent": 85.26}
+{"at": "2026-09-06T12:50:22.624429+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 78.98}
+{"at": "2026-09-06T12:50:38.935644+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [{"process": "ChatGPT", "cpu": 52.3}], "cpu_idle_percent": 85.33}
+{"at": "2026-09-06T12:50:55.312727+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 83.24}
+{"at": "2026-09-06T12:51:11.663242+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 75.77}
+{"at": "2026-09-06T12:51:27.985217+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 84.39}
+{"at": "2026-09-06T12:51:44.333599+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [{"process": "Docker Desktop Helper (Renderer)", "cpu": 73.2}], "cpu_idle_percent": 82.33}
+{"at": "2026-09-06T12:52:00.699385+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 85.33}
+{"at": "2026-09-06T12:52:17.040609+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 82.77}
+{"at": "2026-09-06T12:52:33.395546+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 85.99}
+{"at": "2026-09-06T12:52:49.764685+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 74.35}
+{"at": "2026-09-06T12:53:06.094966+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [{"process": "ChatGPT", "cpu": 87.2}], "cpu_idle_percent": 83.28}
+{"at": "2026-09-06T12:53:22.463070+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 83.17}
+{"at": "2026-09-06T12:53:38.816758+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 82.66}
+{"at": "2026-09-06T12:53:55.154138+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 82.67}
+{"at": "2026-09-06T12:54:11.522477+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 86.53}
+{"at": "2026-09-06T12:54:27.895116+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 86.0}
+{"at": "2026-09-06T12:54:44.218770+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 75.84}
+{"at": "2026-09-06T12:55:00.572365+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 80.11}
+{"at": "2026-09-06T12:55:16.934176+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [{"process": "ChatGPT", "cpu": 128.1}], "cpu_idle_percent": 84.45}
+{"at": "2026-09-06T12:55:33.254407+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 78.33}
+{"at": "2026-09-06T12:55:49.601680+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 81.42}
+{"at": "2026-09-06T12:56:05.927155+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [{"process": "ChatGPT", "cpu": 50.7}], "cpu_idle_percent": 86.79}
+{"at": "2026-09-06T12:56:22.273337+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 77.81}
+{"at": "2026-09-06T12:56:38.597872+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [{"process": "ChatGPT", "cpu": 64.5}], "cpu_idle_percent": 81.74}
+{"at": "2026-09-06T12:56:54.948997+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 78.88}
+{"at": "2026-09-06T12:57:11.287494+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 81.58}
+{"at": "2026-09-06T12:57:27.646422+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 81.25}
+{"at": "2026-09-06T12:57:43.950861+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [{"process": "ChatGPT", "cpu": 65.5}], "cpu_idle_percent": 84.25}
+{"at": "2026-09-06T12:58:00.282987+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 84.35}
+{"at": "2026-09-06T12:58:16.592050+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 85.7}
+{"at": "2026-09-06T12:58:32.908834+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 83.39}
+{"at": "2026-09-06T12:58:49.261916+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 73.65}
+{"at": "2026-09-06T12:59:05.588235+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 81.69}
+{"at": "2026-09-06T12:59:21.919716+00:00", "ac_power": true, "low_power_mode": 0, "browser_process_count": 0, "heavy_non_model_processes": [], "cpu_idle_percent": 84.77}
