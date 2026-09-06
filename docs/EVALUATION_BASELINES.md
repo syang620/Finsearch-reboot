@@ -1,6 +1,38 @@
 # FinSearch Evaluation Baselines
 
+## PR8 release exception — owner approved 2026-09-06
+
+The project owner explicitly authorized **PR8-GROUNDING-001** for
+`AGENT_V1_ANALYST_001` and instructed final review of evidence/documentation head
+`4a55cff`, merge of PR26 and refresh of `master`. Final Codex review of that
+exact head completed on 2026-09-06 at 13:35:35 UTC. Its sole finding required
+this superseding exception record before merging; this documentation addresses
+that finding without changing runtime or evaluation results.
+
+**The strict live gate failed and remains failed: 14/15 non-critical rows, one
+critical row, score 0.981481 and zero evaluator errors.** This new exception
+accepts only the unrelated analyst claim/row grounding failure
+`ANALYST_GROUNDING_INVALID` / `GROUNDING_ROW_TEXT_MISMATCH` for the PR26 merge.
+The answer remains unavailable and fail-closed; the exception does not make it a
+correct calculation answer or convert the gate into a pass.
+
+The exception does not cover filing/period selection, provenance, resolver,
+routing, admission, lane semantics, timeouts or any other regression. It does not
+weaken PR6 validation, extend retries or carry forward any PR7/PR24 waiver. It
+expires with this PR8 merge and does not apply to PR9 or subsequent releases.
+
+Runtime remains frozen at `99cf1b20e2796741df735365e78e241ea6667c2d`. Closure
+changes only release documentation; no evaluation rerun is needed or performed.
+The original raw evidence, manifest, controls and contemporaneous blocked
+disposition below remain unchanged. Their historical "no exception/merge
+authorized" statements are superseded only by this explicit owner approval.
+See the [release disposition](../artifacts/diagnostics/pr8-live-controls/99cf1b2/RELEASE_DISPOSITION.md)
+for scope, residual risk and final-review tracking.
+
 ## PR8 controlled live gate — 99cf1b2, 2026-09-06
+
+Historical measurement and pre-exception stop disposition; see the subsequent
+owner-approved PR8-only exception above. The failed measurement is unchanged.
 
 **Release blocked: the unchanged strict gate failed, with 14/15 non-critical
 rows.** The single run evaluated exact implementation

@@ -60,14 +60,19 @@
   separate AC/awake and isolated analyst replays support the timeout disposition.
   Neither exception carries forward. See `docs/EVALUATION_BASELINES.md`.
 - PR8 — original-as-filed selection and exact annual-period semantics implemented
-  at frozen `99cf1b2` in PR26; review findings addressed, release blocked.
+  at frozen `99cf1b2` in PR26; owner approved PR8-GROUNDING-001 for closure.
+  Final review inspected evidence/documentation head `4a55cff`; its sole finding,
+  recording the authorized exception before merge, is addressed by the release
+  disposition. Merge is owner-authorized.
   ADR 005 and the independent 49-case before/after oracle were frozen before
   runtime changes. PR8 49/49, resolver 170/170, calculator/output repair 20/20
   each, grounding 37/37 and degradation 14/14 pass. The single controlled live
   gate finished with 14/15 non-critical rows and one fail-closed analyst
   `GROUNDING_ROW_TEXT_MISMATCH`; no terminal analyst timeouts. The strict gate
-  remains failed and preserved. No rerun or earlier release exception applies.
-  See `docs/EVALUATION_BASELINES.md` for the stop disposition and controls.
+  remains failed and preserved. The new exception covers only that unrelated
+  analyst grounding failure for this merge; no earlier exception carries forward
+  and no evaluation rerun is needed. See `docs/EVALUATION_BASELINES.md` for scope,
+  original controls and release disposition.
 
 ---
 
