@@ -1,0 +1,337 @@
+{
+  "implementation_sha": "54d31917c27263ea25ebf5d905caa0a4ee34f74f",
+  "dataset_freeze_sha": "0cc20ce37c42d18412cfb518f8b06f775d07257b",
+  "dataset_manifest_sha256": "83c31e4a307d68d77bb051658c4e45bec21764eb6b62e9974cfd151bab22adb3",
+  "config": {
+    "modes": [
+      "bm25_only",
+      "dense_only",
+      "hybrid",
+      "hybrid_reranker"
+    ],
+    "retrieval_top_k": 50,
+    "branch_limit": 500,
+    "rerank_candidate_limit": 10,
+    "rerank_top_k": 10,
+    "rrf_k": 60,
+    "rrf_weights": [
+      1.0,
+      1.0
+    ],
+    "doc_types": [
+      "text_chunk",
+      "table",
+      "table_row"
+    ],
+    "embedding_model": "qwen3-embedding:8b",
+    "embedding_digest": "64b933495768fbd3b87c20583d379728a07471e0c66733a9df87cd1901b3c44b",
+    "reranker_model": "Qwen/Qwen3-Reranker-8B",
+    "order_seed": 20260906,
+    "query_cache_policy": "Default caching enabled; separate initially empty cache namespace per mode. Every query-mode pair measured once. Shared model/process warm state; rotating mode order.",
+    "metrics": [
+      "recall@5",
+      "recall@10",
+      "mrr@10",
+      "ndcg@5",
+      "ndcg@10",
+      "evidence_group_recall@10"
+    ],
+    "latency_percentile_method": "nearest-rank ceil(p*n); wall-clock total retrieval includes query embedding, search, fusion, enrichment and reranking; rerank-only timing when applicable",
+    "run_policy": "Freeze dataset then harness SHA before measurement. No retries by harness, no optimization. Preserve errors and partial runs; never overwrite an existing SHA-keyed output directory."
+  },
+  "validation": {
+    "queries": 126,
+    "answerable": 120,
+    "excluded": 6,
+    "documents": 948,
+    "missing_labels": 0,
+    "strata": {
+      "business_growth": 12,
+      "direct_fact": 18,
+      "hard_negative": 12,
+      "mda": 12,
+      "multi_evidence": 12,
+      "narrative": 12,
+      "paraphrase": 12,
+      "risk_factors": 18,
+      "section_specific": 12,
+      "unanswerable": 6
+    }
+  },
+  "index": {
+    "collection": "finsearch_benchmark_v2_39c8d01ee5c71710",
+    "corpus_sha256": "39c8d01ee5c71710e443e49698957d2aa991e71c16ad79905e7bd07d6a11fe4d",
+    "qdrant_url": "http://127.0.0.1:6333",
+    "embedding_url": "http://127.0.0.1:11434/api/embed",
+    "embedding_model": "qwen3-embedding:8b",
+    "embedding_digest": "64b933495768fbd3b87c20583d379728a07471e0c66733a9df87cd1901b3c44b",
+    "bm25_model": "Qdrant/bm25",
+    "bm25_avg_len": 339.87974683544303,
+    "validation": {
+      "queries": 126,
+      "answerable": 120,
+      "excluded": 6,
+      "documents": 948,
+      "missing_labels": 0,
+      "strata": {
+        "business_growth": 12,
+        "direct_fact": 18,
+        "hard_negative": 12,
+        "mda": 12,
+        "multi_evidence": 12,
+        "narrative": 12,
+        "paraphrase": 12,
+        "risk_factors": 18,
+        "section_specific": 12,
+        "unanswerable": 6
+      }
+    },
+    "started_at": "2026-09-06T14:18:09.418067+00:00",
+    "completed": true,
+    "batch_size": 8,
+    "production_collection_mutated": false,
+    "wall_seconds": 2998.6024508329865,
+    "finished_at": "2026-09-06T15:08:07.967252+00:00",
+    "embedded_sha256": "3bcd4ba8425d604973d694c3793eaae69f6e7c773c895504f5b4a7f57e4faea8",
+    "indexed_points": 948,
+    "qdrant_version": "1.16.2"
+  },
+  "index_before": {
+    "points": 948,
+    "payload_vectors_sha256": "641f5ee5c465daaa7106717eb4e4a8a4e145cdfd04e4e8afd202a892d2e53630",
+    "config": {
+      "params": {
+        "vectors": {
+          "dense": {
+            "size": 4096,
+            "distance": "Cosine",
+            "hnsw_config": null,
+            "quantization_config": null,
+            "on_disk": null,
+            "datatype": null,
+            "multivector_config": null
+          }
+        },
+        "shard_number": 1,
+        "sharding_method": null,
+        "replication_factor": 1,
+        "write_consistency_factor": 1,
+        "read_fan_out_factor": null,
+        "on_disk_payload": true,
+        "sparse_vectors": {
+          "bm25": {
+            "index": null,
+            "modifier": "idf"
+          }
+        }
+      },
+      "hnsw_config": {
+        "m": 16,
+        "ef_construct": 100,
+        "full_scan_threshold": 10000,
+        "max_indexing_threads": 0,
+        "on_disk": false,
+        "payload_m": null,
+        "inline_storage": null
+      },
+      "optimizer_config": {
+        "deleted_threshold": 0.2,
+        "vacuum_min_vector_number": 1000,
+        "default_segment_number": 0,
+        "max_segment_size": null,
+        "memmap_threshold": null,
+        "indexing_threshold": 10000,
+        "flush_interval_sec": 5,
+        "max_optimization_threads": null
+      },
+      "wal_config": {
+        "wal_capacity_mb": 32,
+        "wal_segments_ahead": 0,
+        "wal_retain_closed": 1
+      },
+      "quantization_config": null,
+      "strict_mode_config": null,
+      "metadata": null
+    }
+  },
+  "historical_index_before": {
+    "points": 582,
+    "payload_vectors_sha256": "20a0f405d66ffa20ca8789f915bfb6e7d9891b00363fdef7c01e522b7e3ed892",
+    "config": {
+      "params": {
+        "vectors": {
+          "dense": {
+            "size": 4096,
+            "distance": "Cosine",
+            "hnsw_config": null,
+            "quantization_config": null,
+            "on_disk": null,
+            "datatype": null,
+            "multivector_config": null
+          }
+        },
+        "shard_number": 1,
+        "sharding_method": null,
+        "replication_factor": 1,
+        "write_consistency_factor": 1,
+        "read_fan_out_factor": null,
+        "on_disk_payload": true,
+        "sparse_vectors": {
+          "bm25": {
+            "index": null,
+            "modifier": "idf"
+          }
+        }
+      },
+      "hnsw_config": {
+        "m": 16,
+        "ef_construct": 100,
+        "full_scan_threshold": 10000,
+        "max_indexing_threads": 0,
+        "on_disk": false,
+        "payload_m": null,
+        "inline_storage": null
+      },
+      "optimizer_config": {
+        "deleted_threshold": 0.2,
+        "vacuum_min_vector_number": 1000,
+        "default_segment_number": 0,
+        "max_segment_size": null,
+        "memmap_threshold": null,
+        "indexing_threshold": 10000,
+        "flush_interval_sec": 5,
+        "max_optimization_threads": null
+      },
+      "wal_config": {
+        "wal_capacity_mb": 32,
+        "wal_segments_ahead": 0,
+        "wal_retain_closed": 1
+      },
+      "quantization_config": null,
+      "strict_mode_config": null,
+      "metadata": null
+    }
+  },
+  "tracked_worktree_clean": true,
+  "started_at": "2026-09-06T23:55:16.094837+00:00",
+  "packages": {
+    "qdrant-client": "1.16.1",
+    "pytest": "9.0.2",
+    "requests": "2.32.5",
+    "langchain-ollama": "1.0.1"
+  },
+  "python": "3.11.14",
+  "hardware": {
+    "platform": "Darwin",
+    "machine": "arm64",
+    "os_release": "25.6.0",
+    "hw.model": "Mac16,1",
+    "hw.memsize": "34359738368",
+    "hw.ncpu": "10",
+    "machdep.cpu.brand_string": "Apple M4"
+  },
+  "preflight_controls": {
+    "at": "2026-09-06T23:55:16.078210+00:00",
+    "ac_power": true,
+    "low_power_mode": 0,
+    "browser_process_count": 0,
+    "heavy_non_model_processes": [
+      {
+        "process": "python",
+        "cpu": 93.5
+      },
+      {
+        "process": "ChatGPT",
+        "cpu": 66.3
+      }
+    ]
+  },
+  "source_sha256": {
+    "data/evals/retrieval/benchmark_v2/ANNOTATION.md": "d722ce611c9196fca647b46094df2969ee4d74ef25160a3ce978599bd404a1e5",
+    "data/evals/retrieval/benchmark_v2/comparison_config.json": "410a28106bc02f5a4f635af1afb198f82b63d0175bf05643850fd28ccdb00ce1",
+    "data/evals/retrieval/benchmark_v2/corpus.jsonl": "39c8d01ee5c71710e443e49698957d2aa991e71c16ad79905e7bd07d6a11fe4d",
+    "data/evals/retrieval/benchmark_v2/corpus_manifest.json": "23fe45dcaf640eba7bdab1342e680e892c0468025ad09204416d8b6b5a6fae29",
+    "data/evals/retrieval/benchmark_v2/dataset_manifest.json": "83c31e4a307d68d77bb051658c4e45bec21764eb6b62e9974cfd151bab22adb3",
+    "data/evals/retrieval/benchmark_v2/queries.jsonl": "e356eab5c78f027c570daa05945b4688e152ab3e54c79070862d9759fc2cc9d9",
+    "data/evals/retrieval/benchmark_v2/seed_compatibility.json": "35a7197fc4784500f4aad6c8d9b16d4d0d703c9983d8a26d0c6669559ab08fea",
+    "scripts/evals/retrieval/benchmark_v2_annotations.py": "566149a25f2aae5031d97c4d80a5f2b67ddd018eec6f88f5ac7201644de3fecf",
+    "scripts/evals/retrieval/build_benchmark_v2_corpus.py": "6c321d4f45b8c40f27841e79c12621892524f66dd7cc5a630a88148093727985",
+    "scripts/evals/retrieval/eval_retrieval_v0.py": "e52dda5a6e78088966f0f1fdccebc3d2b040b29009167c4fbf2b056c4ef4dac2",
+    "scripts/evals/retrieval/freeze_benchmark_v2.py": "dda54c1e77429a96691c7f4862989b7aeb19cb58ce9a51c161bf715e8d139b35",
+    "scripts/evals/retrieval/index_benchmark_v2.py": "da66619bc4e26ca4041393e11f56bcc8b490adb12707ff35ad4f2e191af20062",
+    "scripts/evals/retrieval/run_benchmark_v2.py": "26a7e5feddb0def9508e384736b4725885806b203ca89dbc09b405ee14063a5a",
+    "scripts/evals/retrieval/run_retrieval_ablation_v1.py": "58780ae933a9a578cea8e220e592edc207860bd305b83f1920e6d82d484023f6",
+    "scripts/evals/retrieval/verify_benchmark_v2.py": "adb1356ba8f39734a95836db3afd49df4dcb9d1f6de8cf0f290db99c64fd61a1",
+    "src/agents/__init__.py": "5b7512d4f104f18ea838bc8585ce2b12460f8d090284f7b19cf0e7dc36093b98",
+    "src/agents/analyst/__init__.py": "6672f8b7929996fb9dbe2e01e3f13c7b32d269bae77e561b7f3a2e312eb4a68f",
+    "src/agents/analyst/agent.py": "2a4d28a977d88ea4322fc2db3c9d4d0dc08ad64f0de45729f8c406cc334994e6",
+    "src/agents/analyst/grounding.py": "a6d93a735c3d72a478df023c1308e2118b4b95865a625d0ffd8718697bfa2bf8",
+    "src/agents/analyst/table_loader.py": "8aaa67143bf010a503f6b7449756591c2aab9aa1c319da72998594d5bd9d07de",
+    "src/agents/contracts.py": "a56ea354cdcf937a98164cfc8f5a1b05f813398a720441f0ff31d1d7c311e00c",
+    "src/agents/orchestrator/__init__.py": "3f0976d1a3735951cf770e10bf454651880ce55bbe9bf31c385bfadc2079489c",
+    "src/agents/orchestrator/agent_orchestrator.py": "26c4f201053b3218a28679da2f831613a93986b3af11ed71cfc2d0006ef22f35",
+    "src/agents/planner/__init__.py": "078d5099965d500a9d1fcc4a4c5bb1e133a4533a2437485aa97b71b9df246ba1",
+    "src/agents/planner/__main__.py": "882a748d983788136ba4320c60ed82a319a754b0c15cce4a5604da8a572481e2",
+    "src/agents/planner/evaluation.py": "bd9ad9f3520d4b31dc319b916161c302c02172585031c452652af7755298b686",
+    "src/agents/planner/interactive_target_resolution.py": "682bda10852340f719d707e77538600dc54ebe792abf3fa18c8b08684a3480ce",
+    "src/agents/retrieval/QUERY_PLANNER_INTENT.md": "452ab4ffeddbe95b918b013bd27581d0699584335bae02c8e88a7f4ce6508cea",
+    "src/agents/retrieval/__init__.py": "bd3f5755804361c831cc6d45cda1b93ecf1d8dc58b49b0299a15a32d3272f460",
+    "src/agents/retrieval/mcp_client.py": "868d433f84fe36d4dd42c6e8a9006660601ad6878d9846c0a4fc8b51041a230b",
+    "src/agents/retrieval/query_planner_v2.py": "f55fb4d05550027e626db6d2d3797977c1abe16c695818dc727148161dcaa206",
+    "src/agents/text_utils.py": "f042905b3f422506ccdd83af7b81eec1d197b751af7d595e5a95e5fd27a97cc7",
+    "src/analysis/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "src/analysis/answer_synthesis.py": "40dbf9c371149ea9f44c294c6c259c8a6cc02c69b6d118f4db7f3fcef2129b5a",
+    "src/evals/__init__.py": "11bf04cb7ac9c81f3432d218cbd7dc5767d877a726867585abec63068cc1feef",
+    "src/evals/agent_eval_contracts.py": "0c7766f714aa2117ed728b32f9cbb48a7c53ec91d4c6ffa05f0dcc23d95eac80",
+    "src/evals/agent_eval_degradation_v1.py": "48dfc0fed24409e3919a26e8c43651bd5c5771a8ac3acafef9115e8fc35539c2",
+    "src/evals/agent_eval_legacy_v0.py": "12f55b61dc510bf5d018bf4e533386e41564ad1d17f7d45b65bbf347d9f8b266",
+    "src/evals/agent_eval_route_aware_v1.py": "c3e0d02b9ae6db373f119e3cab5cf04a4f12e5284a7427a63af45928cdf281e9",
+    "src/evals/agent_eval_runner.py": "df1cdf183c4c0921b46c86d493b142af38031b563188fdfb2651bdf31f3e84c2",
+    "src/evals/agent_eval_v1_contracts.py": "1f864b9f5ebf5020cf2514e1d392e557152ab5e89a0e61e8af2be9acf26b0d5d",
+    "src/evals/grounding_oracle.py": "a33c27bf7ecb8fbb6bd9f98249978eb4294006284d18940e9b7695bfc111379b",
+    "src/evals/llm_judge_contracts.py": "f105a58acec22f8cd29760b4e81273b77109d94b90d16732041ea03e7879702a",
+    "src/evals/llm_judge_runner.py": "1d45d2f551c03f0ead76972b642681ae4fe8fb8f8ee375646e0052f323b23376",
+    "src/evals/ragas_agent_metrics.py": "0faec54419e97b80a80bf2f56ed9a874c403c3ca692accf7d2bb17b1f6229328",
+    "src/evals/ragas_retrieval_metrics.py": "2462c2b278b1b0102f973ec8a01e341433da102f24e664b28cfcc7b4b47a26f5",
+    "src/evals/retrieval_ablation.py": "8f5f4e9b4f46fc5aca6d8da7bf6f90e67168f4ccb2990b2a48524d4202cc275c",
+    "src/evals/retrieval_benchmark_v2.py": "275755963aefb8a6efdc23866ee211b76c9dd6f1bead390e57f0b0d80baa42c9",
+    "src/evals/retrieval_eval_contracts.py": "5f8042e4fc234c4cbb65e0235f82eb9d679c31ea8cb463374cf6d07e91e0fdcc",
+    "src/evals/retrieval_eval_runner.py": "7791374b0eed2aca4a20633597f56f71e1babf73a9a9343d37bb2b1e31ea3478",
+    "src/evals/retrieval_metrics.py": "e80193d1a617d55598a7032a348637bb5a66cea116b4c39c903391aa9df47ecf",
+    "src/ingestion/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "src/ingestion/chunk_paths.py": "089741757c2413a7ecdcffa5fc6f5e0d4fdf9e2527d32ca71685710cfb31a12c",
+    "src/ingestion/chunk_splitter.py": "a304817a5cf894be8a70c643b27696d96779c933a954b2d9f284550c41704af0",
+    "src/ingestion/qdrant_ingester.py": "baa63129d8f2c203002686e07d8a5e2dc5355b5d0a7609ef285ea78c3fecd38a",
+    "src/ingestion/sec_chunker.py": "5349ffa935b118297e06cc8c87a7a39dbcf56ec8d3fdac8c2d73934b3b1ef662",
+    "src/ingestion/sec_embedder.py": "4299dbbad78b328428163916d191170a239345c7e6a06469eb3d37b9ec80ac8f",
+    "src/ingestion/sec_html_fetcher.py": "0bc961f0a1a6c96517f8c20df9b4209beab8ca20d137cf12f5434c2a1dbbd002",
+    "src/ingestion/tables_summarizer.py": "9380e03994bcf818cf786746542c4ed1a135639a3ac4a251ffaa5a2049739e7c",
+    "src/llm_client.py": "67c591d3ca5d169d7e5f289f55e48a2cc816484b8cfc8c8fef324f9e43ebbd9d",
+    "src/mcp_server/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "src/mcp_server/server.py": "21dba9e072cf7e6a24ac24d1487b6d06cb177806e1e2ad8ab484c1898bf98a3f",
+    "src/mcp_server/tools/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "src/mcp_server/tools/financial_evaluator.py": "1087e130c6afc8bdda30c4b6bded829c26f382f31a8b1a6951ee1be148488bce",
+    "src/mcp_server/tools/sec_metric.py": "1a1b47912ea6f24e98f673f612138f1fecb6c8c6f49d9171208800f88a758964",
+    "src/mcp_server/tools/sec_metric_client.py": "c26eb5f27bf86d0afd9b883c165ac00773926642e3fe53e3d1e87f262fbbf667",
+    "src/mcp_server/tools/sec_metric_registry.py": "e87aa108db67e37846f1701510dbdd1427424ab6ea07fa05fa886c062367133b",
+    "src/mcp_server/tools/sec_retrieval.py": "a11664671fffd316ea1c6d89ea795ab011c066d087fadddf551cb99c84936e20",
+    "src/retrieval/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "src/retrieval/accounting_terms.py": "b8202b0b9ec709f075767ece8a6b9555c89b76aceddcfb6d56e16965d9197c8c",
+    "src/retrieval/evaluator.py": "f1c8aab8a5f9a5ebdc8719fa9e7e88983d9320b961276e0dd41b6dfdf558e82e",
+    "src/retrieval/ollama_client.py": "67cbdfaf483a48f9af25b23fd732b54ce63151334068592a980917181c5e42fe",
+    "src/retrieval/query_expansion.py": "d0b31e8335476796e4b296e5d09e227296ecc994075df92abd2b2c6eeb436e6d",
+    "src/retrieval/rerank_enricher.py": "99aebec076701a9e4e73259d9542055d53f7e80728e482b13dbaf824f5acff00",
+    "src/structured_facts/__init__.py": "42e5b99d9038262bb9fc314315a6c0672a214cbc8683dc77d9028198222acf32",
+    "src/structured_facts/capabilities.py": "632dd0d6ee742b4e0ca9f892c0979110beb3144348aa0a66260c4c651f437531",
+    "src/structured_facts/models.py": "c665ff1046c3549dabaec6d6ebbba6019cfc1aee1b0c66358c3eb232a897b03a",
+    "src/structured_facts/resolver.py": "7febd3e28c51408304e14a606ef6f3802b6efdcc0c6f600f407f17b07bf3b96c"
+  },
+  "reranker": {
+    "model": "Qwen/Qwen3-Reranker-8B",
+    "url": "https://dashscope.aliyuncs.com/api/v1/services/rerank/text-rerank/text-rerank",
+    "immutable_service_digest": null,
+    "credential": "existing environment credential; not recorded"
+  },
+  "status": "running",
+  "latency_policy": "single pass; per-mode empty query caches; rotated mode order; no harness retries; shared model warm state"
+}

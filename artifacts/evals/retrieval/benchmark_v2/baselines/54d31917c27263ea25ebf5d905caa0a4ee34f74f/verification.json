@@ -1,0 +1,19 @@
+{
+  "implementation_sha": "54d31917c27263ea25ebf5d905caa0a4ee34f74f",
+  "pairs": 480,
+  "complete": true,
+  "missing_labels": 0,
+  "hashes_and_metrics_verified": true,
+  "ranked_ids_and_quality_exact_matches_to_original": 480,
+  "original_baseline_sha": "2d50cfe0dc7b624676b472b7407aab7dc11f9648",
+  "prior_baselines_preserved": true,
+  "power_browser_samples": 960,
+  "power_browser_violations": 0,
+  "focused_tests_passed": 67,
+  "full_suite_tests_passed": 872,
+  "full_suite_subtests_passed": 47,
+  "full_suite_known_failures": 2,
+  "full_suite_existing_warnings": 1,
+  "pytest_version": "9.0.2",
+  "retrieval_tuning": false
+}

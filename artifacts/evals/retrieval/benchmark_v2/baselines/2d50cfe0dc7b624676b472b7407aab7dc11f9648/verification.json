@@ -1,0 +1,15 @@
+{
+  "implementation_sha": "2d50cfe0dc7b624676b472b7407aab7dc11f9648",
+  "pairs": 480,
+  "complete": true,
+  "missing_labels": 0,
+  "hashes_and_metrics_verified": true,
+  "focused_tests_passed": 55,
+  "full_suite_tests_passed": 860,
+  "full_suite_subtests_passed": 47,
+  "full_suite_known_failures": 2,
+  "full_suite_existing_warnings": 1,
+  "pytest_version": "9.0.2",
+  "production_and_historical_tracked_files_changed": false,
+  "evaluation_reruns": 0
+}

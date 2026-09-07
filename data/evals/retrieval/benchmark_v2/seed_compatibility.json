@@ -1,0 +1,1678 @@
+{
+  "source": "data/evals/retrieval/text/aapl_2024_10k_text_retrieval_eval_split_with_uids.jsonl",
+  "sha256": "a44b51bc2cf733e757116a3ca79c4ef0fca7dc5c3ea2e7e6a7f320be78a1b888",
+  "case_count": 75,
+  "cases": [
+    {
+      "source_query_id": "AAPL10K24_TXT_001",
+      "original_relevant_doc_ids": [
+        0
+      ],
+      "original_relevant_chunk_uids": [
+        "9f0e54b80f968375134e03c19bb3690bca7a86a6"
+      ],
+      "mapping": [
+        {
+          "original_doc_id": 0,
+          "original_chunk_uid": "9f0e54b80f968375134e03c19bb3690bca7a86a6",
+          "anchor_sha256": "5d93ff8c55e98970e8f405c389bb7b2d9bc233b55cb5fec42ce3e5bd1dbc3e27",
+          "mapped_evidence_ids": [
+            "AAPL_10-K_2024::text::0"
+          ],
+          "status": "exact_anchor_preserved"
+        }
+      ],
+      "adopted_query_id": "KBV2_AAPL_2024_09",
+      "disposition": "exact source-query adoption, separately inspected"
+    },
+    {
+      "source_query_id": "AAPL10K24_TXT_002",
+      "original_relevant_doc_ids": [
+        41
+      ],
+      "original_relevant_chunk_uids": [
+        "615a8f72ea652fe0bb8e238b043d9110b061f9a7"
+      ],
+      "mapping": [
+        {
+          "original_doc_id": 41,
+          "original_chunk_uid": "615a8f72ea652fe0bb8e238b043d9110b061f9a7",
+          "anchor_sha256": "5232773bfc690a8b327508cd5f1aec53c0bd957de3f16424f42928023270f8a3",
+          "mapped_evidence_ids": [],
+          "status": "unresolved_truncated_anchor"
+        }
+      ],
+      "adopted_query_id": null,
+      "disposition": "compatibility audit only; no semantic relabeling or metric inclusion"
+    },
+    {
+      "source_query_id": "AAPL10K24_TXT_003",
+      "original_relevant_doc_ids": [
+        1
+      ],
+      "original_relevant_chunk_uids": [
+        "022be680da20ac265a1d51c450f328f5ac240279"
+      ],
+      "mapping": [
+        {
+          "original_doc_id": 1,
+          "original_chunk_uid": "022be680da20ac265a1d51c450f328f5ac240279",
+          "anchor_sha256": "78aada75dcdbbcdc0974f46e2925838ab6f473b5be65f7f9bf954c38eb32e26f",
+          "mapped_evidence_ids": [],
+          "status": "unresolved_truncated_anchor"
+        }
+      ],
+      "adopted_query_id": null,
+      "disposition": "compatibility audit only; no semantic relabeling or metric inclusion"
+    },
+    {
+      "source_query_id": "AAPL10K24_TXT_004",
+      "original_relevant_doc_ids": [
+        1
+      ],
+      "original_relevant_chunk_uids": [
+        "022be680da20ac265a1d51c450f328f5ac240279"
+      ],
+      "mapping": [
+        {
+          "original_doc_id": 1,
+          "original_chunk_uid": "022be680da20ac265a1d51c450f328f5ac240279",
+          "anchor_sha256": "78aada75dcdbbcdc0974f46e2925838ab6f473b5be65f7f9bf954c38eb32e26f",
+          "mapped_evidence_ids": [],
+          "status": "unresolved_truncated_anchor"
+        }
+      ],
+      "adopted_query_id": null,
+      "disposition": "compatibility audit only; no semantic relabeling or metric inclusion"
+    },
+    {
+      "source_query_id": "AAPL10K24_TXT_005",
+      "original_relevant_doc_ids": [
+        2
+      ],
+      "original_relevant_chunk_uids": [
+        "2f679cb43e9153f903361dc33656fbda31598045"
+      ],
+      "mapping": [
+        {
+          "original_doc_id": 2,
+          "original_chunk_uid": "2f679cb43e9153f903361dc33656fbda31598045",
+          "anchor_sha256": "0dd985409bf15190ffa0b4f68f980baa3c6fafb4cebcb6ef76f9d122bc26b240",
+          "mapped_evidence_ids": [],
+          "status": "unresolved_truncated_anchor"
+        }
+      ],
+      "adopted_query_id": null,
+      "disposition": "compatibility audit only; no semantic relabeling or metric inclusion"
+    },
+    {
+      "source_query_id": "AAPL10K24_TXT_006",
+      "original_relevant_doc_ids": [
+        2
+      ],
+      "original_relevant_chunk_uids": [
+        "2f679cb43e9153f903361dc33656fbda31598045"
+      ],
+      "mapping": [
+        {
+          "original_doc_id": 2,
+          "original_chunk_uid": "2f679cb43e9153f903361dc33656fbda31598045",
+          "anchor_sha256": "0dd985409bf15190ffa0b4f68f980baa3c6fafb4cebcb6ef76f9d122bc26b240",
+          "mapped_evidence_ids": [],
+          "status": "unresolved_truncated_anchor"
+        }
+      ],
+      "adopted_query_id": null,
+      "disposition": "compatibility audit only; no semantic relabeling or metric inclusion"
+    },
+    {
+      "source_query_id": "AAPL10K24_TXT_007",
+      "original_relevant_doc_ids": [
+        3
+      ],
+      "original_relevant_chunk_uids": [
+        "be3480c53ab836f25b88a8436baafe9040b9a665"
+      ],
+      "mapping": [
+        {
+          "original_doc_id": 3,
+          "original_chunk_uid": "be3480c53ab836f25b88a8436baafe9040b9a665",
+          "anchor_sha256": "d5ff38b58a67942304b115f7c1b181844d9bd601204516ee1124b71b5b4af88e",
+          "mapped_evidence_ids": [],
+          "status": "unresolved_truncated_anchor"
+        }
+      ],
+      "adopted_query_id": null,
+      "disposition": "compatibility audit only; no semantic relabeling or metric inclusion"
+    },
+    {
+      "source_query_id": "AAPL10K24_TXT_008",
+      "original_relevant_doc_ids": [
+        88
+      ],
+      "original_relevant_chunk_uids": [
+        "8f7f2032b01dbf1c92818d27a9f69e783b5a07f8"
+      ],
+      "mapping": [
+        {
+          "original_doc_id": 88,
+          "original_chunk_uid": "8f7f2032b01dbf1c92818d27a9f69e783b5a07f8",
+          "anchor_sha256": "d5ff38b58a67942304b115f7c1b181844d9bd601204516ee1124b71b5b4af88e",
+          "mapped_evidence_ids": [],
+          "status": "unresolved_truncated_anchor"
+        }
+      ],
+      "adopted_query_id": null,
+      "disposition": "compatibility audit only; no semantic relabeling or metric inclusion"
+    },
+    {
+      "source_query_id": "AAPL10K24_TXT_009",
+      "original_relevant_doc_ids": [
+        4
+      ],
+      "original_relevant_chunk_uids": [
+        "d02f19fd78a36199631e1cadc04a7a0f6e9963a2"
+      ],
+      "mapping": [
+        {
+          "original_doc_id": 4,
+          "original_chunk_uid": "d02f19fd78a36199631e1cadc04a7a0f6e9963a2",
+          "anchor_sha256": "64ab2ad890b624fa0ded809e50a553f2da9fc73e4e90267689c71a8acb820788",
+          "mapped_evidence_ids": [],
+          "status": "unresolved_truncated_anchor"
+        }
+      ],
+      "adopted_query_id": null,
+      "disposition": "compatibility audit only; no semantic relabeling or metric inclusion"
+    },
+    {
+      "source_query_id": "AAPL10K24_TXT_010",
+      "original_relevant_doc_ids": [
+        5
+      ],
+      "original_relevant_chunk_uids": [
+        "8c68b8768c6cdcc6ed01cf1819a606dcbac656a7"
+      ],
+      "mapping": [
+        {
+          "original_doc_id": 5,
+          "original_chunk_uid": "8c68b8768c6cdcc6ed01cf1819a606dcbac656a7",
+          "anchor_sha256": "26759355b2d5b0ede88231e12247b6d60e896c9b97201fab3b2bbdd56d036c21",
+          "mapped_evidence_ids": [],
+          "status": "unresolved_truncated_anchor"
+        }
+      ],
+      "adopted_query_id": null,
+      "disposition": "compatibility audit only; no semantic relabeling or metric inclusion"
+    },
+    {
+      "source_query_id": "AAPL10K24_TXT_011",
+      "original_relevant_doc_ids": [
+        6
+      ],
+      "original_relevant_chunk_uids": [
+        "31c425ff7439b2bfa12ae82bbad30c74ee59729c"
+      ],
+      "mapping": [
+        {
+          "original_doc_id": 6,
+          "original_chunk_uid": "31c425ff7439b2bfa12ae82bbad30c74ee59729c",
+          "anchor_sha256": "44653f983bd983cfc13a0634c52e061548811f6e9e153e01868a732fb4610a27",
+          "mapped_evidence_ids": [],
+          "status": "unresolved_truncated_anchor"
+        }
+      ],
+      "adopted_query_id": null,
+      "disposition": "compatibility audit only; no semantic relabeling or metric inclusion"
+    },
+    {
+      "source_query_id": "AAPL10K24_TXT_012",
+      "original_relevant_doc_ids": [
+        7
+      ],
+      "original_relevant_chunk_uids": [
+        "f91369bb7118a64c7a41b3b3b892163a6a40c73e"
+      ],
+      "mapping": [
+        {
+          "original_doc_id": 7,
+          "original_chunk_uid": "f91369bb7118a64c7a41b3b3b892163a6a40c73e",
+          "anchor_sha256": "9e694455f26e2d031e3428fc7ee704fad2bfe0ec5647856e46b2a024ad3db8e2",
+          "mapped_evidence_ids": [],
+          "status": "unresolved_truncated_anchor"
+        }
+      ],
+      "adopted_query_id": null,
+      "disposition": "compatibility audit only; no semantic relabeling or metric inclusion"
+    },
+    {
+      "source_query_id": "AAPL10K24_TXT_013",
+      "original_relevant_doc_ids": [
+        8
+      ],
+      "original_relevant_chunk_uids": [
+        "f3d6ea85ae840b8931578845c772f4e1aa69e09e"
+      ],
+      "mapping": [
+        {
+          "original_doc_id": 8,
+          "original_chunk_uid": "f3d6ea85ae840b8931578845c772f4e1aa69e09e",
+          "anchor_sha256": "c332d29dfa18cb40a01d2605174e3b40c656684a9326b5d949fa623edcca9319",
+          "mapped_evidence_ids": [],
+          "status": "unresolved_truncated_anchor"
+        }
+      ],
+      "adopted_query_id": null,
+      "disposition": "compatibility audit only; no semantic relabeling or metric inclusion"
+    },
+    {
+      "source_query_id": "AAPL10K24_TXT_014",
+      "original_relevant_doc_ids": [
+        8
+      ],
+      "original_relevant_chunk_uids": [
+        "f3d6ea85ae840b8931578845c772f4e1aa69e09e"
+      ],
+      "mapping": [
+        {
+          "original_doc_id": 8,
+          "original_chunk_uid": "f3d6ea85ae840b8931578845c772f4e1aa69e09e",
+          "anchor_sha256": "c332d29dfa18cb40a01d2605174e3b40c656684a9326b5d949fa623edcca9319",
+          "mapped_evidence_ids": [],
+          "status": "unresolved_truncated_anchor"
+        }
+      ],
+      "adopted_query_id": null,
+      "disposition": "compatibility audit only; no semantic relabeling or metric inclusion"
+    },
+    {
+      "source_query_id": "AAPL10K24_TXT_015",
+      "original_relevant_doc_ids": [
+        9
+      ],
+      "original_relevant_chunk_uids": [
+        "a2bd6155c69448dee409547687d002e4222a2ccf"
+      ],
+      "mapping": [
+        {
+          "original_doc_id": 9,
+          "original_chunk_uid": "a2bd6155c69448dee409547687d002e4222a2ccf",
+          "anchor_sha256": "57d53114e4fcd9f0624d76cd30a24e5d779ac24dc8ddf78ef503ba8557540ff2",
+          "mapped_evidence_ids": [],
+          "status": "unresolved_truncated_anchor"
+        }
+      ],
+      "adopted_query_id": null,
+      "disposition": "compatibility audit only; no semantic relabeling or metric inclusion"
+    },
+    {
+      "source_query_id": "AAPL10K24_TXT_016",
+      "original_relevant_doc_ids": [
+        10
+      ],
+      "original_relevant_chunk_uids": [
+        "091f7ff8d03c36b75511642a9c3352415818dc6a"
+      ],
+      "mapping": [
+        {
+          "original_doc_id": 10,
+          "original_chunk_uid": "091f7ff8d03c36b75511642a9c3352415818dc6a",
+          "anchor_sha256": "b5680d00969d5fbe9336b42c621316e4116771a3b8fbdb334c1755d1a46e1cce",
+          "mapped_evidence_ids": [],
+          "status": "unresolved_truncated_anchor"
+        }
+      ],
+      "adopted_query_id": null,
+      "disposition": "compatibility audit only; no semantic relabeling or metric inclusion"
+    },
+    {
+      "source_query_id": "AAPL10K24_TXT_017",
+      "original_relevant_doc_ids": [
+        11
+      ],
+      "original_relevant_chunk_uids": [
+        "8bbf1980b610b2ce40c5dae5514e4d117c448185"
+      ],
+      "mapping": [
+        {
+          "original_doc_id": 11,
+          "original_chunk_uid": "8bbf1980b610b2ce40c5dae5514e4d117c448185",
+          "anchor_sha256": "1c1415287b71e77261346ab4c0b886dcdabe1df6cee853815137903d90d5097d",
+          "mapped_evidence_ids": [],
+          "status": "unresolved_truncated_anchor"
+        }
+      ],
+      "adopted_query_id": null,
+      "disposition": "compatibility audit only; no semantic relabeling or metric inclusion"
+    },
+    {
+      "source_query_id": "AAPL10K24_TXT_018",
+      "original_relevant_doc_ids": [
+        13
+      ],
+      "original_relevant_chunk_uids": [
+        "b8a55cb60609896bddd36a3dec56727cbcc034bf"
+      ],
+      "mapping": [
+        {
+          "original_doc_id": 13,
+          "original_chunk_uid": "b8a55cb60609896bddd36a3dec56727cbcc034bf",
+          "anchor_sha256": "cc27c9404f90690b2deed259a5aef6aaf7f084971001dcd08f8e311d07050a42",
+          "mapped_evidence_ids": [],
+          "status": "unresolved_truncated_anchor"
+        }
+      ],
+      "adopted_query_id": null,
+      "disposition": "compatibility audit only; no semantic relabeling or metric inclusion"
+    },
+    {
+      "source_query_id": "AAPL10K24_TXT_019",
+      "original_relevant_doc_ids": [
+        16
+      ],
+      "original_relevant_chunk_uids": [
+        "2489d374d5c11d8ccf5cbd81013357ba90117fd8"
+      ],
+      "mapping": [
+        {
+          "original_doc_id": 16,
+          "original_chunk_uid": "2489d374d5c11d8ccf5cbd81013357ba90117fd8",
+          "anchor_sha256": "31096b3e5bae888bbd730d9220ca869be9c2f77b38592099b2f65eaf8fce226d",
+          "mapped_evidence_ids": [],
+          "status": "unresolved_truncated_anchor"
+        }
+      ],
+      "adopted_query_id": null,
+      "disposition": "compatibility audit only; no semantic relabeling or metric inclusion"
+    },
+    {
+      "source_query_id": "AAPL10K24_TXT_020",
+      "original_relevant_doc_ids": [
+        21
+      ],
+      "original_relevant_chunk_uids": [
+        "4c5ec3fcff4639a73a0f2694896de1ac931c83c4"
+      ],
+      "mapping": [
+        {
+          "original_doc_id": 21,
+          "original_chunk_uid": "4c5ec3fcff4639a73a0f2694896de1ac931c83c4",
+          "anchor_sha256": "afecdf00be2671cf4056dc4ca6ede32edd6dff79b6197231724aef74bfa1fa6b",
+          "mapped_evidence_ids": [],
+          "status": "unresolved_truncated_anchor"
+        }
+      ],
+      "adopted_query_id": null,
+      "disposition": "compatibility audit only; no semantic relabeling or metric inclusion"
+    },
+    {
+      "source_query_id": "AAPL10K24_TXT_021",
+      "original_relevant_doc_ids": [
+        24
+      ],
+      "original_relevant_chunk_uids": [
+        "be9ff39f8e934dcd03f9c757936d4ce169820746"
+      ],
+      "mapping": [
+        {
+          "original_doc_id": 24,
+          "original_chunk_uid": "be9ff39f8e934dcd03f9c757936d4ce169820746",
+          "anchor_sha256": "50b8e86d0a0205f66da7b23210889847daf8699c228df835d78c618451a62ce5",
+          "mapped_evidence_ids": [],
+          "status": "unresolved_truncated_anchor"
+        }
+      ],
+      "adopted_query_id": null,
+      "disposition": "compatibility audit only; no semantic relabeling or metric inclusion"
+    },
+    {
+      "source_query_id": "AAPL10K24_TXT_022",
+      "original_relevant_doc_ids": [
+        26
+      ],
+      "original_relevant_chunk_uids": [
+        "0d3966dde11e65cda7f12a473aebf92b0391da45"
+      ],
+      "mapping": [
+        {
+          "original_doc_id": 26,
+          "original_chunk_uid": "0d3966dde11e65cda7f12a473aebf92b0391da45",
+          "anchor_sha256": "e22fff877a83d44dd4a07d4bc86365906231234be38c6af03b82f0213f66b5b9",
+          "mapped_evidence_ids": [],
+          "status": "unresolved_truncated_anchor"
+        }
+      ],
+      "adopted_query_id": null,
+      "disposition": "compatibility audit only; no semantic relabeling or metric inclusion"
+    },
+    {
+      "source_query_id": "AAPL10K24_TXT_023",
+      "original_relevant_doc_ids": [
+        27
+      ],
+      "original_relevant_chunk_uids": [
+        "2449f4d951f062d99a790932cd87c39d6fd39e94"
+      ],
+      "mapping": [
+        {
+          "original_doc_id": 27,
+          "original_chunk_uid": "2449f4d951f062d99a790932cd87c39d6fd39e94",
+          "anchor_sha256": "903ea500e7ccf842c1312b6c2f964e3e98ff146456cecec717e9a0e122bf735f",
+          "mapped_evidence_ids": [
+            "AAPL_10-K_2024::text::18",
+            "AAPL_10-K_2024::text::83",
+            "AAPL_10-K_2024::text::97"
+          ],
+          "status": "exact_anchor_preserved"
+        }
+      ],
+      "adopted_query_id": null,
+      "disposition": "compatibility audit only; no semantic relabeling or metric inclusion"
+    },
+    {
+      "source_query_id": "AAPL10K24_TXT_024",
+      "original_relevant_doc_ids": [
+        28
+      ],
+      "original_relevant_chunk_uids": [
+        "0f923f219580551ca62fb2f487c09b7a931b2b31"
+      ],
+      "mapping": [
+        {
+          "original_doc_id": 28,
+          "original_chunk_uid": "0f923f219580551ca62fb2f487c09b7a931b2b31",
+          "anchor_sha256": "8c944f1155dbe2d4038c8d8992554116b5e97921f86b3ebd92c31d3b75f26d5f",
+          "mapped_evidence_ids": [],
+          "status": "unresolved_truncated_anchor"
+        }
+      ],
+      "adopted_query_id": null,
+      "disposition": "compatibility audit only; no semantic relabeling or metric inclusion"
+    },
+    {
+      "source_query_id": "AAPL10K24_TXT_025",
+      "original_relevant_doc_ids": [
+        30
+      ],
+      "original_relevant_chunk_uids": [
+        "310e7400301f4ffb7331c98732b3523abc4c777d"
+      ],
+      "mapping": [
+        {
+          "original_doc_id": 30,
+          "original_chunk_uid": "310e7400301f4ffb7331c98732b3523abc4c777d",
+          "anchor_sha256": "703d89b43be540b7005c49422ae82e1bbc90824c713cf8146c2561c8976f1693",
+          "mapped_evidence_ids": [],
+          "status": "unresolved_truncated_anchor"
+        }
+      ],
+      "adopted_query_id": null,
+      "disposition": "compatibility audit only; no semantic relabeling or metric inclusion"
+    },
+    {
+      "source_query_id": "AAPL10K24_TXT_026",
+      "original_relevant_doc_ids": [
+        31
+      ],
+      "original_relevant_chunk_uids": [
+        "bd1bb903e26812bc18d534ae7d34f173be407988"
+      ],
+      "mapping": [
+        {
+          "original_doc_id": 31,
+          "original_chunk_uid": "bd1bb903e26812bc18d534ae7d34f173be407988",
+          "anchor_sha256": "dc925da4a6688a07b7d8aa73148c3ffe009e037d47daa56a11fe1279de5da169",
+          "mapped_evidence_ids": [],
+          "status": "unresolved_truncated_anchor"
+        }
+      ],
+      "adopted_query_id": null,
+      "disposition": "compatibility audit only; no semantic relabeling or metric inclusion"
+    },
+    {
+      "source_query_id": "AAPL10K24_TXT_027",
+      "original_relevant_doc_ids": [
+        32
+      ],
+      "original_relevant_chunk_uids": [
+        "27ce956917efc17dc6b75b78601d3c4b214059c0"
+      ],
+      "mapping": [
+        {
+          "original_doc_id": 32,
+          "original_chunk_uid": "27ce956917efc17dc6b75b78601d3c4b214059c0",
+          "anchor_sha256": "8d64ef1b2c615c0f4de3412d6fc04e69f60294c0d2b0e92f1f40430791820851",
+          "mapped_evidence_ids": [],
+          "status": "unresolved_truncated_anchor"
+        }
+      ],
+      "adopted_query_id": null,
+      "disposition": "compatibility audit only; no semantic relabeling or metric inclusion"
+    },
+    {
+      "source_query_id": "AAPL10K24_TXT_028",
+      "original_relevant_doc_ids": [
+        33
+      ],
+      "original_relevant_chunk_uids": [
+        "afd7c4db84a4167dc77e5cf19bb933c28c3d2857"
+      ],
+      "mapping": [
+        {
+          "original_doc_id": 33,
+          "original_chunk_uid": "afd7c4db84a4167dc77e5cf19bb933c28c3d2857",
+          "anchor_sha256": "b78c6d0de62bbfbe0fec20a74ce9a511a3514fe3af147a35bcfc4e3a0de066bb",
+          "mapped_evidence_ids": [],
+          "status": "unresolved_truncated_anchor"
+        }
+      ],
+      "adopted_query_id": null,
+      "disposition": "compatibility audit only; no semantic relabeling or metric inclusion"
+    },
+    {
+      "source_query_id": "AAPL10K24_TXT_029",
+      "original_relevant_doc_ids": [
+        29
+      ],
+      "original_relevant_chunk_uids": [
+        "0492b1d8489056fe0fd5069b4201f9d3b8138b5e"
+      ],
+      "mapping": [
+        {
+          "original_doc_id": 29,
+          "original_chunk_uid": "0492b1d8489056fe0fd5069b4201f9d3b8138b5e",
+          "anchor_sha256": "f29975201f68a1822342b5c7343c8bcb88e9e75261ee2aca6da5b762207218e9",
+          "mapped_evidence_ids": [],
+          "status": "unresolved_truncated_anchor"
+        }
+      ],
+      "adopted_query_id": null,
+      "disposition": "compatibility audit only; no semantic relabeling or metric inclusion"
+    },
+    {
+      "source_query_id": "AAPL10K24_TXT_030",
+      "original_relevant_doc_ids": [
+        35
+      ],
+      "original_relevant_chunk_uids": [
+        "adb692128985c0531bb5962ef4c399a1d492176b"
+      ],
+      "mapping": [
+        {
+          "original_doc_id": 35,
+          "original_chunk_uid": "adb692128985c0531bb5962ef4c399a1d492176b",
+          "anchor_sha256": "449c18e9115577a26aa1d3e276afa4d69853b9b1dc719b42640002b7a13761a0",
+          "mapped_evidence_ids": [
+            "AAPL_10-K_2024::text::24",
+            "AAPL_10-K_2024::text::25",
+            "AAPL_10-K_2024::text::26"
+          ],
+          "status": "exact_anchor_preserved"
+        }
+      ],
+      "adopted_query_id": null,
+      "disposition": "compatibility audit only; no semantic relabeling or metric inclusion"
+    },
+    {
+      "source_query_id": "AAPL10K24_TXT_031",
+      "original_relevant_doc_ids": [
+        36
+      ],
+      "original_relevant_chunk_uids": [
+        "1efc9f3b23806851283c210ac8951c538ab7e6fc"
+      ],
+      "mapping": [
+        {
+          "original_doc_id": 36,
+          "original_chunk_uid": "1efc9f3b23806851283c210ac8951c538ab7e6fc",
+          "anchor_sha256": "3109afca717c02e68062ed2402b5e7d7ce38621b4990c320d44396efe798a544",
+          "mapped_evidence_ids": [
+            "AAPL_10-K_2024::text::24"
+          ],
+          "status": "exact_anchor_preserved"
+        }
+      ],
+      "adopted_query_id": null,
+      "disposition": "compatibility audit only; no semantic relabeling or metric inclusion"
+    },
+    {
+      "source_query_id": "AAPL10K24_TXT_032",
+      "original_relevant_doc_ids": [
+        37
+      ],
+      "original_relevant_chunk_uids": [
+        "f1c2d1c8061bbfa6e14bb98de87fc5e03d1074ba"
+      ],
+      "mapping": [
+        {
+          "original_doc_id": 37,
+          "original_chunk_uid": "f1c2d1c8061bbfa6e14bb98de87fc5e03d1074ba",
+          "anchor_sha256": "35e36c21fa1a69f479390ad930ac10f9a2af36f1f181f0684260cd45ea8f0851",
+          "mapped_evidence_ids": [],
+          "status": "unresolved_truncated_anchor"
+        }
+      ],
+      "adopted_query_id": null,
+      "disposition": "compatibility audit only; no semantic relabeling or metric inclusion"
+    },
+    {
+      "source_query_id": "AAPL10K24_TXT_033",
+      "original_relevant_doc_ids": [
+        38
+      ],
+      "original_relevant_chunk_uids": [
+        "20ead26aece3e44d74a714c295fcff73e4b55a9e"
+      ],
+      "mapping": [
+        {
+          "original_doc_id": 38,
+          "original_chunk_uid": "20ead26aece3e44d74a714c295fcff73e4b55a9e",
+          "anchor_sha256": "5cea2d71621942f2709a665ef3ec92ba36ae2608a1f6e62a061108ad310db29a",
+          "mapped_evidence_ids": [],
+          "status": "unresolved_truncated_anchor"
+        }
+      ],
+      "adopted_query_id": null,
+      "disposition": "compatibility audit only; no semantic relabeling or metric inclusion"
+    },
+    {
+      "source_query_id": "AAPL10K24_TXT_034",
+      "original_relevant_doc_ids": [
+        40
+      ],
+      "original_relevant_chunk_uids": [
+        "368f6777791ab784878ccdb8a1a2efa7169f1712"
+      ],
+      "mapping": [
+        {
+          "original_doc_id": 40,
+          "original_chunk_uid": "368f6777791ab784878ccdb8a1a2efa7169f1712",
+          "anchor_sha256": "63d75c4bf0d218d6a71cef421801437158baaa5e0177ec56f0338ab46dc1dc10",
+          "mapped_evidence_ids": [],
+          "status": "unresolved_truncated_anchor"
+        }
+      ],
+      "adopted_query_id": null,
+      "disposition": "compatibility audit only; no semantic relabeling or metric inclusion"
+    },
+    {
+      "source_query_id": "AAPL10K24_TXT_035",
+      "original_relevant_doc_ids": [
+        43
+      ],
+      "original_relevant_chunk_uids": [
+        "c9a4f4155b10f1045a674f903c671e0d70068d08"
+      ],
+      "mapping": [
+        {
+          "original_doc_id": 43,
+          "original_chunk_uid": "c9a4f4155b10f1045a674f903c671e0d70068d08",
+          "anchor_sha256": "da9a8f761d164932dd140478b6dbe95f5120d2c30ea2541dcd42ff20a7d45467",
+          "mapped_evidence_ids": [],
+          "status": "unresolved_truncated_anchor"
+        }
+      ],
+      "adopted_query_id": null,
+      "disposition": "compatibility audit only; no semantic relabeling or metric inclusion"
+    },
+    {
+      "source_query_id": "AAPL10K24_TXT_036",
+      "original_relevant_doc_ids": [
+        44
+      ],
+      "original_relevant_chunk_uids": [
+        "1a7e7742434762a15a4e1108eecd685b73e12587"
+      ],
+      "mapping": [
+        {
+          "original_doc_id": 44,
+          "original_chunk_uid": "1a7e7742434762a15a4e1108eecd685b73e12587",
+          "anchor_sha256": "70116706b0143bdc08dd9c897d9e5484304b44683c0e7875e9cbded912ca531f",
+          "mapped_evidence_ids": [],
+          "status": "unresolved_truncated_anchor"
+        }
+      ],
+      "adopted_query_id": null,
+      "disposition": "compatibility audit only; no semantic relabeling or metric inclusion"
+    },
+    {
+      "source_query_id": "AAPL10K24_TXT_037",
+      "original_relevant_doc_ids": [
+        45
+      ],
+      "original_relevant_chunk_uids": [
+        "6312ce0c7cba00ea0a9e39c661a45f7aac040fdd"
+      ],
+      "mapping": [
+        {
+          "original_doc_id": 45,
+          "original_chunk_uid": "6312ce0c7cba00ea0a9e39c661a45f7aac040fdd",
+          "anchor_sha256": "d662bfb31183a5c65757f10c4bc0ba92a41c27d791dbf505fb5110316d0885ae",
+          "mapped_evidence_ids": [],
+          "status": "unresolved_truncated_anchor"
+        }
+      ],
+      "adopted_query_id": null,
+      "disposition": "compatibility audit only; no semantic relabeling or metric inclusion"
+    },
+    {
+      "source_query_id": "AAPL10K24_TXT_038",
+      "original_relevant_doc_ids": [
+        46
+      ],
+      "original_relevant_chunk_uids": [
+        "c19fdbc89e7f8a1326b96dc6f76185ad34334b65"
+      ],
+      "mapping": [
+        {
+          "original_doc_id": 46,
+          "original_chunk_uid": "c19fdbc89e7f8a1326b96dc6f76185ad34334b65",
+          "anchor_sha256": "d97f7dea5a6a48b5aa753c9ecda3978af681a6b3d317c1c922e85c82a2fddeb4",
+          "mapped_evidence_ids": [],
+          "status": "unresolved_truncated_anchor"
+        }
+      ],
+      "adopted_query_id": null,
+      "disposition": "compatibility audit only; no semantic relabeling or metric inclusion"
+    },
+    {
+      "source_query_id": "AAPL10K24_TXT_039",
+      "original_relevant_doc_ids": [
+        47
+      ],
+      "original_relevant_chunk_uids": [
+        "7d65ddd155d8f8262f2d2873c79c0d5064016f14"
+      ],
+      "mapping": [
+        {
+          "original_doc_id": 47,
+          "original_chunk_uid": "7d65ddd155d8f8262f2d2873c79c0d5064016f14",
+          "anchor_sha256": "84cf68b2a3637e599db2292d8eeaae0e5ab42b94e543f5ab4362358aa1ac29cc",
+          "mapped_evidence_ids": [],
+          "status": "unresolved_truncated_anchor"
+        }
+      ],
+      "adopted_query_id": null,
+      "disposition": "compatibility audit only; no semantic relabeling or metric inclusion"
+    },
+    {
+      "source_query_id": "AAPL10K24_TXT_040",
+      "original_relevant_doc_ids": [
+        48
+      ],
+      "original_relevant_chunk_uids": [
+        "dda16647f55423787731de0400b873e3eef0f6d2"
+      ],
+      "mapping": [
+        {
+          "original_doc_id": 48,
+          "original_chunk_uid": "dda16647f55423787731de0400b873e3eef0f6d2",
+          "anchor_sha256": "5d1b5ff33859133d61707846fd25607ea752d1e6a1585285ece4acc273cb59de",
+          "mapped_evidence_ids": [],
+          "status": "unresolved_truncated_anchor"
+        }
+      ],
+      "adopted_query_id": null,
+      "disposition": "compatibility audit only; no semantic relabeling or metric inclusion"
+    },
+    {
+      "source_query_id": "AAPL10K24_TXT_041",
+      "original_relevant_doc_ids": [
+        48,
+        76,
+        77,
+        78
+      ],
+      "original_relevant_chunk_uids": [
+        "dda16647f55423787731de0400b873e3eef0f6d2",
+        "58a2bd7504db437e4ec4ecbf871b3b25978a4507",
+        "84a2adb656863f778ce4036b51728d1bc1fc5087",
+        "fa41ebb0d7cb7814e02f2c86aa66905d3d7200da"
+      ],
+      "mapping": [
+        {
+          "original_doc_id": 48,
+          "original_chunk_uid": "dda16647f55423787731de0400b873e3eef0f6d2",
+          "anchor_sha256": "5d1b5ff33859133d61707846fd25607ea752d1e6a1585285ece4acc273cb59de",
+          "mapped_evidence_ids": [],
+          "status": "unresolved_truncated_anchor"
+        },
+        {
+          "original_doc_id": 77,
+          "original_chunk_uid": "84a2adb656863f778ce4036b51728d1bc1fc5087",
+          "anchor_sha256": "300d32f68e44fda1d2298d179e58e8a7422ca54b17004fa0fa61b3e822c75ae0",
+          "mapped_evidence_ids": [],
+          "status": "unresolved_truncated_anchor"
+        },
+        {
+          "original_doc_id": 78,
+          "original_chunk_uid": "fa41ebb0d7cb7814e02f2c86aa66905d3d7200da",
+          "anchor_sha256": "05aaf6b937a2e19e3bf3994b7eb98019b1a136d6378b31b6450bf3cd4d02ea22",
+          "mapped_evidence_ids": [],
+          "status": "unresolved_truncated_anchor"
+        },
+        {
+          "original_doc_id": 76,
+          "original_chunk_uid": "58a2bd7504db437e4ec4ecbf871b3b25978a4507",
+          "anchor_sha256": "508ff7a5c389b45c666dce5c51deeff86fd9bf310c5672794a9ab0236ba7b1f8",
+          "mapped_evidence_ids": [],
+          "status": "unresolved_truncated_anchor"
+        }
+      ],
+      "adopted_query_id": null,
+      "disposition": "compatibility audit only; no semantic relabeling or metric inclusion"
+    },
+    {
+      "source_query_id": "AAPL10K24_TXT_042",
+      "original_relevant_doc_ids": [
+        49
+      ],
+      "original_relevant_chunk_uids": [
+        "b70c94804eb5cadb53b1c50dec72ac27750db33c"
+      ],
+      "mapping": [
+        {
+          "original_doc_id": 49,
+          "original_chunk_uid": "b70c94804eb5cadb53b1c50dec72ac27750db33c",
+          "anchor_sha256": "0b54c1923938f703232a98bd3646951e72069fa8c016ca4ac6e3223a6de0f210",
+          "mapped_evidence_ids": [],
+          "status": "unresolved_truncated_anchor"
+        }
+      ],
+      "adopted_query_id": null,
+      "disposition": "compatibility audit only; no semantic relabeling or metric inclusion"
+    },
+    {
+      "source_query_id": "AAPL10K24_TXT_043",
+      "original_relevant_doc_ids": [
+        50
+      ],
+      "original_relevant_chunk_uids": [
+        "afcc7bc982a6c955cc9ff073208424e96a4daa92"
+      ],
+      "mapping": [
+        {
+          "original_doc_id": 50,
+          "original_chunk_uid": "afcc7bc982a6c955cc9ff073208424e96a4daa92",
+          "anchor_sha256": "1c8d63cd202727f2d4f2f5eccd9646084cf02ec61fd6d032b9c08eccd02f7f37",
+          "mapped_evidence_ids": [],
+          "status": "unresolved_truncated_anchor"
+        }
+      ],
+      "adopted_query_id": null,
+      "disposition": "compatibility audit only; no semantic relabeling or metric inclusion"
+    },
+    {
+      "source_query_id": "AAPL10K24_TXT_044",
+      "original_relevant_doc_ids": [
+        52
+      ],
+      "original_relevant_chunk_uids": [
+        "afb81781535bd8821badad74fe171cbd7aacdc14"
+      ],
+      "mapping": [
+        {
+          "original_doc_id": 52,
+          "original_chunk_uid": "afb81781535bd8821badad74fe171cbd7aacdc14",
+          "anchor_sha256": "abb6c2ad39cff68953cfdca433cea37d2680d41e4d7249ff428579351123ee94",
+          "mapped_evidence_ids": [],
+          "status": "unresolved_truncated_anchor"
+        }
+      ],
+      "adopted_query_id": null,
+      "disposition": "compatibility audit only; no semantic relabeling or metric inclusion"
+    },
+    {
+      "source_query_id": "AAPL10K24_TXT_045",
+      "original_relevant_doc_ids": [
+        53
+      ],
+      "original_relevant_chunk_uids": [
+        "22f75494b373aa6da2065671c6a65cdcf29f6597"
+      ],
+      "mapping": [
+        {
+          "original_doc_id": 53,
+          "original_chunk_uid": "22f75494b373aa6da2065671c6a65cdcf29f6597",
+          "anchor_sha256": "c072922d25c12ac550618d47f1a1fa898a99ccc6604fb55036ee7fac92d4e44b",
+          "mapped_evidence_ids": [],
+          "status": "unresolved_truncated_anchor"
+        }
+      ],
+      "adopted_query_id": null,
+      "disposition": "compatibility audit only; no semantic relabeling or metric inclusion"
+    },
+    {
+      "source_query_id": "AAPL10K24_TXT_046",
+      "original_relevant_doc_ids": [
+        65
+      ],
+      "original_relevant_chunk_uids": [
+        "7457da72f900a1b76b5e76d29e5e9c5d8563fdab"
+      ],
+      "mapping": [
+        {
+          "original_doc_id": 65,
+          "original_chunk_uid": "7457da72f900a1b76b5e76d29e5e9c5d8563fdab",
+          "anchor_sha256": "026c43b5c013318f933c895eed65f4a777fd5a315cae4b2cdbdac9df0a5e001d",
+          "mapped_evidence_ids": [],
+          "status": "unresolved_truncated_anchor"
+        }
+      ],
+      "adopted_query_id": null,
+      "disposition": "compatibility audit only; no semantic relabeling or metric inclusion"
+    },
+    {
+      "source_query_id": "AAPL10K24_TXT_047",
+      "original_relevant_doc_ids": [
+        65
+      ],
+      "original_relevant_chunk_uids": [
+        "7457da72f900a1b76b5e76d29e5e9c5d8563fdab"
+      ],
+      "mapping": [
+        {
+          "original_doc_id": 65,
+          "original_chunk_uid": "7457da72f900a1b76b5e76d29e5e9c5d8563fdab",
+          "anchor_sha256": "026c43b5c013318f933c895eed65f4a777fd5a315cae4b2cdbdac9df0a5e001d",
+          "mapped_evidence_ids": [],
+          "status": "unresolved_truncated_anchor"
+        }
+      ],
+      "adopted_query_id": null,
+      "disposition": "compatibility audit only; no semantic relabeling or metric inclusion"
+    },
+    {
+      "source_query_id": "AAPL10K24_TXT_048",
+      "original_relevant_doc_ids": [
+        57
+      ],
+      "original_relevant_chunk_uids": [
+        "fe9e1921aa011257776a8a6f9a56cd4498ef3660"
+      ],
+      "mapping": [
+        {
+          "original_doc_id": 57,
+          "original_chunk_uid": "fe9e1921aa011257776a8a6f9a56cd4498ef3660",
+          "anchor_sha256": "164ac769f299ebbf0d7551b8cbe0422755037fef8f07717ff914f10a35ce666c",
+          "mapped_evidence_ids": [
+            "AAPL_10-K_2024::text::45"
+          ],
+          "status": "exact_anchor_preserved"
+        }
+      ],
+      "adopted_query_id": null,
+      "disposition": "compatibility audit only; no semantic relabeling or metric inclusion"
+    },
+    {
+      "source_query_id": "AAPL10K24_TXT_049",
+      "original_relevant_doc_ids": [
+        84
+      ],
+      "original_relevant_chunk_uids": [
+        "cafbffc099f72c9a9f2b51e1f2c991297c28ee37"
+      ],
+      "mapping": [
+        {
+          "original_doc_id": 84,
+          "original_chunk_uid": "cafbffc099f72c9a9f2b51e1f2c991297c28ee37",
+          "anchor_sha256": "a6ea8a04a0259d9f62a19f215739ac4e19f228c52272c17607384f0ee0edbd15",
+          "mapped_evidence_ids": [],
+          "status": "unresolved_truncated_anchor"
+        }
+      ],
+      "adopted_query_id": null,
+      "disposition": "compatibility audit only; no semantic relabeling or metric inclusion"
+    },
+    {
+      "source_query_id": "AAPL10K24_TXT_050",
+      "original_relevant_doc_ids": [
+        72
+      ],
+      "original_relevant_chunk_uids": [
+        "3cbc7b90112adf2140369d6066b6944c78e3e61c"
+      ],
+      "mapping": [
+        {
+          "original_doc_id": 72,
+          "original_chunk_uid": "3cbc7b90112adf2140369d6066b6944c78e3e61c",
+          "anchor_sha256": "2d52d19e752baf12f0e22d68c85e0bec2fee814e5eacbd9985efedf71283366c",
+          "mapped_evidence_ids": [],
+          "status": "unresolved_truncated_anchor"
+        }
+      ],
+      "adopted_query_id": null,
+      "disposition": "compatibility audit only; no semantic relabeling or metric inclusion"
+    },
+    {
+      "source_query_id": "AAPL10K24_TXT_051",
+      "original_relevant_doc_ids": [
+        67,
+        72
+      ],
+      "original_relevant_chunk_uids": [
+        "31ea01eae0db6ae88744daf02ef5028edd89436c",
+        "3cbc7b90112adf2140369d6066b6944c78e3e61c"
+      ],
+      "mapping": [
+        {
+          "original_doc_id": 67,
+          "original_chunk_uid": "31ea01eae0db6ae88744daf02ef5028edd89436c",
+          "anchor_sha256": "efebf7f28fbe7bcb197278e5bb8289a876103c848b3466e9dfeaad053cd0c952",
+          "mapped_evidence_ids": [],
+          "status": "unresolved_truncated_anchor"
+        },
+        {
+          "original_doc_id": 72,
+          "original_chunk_uid": "3cbc7b90112adf2140369d6066b6944c78e3e61c",
+          "anchor_sha256": "2d52d19e752baf12f0e22d68c85e0bec2fee814e5eacbd9985efedf71283366c",
+          "mapped_evidence_ids": [],
+          "status": "unresolved_truncated_anchor"
+        }
+      ],
+      "adopted_query_id": null,
+      "disposition": "compatibility audit only; no semantic relabeling or metric inclusion"
+    },
+    {
+      "source_query_id": "AAPL10K24_TXT_052",
+      "original_relevant_doc_ids": [
+        68
+      ],
+      "original_relevant_chunk_uids": [
+        "bb81b81630c1ac14434c6dfd939fe66e7d06543b"
+      ],
+      "mapping": [
+        {
+          "original_doc_id": 68,
+          "original_chunk_uid": "bb81b81630c1ac14434c6dfd939fe66e7d06543b",
+          "anchor_sha256": "452219cf43c915cacfb427593edd044011ecbd098fb3617119d3c586c7950a38",
+          "mapped_evidence_ids": [],
+          "status": "unresolved_truncated_anchor"
+        }
+      ],
+      "adopted_query_id": null,
+      "disposition": "compatibility audit only; no semantic relabeling or metric inclusion"
+    },
+    {
+      "source_query_id": "AAPL10K24_TXT_053",
+      "original_relevant_doc_ids": [
+        69
+      ],
+      "original_relevant_chunk_uids": [
+        "a0db8ab307ba9fe770d1c2ce4b15a66ce8b43e8a"
+      ],
+      "mapping": [
+        {
+          "original_doc_id": 69,
+          "original_chunk_uid": "a0db8ab307ba9fe770d1c2ce4b15a66ce8b43e8a",
+          "anchor_sha256": "9d5e1ec37279761b79d7f709f11fd0dbe71ae1bbef6c089d070867db73654655",
+          "mapped_evidence_ids": [],
+          "status": "unresolved_truncated_anchor"
+        }
+      ],
+      "adopted_query_id": null,
+      "disposition": "compatibility audit only; no semantic relabeling or metric inclusion"
+    },
+    {
+      "source_query_id": "AAPL10K24_TXT_054",
+      "original_relevant_doc_ids": [
+        69
+      ],
+      "original_relevant_chunk_uids": [
+        "a0db8ab307ba9fe770d1c2ce4b15a66ce8b43e8a"
+      ],
+      "mapping": [
+        {
+          "original_doc_id": 69,
+          "original_chunk_uid": "a0db8ab307ba9fe770d1c2ce4b15a66ce8b43e8a",
+          "anchor_sha256": "9d5e1ec37279761b79d7f709f11fd0dbe71ae1bbef6c089d070867db73654655",
+          "mapped_evidence_ids": [],
+          "status": "unresolved_truncated_anchor"
+        }
+      ],
+      "adopted_query_id": null,
+      "disposition": "compatibility audit only; no semantic relabeling or metric inclusion"
+    },
+    {
+      "source_query_id": "AAPL10K24_TXT_055",
+      "original_relevant_doc_ids": [
+        76
+      ],
+      "original_relevant_chunk_uids": [
+        "58a2bd7504db437e4ec4ecbf871b3b25978a4507"
+      ],
+      "mapping": [
+        {
+          "original_doc_id": 76,
+          "original_chunk_uid": "58a2bd7504db437e4ec4ecbf871b3b25978a4507",
+          "anchor_sha256": "508ff7a5c389b45c666dce5c51deeff86fd9bf310c5672794a9ab0236ba7b1f8",
+          "mapped_evidence_ids": [],
+          "status": "unresolved_truncated_anchor"
+        }
+      ],
+      "adopted_query_id": null,
+      "disposition": "compatibility audit only; no semantic relabeling or metric inclusion"
+    },
+    {
+      "source_query_id": "AAPL10K24_TXT_056",
+      "original_relevant_doc_ids": [
+        64
+      ],
+      "original_relevant_chunk_uids": [
+        "5c5693afe05e74cd1fe7decec770cf4d9bb8e3f2"
+      ],
+      "mapping": [
+        {
+          "original_doc_id": 64,
+          "original_chunk_uid": "5c5693afe05e74cd1fe7decec770cf4d9bb8e3f2",
+          "anchor_sha256": "810126c8071d27f4aa975025833e6f76c4f65366501bdf69149ace9149988f94",
+          "mapped_evidence_ids": [
+            "AAPL_10-K_2024::text::52"
+          ],
+          "status": "exact_anchor_preserved"
+        }
+      ],
+      "adopted_query_id": null,
+      "disposition": "compatibility audit only; no semantic relabeling or metric inclusion"
+    },
+    {
+      "source_query_id": "AAPL10K24_TXT_057",
+      "original_relevant_doc_ids": [
+        77
+      ],
+      "original_relevant_chunk_uids": [
+        "84a2adb656863f778ce4036b51728d1bc1fc5087"
+      ],
+      "mapping": [
+        {
+          "original_doc_id": 77,
+          "original_chunk_uid": "84a2adb656863f778ce4036b51728d1bc1fc5087",
+          "anchor_sha256": "300d32f68e44fda1d2298d179e58e8a7422ca54b17004fa0fa61b3e822c75ae0",
+          "mapped_evidence_ids": [],
+          "status": "unresolved_truncated_anchor"
+        }
+      ],
+      "adopted_query_id": null,
+      "disposition": "compatibility audit only; no semantic relabeling or metric inclusion"
+    },
+    {
+      "source_query_id": "AAPL10K24_TXT_058",
+      "original_relevant_doc_ids": [
+        78
+      ],
+      "original_relevant_chunk_uids": [
+        "fa41ebb0d7cb7814e02f2c86aa66905d3d7200da"
+      ],
+      "mapping": [
+        {
+          "original_doc_id": 78,
+          "original_chunk_uid": "fa41ebb0d7cb7814e02f2c86aa66905d3d7200da",
+          "anchor_sha256": "05aaf6b937a2e19e3bf3994b7eb98019b1a136d6378b31b6450bf3cd4d02ea22",
+          "mapped_evidence_ids": [],
+          "status": "unresolved_truncated_anchor"
+        }
+      ],
+      "adopted_query_id": null,
+      "disposition": "compatibility audit only; no semantic relabeling or metric inclusion"
+    },
+    {
+      "source_query_id": "AAPL10K24_TXT_059",
+      "original_relevant_doc_ids": [
+        85
+      ],
+      "original_relevant_chunk_uids": [
+        "250dd202bdebc958f630f8e47a17cac7b08a8ce0"
+      ],
+      "mapping": [
+        {
+          "original_doc_id": 85,
+          "original_chunk_uid": "250dd202bdebc958f630f8e47a17cac7b08a8ce0",
+          "anchor_sha256": "fbc244b27894b45a469f2fb25bd74cb282a360772f413776fe7b0c0a4a4cbd6d",
+          "mapped_evidence_ids": [],
+          "status": "unresolved_truncated_anchor"
+        }
+      ],
+      "adopted_query_id": null,
+      "disposition": "compatibility audit only; no semantic relabeling or metric inclusion"
+    },
+    {
+      "source_query_id": "AAPL10K24_TXT_060",
+      "original_relevant_doc_ids": [
+        86
+      ],
+      "original_relevant_chunk_uids": [
+        "72f00a1ba2ac7b9185e038d1c3a21f631942aba0"
+      ],
+      "mapping": [
+        {
+          "original_doc_id": 86,
+          "original_chunk_uid": "72f00a1ba2ac7b9185e038d1c3a21f631942aba0",
+          "anchor_sha256": "b34a556e30eec79b2b5a318fce45bbdabbe4d31045f45d7787f3125629044fde",
+          "mapped_evidence_ids": [],
+          "status": "unresolved_truncated_anchor"
+        }
+      ],
+      "adopted_query_id": null,
+      "disposition": "compatibility audit only; no semantic relabeling or metric inclusion"
+    },
+    {
+      "source_query_id": "AAPL10K24_TXT_061",
+      "original_relevant_doc_ids": [
+        91
+      ],
+      "original_relevant_chunk_uids": [
+        "3de3b2b4c8b4235f4c319a629e48264c20214509"
+      ],
+      "mapping": [
+        {
+          "original_doc_id": 91,
+          "original_chunk_uid": "3de3b2b4c8b4235f4c319a629e48264c20214509",
+          "anchor_sha256": "034c5a8f7f33d31a63443e674ea05b071b6d0defd781baab926351926e75bbb6",
+          "mapped_evidence_ids": [],
+          "status": "unresolved_truncated_anchor"
+        }
+      ],
+      "adopted_query_id": null,
+      "disposition": "compatibility audit only; no semantic relabeling or metric inclusion"
+    },
+    {
+      "source_query_id": "AAPL10K24_TXT_062",
+      "original_relevant_doc_ids": [
+        96
+      ],
+      "original_relevant_chunk_uids": [
+        "78748600e1ebca4748dad131fad7fb00d8cb6768"
+      ],
+      "mapping": [
+        {
+          "original_doc_id": 96,
+          "original_chunk_uid": "78748600e1ebca4748dad131fad7fb00d8cb6768",
+          "anchor_sha256": "1469f5c777a4ca523c446931dec038b4d61c8adf074df24e1344cd431f463b91",
+          "mapped_evidence_ids": [],
+          "status": "unresolved_truncated_anchor"
+        }
+      ],
+      "adopted_query_id": null,
+      "disposition": "compatibility audit only; no semantic relabeling or metric inclusion"
+    },
+    {
+      "source_query_id": "AAPL10K24_TXT_063",
+      "original_relevant_doc_ids": [
+        99
+      ],
+      "original_relevant_chunk_uids": [
+        "706638ea4da24ee0e3bfdaa09d2610ef4f3966ad"
+      ],
+      "mapping": [
+        {
+          "original_doc_id": 99,
+          "original_chunk_uid": "706638ea4da24ee0e3bfdaa09d2610ef4f3966ad",
+          "anchor_sha256": "95633c7ee1723b96d442ed9f3f100fe56ae0c05c753c3acbf640e242885c0888",
+          "mapped_evidence_ids": [],
+          "status": "unresolved_truncated_anchor"
+        }
+      ],
+      "adopted_query_id": null,
+      "disposition": "compatibility audit only; no semantic relabeling or metric inclusion"
+    },
+    {
+      "source_query_id": "AAPL10K24_TXT_064",
+      "original_relevant_doc_ids": [
+        100
+      ],
+      "original_relevant_chunk_uids": [
+        "283fae869f66ea2de33cc9a23cb1771be00cd5fa"
+      ],
+      "mapping": [
+        {
+          "original_doc_id": 100,
+          "original_chunk_uid": "283fae869f66ea2de33cc9a23cb1771be00cd5fa",
+          "anchor_sha256": "7cbe4539bd16243be7934931fd2c52586daf882dddacca3a6c1c2a518046c090",
+          "mapped_evidence_ids": [],
+          "status": "unresolved_truncated_anchor"
+        }
+      ],
+      "adopted_query_id": null,
+      "disposition": "compatibility audit only; no semantic relabeling or metric inclusion"
+    },
+    {
+      "source_query_id": "AAPL10K24_TXT_065",
+      "original_relevant_doc_ids": [
+        34
+      ],
+      "original_relevant_chunk_uids": [
+        "acda73f8bcfd9c5ef26ff27515dc44f07a1507ef"
+      ],
+      "mapping": [
+        {
+          "original_doc_id": 34,
+          "original_chunk_uid": "acda73f8bcfd9c5ef26ff27515dc44f07a1507ef",
+          "anchor_sha256": "a3014a36534d5612e7e04f74fc455b30bd0101d370991d349923efd6cc69ebc0",
+          "mapped_evidence_ids": [
+            "AAPL_10-K_2024::text::89"
+          ],
+          "status": "exact_anchor_preserved"
+        }
+      ],
+      "adopted_query_id": null,
+      "disposition": "compatibility audit only; no semantic relabeling or metric inclusion"
+    },
+    {
+      "source_query_id": "AAPL10K24_TXT_066",
+      "original_relevant_doc_ids": [
+        43,
+        44
+      ],
+      "original_relevant_chunk_uids": [
+        "c9a4f4155b10f1045a674f903c671e0d70068d08",
+        "1a7e7742434762a15a4e1108eecd685b73e12587"
+      ],
+      "mapping": [
+        {
+          "original_doc_id": 44,
+          "original_chunk_uid": "1a7e7742434762a15a4e1108eecd685b73e12587",
+          "anchor_sha256": "70116706b0143bdc08dd9c897d9e5484304b44683c0e7875e9cbded912ca531f",
+          "mapped_evidence_ids": [],
+          "status": "unresolved_truncated_anchor"
+        },
+        {
+          "original_doc_id": 43,
+          "original_chunk_uid": "c9a4f4155b10f1045a674f903c671e0d70068d08",
+          "anchor_sha256": "da9a8f761d164932dd140478b6dbe95f5120d2c30ea2541dcd42ff20a7d45467",
+          "mapped_evidence_ids": [],
+          "status": "unresolved_truncated_anchor"
+        }
+      ],
+      "adopted_query_id": null,
+      "disposition": "compatibility audit only; no semantic relabeling or metric inclusion"
+    },
+    {
+      "source_query_id": "AAPL10K24_TXT_067",
+      "original_relevant_doc_ids": [
+        30,
+        31,
+        32
+      ],
+      "original_relevant_chunk_uids": [
+        "310e7400301f4ffb7331c98732b3523abc4c777d",
+        "bd1bb903e26812bc18d534ae7d34f173be407988",
+        "27ce956917efc17dc6b75b78601d3c4b214059c0"
+      ],
+      "mapping": [
+        {
+          "original_doc_id": 30,
+          "original_chunk_uid": "310e7400301f4ffb7331c98732b3523abc4c777d",
+          "anchor_sha256": "703d89b43be540b7005c49422ae82e1bbc90824c713cf8146c2561c8976f1693",
+          "mapped_evidence_ids": [],
+          "status": "unresolved_truncated_anchor"
+        },
+        {
+          "original_doc_id": 31,
+          "original_chunk_uid": "bd1bb903e26812bc18d534ae7d34f173be407988",
+          "anchor_sha256": "dc925da4a6688a07b7d8aa73148c3ffe009e037d47daa56a11fe1279de5da169",
+          "mapped_evidence_ids": [],
+          "status": "unresolved_truncated_anchor"
+        },
+        {
+          "original_doc_id": 32,
+          "original_chunk_uid": "27ce956917efc17dc6b75b78601d3c4b214059c0",
+          "anchor_sha256": "8d64ef1b2c615c0f4de3412d6fc04e69f60294c0d2b0e92f1f40430791820851",
+          "mapped_evidence_ids": [],
+          "status": "unresolved_truncated_anchor"
+        }
+      ],
+      "adopted_query_id": null,
+      "disposition": "compatibility audit only; no semantic relabeling or metric inclusion"
+    },
+    {
+      "source_query_id": "AAPL10K24_TXT_068",
+      "original_relevant_doc_ids": [
+        53,
+        68
+      ],
+      "original_relevant_chunk_uids": [
+        "22f75494b373aa6da2065671c6a65cdcf29f6597",
+        "bb81b81630c1ac14434c6dfd939fe66e7d06543b"
+      ],
+      "mapping": [
+        {
+          "original_doc_id": 53,
+          "original_chunk_uid": "22f75494b373aa6da2065671c6a65cdcf29f6597",
+          "anchor_sha256": "c072922d25c12ac550618d47f1a1fa898a99ccc6604fb55036ee7fac92d4e44b",
+          "mapped_evidence_ids": [],
+          "status": "unresolved_truncated_anchor"
+        },
+        {
+          "original_doc_id": 68,
+          "original_chunk_uid": "bb81b81630c1ac14434c6dfd939fe66e7d06543b",
+          "anchor_sha256": "452219cf43c915cacfb427593edd044011ecbd098fb3617119d3c586c7950a38",
+          "mapped_evidence_ids": [],
+          "status": "unresolved_truncated_anchor"
+        }
+      ],
+      "adopted_query_id": null,
+      "disposition": "compatibility audit only; no semantic relabeling or metric inclusion"
+    },
+    {
+      "source_query_id": "AAPL10K24_TXT_069",
+      "original_relevant_doc_ids": [
+        6,
+        87
+      ],
+      "original_relevant_chunk_uids": [
+        "31c425ff7439b2bfa12ae82bbad30c74ee59729c",
+        "56575ad11af4a60bad150e5fb4d359c0aba9059c"
+      ],
+      "mapping": [
+        {
+          "original_doc_id": 6,
+          "original_chunk_uid": "31c425ff7439b2bfa12ae82bbad30c74ee59729c",
+          "anchor_sha256": "44653f983bd983cfc13a0634c52e061548811f6e9e153e01868a732fb4610a27",
+          "mapped_evidence_ids": [],
+          "status": "unresolved_truncated_anchor"
+        },
+        {
+          "original_doc_id": 87,
+          "original_chunk_uid": "56575ad11af4a60bad150e5fb4d359c0aba9059c",
+          "anchor_sha256": "44653f983bd983cfc13a0634c52e061548811f6e9e153e01868a732fb4610a27",
+          "mapped_evidence_ids": [],
+          "status": "unresolved_truncated_anchor"
+        }
+      ],
+      "adopted_query_id": null,
+      "disposition": "compatibility audit only; no semantic relabeling or metric inclusion"
+    },
+    {
+      "source_query_id": "AAPL10K24_TXT_070",
+      "original_relevant_doc_ids": [
+        47,
+        72
+      ],
+      "original_relevant_chunk_uids": [
+        "7d65ddd155d8f8262f2d2873c79c0d5064016f14",
+        "3cbc7b90112adf2140369d6066b6944c78e3e61c"
+      ],
+      "mapping": [
+        {
+          "original_doc_id": 47,
+          "original_chunk_uid": "7d65ddd155d8f8262f2d2873c79c0d5064016f14",
+          "anchor_sha256": "84cf68b2a3637e599db2292d8eeaae0e5ab42b94e543f5ab4362358aa1ac29cc",
+          "mapped_evidence_ids": [],
+          "status": "unresolved_truncated_anchor"
+        },
+        {
+          "original_doc_id": 72,
+          "original_chunk_uid": "3cbc7b90112adf2140369d6066b6944c78e3e61c",
+          "anchor_sha256": "2d52d19e752baf12f0e22d68c85e0bec2fee814e5eacbd9985efedf71283366c",
+          "mapped_evidence_ids": [],
+          "status": "unresolved_truncated_anchor"
+        }
+      ],
+      "adopted_query_id": null,
+      "disposition": "compatibility audit only; no semantic relabeling or metric inclusion"
+    },
+    {
+      "source_query_id": "AAPL10K24_TXT_071",
+      "original_relevant_doc_ids": [
+        48,
+        77,
+        79
+      ],
+      "original_relevant_chunk_uids": [
+        "dda16647f55423787731de0400b873e3eef0f6d2",
+        "84a2adb656863f778ce4036b51728d1bc1fc5087",
+        "6f0fb8cd026a5abb7a8dc977bb9653f418024a96"
+      ],
+      "mapping": [
+        {
+          "original_doc_id": 79,
+          "original_chunk_uid": "6f0fb8cd026a5abb7a8dc977bb9653f418024a96",
+          "anchor_sha256": "85c595f2cb4e1127bd27d37c258da1f52449a29ed0ec9b6ab98efccdbc87517e",
+          "mapped_evidence_ids": [],
+          "status": "unresolved_truncated_anchor"
+        },
+        {
+          "original_doc_id": 48,
+          "original_chunk_uid": "dda16647f55423787731de0400b873e3eef0f6d2",
+          "anchor_sha256": "5d1b5ff33859133d61707846fd25607ea752d1e6a1585285ece4acc273cb59de",
+          "mapped_evidence_ids": [],
+          "status": "unresolved_truncated_anchor"
+        },
+        {
+          "original_doc_id": 77,
+          "original_chunk_uid": "84a2adb656863f778ce4036b51728d1bc1fc5087",
+          "anchor_sha256": "300d32f68e44fda1d2298d179e58e8a7422ca54b17004fa0fa61b3e822c75ae0",
+          "mapped_evidence_ids": [],
+          "status": "unresolved_truncated_anchor"
+        }
+      ],
+      "adopted_query_id": null,
+      "disposition": "compatibility audit only; no semantic relabeling or metric inclusion"
+    },
+    {
+      "source_query_id": "AAPL10K24_TXT_072",
+      "original_relevant_doc_ids": [
+        3,
+        88
+      ],
+      "original_relevant_chunk_uids": [
+        "be3480c53ab836f25b88a8436baafe9040b9a665",
+        "8f7f2032b01dbf1c92818d27a9f69e783b5a07f8"
+      ],
+      "mapping": [
+        {
+          "original_doc_id": 3,
+          "original_chunk_uid": "be3480c53ab836f25b88a8436baafe9040b9a665",
+          "anchor_sha256": "d5ff38b58a67942304b115f7c1b181844d9bd601204516ee1124b71b5b4af88e",
+          "mapped_evidence_ids": [],
+          "status": "unresolved_truncated_anchor"
+        },
+        {
+          "original_doc_id": 88,
+          "original_chunk_uid": "8f7f2032b01dbf1c92818d27a9f69e783b5a07f8",
+          "anchor_sha256": "d5ff38b58a67942304b115f7c1b181844d9bd601204516ee1124b71b5b4af88e",
+          "mapped_evidence_ids": [],
+          "status": "unresolved_truncated_anchor"
+        }
+      ],
+      "adopted_query_id": null,
+      "disposition": "compatibility audit only; no semantic relabeling or metric inclusion"
+    },
+    {
+      "source_query_id": "AAPL10K24_TXT_073",
+      "original_relevant_doc_ids": [
+        9,
+        16
+      ],
+      "original_relevant_chunk_uids": [
+        "a2bd6155c69448dee409547687d002e4222a2ccf",
+        "2489d374d5c11d8ccf5cbd81013357ba90117fd8"
+      ],
+      "mapping": [
+        {
+          "original_doc_id": 9,
+          "original_chunk_uid": "a2bd6155c69448dee409547687d002e4222a2ccf",
+          "anchor_sha256": "57d53114e4fcd9f0624d76cd30a24e5d779ac24dc8ddf78ef503ba8557540ff2",
+          "mapped_evidence_ids": [],
+          "status": "unresolved_truncated_anchor"
+        },
+        {
+          "original_doc_id": 16,
+          "original_chunk_uid": "2489d374d5c11d8ccf5cbd81013357ba90117fd8",
+          "anchor_sha256": "31096b3e5bae888bbd730d9220ca869be9c2f77b38592099b2f65eaf8fce226d",
+          "mapped_evidence_ids": [],
+          "status": "unresolved_truncated_anchor"
+        }
+      ],
+      "adopted_query_id": null,
+      "disposition": "compatibility audit only; no semantic relabeling or metric inclusion"
+    },
+    {
+      "source_query_id": "AAPL10K24_TXT_074",
+      "original_relevant_doc_ids": [
+        50,
+        75,
+        91
+      ],
+      "original_relevant_chunk_uids": [
+        "afcc7bc982a6c955cc9ff073208424e96a4daa92",
+        "b405f715b21bf3872aeab50d9b5e44f95b422e65",
+        "3de3b2b4c8b4235f4c319a629e48264c20214509"
+      ],
+      "mapping": [
+        {
+          "original_doc_id": 75,
+          "original_chunk_uid": "b405f715b21bf3872aeab50d9b5e44f95b422e65",
+          "anchor_sha256": "f94e938d286228526845dbabe9add3319afcff24464e29c5d63f481191f96ab4",
+          "mapped_evidence_ids": [],
+          "status": "unresolved_truncated_anchor"
+        },
+        {
+          "original_doc_id": 91,
+          "original_chunk_uid": "3de3b2b4c8b4235f4c319a629e48264c20214509",
+          "anchor_sha256": "034c5a8f7f33d31a63443e674ea05b071b6d0defd781baab926351926e75bbb6",
+          "mapped_evidence_ids": [],
+          "status": "unresolved_truncated_anchor"
+        },
+        {
+          "original_doc_id": 50,
+          "original_chunk_uid": "afcc7bc982a6c955cc9ff073208424e96a4daa92",
+          "anchor_sha256": "1c8d63cd202727f2d4f2f5eccd9646084cf02ec61fd6d032b9c08eccd02f7f37",
+          "mapped_evidence_ids": [],
+          "status": "unresolved_truncated_anchor"
+        }
+      ],
+      "adopted_query_id": null,
+      "disposition": "compatibility audit only; no semantic relabeling or metric inclusion"
+    },
+    {
+      "source_query_id": "AAPL10K24_TXT_075",
+      "original_relevant_doc_ids": [
+        52,
+        78
+      ],
+      "original_relevant_chunk_uids": [
+        "afb81781535bd8821badad74fe171cbd7aacdc14",
+        "fa41ebb0d7cb7814e02f2c86aa66905d3d7200da"
+      ],
+      "mapping": [
+        {
+          "original_doc_id": 52,
+          "original_chunk_uid": "afb81781535bd8821badad74fe171cbd7aacdc14",
+          "anchor_sha256": "abb6c2ad39cff68953cfdca433cea37d2680d41e4d7249ff428579351123ee94",
+          "mapped_evidence_ids": [],
+          "status": "unresolved_truncated_anchor"
+        },
+        {
+          "original_doc_id": 78,
+          "original_chunk_uid": "fa41ebb0d7cb7814e02f2c86aa66905d3d7200da",
+          "anchor_sha256": "05aaf6b937a2e19e3bf3994b7eb98019b1a136d6378b31b6450bf3cd4d02ea22",
+          "mapped_evidence_ids": [],
+          "status": "unresolved_truncated_anchor"
+        }
+      ],
+      "adopted_query_id": null,
+      "disposition": "compatibility audit only; no semantic relabeling or metric inclusion"
+    }
+  ]
+}

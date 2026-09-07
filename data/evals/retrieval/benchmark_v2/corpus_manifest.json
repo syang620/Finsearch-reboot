@@ -1,0 +1,89 @@
+{
+  "corpus_id": "sec_retrieval_benchmark_v2",
+  "documents": 948,
+  "corpus_sha256": "39c8d01ee5c71710e443e49698957d2aa991e71c16ad79905e7bd07d6a11fe4d",
+  "sources": [
+    {
+      "ticker": "AAPL",
+      "fiscal_year": 2024,
+      "form_type": "10-K",
+      "source_html": "data/html_filings/AAPL/10-K/10-K_2024.html",
+      "source_sha256": "24a830a0f1256e371d36a1f7f72e5e85a38037d1de2f6f966eb8457db42ff6d6",
+      "raw_text_chunks": 101,
+      "text_chunks": 107,
+      "tables": 48,
+      "fallback_parser": false
+    },
+    {
+      "ticker": "AAPL",
+      "fiscal_year": 2025,
+      "form_type": "10-K",
+      "source_html": "data/html_filings/AAPL/10-K/10-K_2025.html",
+      "source_sha256": "548ae59778cf08ee0f2ee088e7ece20d947076c3c01f74d2d65db4c2777e436a",
+      "raw_text_chunks": 104,
+      "text_chunks": 114,
+      "tables": 47,
+      "fallback_parser": false
+    },
+    {
+      "ticker": "AMZN",
+      "fiscal_year": 2023,
+      "form_type": "10-K",
+      "source_html": "data/html_filings/AMZN/10-K/10-K_2023.html",
+      "source_sha256": "a469a0feca6dd5728b10c73076c2c120db58116938614c5b1b864fe13674266d",
+      "raw_text_chunks": 40,
+      "text_chunks": 76,
+      "tables": 59,
+      "fallback_parser": false
+    },
+    {
+      "ticker": "AMZN",
+      "fiscal_year": 2024,
+      "form_type": "10-K",
+      "source_html": "data/html_filings/AMZN/10-K/10-K_2024.html",
+      "source_sha256": "094e0f2aa1d58203ed77340330e94ff5cb63f5168de5e08ed25a17681a1a53d9",
+      "raw_text_chunks": 40,
+      "text_chunks": 76,
+      "tables": 57,
+      "fallback_parser": false
+    },
+    {
+      "ticker": "MSFT",
+      "fiscal_year": 2024,
+      "form_type": "10-K",
+      "source_html": "data/html_filings/MSFT/10-K/10-K_2024.html",
+      "source_sha256": "43829a12cc9cd7198474b3d735c4fc1aba1f871fb637d237aa5979d57e6b8c95",
+      "raw_text_chunks": 25,
+      "text_chunks": 91,
+      "tables": 86,
+      "fallback_parser": false
+    },
+    {
+      "ticker": "MSFT",
+      "fiscal_year": 2025,
+      "form_type": "10-K",
+      "source_html": "data/html_filings/MSFT/10-K/10-K_2025.html",
+      "source_sha256": "99d693f6c1544144ebeee92954f151a85bc62111837530a42855953bc01d0bbe",
+      "raw_text_chunks": 24,
+      "text_chunks": 108,
+      "tables": 79,
+      "fallback_parser": false
+    }
+  ],
+  "construction": {
+    "text": "unchanged sec_chunker and ingestion CLI splitter defaults: parent expansion, subsection, 1200 tokens, one paragraph overlap",
+    "tables": "full raw tables from unchanged sec_chunker; no generated summaries or table-row documents",
+    "scope": "all extracted chunks from six preselected tracked annual filings; no retrieval-based selection"
+  },
+  "packages": {
+    "sec-parser": "0.58.1",
+    "tiktoken": "0.12.0",
+    "pandas": "3.0.0",
+    "beautifulsoup4": "4.12.3"
+  },
+  "source_code_sha256": {
+    "src/ingestion/sec_chunker.py": "5349ffa935b118297e06cc8c87a7a39dbcf56ec8d3fdac8c2d73934b3b1ef662",
+    "src/ingestion/chunk_splitter.py": "a304817a5cf894be8a70c643b27696d96779c933a954b2d9f284550c41704af0",
+    "src/ingestion/sec_embedder.py": "4299dbbad78b328428163916d191170a239345c7e6a06469eb3d37b9ec80ac8f"
+  }
+}
