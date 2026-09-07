@@ -174,8 +174,22 @@ and benchmark indexes and embedding digest stayed unchanged. This is an
 incomplete, control-contaminated attempt, not a replacement baseline or a
 release pass. Its [raw evidence and interruption report](../artifacts/evals/retrieval/benchmark_v2/baselines/4784e134967fae5cd2b1e253c99ef95e0852602c/REPORT.md)
 are preserved under that SHA. No partial results are selected for comparison.
-Resume only after workload isolation, with a clean new freeze/output identity;
-never overwrite either recorded run. PR27 remains unmerged pending completion.
+After workload isolation, the clean, reviewed head
+`54d31917c27263ea25ebf5d905caa0a4ee34f74f` was used for a new full pass. It
+completed **480/480 pairs with zero errors/missing labels**, passed all 960
+power/browser samples, and preserved both indexes and the model digest.
+All 480 ranked-ID lists and quality-metric dictionaries exactly match the
+original run. The review fix therefore changes verification portability, not
+retrieval results. Both prior runs remain immutable; none was overwritten or
+selectively resumed.
+
+The [post-review complete report](../artifacts/evals/retrieval/benchmark_v2/baselines/54d31917c27263ea25ebf5d905caa0a4ee34f74f/REPORT.md)
+and [full metrics](../artifacts/evals/retrieval/benchmark_v2/baselines/54d31917c27263ea25ebf5d905caa0a4ee34f74f/summary.json)
+record the new latency observations: total p50/p95 ms are BM25 13.5/16.1,
+dense 142.7/282.8, hybrid 123.8/293.1, and reranked 1363.0/1884.6; reranker-only
+1193/1684. Background CPU bursts remain disclosed, not optimized away. Codex
+review of `54d3191` completed with no new findings; final evidence-head review
+is requested before the user-authorized merge. No further retrieval tuning.
 
 ## Honest claims
 
