@@ -41,7 +41,7 @@ Assess the whole answer and compare_rows as well as the claim list. unbound_fact
 
 Return ONLY this JSON object, no markdown, no extra keys:
 {"claims":[{"claim_id":"actual ID","support":"fully_supported|partially_supported|unsupported","reason":"specific reasoning","evidence_quotes":[{"context_id":"actual cited ID","quote":"verbatim evidence substring"}]}],"requirements":[{"claim_id":"gold ID","fulfillment":"complete|partial|missing","reason":"specific reasoning"}],"answer_relevant":true,"answerability_correct":true,"unbound_factual_prose":false,"answer_reason":"specific whole-answer assessment"}
-Use empty claims/requirements arrays only when those inputs are empty. Do not invent claim IDs.''' 
+Use empty claims/requirements arrays only when those inputs are empty. Do not invent claim IDs.'''
 
 ANNOTATION = '''# Semantic answer benchmark v1: frozen annotation contract
 
