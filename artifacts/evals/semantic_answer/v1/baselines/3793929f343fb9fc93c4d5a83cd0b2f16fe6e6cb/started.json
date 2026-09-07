@@ -1,0 +1,446 @@
+{
+  "implementation_sha": "3793929f343fb9fc93c4d5a83cd0b2f16fe6e6cb",
+  "dataset_freeze_sha": "b7d30041a678cd9ef5395828daf49c4db634605c",
+  "dataset_manifest_sha256": "db6a8c7a985cfc95734e23a978bfbb923bcf145ce06b15886a4b44a3dbce3a49",
+  "dataset_sha256": "63e085e940a98aa7aa6b6136f9a55a2ce5bdc810e64d8bc6663d4125fdba65d2",
+  "source_sha256": {
+    "scripts/evals/agents/build_semantic_dataset_v1.py": "03a926f51c593c16765ca11c347244f84ad5b22cc2b6a26083c9b4403fb3fcf5",
+    "scripts/evals/agents/build_semantic_sources_v1.py": "6af272b31d63606fe7a90e0df8c67d729f7b08fd886de6b121755f5f3517762c",
+    "scripts/evals/agents/capture_pr7_timeout_support.py": "83c8701902995296808c5fa0c776aa0fc4ddba77e420b1ef54f918741544bc49",
+    "scripts/evals/agents/capture_resolver_pr24.py": "bf083654f10dfd2c59d44e7fd55bfd4c80d17d7bafd13548c966d0c28c4caa97",
+    "scripts/evals/agents/eval_agent_calculator_v1.py": "6d4e9f84f16b8caacb786b7fa884ef790ad8b1e36c13bc0883f7338dee595532",
+    "scripts/evals/agents/eval_agent_degradation_v1.py": "3edf73da9bafa6ca4092ac9d10a5a776b2e813222937a65c68afe0bf323c22ff",
+    "scripts/evals/agents/eval_agent_grounding_v1.py": "c97918b70489043dd1bea7a10eb77cab88d904ff42cda3f92c6ea8015284dde0",
+    "scripts/evals/agents/eval_agent_output_repair_v1.py": "ec253db762670718bb99e8683530478f7b5fcb043fa419ad85677372207beee4",
+    "scripts/evals/agents/eval_agents_v0.py": "6a4872dc50b53bfd0b77354dcf300ab9dd1f9e753afe9dd0090c2896d4ff83fe",
+    "scripts/evals/agents/eval_agents_v1.py": "64b80e637e3d12ce81280c6095cc8a8b721e64fa7639c1cee3d4d4fc6f564f37",
+    "scripts/evals/agents/eval_filing_period_pr8.py": "db2a2e5d0f76039951ee036ea63c1dda1c18a20294208b33f26810ea3fd7e1eb",
+    "scripts/evals/agents/eval_grounding_judge_v1.py": "cce0c54201a39f78263f99f58c1aeac07d781b17f4bf00763e30babe4e841b0a",
+    "scripts/evals/agents/eval_planner_routes.py": "abc036334c1b5f1a8d4f2ea0987c7ee7e47334d259a06f26b14e7baec0c02868",
+    "scripts/evals/agents/eval_structured_fact_capabilities.py": "ee7daa52e50c8c7c7793ca1a7e30d6e63faf55933109bac28fb0f3563f7628f7",
+    "scripts/evals/agents/eval_structured_fact_resolver_v1.py": "9071690315dcc09cbb1a7dd55478904752b383ae047f724bd6929edfe6771c88",
+    "scripts/evals/agents/freeze_filing_period_pr8.py": "b761cc5ff2f6e2885a0c0e9c6b4815cb4b36bd2ad1e06e24d901689f7e961a1a",
+    "scripts/evals/agents/freeze_semantic_v1.py": "d5131cd24e70163d5e3c0833aeddc5f12598caa6b8e10366a91cb65cd5c5e75e",
+    "scripts/evals/agents/investigate_pr7_timeouts.py": "646315c0464249655814e02991580b64260c0dac034521175aeb650e6ed116cf",
+    "scripts/evals/agents/replay_pr7_ac_packets.py": "ec07c70be07a387f530f8b59b141f2f96bf62a912ca1070f9f6f1baa0326a5df",
+    "scripts/evals/agents/replay_pr7_kb002_isolated.py": "0ca508c3a1190c757d6bb3b6aa083025c6743e8c77641bcb6447082a1742ad12",
+    "scripts/evals/agents/replay_pr7_timeout_packets.py": "518e97119366eb5654b72054c04540ac8a25fa4e040ee709ad62ad5d344351f7",
+    "scripts/evals/agents/run_semantic_v1.py": "68b96c96f383e6df743b27a26dfc2694132d2963f3e455b98e8793531adfce3a",
+    "scripts/evals/agents/semantic_annotations_v1.py": "fbc5b8ca57fced786bc9af7e27a71df4ab8a03501272c32550c7b4283be843d3",
+    "scripts/evals/agents/summarize_pr7_ac_comparison.py": "a5e04d81ebe5b6e273979d069c0f78974c76dbec205b5be65fb242d513047e4a",
+    "scripts/evals/agents/verify_semantic_v1.py": "cc623f5b9461ada636e15ba2de0d28587207fb121a990b30bf076d87e3a8ecf6",
+    "scripts/evals/retrieval/run_benchmark_v2.py": "26a7e5feddb0def9508e384736b4725885806b203ca89dbc09b405ee14063a5a",
+    "src/agents/__init__.py": "5b7512d4f104f18ea838bc8585ce2b12460f8d090284f7b19cf0e7dc36093b98",
+    "src/agents/analyst/__init__.py": "6672f8b7929996fb9dbe2e01e3f13c7b32d269bae77e561b7f3a2e312eb4a68f",
+    "src/agents/analyst/agent.py": "2a4d28a977d88ea4322fc2db3c9d4d0dc08ad64f0de45729f8c406cc334994e6",
+    "src/agents/analyst/grounding.py": "a6d93a735c3d72a478df023c1308e2118b4b95865a625d0ffd8718697bfa2bf8",
+    "src/agents/analyst/table_loader.py": "8aaa67143bf010a503f6b7449756591c2aab9aa1c319da72998594d5bd9d07de",
+    "src/agents/contracts.py": "a56ea354cdcf937a98164cfc8f5a1b05f813398a720441f0ff31d1d7c311e00c",
+    "src/agents/orchestrator/__init__.py": "3f0976d1a3735951cf770e10bf454651880ce55bbe9bf31c385bfadc2079489c",
+    "src/agents/orchestrator/agent_orchestrator.py": "26c4f201053b3218a28679da2f831613a93986b3af11ed71cfc2d0006ef22f35",
+    "src/agents/planner/__init__.py": "078d5099965d500a9d1fcc4a4c5bb1e133a4533a2437485aa97b71b9df246ba1",
+    "src/agents/planner/__main__.py": "882a748d983788136ba4320c60ed82a319a754b0c15cce4a5604da8a572481e2",
+    "src/agents/planner/evaluation.py": "bd9ad9f3520d4b31dc319b916161c302c02172585031c452652af7755298b686",
+    "src/agents/planner/interactive_target_resolution.py": "682bda10852340f719d707e77538600dc54ebe792abf3fa18c8b08684a3480ce",
+    "src/agents/retrieval/QUERY_PLANNER_INTENT.md": "452ab4ffeddbe95b918b013bd27581d0699584335bae02c8e88a7f4ce6508cea",
+    "src/agents/retrieval/__init__.py": "bd3f5755804361c831cc6d45cda1b93ecf1d8dc58b49b0299a15a32d3272f460",
+    "src/agents/retrieval/mcp_client.py": "868d433f84fe36d4dd42c6e8a9006660601ad6878d9846c0a4fc8b51041a230b",
+    "src/agents/retrieval/query_planner_v2.py": "f55fb4d05550027e626db6d2d3797977c1abe16c695818dc727148161dcaa206",
+    "src/agents/text_utils.py": "f042905b3f422506ccdd83af7b81eec1d197b751af7d595e5a95e5fd27a97cc7",
+    "src/analysis/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "src/analysis/answer_synthesis.py": "40dbf9c371149ea9f44c294c6c259c8a6cc02c69b6d118f4db7f3fcef2129b5a",
+    "src/evals/__init__.py": "11bf04cb7ac9c81f3432d218cbd7dc5767d877a726867585abec63068cc1feef",
+    "src/evals/agent_eval_contracts.py": "0c7766f714aa2117ed728b32f9cbb48a7c53ec91d4c6ffa05f0dcc23d95eac80",
+    "src/evals/agent_eval_degradation_v1.py": "48dfc0fed24409e3919a26e8c43651bd5c5771a8ac3acafef9115e8fc35539c2",
+    "src/evals/agent_eval_legacy_v0.py": "12f55b61dc510bf5d018bf4e533386e41564ad1d17f7d45b65bbf347d9f8b266",
+    "src/evals/agent_eval_route_aware_v1.py": "c3e0d02b9ae6db373f119e3cab5cf04a4f12e5284a7427a63af45928cdf281e9",
+    "src/evals/agent_eval_runner.py": "df1cdf183c4c0921b46c86d493b142af38031b563188fdfb2651bdf31f3e84c2",
+    "src/evals/agent_eval_v1_contracts.py": "1f864b9f5ebf5020cf2514e1d392e557152ab5e89a0e61e8af2be9acf26b0d5d",
+    "src/evals/grounding_oracle.py": "a33c27bf7ecb8fbb6bd9f98249978eb4294006284d18940e9b7695bfc111379b",
+    "src/evals/llm_judge_contracts.py": "f105a58acec22f8cd29760b4e81273b77109d94b90d16732041ea03e7879702a",
+    "src/evals/llm_judge_runner.py": "1d45d2f551c03f0ead76972b642681ae4fe8fb8f8ee375646e0052f323b23376",
+    "src/evals/ragas_agent_metrics.py": "0faec54419e97b80a80bf2f56ed9a874c403c3ca692accf7d2bb17b1f6229328",
+    "src/evals/ragas_retrieval_metrics.py": "2462c2b278b1b0102f973ec8a01e341433da102f24e664b28cfcc7b4b47a26f5",
+    "src/evals/retrieval_ablation.py": "8f5f4e9b4f46fc5aca6d8da7bf6f90e67168f4ccb2990b2a48524d4202cc275c",
+    "src/evals/retrieval_benchmark_v2.py": "275755963aefb8a6efdc23866ee211b76c9dd6f1bead390e57f0b0d80baa42c9",
+    "src/evals/retrieval_eval_contracts.py": "5f8042e4fc234c4cbb65e0235f82eb9d679c31ea8cb463374cf6d07e91e0fdcc",
+    "src/evals/retrieval_eval_runner.py": "7791374b0eed2aca4a20633597f56f71e1babf73a9a9343d37bb2b1e31ea3478",
+    "src/evals/retrieval_metrics.py": "e80193d1a617d55598a7032a348637bb5a66cea116b4c39c903391aa9df47ecf",
+    "src/evals/semantic_answer_v1.py": "81cea8cb01247b9f56b50a1638e9780f706b0129fc615d5db9e3a5017e51eb75",
+    "src/ingestion/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "src/ingestion/chunk_paths.py": "089741757c2413a7ecdcffa5fc6f5e0d4fdf9e2527d32ca71685710cfb31a12c",
+    "src/ingestion/chunk_splitter.py": "a304817a5cf894be8a70c643b27696d96779c933a954b2d9f284550c41704af0",
+    "src/ingestion/qdrant_ingester.py": "baa63129d8f2c203002686e07d8a5e2dc5355b5d0a7609ef285ea78c3fecd38a",
+    "src/ingestion/sec_chunker.py": "5349ffa935b118297e06cc8c87a7a39dbcf56ec8d3fdac8c2d73934b3b1ef662",
+    "src/ingestion/sec_embedder.py": "4299dbbad78b328428163916d191170a239345c7e6a06469eb3d37b9ec80ac8f",
+    "src/ingestion/sec_html_fetcher.py": "0bc961f0a1a6c96517f8c20df9b4209beab8ca20d137cf12f5434c2a1dbbd002",
+    "src/ingestion/tables_summarizer.py": "9380e03994bcf818cf786746542c4ed1a135639a3ac4a251ffaa5a2049739e7c",
+    "src/llm_client.py": "67c591d3ca5d169d7e5f289f55e48a2cc816484b8cfc8c8fef324f9e43ebbd9d",
+    "src/mcp_server/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "src/mcp_server/server.py": "21dba9e072cf7e6a24ac24d1487b6d06cb177806e1e2ad8ab484c1898bf98a3f",
+    "src/mcp_server/tools/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "src/mcp_server/tools/financial_evaluator.py": "1087e130c6afc8bdda30c4b6bded829c26f382f31a8b1a6951ee1be148488bce",
+    "src/mcp_server/tools/sec_metric.py": "1a1b47912ea6f24e98f673f612138f1fecb6c8c6f49d9171208800f88a758964",
+    "src/mcp_server/tools/sec_metric_client.py": "c26eb5f27bf86d0afd9b883c165ac00773926642e3fe53e3d1e87f262fbbf667",
+    "src/mcp_server/tools/sec_metric_registry.py": "e87aa108db67e37846f1701510dbdd1427424ab6ea07fa05fa886c062367133b",
+    "src/mcp_server/tools/sec_retrieval.py": "a11664671fffd316ea1c6d89ea795ab011c066d087fadddf551cb99c84936e20",
+    "src/retrieval/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "src/retrieval/accounting_terms.py": "b8202b0b9ec709f075767ece8a6b9555c89b76aceddcfb6d56e16965d9197c8c",
+    "src/retrieval/evaluator.py": "f1c8aab8a5f9a5ebdc8719fa9e7e88983d9320b961276e0dd41b6dfdf558e82e",
+    "src/retrieval/ollama_client.py": "67cbdfaf483a48f9af25b23fd732b54ce63151334068592a980917181c5e42fe",
+    "src/retrieval/query_expansion.py": "d0b31e8335476796e4b296e5d09e227296ecc994075df92abd2b2c6eeb436e6d",
+    "src/retrieval/rerank_enricher.py": "99aebec076701a9e4e73259d9542055d53f7e80728e482b13dbaf824f5acff00",
+    "src/structured_facts/__init__.py": "42e5b99d9038262bb9fc314315a6c0672a214cbc8683dc77d9028198222acf32",
+    "src/structured_facts/capabilities.py": "632dd0d6ee742b4e0ca9f892c0979110beb3144348aa0a66260c4c651f437531",
+    "src/structured_facts/models.py": "c665ff1046c3549dabaec6d6ebbba6019cfc1aee1b0c66358c3eb232a897b03a",
+    "src/structured_facts/resolver.py": "7febd3e28c51408304e14a606ef6f3802b6efdcc0c6f600f407f17b07bf3b96c"
+  },
+  "production_identical_to": "21a792c9653e662964fee8fb550eba80fa0ad5de",
+  "tracked_worktree_clean": true,
+  "config": {
+    "base_runtime_sha": "21a792c9653e662964fee8fb550eba80fa0ad5de",
+    "planner_model": "ollama/qwen2.5:14b-instruct",
+    "analyst_model": "ollama/qwen2.5:14b-instruct",
+    "model_digest": "7cdf5a0187d5c58cc5d369b255592f7841d1c4696d45a8c8a9489440385b22f6",
+    "embedding_model": "qwen3-embedding:8b",
+    "embedding_digest": "64b933495768fbd3b87c20583d379728a07471e0c66733a9df87cd1901b3c44b",
+    "reranker_model": "Qwen/Qwen3-Reranker-8B",
+    "collection": "finsearch_benchmark_v2_39c8d01ee5c71710",
+    "historical_collection": "sec_docs_dense_bm25_pr2_63dcec0",
+    "order_seed": 20260907,
+    "runtime_policy": "One sequential pass, unchanged runtime retries and 120s analyst timeout; no harness retries or follow-up clarification. Existing SEC network client, no metric fixtures. Fresh checkpoint and query-embedding cache, shared across cases. Diagnostic timings, not controlled performance claims.",
+    "judge": {
+      "model": "gemma4:e4b",
+      "digest": "c6eb396dbd5992bbe3f5cdb947e8bbc0ee413d7c17e2beaae69f5d569cf982eb",
+      "provider": "local Ollama",
+      "temperature": 0,
+      "num_ctx": 32768,
+      "num_predict": 4096,
+      "think": false,
+      "timeout_s": 240,
+      "attempts": 1,
+      "format": "json"
+    },
+    "audit": {
+      "seed": 20260907,
+      "cases_per_stratum": 2,
+      "reviewer": "source-inspecting coding assistant; not independent human adjudication",
+      "blind_to_judge_until_annotations_frozen": true
+    }
+  },
+  "model_provenance": {
+    "ollama": {
+      "version": "0.33.2"
+    },
+    "models": {
+      "qwen2.5:14b-instruct": {
+        "name": "qwen2.5:14b-instruct",
+        "model": "qwen2.5:14b-instruct",
+        "modified_at": "2026-01-03T15:36:34.091196277-05:00",
+        "size": 8988124069,
+        "digest": "7cdf5a0187d5c58cc5d369b255592f7841d1c4696d45a8c8a9489440385b22f6",
+        "details": {
+          "parent_model": "",
+          "format": "gguf",
+          "family": "qwen2",
+          "families": [
+            "qwen2"
+          ],
+          "parameter_size": "14.8B",
+          "quantization_level": "Q4_K_M",
+          "context_length": 32768,
+          "embedding_length": 5120
+        },
+        "capabilities": [
+          "completion",
+          "tools"
+        ]
+      },
+      "qwen3-embedding:8b": {
+        "name": "qwen3-embedding:8b",
+        "model": "qwen3-embedding:8b",
+        "modified_at": "2025-11-29T12:10:04.649998003-05:00",
+        "size": 4676805193,
+        "digest": "64b933495768fbd3b87c20583d379728a07471e0c66733a9df87cd1901b3c44b",
+        "details": {
+          "parent_model": "<MODEL_BUILD_HOME>/.ollama/models/blobs/sha256-3fcd3febec8b3fd64435204db75bf0dd73b91e8d0661e0331acfe7e7c3120b85",
+          "format": "gguf",
+          "family": "qwen3",
+          "families": [
+            "qwen3"
+          ],
+          "parameter_size": "7.6B",
+          "quantization_level": "Q4_K_M",
+          "context_length": 40960,
+          "embedding_length": 4096
+        },
+        "capabilities": [
+          "embedding"
+        ]
+      },
+      "gemma4:e4b": {
+        "name": "gemma4:e4b",
+        "model": "gemma4:e4b",
+        "modified_at": "2026-04-03T09:37:48.788948362-04:00",
+        "size": 9608350718,
+        "digest": "c6eb396dbd5992bbe3f5cdb947e8bbc0ee413d7c17e2beaae69f5d569cf982eb",
+        "details": {
+          "parent_model": "",
+          "format": "gguf",
+          "family": "gemma4",
+          "families": [
+            "gemma4"
+          ],
+          "parameter_size": "8.0B",
+          "quantization_level": "Q4_K_M"
+        },
+        "capabilities": [
+          "completion",
+          "tools",
+          "thinking"
+        ]
+      }
+    }
+  },
+  "hardware": {
+    "platform": "Darwin",
+    "machine": "arm64",
+    "os_release": "25.6.0",
+    "hw.model": "Mac16,1",
+    "hw.memsize": "34359738368",
+    "hw.ncpu": "10",
+    "machdep.cpu.brand_string": "Apple M4"
+  },
+  "python": "3.11.14",
+  "packages": {
+    "pytest": "9.0.2",
+    "requests": "2.32.5",
+    "qdrant-client": "1.16.1",
+    "langchain-ollama": "1.0.1"
+  },
+  "started_at": "2026-09-07T00:52:21.926098+00:00",
+  "validation": {
+    "cases": 60,
+    "required_claims": 86,
+    "answerable": 54,
+    "insufficient_data": 6,
+    "strata": {
+      "calculator": 6,
+      "comparison": 6,
+      "difficult_attribution": 6,
+      "hybrid": 6,
+      "insufficient_data": 6,
+      "multiple_claims": 6,
+      "narrative": 6,
+      "plausible_wrong_evidence": 6,
+      "structured_numeric": 12
+    },
+    "audit_cases": 18
+  },
+  "environment": {
+    "reranker_model": "Qwen/Qwen3-Reranker-8B",
+    "reranker_url": "https://dashscope.aliyuncs.com/api/v1/services/rerank/text-rerank/text-rerank",
+    "reranker_service_digest": null,
+    "sec_mode": "unchanged live SEC client; contact supplied locally, redacted",
+    "resources": {
+      "QDRANT_COLLECTION_NAME": "finsearch_benchmark_v2_39c8d01ee5c71710",
+      "QDRANT_HOST": "127.0.0.1",
+      "QDRANT_PORT": "6333",
+      "QWEN3_EMBED_API_URL": "http://127.0.0.1:11434/api/embed",
+      "OLLAMA_BASE_URL": "http://127.0.0.1:11434"
+    }
+  },
+  "controls_before": {
+    "at": "2026-09-07T00:52:21.925522+00:00",
+    "ac_power": true,
+    "low_power_mode": 0,
+    "browser_process_count": 0,
+    "heavy_non_model_processes": [
+      {
+        "process": "python",
+        "cpu": 92.8
+      }
+    ]
+  },
+  "index_before": {
+    "points": 948,
+    "payload_vectors_sha256": "641f5ee5c465daaa7106717eb4e4a8a4e145cdfd04e4e8afd202a892d2e53630",
+    "config": {
+      "params": {
+        "vectors": {
+          "dense": {
+            "size": 4096,
+            "distance": "Cosine",
+            "hnsw_config": null,
+            "quantization_config": null,
+            "on_disk": null,
+            "datatype": null,
+            "multivector_config": null
+          }
+        },
+        "shard_number": 1,
+        "sharding_method": null,
+        "replication_factor": 1,
+        "write_consistency_factor": 1,
+        "read_fan_out_factor": null,
+        "on_disk_payload": true,
+        "sparse_vectors": {
+          "bm25": {
+            "index": null,
+            "modifier": "idf"
+          }
+        }
+      },
+      "hnsw_config": {
+        "m": 16,
+        "ef_construct": 100,
+        "full_scan_threshold": 10000,
+        "max_indexing_threads": 0,
+        "on_disk": false,
+        "payload_m": null,
+        "inline_storage": null
+      },
+      "optimizer_config": {
+        "deleted_threshold": 0.2,
+        "vacuum_min_vector_number": 1000,
+        "default_segment_number": 0,
+        "max_segment_size": null,
+        "memmap_threshold": null,
+        "indexing_threshold": 10000,
+        "flush_interval_sec": 5,
+        "max_optimization_threads": null
+      },
+      "wal_config": {
+        "wal_capacity_mb": 32,
+        "wal_segments_ahead": 0,
+        "wal_retain_closed": 1
+      },
+      "quantization_config": null,
+      "strict_mode_config": null,
+      "metadata": null
+    }
+  },
+  "historical_index_before": {
+    "points": 582,
+    "payload_vectors_sha256": "20a0f405d66ffa20ca8789f915bfb6e7d9891b00363fdef7c01e522b7e3ed892",
+    "config": {
+      "params": {
+        "vectors": {
+          "dense": {
+            "size": 4096,
+            "distance": "Cosine",
+            "hnsw_config": null,
+            "quantization_config": null,
+            "on_disk": null,
+            "datatype": null,
+            "multivector_config": null
+          }
+        },
+        "shard_number": 1,
+        "sharding_method": null,
+        "replication_factor": 1,
+        "write_consistency_factor": 1,
+        "read_fan_out_factor": null,
+        "on_disk_payload": true,
+        "sparse_vectors": {
+          "bm25": {
+            "index": null,
+            "modifier": "idf"
+          }
+        }
+      },
+      "hnsw_config": {
+        "m": 16,
+        "ef_construct": 100,
+        "full_scan_threshold": 10000,
+        "max_indexing_threads": 0,
+        "on_disk": false,
+        "payload_m": null,
+        "inline_storage": null
+      },
+      "optimizer_config": {
+        "deleted_threshold": 0.2,
+        "vacuum_min_vector_number": 1000,
+        "default_segment_number": 0,
+        "max_segment_size": null,
+        "memmap_threshold": null,
+        "indexing_threshold": 10000,
+        "flush_interval_sec": 5,
+        "max_optimization_threads": null
+      },
+      "wal_config": {
+        "wal_capacity_mb": 32,
+        "wal_segments_ahead": 0,
+        "wal_retain_closed": 1
+      },
+      "quantization_config": null,
+      "strict_mode_config": null,
+      "metadata": null
+    }
+  },
+  "schedule": [
+    "SEM1_MSFT_2024_05",
+    "SEM1_MSFT_2025_04",
+    "SEM1_AMZN_2023_01",
+    "SEM1_AAPL_2024_10",
+    "SEM1_MSFT_2025_06",
+    "SEM1_AMZN_2023_02",
+    "SEM1_AMZN_2024_09",
+    "SEM1_AMZN_2024_08",
+    "SEM1_MSFT_2025_01",
+    "SEM1_AMZN_2024_02",
+    "SEM1_AAPL_2024_02",
+    "SEM1_AAPL_2024_05",
+    "SEM1_MSFT_2024_10",
+    "SEM1_AMZN_2023_05",
+    "SEM1_MSFT_2025_07",
+    "SEM1_AMZN_2023_06",
+    "SEM1_AMZN_2024_06",
+    "SEM1_AAPL_2024_06",
+    "SEM1_MSFT_2024_06",
+    "SEM1_AAPL_2024_07",
+    "SEM1_AMZN_2023_08",
+    "SEM1_AAPL_2025_08",
+    "SEM1_AMZN_2024_05",
+    "SEM1_AAPL_2025_10",
+    "SEM1_AAPL_2024_09",
+    "SEM1_MSFT_2024_03",
+    "SEM1_MSFT_2024_09",
+    "SEM1_AMZN_2024_01",
+    "SEM1_AMZN_2023_10",
+    "SEM1_MSFT_2025_08",
+    "SEM1_MSFT_2024_04",
+    "SEM1_AAPL_2025_02",
+    "SEM1_MSFT_2025_03",
+    "SEM1_MSFT_2024_02",
+    "SEM1_AAPL_2024_03",
+    "SEM1_MSFT_2024_08",
+    "SEM1_AAPL_2024_04",
+    "SEM1_MSFT_2024_01",
+    "SEM1_MSFT_2025_05",
+    "SEM1_AAPL_2024_01",
+    "SEM1_AMZN_2023_04",
+    "SEM1_AMZN_2024_07",
+    "SEM1_AAPL_2025_09",
+    "SEM1_AMZN_2024_04",
+    "SEM1_AMZN_2023_03",
+    "SEM1_AAPL_2025_01",
+    "SEM1_MSFT_2025_09",
+    "SEM1_AAPL_2024_08",
+    "SEM1_AMZN_2024_03",
+    "SEM1_AAPL_2025_07",
+    "SEM1_AMZN_2023_09",
+    "SEM1_AAPL_2025_06",
+    "SEM1_AMZN_2024_10",
+    "SEM1_MSFT_2024_07",
+    "SEM1_MSFT_2025_02",
+    "SEM1_AAPL_2025_04",
+    "SEM1_AMZN_2023_07",
+    "SEM1_AAPL_2025_03",
+    "SEM1_AAPL_2025_05",
+    "SEM1_MSFT_2025_10"
+  ],
+  "status": "running",
+  "corpus_manifest_sha256": "23fe45dcaf640eba7bdab1342e680e892c0468025ad09204416d8b6b5a6fae29",
+  "artifact_redaction": "Local worktree/home paths and credential strings only; financial evidence unchanged"
+}

@@ -1,0 +1,93 @@
+{
+  "started_at": "2026-09-07T12:32:14.125166+00:00",
+  "implementation_sha": "3793929f343fb9fc93c4d5a83cd0b2f16fe6e6cb",
+  "judge_execution_head": "ac394f35f39abbc8fcff48be9ba8d5e25ea63a86",
+  "audit_sha256": "f74c9af419011a97100c05f407af08ab58debfa6a85d78926d99e97eed8b5ca5",
+  "models": {
+    "ollama": {
+      "version": "0.33.2"
+    },
+    "models": {
+      "qwen2.5:14b-instruct": {
+        "name": "qwen2.5:14b-instruct",
+        "model": "qwen2.5:14b-instruct",
+        "modified_at": "2026-01-03T15:36:34.091196277-05:00",
+        "size": 8988124069,
+        "digest": "7cdf5a0187d5c58cc5d369b255592f7841d1c4696d45a8c8a9489440385b22f6",
+        "details": {
+          "parent_model": "",
+          "format": "gguf",
+          "family": "qwen2",
+          "families": [
+            "qwen2"
+          ],
+          "parameter_size": "14.8B",
+          "quantization_level": "Q4_K_M",
+          "context_length": 32768,
+          "embedding_length": 5120
+        },
+        "capabilities": [
+          "completion",
+          "tools"
+        ]
+      },
+      "qwen3-embedding:8b": {
+        "name": "qwen3-embedding:8b",
+        "model": "qwen3-embedding:8b",
+        "modified_at": "2025-11-29T12:10:04.649998003-05:00",
+        "size": 4676805193,
+        "digest": "64b933495768fbd3b87c20583d379728a07471e0c66733a9df87cd1901b3c44b",
+        "details": {
+          "parent_model": "<MODEL_BUILD_HOME>/.ollama/models/blobs/sha256-3fcd3febec8b3fd64435204db75bf0dd73b91e8d0661e0331acfe7e7c3120b85",
+          "format": "gguf",
+          "family": "qwen3",
+          "families": [
+            "qwen3"
+          ],
+          "parameter_size": "7.6B",
+          "quantization_level": "Q4_K_M",
+          "context_length": 40960,
+          "embedding_length": 4096
+        },
+        "capabilities": [
+          "embedding"
+        ]
+      },
+      "gemma4:e4b": {
+        "name": "gemma4:e4b",
+        "model": "gemma4:e4b",
+        "modified_at": "2026-04-03T09:37:48.788948362-04:00",
+        "size": 9608350718,
+        "digest": "c6eb396dbd5992bbe3f5cdb947e8bbc0ee413d7c17e2beaae69f5d569cf982eb",
+        "details": {
+          "parent_model": "",
+          "format": "gguf",
+          "family": "gemma4",
+          "families": [
+            "gemma4"
+          ],
+          "parameter_size": "8.0B",
+          "quantization_level": "Q4_K_M"
+        },
+        "capabilities": [
+          "completion",
+          "tools",
+          "thinking"
+        ]
+      }
+    }
+  },
+  "rubric_sha256": "cbdd67689374af5dbe44a637b23080b9656b26183ecf827ad7d92a730d745cd5",
+  "config": {
+    "model": "gemma4:e4b",
+    "digest": "c6eb396dbd5992bbe3f5cdb947e8bbc0ee413d7c17e2beaae69f5d569cf982eb",
+    "provider": "local Ollama",
+    "temperature": 0,
+    "num_ctx": 32768,
+    "num_predict": 4096,
+    "think": false,
+    "timeout_s": 240,
+    "attempts": 1,
+    "format": "json"
+  }
+}

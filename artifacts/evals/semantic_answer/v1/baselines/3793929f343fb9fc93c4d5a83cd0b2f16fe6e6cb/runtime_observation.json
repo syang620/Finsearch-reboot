@@ -1,0 +1,48 @@
+{
+  "observed_at": "2026-09-07T02:26:46.062211+00:00",
+  "completed_cases_at_observation": 18,
+  "active_models": {
+    "models": [
+      {
+        "name": "qwen2.5:14b-instruct",
+        "model": "qwen2.5:14b-instruct",
+        "size": 15209406135,
+        "digest": "7cdf5a0187d5c58cc5d369b255592f7841d1c4696d45a8c8a9489440385b22f6",
+        "details": {
+          "parent_model": "",
+          "format": "gguf",
+          "family": "qwen2",
+          "families": [
+            "qwen2"
+          ],
+          "parameter_size": "14.8B",
+          "quantization_level": "Q4_K_M"
+        },
+        "expires_at": "2026-09-06T22:31:10.772047-04:00",
+        "size_vram": 15209406135,
+        "context_length": 32768
+      }
+    ]
+  },
+  "controls": {
+    "at": "2026-09-07T02:26:46.117251+00:00",
+    "ac_power": true,
+    "low_power_mode": 0,
+    "browser_process_count": 2,
+    "heavy_non_model_processes": [
+      {
+        "process": "python",
+        "cpu": 75.1
+      },
+      {
+        "process": "ChatGPT",
+        "cpu": 97.1
+      },
+      {
+        "process": "Codex (Renderer)",
+        "cpu": 57.9
+      }
+    ]
+  },
+  "method": "Read-only API metadata observation during the run; no inference, model load/unload, or configuration write. Context size is an observation, not an extra harness setting or proof it was constant throughout the run."
+}

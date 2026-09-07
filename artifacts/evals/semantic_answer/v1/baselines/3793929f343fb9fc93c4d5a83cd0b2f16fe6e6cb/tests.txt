@@ -1,0 +1,72 @@
+Command: PYTHONPATH=src:. python -m pytest tests -q --import-mode=importlib
+Environment: finsearch-arm; pytest 9.0.2
+Exit code: 1. Local worktree path replaced with <WORKTREE>; line-end whitespace normalized; assertions, results and counts unchanged.
+
+........................................................................ [  7%]
+......................................................... [ 14%]
+........................................................................ [ 22%]
+........................F............................................... [ 30%]
+F............................................. [ 35%]
+........................................................................ [ 42%]
+........................................................................ [ 50%]
+........................................................................ [ 58%]
+........................................................................ [ 66%]
+........................................................................ [ 74%]
+........................................................................ [ 82%]
+........................................................................ [ 90%]
+........................................................................ [ 98%]
+...............                                                    [100%]
+=================================== FAILURES ===================================
+__________________ test_planner_routes_match_expected_routes ___________________
+
+planner_eval_results = [PlannerEvalResult(case=PlannerEvalCase(id='sf_001', query='What was Apple revenue in FY2024?', category='structured_f...cation_request': None}, 'full_plan_trace': None, 'downstream_skipped_reason': 'FULL_PLANNER_DISABLED_BY_CONFIG'}), ...]
+
+    def test_planner_routes_match_expected_routes(planner_eval_results: list[PlannerEvalResult]) -> None:
+        failures = []
+        for result in planner_eval_results:
+            if result.case.expected_route is None:
+                continue
+            if result.actual_route != result.case.expected_route:
+                failures.append(
+                    f"{result.case.category}/{result.case.id}: "
+                    f"expected route {result.case.expected_route!r}, got {result.actual_route!r}"
+                )
+
+>       assert not failures, "\n".join(failures)
+E       AssertionError: alias_recognition/alias_002: expected route 'structured_fact', got 'kb'
+E       assert not ["alias_recognition/alias_002: expected route 'structured_fact', got 'kb'"]
+
+tests/agents/planner/test_planner_routes.py:15: AssertionError
+_____ test_retrieval_no_tool_call_increments_attempts_and_stops_on_budget ______
+
+    def test_retrieval_no_tool_call_increments_attempts_and_stops_on_budget():
+        wf = RetrievalWorkflowAgent(
+            retrieval_llm=FakeRetrieverLLM(),
+            reviewer_llm=FakeReviewerLLM(),
+            max_attempts=2,
+        )
+
+        state = {
+            "targets": [{"ticker": "AAPL", "fiscal_year": 2024}],
+            "original_user_query": "What is total debt?",
+            "retrieval_plan": {"jobs": [{"job_type": "fact_lookup", "goal": "total debt"}]},
+        }
+
+        runs = asyncio.run(wf.run(state=state, client=FakeClient()))
+        run = runs[0]
+
+>       assert len(run["attempts"]) == 2
+E       AssertionError: assert 1 == 2
+E        +  where 1 = len([{'attempt_index': 1, 'request': {'doc_types': ['table', 'table_row', 'text_chunk'], 'queries': ['total debt', 'What i...table', 'table_row', 'text_chunk'], 'fiscal_year': 2024, 'form_type': None, 'ticker': 'AAPL'}, 'num_results': 0, ...}}])
+
+tests/agents/retrieval/test_retrieval_workflow_no_tool_call.py:81: AssertionError
+=============================== warnings summary ===============================
+tests/agents/analyst/test_analyst_compute_retry_and_parsing.py::AnalystPacketBuilderTests::test_table_markdown_render_failure_falls_back_to_csv
+  <WORKTREE>/tests/agents/analyst/test_analyst_compute_retry_and_parsing.py:565: RuntimeWarning: Failed to render table markdown: no tabulate
+    rendered = _table_dict_to_markdown({"col1": [1], "col2": [2]})
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/agents/planner/test_planner_routes.py::test_planner_routes_match_expected_routes
+FAILED tests/agents/retrieval/test_retrieval_workflow_no_tool_call.py::test_retrieval_no_tool_call_increments_attempts_and_stops_on_budget
+2 failed, 908 passed, 1 warning, 47 subtests passed in 15.48s

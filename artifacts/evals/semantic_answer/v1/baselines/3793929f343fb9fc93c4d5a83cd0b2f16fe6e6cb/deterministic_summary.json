@@ -1,0 +1,464 @@
+{
+  "overall": {
+    "cases": 60,
+    "answers_emitted": 21,
+    "observed_claims": 20,
+    "unsupported_claim_flags": 0,
+    "claim_citation_coverage": {
+      "numerator": 20,
+      "denominator": 20,
+      "rate": 1.0
+    },
+    "valid_context_id_rate": {
+      "numerator": 23,
+      "denominator": 23,
+      "rate": 1.0
+    },
+    "structured_evidence_compatibility": {
+      "numerator": 0,
+      "denominator": 0,
+      "rate": null
+    },
+    "kb_evidence_compatibility": {
+      "numerator": 17,
+      "denominator": 17,
+      "rate": 1.0
+    },
+    "numeric_consistency": {
+      "numerator": 0,
+      "denominator": 56,
+      "rate": 0.0
+    },
+    "answerability_correctness": {
+      "numerator": 17,
+      "denominator": 60,
+      "rate": 0.2833333333333333
+    },
+    "insufficient_data_correctness": {
+      "numerator": 5,
+      "denominator": 6,
+      "rate": 0.8333333333333334
+    },
+    "latency_ms": {
+      "n": 60,
+      "p50": 323593,
+      "p95": 4064140
+    }
+  },
+  "by_stratum": {
+    "calculator": {
+      "cases": 6,
+      "answers_emitted": 1,
+      "observed_claims": 0,
+      "unsupported_claim_flags": 0,
+      "claim_citation_coverage": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null
+      },
+      "valid_context_id_rate": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null
+      },
+      "structured_evidence_compatibility": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null
+      },
+      "kb_evidence_compatibility": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null
+      },
+      "numeric_consistency": {
+        "numerator": 0,
+        "denominator": 18,
+        "rate": 0.0
+      },
+      "answerability_correctness": {
+        "numerator": 0,
+        "denominator": 6,
+        "rate": 0.0
+      },
+      "insufficient_data_correctness": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null
+      },
+      "latency_ms": {
+        "n": 6,
+        "p50": 525662,
+        "p95": 740977
+      }
+    },
+    "comparison": {
+      "cases": 6,
+      "answers_emitted": 2,
+      "observed_claims": 3,
+      "unsupported_claim_flags": 0,
+      "claim_citation_coverage": {
+        "numerator": 3,
+        "denominator": 3,
+        "rate": 1.0
+      },
+      "valid_context_id_rate": {
+        "numerator": 3,
+        "denominator": 3,
+        "rate": 1.0
+      },
+      "structured_evidence_compatibility": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null
+      },
+      "kb_evidence_compatibility": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null
+      },
+      "numeric_consistency": {
+        "numerator": 0,
+        "denominator": 12,
+        "rate": 0.0
+      },
+      "answerability_correctness": {
+        "numerator": 2,
+        "denominator": 6,
+        "rate": 0.3333333333333333
+      },
+      "insufficient_data_correctness": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null
+      },
+      "latency_ms": {
+        "n": 6,
+        "p50": 415052,
+        "p95": 648205
+      }
+    },
+    "difficult_attribution": {
+      "cases": 6,
+      "answers_emitted": 2,
+      "observed_claims": 2,
+      "unsupported_claim_flags": 0,
+      "claim_citation_coverage": {
+        "numerator": 2,
+        "denominator": 2,
+        "rate": 1.0
+      },
+      "valid_context_id_rate": {
+        "numerator": 2,
+        "denominator": 2,
+        "rate": 1.0
+      },
+      "structured_evidence_compatibility": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null
+      },
+      "kb_evidence_compatibility": {
+        "numerator": 2,
+        "denominator": 2,
+        "rate": 1.0
+      },
+      "numeric_consistency": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null
+      },
+      "answerability_correctness": {
+        "numerator": 2,
+        "denominator": 6,
+        "rate": 0.3333333333333333
+      },
+      "insufficient_data_correctness": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null
+      },
+      "latency_ms": {
+        "n": 6,
+        "p50": 186631,
+        "p95": 977823
+      }
+    },
+    "hybrid": {
+      "cases": 6,
+      "answers_emitted": 1,
+      "observed_claims": 0,
+      "unsupported_claim_flags": 0,
+      "claim_citation_coverage": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null
+      },
+      "valid_context_id_rate": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null
+      },
+      "structured_evidence_compatibility": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null
+      },
+      "kb_evidence_compatibility": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null
+      },
+      "numeric_consistency": {
+        "numerator": 0,
+        "denominator": 6,
+        "rate": 0.0
+      },
+      "answerability_correctness": {
+        "numerator": 0,
+        "denominator": 6,
+        "rate": 0.0
+      },
+      "insufficient_data_correctness": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null
+      },
+      "latency_ms": {
+        "n": 6,
+        "p50": 397084,
+        "p95": 5739457
+      }
+    },
+    "insufficient_data": {
+      "cases": 6,
+      "answers_emitted": 5,
+      "observed_claims": 0,
+      "unsupported_claim_flags": 0,
+      "claim_citation_coverage": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null
+      },
+      "valid_context_id_rate": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null
+      },
+      "structured_evidence_compatibility": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null
+      },
+      "kb_evidence_compatibility": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null
+      },
+      "numeric_consistency": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null
+      },
+      "answerability_correctness": {
+        "numerator": 5,
+        "denominator": 6,
+        "rate": 0.8333333333333334
+      },
+      "insufficient_data_correctness": {
+        "numerator": 5,
+        "denominator": 6,
+        "rate": 0.8333333333333334
+      },
+      "latency_ms": {
+        "n": 6,
+        "p50": 194888,
+        "p95": 415250
+      }
+    },
+    "multiple_claims": {
+      "cases": 6,
+      "answers_emitted": 5,
+      "observed_claims": 12,
+      "unsupported_claim_flags": 0,
+      "claim_citation_coverage": {
+        "numerator": 12,
+        "denominator": 12,
+        "rate": 1.0
+      },
+      "valid_context_id_rate": {
+        "numerator": 15,
+        "denominator": 15,
+        "rate": 1.0
+      },
+      "structured_evidence_compatibility": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null
+      },
+      "kb_evidence_compatibility": {
+        "numerator": 12,
+        "denominator": 12,
+        "rate": 1.0
+      },
+      "numeric_consistency": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null
+      },
+      "answerability_correctness": {
+        "numerator": 5,
+        "denominator": 6,
+        "rate": 0.8333333333333334
+      },
+      "insufficient_data_correctness": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null
+      },
+      "latency_ms": {
+        "n": 6,
+        "p50": 217080,
+        "p95": 906228
+      }
+    },
+    "narrative": {
+      "cases": 6,
+      "answers_emitted": 3,
+      "observed_claims": 3,
+      "unsupported_claim_flags": 0,
+      "claim_citation_coverage": {
+        "numerator": 3,
+        "denominator": 3,
+        "rate": 1.0
+      },
+      "valid_context_id_rate": {
+        "numerator": 3,
+        "denominator": 3,
+        "rate": 1.0
+      },
+      "structured_evidence_compatibility": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null
+      },
+      "kb_evidence_compatibility": {
+        "numerator": 3,
+        "denominator": 3,
+        "rate": 1.0
+      },
+      "numeric_consistency": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null
+      },
+      "answerability_correctness": {
+        "numerator": 3,
+        "denominator": 6,
+        "rate": 0.5
+      },
+      "insufficient_data_correctness": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null
+      },
+      "latency_ms": {
+        "n": 6,
+        "p50": 370313,
+        "p95": 5056688
+      }
+    },
+    "plausible_wrong_evidence": {
+      "cases": 6,
+      "answers_emitted": 2,
+      "observed_claims": 0,
+      "unsupported_claim_flags": 0,
+      "claim_citation_coverage": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null
+      },
+      "valid_context_id_rate": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null
+      },
+      "structured_evidence_compatibility": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null
+      },
+      "kb_evidence_compatibility": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null
+      },
+      "numeric_consistency": {
+        "numerator": 0,
+        "denominator": 8,
+        "rate": 0.0
+      },
+      "answerability_correctness": {
+        "numerator": 0,
+        "denominator": 6,
+        "rate": 0.0
+      },
+      "insufficient_data_correctness": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null
+      },
+      "latency_ms": {
+        "n": 6,
+        "p50": 253509,
+        "p95": 4630390
+      }
+    },
+    "structured_numeric": {
+      "cases": 12,
+      "answers_emitted": 0,
+      "observed_claims": 0,
+      "unsupported_claim_flags": 0,
+      "claim_citation_coverage": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null
+      },
+      "valid_context_id_rate": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null
+      },
+      "structured_evidence_compatibility": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null
+      },
+      "kb_evidence_compatibility": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null
+      },
+      "numeric_consistency": {
+        "numerator": 0,
+        "denominator": 12,
+        "rate": 0.0
+      },
+      "answerability_correctness": {
+        "numerator": 0,
+        "denominator": 12,
+        "rate": 0.0
+      },
+      "insufficient_data_correctness": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null
+      },
+      "latency_ms": {
+        "n": 12,
+        "p50": 90050,
+        "p95": 4064140
+      }
+    }
+  }
+}
