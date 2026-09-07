@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "counts": {
+    "cases": 60,
+    "required_claims": 86,
+    "answerable": 54,
+    "insufficient_data": 6,
+    "strata": {
+      "calculator": 6,
+      "comparison": 6,
+      "difficult_attribution": 6,
+      "hybrid": 6,
+      "insufficient_data": 6,
+      "multiple_claims": 6,
+      "narrative": 6,
+      "plausible_wrong_evidence": 6,
+      "structured_numeric": 12
+    },
+    "audit_cases": 18
+  },
+  "files_sha256": {
+    "ANNOTATION.md": "f6d5aa33210bfaf960b2409bc954d33319fcb014802b76e5eb05084509e7c81d",
+    "draft_counts.json": "b77ef744d0b0cf4738eaf7630f1e62670901cfaf3a21b039fb18d697d1b0ed4b",
+    "evaluation_config.json": "6a7ea765e0271dc341abc80f48a8b94dbd0bf1ca260ea30f4abecd7e334664b2",
+    "judge_rubric.txt": "cbdd67689374af5dbe44a637b23080b9656b26183ecf827ad7d92a730d745cd5",
+    "numeric_source_facts.jsonl": "446ce83669e1e8713ac8b40b68e80368a30feea0b49970a3ee275c42fb767bc6",
+    "queries.jsonl": "63e085e940a98aa7aa6b6136f9a55a2ce5bdc810e64d8bc6663d4125fdba65d2",
+    "source_manifest.json": "5c3730b1f6aa884156a2e0409fc5e3046b03bc36dad5934593fde07f42561b85",
+    "tables/AAPL_10-K_2024.tables.jsonl": "f550d409daa2bd4e848be34529f9e974b3d6e61392924634582e1d16cd4d7216",
+    "tables/AAPL_10-K_2025.tables.jsonl": "258bc734011a2c64f9ad809e64679b32b793ac18eef1d93581bf56269776bcdd",
+    "tables/AMZN_10-K_2023.tables.jsonl": "76fc068a27df0922e2deedc3c70b1ddb8a7db3bd77f6945a336f08ed1b90c02c",
+    "tables/AMZN_10-K_2024.tables.jsonl": "9f3799976ffa5d2382dcf2eb6699743141472685407336c2a74cf3785e54eaad",
+    "tables/MSFT_10-K_2024.tables.jsonl": "000e623b565e8e4170dfea2707295e147fb5e61fb444fadef7b444d9ffe6eee7",
+    "tables/MSFT_10-K_2025.tables.jsonl": "864fa982cfa466fa1485645fa903866fc27988ff9f780b531aa36429d8fac16c"
+  },
+  "source_base_sha": "21a792c9653e662964fee8fb550eba80fa0ad5de",
+  "gold_observed_system_answers": false,
+  "gold_used_ranked_retrieval": false
+}

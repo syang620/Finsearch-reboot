@@ -1,0 +1,50 @@
+{
+  "method": "Independent consolidated annual/instant inline-XBRL elements from source HTML; not sec_metric or system results.",
+  "corpus_path": "data/evals/retrieval/benchmark_v2",
+  "corpus_sha256": "39c8d01ee5c71710e443e49698957d2aa991e71c16ad79905e7bd07d6a11fe4d",
+  "numeric_facts_sha256": "446ce83669e1e8713ac8b40b68e80368a30feea0b49970a3ee275c42fb767bc6",
+  "sources": [
+    {
+      "source_html": "data/html_filings/AAPL/10-K/10-K_2024.html",
+      "source_sha256": "24a830a0f1256e371d36a1f7f72e5e85a38037d1de2f6f966eb8457db42ff6d6",
+      "table_sidecar": "tables/AAPL_10-K_2024.tables.jsonl",
+      "table_sha256": "f550d409daa2bd4e848be34529f9e974b3d6e61392924634582e1d16cd4d7216",
+      "tables": 48
+    },
+    {
+      "source_html": "data/html_filings/AAPL/10-K/10-K_2025.html",
+      "source_sha256": "548ae59778cf08ee0f2ee088e7ece20d947076c3c01f74d2d65db4c2777e436a",
+      "table_sidecar": "tables/AAPL_10-K_2025.tables.jsonl",
+      "table_sha256": "258bc734011a2c64f9ad809e64679b32b793ac18eef1d93581bf56269776bcdd",
+      "tables": 47
+    },
+    {
+      "source_html": "data/html_filings/AMZN/10-K/10-K_2023.html",
+      "source_sha256": "a469a0feca6dd5728b10c73076c2c120db58116938614c5b1b864fe13674266d",
+      "table_sidecar": "tables/AMZN_10-K_2023.tables.jsonl",
+      "table_sha256": "76fc068a27df0922e2deedc3c70b1ddb8a7db3bd77f6945a336f08ed1b90c02c",
+      "tables": 59
+    },
+    {
+      "source_html": "data/html_filings/AMZN/10-K/10-K_2024.html",
+      "source_sha256": "094e0f2aa1d58203ed77340330e94ff5cb63f5168de5e08ed25a17681a1a53d9",
+      "table_sidecar": "tables/AMZN_10-K_2024.tables.jsonl",
+      "table_sha256": "9f3799976ffa5d2382dcf2eb6699743141472685407336c2a74cf3785e54eaad",
+      "tables": 57
+    },
+    {
+      "source_html": "data/html_filings/MSFT/10-K/10-K_2024.html",
+      "source_sha256": "43829a12cc9cd7198474b3d735c4fc1aba1f871fb637d237aa5979d57e6b8c95",
+      "table_sidecar": "tables/MSFT_10-K_2024.tables.jsonl",
+      "table_sha256": "000e623b565e8e4170dfea2707295e147fb5e61fb444fadef7b444d9ffe6eee7",
+      "tables": 86
+    },
+    {
+      "source_html": "data/html_filings/MSFT/10-K/10-K_2025.html",
+      "source_sha256": "99d693f6c1544144ebeee92954f151a85bc62111837530a42855953bc01d0bbe",
+      "table_sidecar": "tables/MSFT_10-K_2025.tables.jsonl",
+      "table_sha256": "864fa982cfa466fa1485645fa903866fc27988ff9f780b531aa36429d8fac16c",
+      "tables": 79
+    }
+  ]
+}

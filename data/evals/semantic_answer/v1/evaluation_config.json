@@ -1,0 +1,31 @@
+{
+  "base_runtime_sha": "21a792c9653e662964fee8fb550eba80fa0ad5de",
+  "planner_model": "ollama/qwen2.5:14b-instruct",
+  "analyst_model": "ollama/qwen2.5:14b-instruct",
+  "model_digest": "7cdf5a0187d5c58cc5d369b255592f7841d1c4696d45a8c8a9489440385b22f6",
+  "embedding_model": "qwen3-embedding:8b",
+  "embedding_digest": "64b933495768fbd3b87c20583d379728a07471e0c66733a9df87cd1901b3c44b",
+  "reranker_model": "Qwen/Qwen3-Reranker-8B",
+  "collection": "finsearch_benchmark_v2_39c8d01ee5c71710",
+  "historical_collection": "sec_docs_dense_bm25_pr2_63dcec0",
+  "order_seed": 20260907,
+  "runtime_policy": "One sequential pass, unchanged runtime retries and 120s analyst timeout; no harness retries or follow-up clarification. Existing SEC network client, no metric fixtures. Fresh checkpoint and query-embedding cache, shared across cases. Diagnostic timings, not controlled performance claims.",
+  "judge": {
+    "model": "gemma4:e4b",
+    "digest": "c6eb396dbd5992bbe3f5cdb947e8bbc0ee413d7c17e2beaae69f5d569cf982eb",
+    "provider": "local Ollama",
+    "temperature": 0,
+    "num_ctx": 32768,
+    "num_predict": 4096,
+    "think": false,
+    "timeout_s": 240,
+    "attempts": 1,
+    "format": "json"
+  },
+  "audit": {
+    "seed": 20260907,
+    "cases_per_stratum": 2,
+    "reviewer": "source-inspecting coding assistant; not independent human adjudication",
+    "blind_to_judge_until_annotations_frozen": true
+  }
+}
