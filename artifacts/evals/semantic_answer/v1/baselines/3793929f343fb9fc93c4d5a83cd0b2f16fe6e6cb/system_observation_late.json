@@ -1,0 +1,48 @@
+{
+  "observed_at": "2026-09-07T04:37:16.697033+00:00",
+  "completed_cases": 42,
+  "method": "Read-only mid-run observation; no inference, model loading, service restart, settings changes, or causal attribution.",
+  "controls": {
+    "at": "2026-09-07T04:37:16.824953+00:00",
+    "ac_power": true,
+    "low_power_mode": 0,
+    "browser_process_count": 1,
+    "heavy_non_model_processes": [
+      {
+        "process": "python",
+        "cpu": 90.8
+      },
+      {
+        "process": "python",
+        "cpu": 62.0
+      }
+    ]
+  },
+  "memory": {
+    "vm_stat": "Mach Virtual Memory Statistics: (page size of 16384 bytes)\nPages free:                                     3803.\nPages active:                                 301616.\nPages inactive:                               309586.\nPages speculative:                              2670.\nPages throttled:                                   0.\nPages wired down:                            1066212.\nPages purgeable:                                9519.\n\"Translation faults\":                     4037728837.\nPages copy-on-write:                        93222394.\nPages zero filled:                        1354032607.\nPages reactivated:                         174673649.\nPages purged:                               19496286.\nFile-backed pages:                            141915.\nAnonymous pages:                              471957.\nPages stored in compressor:                   910681.\nPages occupied by compressor:                 371934.\nDecompressions:                            140795380.\nCompressions:                              173784728.\nPageins:                                    83618353.\nPageouts:                                     328733.\nSwapins:                                     1737681.\nSwapouts:                                    2728492.\n",
+    "swapusage": "vm.swapusage: total = 3072.00M  used = 1993.94M  free = 1078.06M  (encrypted)\n"
+  },
+  "active_models": {
+    "models": [
+      {
+        "name": "qwen2.5:14b-instruct",
+        "model": "qwen2.5:14b-instruct",
+        "size": 15209406135,
+        "digest": "7cdf5a0187d5c58cc5d369b255592f7841d1c4696d45a8c8a9489440385b22f6",
+        "details": {
+          "parent_model": "",
+          "format": "gguf",
+          "family": "qwen2",
+          "families": [
+            "qwen2"
+          ],
+          "parameter_size": "14.8B",
+          "quantization_level": "Q4_K_M"
+        },
+        "expires_at": "2026-09-07T00:42:07.434359-04:00",
+        "size_vram": 15209406135,
+        "context_length": 32768
+      }
+    ]
+  }
+}

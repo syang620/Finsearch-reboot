@@ -1,0 +1,34 @@
+{
+  "cases": 60,
+  "strata": {
+    "structured_numeric": 12,
+    "narrative": 6,
+    "hybrid": 6,
+    "comparison": 6,
+    "calculator": 6,
+    "multiple_claims": 6,
+    "difficult_attribution": 6,
+    "plausible_wrong_evidence": 6,
+    "insufficient_data": 6
+  },
+  "audit_ids": [
+    "SEM1_AAPL_2024_07",
+    "SEM1_AAPL_2025_03",
+    "SEM1_AAPL_2025_04",
+    "SEM1_AAPL_2025_05",
+    "SEM1_AAPL_2025_06",
+    "SEM1_AAPL_2025_07",
+    "SEM1_AMZN_2023_02",
+    "SEM1_AMZN_2023_03",
+    "SEM1_AMZN_2023_09",
+    "SEM1_AMZN_2023_10",
+    "SEM1_AMZN_2024_04",
+    "SEM1_AMZN_2024_05",
+    "SEM1_MSFT_2024_02",
+    "SEM1_MSFT_2024_08",
+    "SEM1_MSFT_2024_09",
+    "SEM1_MSFT_2024_10",
+    "SEM1_MSFT_2025_06",
+    "SEM1_MSFT_2025_08"
+  ]
+}

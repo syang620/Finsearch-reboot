@@ -1,0 +1,504 @@
+{
+  "overall": {
+    "cases": 60,
+    "judge_valid_cases": 4,
+    "judge_missing_or_error_cases": 56,
+    "claim_evaluation_coverage": {
+      "numerator": 7,
+      "denominator": 20,
+      "rate": 0.35
+    },
+    "fully_supported_claim_rate": {
+      "numerator": 7,
+      "denominator": 7,
+      "rate": 1.0
+    },
+    "partially_supported_claim_rate": {
+      "numerator": 0,
+      "denominator": 7,
+      "rate": 0.0
+    },
+    "unsupported_claim_rate": {
+      "numerator": 0,
+      "denominator": 7,
+      "rate": 0.0
+    },
+    "fully_grounded_answer_rate_judged_only": {
+      "numerator": 4,
+      "denominator": 4,
+      "rate": 1.0
+    },
+    "fully_grounded_answers_over_all_cases_lower_bound": {
+      "numerator": 4,
+      "denominator": 60,
+      "rate": 0.06666666666666667
+    },
+    "complete_relevant_answers_judged_only": {
+      "numerator": 4,
+      "denominator": 4,
+      "rate": 1.0
+    },
+    "gold_requirement_completeness_judged_only": {
+      "numerator": 6,
+      "denominator": 6,
+      "rate": 1.0
+    },
+    "semantic_answerability_correctness_judged_only": {
+      "numerator": 4,
+      "denominator": 4,
+      "rate": 1.0
+    }
+  },
+  "by_stratum": {
+    "calculator": {
+      "cases": 6,
+      "judge_valid_cases": 0,
+      "judge_missing_or_error_cases": 6,
+      "claim_evaluation_coverage": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null
+      },
+      "fully_supported_claim_rate": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null
+      },
+      "partially_supported_claim_rate": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null
+      },
+      "unsupported_claim_rate": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null
+      },
+      "fully_grounded_answer_rate_judged_only": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null
+      },
+      "fully_grounded_answers_over_all_cases_lower_bound": {
+        "numerator": 0,
+        "denominator": 6,
+        "rate": 0.0
+      },
+      "complete_relevant_answers_judged_only": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null
+      },
+      "gold_requirement_completeness_judged_only": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null
+      },
+      "semantic_answerability_correctness_judged_only": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null
+      }
+    },
+    "comparison": {
+      "cases": 6,
+      "judge_valid_cases": 0,
+      "judge_missing_or_error_cases": 6,
+      "claim_evaluation_coverage": {
+        "numerator": 0,
+        "denominator": 3,
+        "rate": 0.0
+      },
+      "fully_supported_claim_rate": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null
+      },
+      "partially_supported_claim_rate": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null
+      },
+      "unsupported_claim_rate": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null
+      },
+      "fully_grounded_answer_rate_judged_only": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null
+      },
+      "fully_grounded_answers_over_all_cases_lower_bound": {
+        "numerator": 0,
+        "denominator": 6,
+        "rate": 0.0
+      },
+      "complete_relevant_answers_judged_only": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null
+      },
+      "gold_requirement_completeness_judged_only": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null
+      },
+      "semantic_answerability_correctness_judged_only": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null
+      }
+    },
+    "difficult_attribution": {
+      "cases": 6,
+      "judge_valid_cases": 1,
+      "judge_missing_or_error_cases": 5,
+      "claim_evaluation_coverage": {
+        "numerator": 1,
+        "denominator": 2,
+        "rate": 0.5
+      },
+      "fully_supported_claim_rate": {
+        "numerator": 1,
+        "denominator": 1,
+        "rate": 1.0
+      },
+      "partially_supported_claim_rate": {
+        "numerator": 0,
+        "denominator": 1,
+        "rate": 0.0
+      },
+      "unsupported_claim_rate": {
+        "numerator": 0,
+        "denominator": 1,
+        "rate": 0.0
+      },
+      "fully_grounded_answer_rate_judged_only": {
+        "numerator": 1,
+        "denominator": 1,
+        "rate": 1.0
+      },
+      "fully_grounded_answers_over_all_cases_lower_bound": {
+        "numerator": 1,
+        "denominator": 6,
+        "rate": 0.16666666666666666
+      },
+      "complete_relevant_answers_judged_only": {
+        "numerator": 1,
+        "denominator": 1,
+        "rate": 1.0
+      },
+      "gold_requirement_completeness_judged_only": {
+        "numerator": 1,
+        "denominator": 1,
+        "rate": 1.0
+      },
+      "semantic_answerability_correctness_judged_only": {
+        "numerator": 1,
+        "denominator": 1,
+        "rate": 1.0
+      }
+    },
+    "hybrid": {
+      "cases": 6,
+      "judge_valid_cases": 0,
+      "judge_missing_or_error_cases": 6,
+      "claim_evaluation_coverage": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null
+      },
+      "fully_supported_claim_rate": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null
+      },
+      "partially_supported_claim_rate": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null
+      },
+      "unsupported_claim_rate": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null
+      },
+      "fully_grounded_answer_rate_judged_only": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null
+      },
+      "fully_grounded_answers_over_all_cases_lower_bound": {
+        "numerator": 0,
+        "denominator": 6,
+        "rate": 0.0
+      },
+      "complete_relevant_answers_judged_only": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null
+      },
+      "gold_requirement_completeness_judged_only": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null
+      },
+      "semantic_answerability_correctness_judged_only": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null
+      }
+    },
+    "insufficient_data": {
+      "cases": 6,
+      "judge_valid_cases": 0,
+      "judge_missing_or_error_cases": 6,
+      "claim_evaluation_coverage": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null
+      },
+      "fully_supported_claim_rate": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null
+      },
+      "partially_supported_claim_rate": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null
+      },
+      "unsupported_claim_rate": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null
+      },
+      "fully_grounded_answer_rate_judged_only": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null
+      },
+      "fully_grounded_answers_over_all_cases_lower_bound": {
+        "numerator": 0,
+        "denominator": 6,
+        "rate": 0.0
+      },
+      "complete_relevant_answers_judged_only": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null
+      },
+      "gold_requirement_completeness_judged_only": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null
+      },
+      "semantic_answerability_correctness_judged_only": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null
+      }
+    },
+    "multiple_claims": {
+      "cases": 6,
+      "judge_valid_cases": 2,
+      "judge_missing_or_error_cases": 4,
+      "claim_evaluation_coverage": {
+        "numerator": 5,
+        "denominator": 12,
+        "rate": 0.4166666666666667
+      },
+      "fully_supported_claim_rate": {
+        "numerator": 5,
+        "denominator": 5,
+        "rate": 1.0
+      },
+      "partially_supported_claim_rate": {
+        "numerator": 0,
+        "denominator": 5,
+        "rate": 0.0
+      },
+      "unsupported_claim_rate": {
+        "numerator": 0,
+        "denominator": 5,
+        "rate": 0.0
+      },
+      "fully_grounded_answer_rate_judged_only": {
+        "numerator": 2,
+        "denominator": 2,
+        "rate": 1.0
+      },
+      "fully_grounded_answers_over_all_cases_lower_bound": {
+        "numerator": 2,
+        "denominator": 6,
+        "rate": 0.3333333333333333
+      },
+      "complete_relevant_answers_judged_only": {
+        "numerator": 2,
+        "denominator": 2,
+        "rate": 1.0
+      },
+      "gold_requirement_completeness_judged_only": {
+        "numerator": 4,
+        "denominator": 4,
+        "rate": 1.0
+      },
+      "semantic_answerability_correctness_judged_only": {
+        "numerator": 2,
+        "denominator": 2,
+        "rate": 1.0
+      }
+    },
+    "narrative": {
+      "cases": 6,
+      "judge_valid_cases": 1,
+      "judge_missing_or_error_cases": 5,
+      "claim_evaluation_coverage": {
+        "numerator": 1,
+        "denominator": 3,
+        "rate": 0.3333333333333333
+      },
+      "fully_supported_claim_rate": {
+        "numerator": 1,
+        "denominator": 1,
+        "rate": 1.0
+      },
+      "partially_supported_claim_rate": {
+        "numerator": 0,
+        "denominator": 1,
+        "rate": 0.0
+      },
+      "unsupported_claim_rate": {
+        "numerator": 0,
+        "denominator": 1,
+        "rate": 0.0
+      },
+      "fully_grounded_answer_rate_judged_only": {
+        "numerator": 1,
+        "denominator": 1,
+        "rate": 1.0
+      },
+      "fully_grounded_answers_over_all_cases_lower_bound": {
+        "numerator": 1,
+        "denominator": 6,
+        "rate": 0.16666666666666666
+      },
+      "complete_relevant_answers_judged_only": {
+        "numerator": 1,
+        "denominator": 1,
+        "rate": 1.0
+      },
+      "gold_requirement_completeness_judged_only": {
+        "numerator": 1,
+        "denominator": 1,
+        "rate": 1.0
+      },
+      "semantic_answerability_correctness_judged_only": {
+        "numerator": 1,
+        "denominator": 1,
+        "rate": 1.0
+      }
+    },
+    "plausible_wrong_evidence": {
+      "cases": 6,
+      "judge_valid_cases": 0,
+      "judge_missing_or_error_cases": 6,
+      "claim_evaluation_coverage": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null
+      },
+      "fully_supported_claim_rate": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null
+      },
+      "partially_supported_claim_rate": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null
+      },
+      "unsupported_claim_rate": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null
+      },
+      "fully_grounded_answer_rate_judged_only": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null
+      },
+      "fully_grounded_answers_over_all_cases_lower_bound": {
+        "numerator": 0,
+        "denominator": 6,
+        "rate": 0.0
+      },
+      "complete_relevant_answers_judged_only": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null
+      },
+      "gold_requirement_completeness_judged_only": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null
+      },
+      "semantic_answerability_correctness_judged_only": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null
+      }
+    },
+    "structured_numeric": {
+      "cases": 12,
+      "judge_valid_cases": 0,
+      "judge_missing_or_error_cases": 12,
+      "claim_evaluation_coverage": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null
+      },
+      "fully_supported_claim_rate": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null
+      },
+      "partially_supported_claim_rate": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null
+      },
+      "unsupported_claim_rate": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null
+      },
+      "fully_grounded_answer_rate_judged_only": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null
+      },
+      "fully_grounded_answers_over_all_cases_lower_bound": {
+        "numerator": 0,
+        "denominator": 12,
+        "rate": 0.0
+      },
+      "complete_relevant_answers_judged_only": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null
+      },
+      "gold_requirement_completeness_judged_only": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null
+      },
+      "semantic_answerability_correctness_judged_only": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null
+      }
+    }
+  }
+}

@@ -1,0 +1,62 @@
+{
+  "policy": "Publication-only redaction of upstream parent_model home prefixes; dependent file hashes rebound. Original bytes retained locally. No answers, judgments, numeric values, scores, model digests, or source hashes changed.",
+  "original_files_sha256": {
+    "answer_manifest.json": "c064e504b9d1bd5d75af405f674604ecfa8367ad90b357b8fba5f8ec03be0789",
+    "deterministic.jsonl": "1fd1219cad0f5392215d4149719daeee2086aea5074a10d1bf2d47f311987a87",
+    "deterministic_summary.json": "aebf9fb2dceb52b23b39821687adbb4df70b2f2bf5fba32365b35b5d114777a9",
+    "judge/judgments.jsonl": "0bac6ac91d8a4f22cb8995d1d355d45ed59d0342d106fcb88539fa31e9517fa2",
+    "judge/manifest.json": "a8b54cdb3c0bf882a9de07789ff0f9d8d2ae62ca896deff4d4d9248452c54be6",
+    "judge/started.json": "f8809109698c3a6d32bc9d5a5df9b46637a88fe4d1c6bdfaf10a4c6c88d2205e",
+    "judge/summary.json": "d9c7f1685b7b84b19fe94d03c5257f850eb85c7886726ce1f90b3b5a363da209",
+    "raw_answers.jsonl": "d315e99ef88e4f7d611e85daa394c3e2a4f99fcb0c74398fd8b3fbc93fda32c2",
+    "runtime_observation.json": "a2723cb6426f6f0de54fa6693b9d8803b7d6511a3f7dfd2c72cc6ce20bfebe98",
+    "source_audit.jsonl": "f74c9af419011a97100c05f407af08ab58debfa6a85d78926d99e97eed8b5ca5",
+    "started.json": "9f30fa7bed6411b8a967c1cadc94a39ce71bf89ddf87fbd68b01f24de424f894",
+    "system_observation_late.json": "c2f8c5379b73f46be6dc0d5d7ace400153012632b830f8430d77570f7555580c",
+    "verification.json": "c9ad30989b4eea443a1fd0ce1aa5e8740e06f9f211ffd677977fcba01fa8b68d"
+  },
+  "publication_files_sha256": {
+    "answer_manifest.json": "9eec11249bfc99e636a8cdefe9c148ec23cb56510bf168caf892de34e3b20045",
+    "deterministic.jsonl": "1fd1219cad0f5392215d4149719daeee2086aea5074a10d1bf2d47f311987a87",
+    "deterministic_summary.json": "aebf9fb2dceb52b23b39821687adbb4df70b2f2bf5fba32365b35b5d114777a9",
+    "judge/judgments.jsonl": "0bac6ac91d8a4f22cb8995d1d355d45ed59d0342d106fcb88539fa31e9517fa2",
+    "judge/manifest.json": "a4da8bb8f0aca3772844dc5bc851705a7fb8f8202bc2c5abe1a9337ea1e2bfd4",
+    "judge/started.json": "7771af00bc9a78af36cc6cb46bc2be94d471f3731d0e58f33ca017c33d752655",
+    "judge/summary.json": "d9c7f1685b7b84b19fe94d03c5257f850eb85c7886726ce1f90b3b5a363da209",
+    "raw_answers.jsonl": "d315e99ef88e4f7d611e85daa394c3e2a4f99fcb0c74398fd8b3fbc93fda32c2",
+    "runtime_observation.json": "a2723cb6426f6f0de54fa6693b9d8803b7d6511a3f7dfd2c72cc6ce20bfebe98",
+    "source_audit.jsonl": "f74c9af419011a97100c05f407af08ab58debfa6a85d78926d99e97eed8b5ca5",
+    "started.json": "8999f440b17693191a47ab20d7c956592b08b2ca1749a16c460221d703ef3c49",
+    "system_observation_late.json": "c2f8c5379b73f46be6dc0d5d7ace400153012632b830f8430d77570f7555580c",
+    "verification.json": "c9ad30989b4eea443a1fd0ce1aa5e8740e06f9f211ffd677977fcba01fa8b68d"
+  },
+  "changes": {
+    "answer_manifest.json": {
+      "metadata_json_pointers": [
+        "/model_provenance/models/qwen3-embedding:8b/details/parent_model",
+        "/model_provenance_after/models/qwen3-embedding:8b/details/parent_model"
+      ],
+      "rebound_artifact_hashes": [
+        "started.json"
+      ]
+    },
+    "judge/manifest.json": {
+      "metadata_json_pointers": [
+        "/model_provenance_after/models/qwen3-embedding:8b/details/parent_model"
+      ],
+      "rebound_artifact_hashes": [
+        "started.json"
+      ]
+    },
+    "judge/started.json": {
+      "metadata_json_pointers": [
+        "/models/models/qwen3-embedding:8b/details/parent_model"
+      ]
+    },
+    "started.json": {
+      "metadata_json_pointers": [
+        "/model_provenance/models/qwen3-embedding:8b/details/parent_model"
+      ]
+    }
+  }
+}
