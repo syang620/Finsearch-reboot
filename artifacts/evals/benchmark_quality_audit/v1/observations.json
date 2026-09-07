@@ -1,0 +1,300 @@
+{
+  "audit_version": 1,
+  "inputs_sha256": {
+    "artifacts/evals/retrieval/benchmark_v2/baselines/54d31917c27263ea25ebf5d905caa0a4ee34f74f/per_query.jsonl": "6aaafffa6deb196756d05567e2930504b6b7ea4e9b3431fa2c733727bab94c29",
+    "artifacts/evals/semantic_answer/v1/baselines/3793929f343fb9fc93c4d5a83cd0b2f16fe6e6cb/judge/judgments.jsonl": "0bac6ac91d8a4f22cb8995d1d355d45ed59d0342d106fcb88539fa31e9517fa2",
+    "artifacts/evals/semantic_answer/v1/baselines/3793929f343fb9fc93c4d5a83cd0b2f16fe6e6cb/raw_answers.jsonl": "d315e99ef88e4f7d611e85daa394c3e2a4f99fcb0c74398fd8b3fbc93fda32c2",
+    "artifacts/evals/semantic_answer/v1/baselines/3793929f343fb9fc93c4d5a83cd0b2f16fe6e6cb/source_audit.jsonl": "f74c9af419011a97100c05f407af08ab58debfa6a85d78926d99e97eed8b5ca5",
+    "data/evals/retrieval/benchmark_v2/corpus.jsonl": "39c8d01ee5c71710e443e49698957d2aa991e71c16ad79905e7bd07d6a11fe4d",
+    "data/evals/retrieval/benchmark_v2/dataset_manifest.json": "83c31e4a307d68d77bb051658c4e45bec21764eb6b62e9974cfd151bab22adb3",
+    "data/evals/retrieval/benchmark_v2/queries.jsonl": "e356eab5c78f027c570daa05945b4688e152ab3e54c79070862d9759fc2cc9d9",
+    "data/evals/semantic_answer/v1/judge_rubric.txt": "cbdd67689374af5dbe44a637b23080b9656b26183ecf827ad7d92a730d745cd5",
+    "data/evals/semantic_answer/v1/manifest.json": "db6a8c7a985cfc95734e23a978bfbb923bcf145ce06b15886a4b44a3dbce3a49",
+    "data/evals/semantic_answer/v1/queries.jsonl": "63e085e940a98aa7aa6b6136f9a55a2ce5bdc810e64d8bc6663d4125fdba65d2",
+    "scripts/evals/audit_benchmark_quality_v1.py": "1d94c1570b5249a093fc882e2f4e3e2a41c6329dc67b8ec3f1025b919ed71de6",
+    "src/evals/retrieval_benchmark_v2.py": "275755963aefb8a6efdc23866ee211b76c9dd6f1bead390e57f0b0d80baa42c9",
+    "src/evals/semantic_answer_v1.py": "81cea8cb01247b9f56b50a1638e9780f706b0129fc615d5db9e3a5017e51eb75"
+  },
+  "optimization_freeze_approved": false,
+  "retrieval": {
+    "arithmetic": {
+      "metric_values_checked": 6000,
+      "mismatches": 0,
+      "randomized_rankings": 1000
+    },
+    "cases": 120,
+    "corpus_documents": 948,
+    "corpus_types": {
+      "table": 376,
+      "text_chunk": 572
+    },
+    "exact_duplicate_text_excess": 0,
+    "excluded": 6,
+    "filings": {
+      "AAPL_2024": 20,
+      "AAPL_2025": 20,
+      "AMZN_2023": 20,
+      "AMZN_2024": 20,
+      "MSFT_2024": 20,
+      "MSFT_2025": 20
+    },
+    "issuers": {
+      "AAPL": 40,
+      "AMZN": 40,
+      "MSFT": 40
+    },
+    "judgment_grades": {
+      "0": 16,
+      "1": 24,
+      "2": 179
+    },
+    "positive_count_distribution": {
+      "1": 77,
+      "2": 30,
+      "3": 10,
+      "4": 3
+    },
+    "positive_document_types": {
+      "table": 45,
+      "text_chunk": 134
+    },
+    "positive_query_mix": {
+      "table": 22,
+      "table+text_chunk": 4,
+      "text_chunk": 94
+    },
+    "repeated_positive_sets": [
+      [
+        "KBV2_AAPL_2024_03",
+        "KBV2_AAPL_2024_18"
+      ],
+      [
+        "KBV2_AAPL_2024_05",
+        "KBV2_AAPL_2024_17"
+      ],
+      [
+        "KBV2_AAPL_2025_03",
+        "KBV2_AAPL_2025_18"
+      ],
+      [
+        "KBV2_AAPL_2025_05",
+        "KBV2_AAPL_2025_17"
+      ],
+      [
+        "KBV2_AMZN_2023_03",
+        "KBV2_AMZN_2023_18"
+      ],
+      [
+        "KBV2_AMZN_2023_11",
+        "KBV2_AMZN_2023_12"
+      ],
+      [
+        "KBV2_AMZN_2023_14",
+        "KBV2_AMZN_2023_17"
+      ],
+      [
+        "KBV2_AMZN_2024_03",
+        "KBV2_AMZN_2024_18"
+      ],
+      [
+        "KBV2_AMZN_2024_11",
+        "KBV2_AMZN_2024_12"
+      ],
+      [
+        "KBV2_AMZN_2024_14",
+        "KBV2_AMZN_2024_17"
+      ],
+      [
+        "KBV2_MSFT_2024_04",
+        "KBV2_MSFT_2024_17"
+      ],
+      [
+        "KBV2_MSFT_2024_07",
+        "KBV2_MSFT_2024_08"
+      ],
+      [
+        "KBV2_MSFT_2024_09",
+        "KBV2_MSFT_2024_14",
+        "KBV2_MSFT_2024_18"
+      ],
+      [
+        "KBV2_MSFT_2025_04",
+        "KBV2_MSFT_2025_17"
+      ],
+      [
+        "KBV2_MSFT_2025_07",
+        "KBV2_MSFT_2025_08"
+      ],
+      [
+        "KBV2_MSFT_2025_09",
+        "KBV2_MSFT_2025_14",
+        "KBV2_MSFT_2025_18"
+      ]
+    ],
+    "stored_section_labels_not_validated_sec_sections": {
+      "Item 1 > Note About Forward-Looking Statements": 40,
+      "Item 1. Business > Available Information": 2,
+      "Item 1. Business > Business Risks": 7,
+      "Item 1. Business > Business Seasonality and Product Introductions": 2,
+      "Item 1. Business > Business and Industry Risks": 6,
+      "Item 1. Business > Company Background": 2,
+      "Item 1. Business > Consumers": 4,
+      "Item 1. Business > Financial Risks": 1,
+      "Item 1. Business > General": 2,
+      "Item 1. Business > Human Capital": 2,
+      "Item 1. Business > Item 1C. Cybersecurity": 2,
+      "Item 1. Business > Item 1C.Cybersecurity": 2,
+      "Item 1. Business > Macroeconomic and Industry Risks": 2,
+      "Item 1. Business > Markets and Distribution": 2,
+      "Item 1. Business > Operating Risks": 6,
+      "Item 1. Business > Sellers": 2,
+      "Item 1. Business > Supply of Components": 2,
+      "Item 6 > FINANCIAL CONDITION AND RESULTS OF OPERATIONS": 6,
+      "Item 6 > NOTES TO FINANCIAL STATEMENTS": 4,
+      "Item 6 > STOCKHOLDERS\u2019 EQUITY STATEMENTS": 4,
+      "Item 6. Reserved > Critical Accounting Estimates": 2,
+      "Item 6. Reserved > Critical Audit Matter": 10,
+      "Item 6. Reserved > Overview": 2,
+      "Item 6. Reserved > Results of Operations": 4,
+      "Item 6. [Reserved] > Cash Equivalents": 4,
+      "Item 6. [Reserved] > Commercial Paper": 2,
+      "Item 6. [Reserved] > Concentrations in the Available Sources of Supply of Materials and Product": 2,
+      "Item 6. [Reserved] > Gross Margin": 2,
+      "Item 6. [Reserved] > Inventories": 2,
+      "Item 6. [Reserved] > Products and Services Performance": 4,
+      "PART I > Item 2.Properties": 4,
+      "PART II > Item 6 > FINANCIAL CONDITION AND RESULTS OF OPERATIONS > OPERATING EXPENSES > Research and Development": 4,
+      "PART II > Item 6 > FINANCIAL CONDITION AND RESULTS OF OPERATIONS > SEGMENT RESULTS OF OPERATIONS": 2,
+      "PART II > Item 6 > FINANCIAL CONDITION AND RESULTS OF OPERATIONS > SUMMARY RESULTS OF OPERATIONS": 2,
+      "PART II > Item 6 > INCOME STATEMENTS": 6,
+      "PART II > Item 6 > NOTES TO FINANCIAL STATEMENTS > NOTE 19 \u2014 SEGMENT INFORMATION AND GEOGRAPHIC DATA > More Personal Computing": 1,
+      "PART II > Item 6 > STOCKHOLDERS\u2019 EQUITY STATEMENTS > NOTE 17 \u2014 EMPLOYEE STOCK AND SAVINGS PLANS > Savings Plans": 1,
+      "PART II > Item 6. [Reserved] > Gross Margin": 4,
+      "PART II > Item 6. [Reserved] > Item 8. Financial Statements and Supplementary Data > CONSOLIDATED STATEMENTS OF OPERATIONS": 6,
+      "PART II > Item 6. [Reserved] > Note 13 \u2013 Segment Information and Geographic Data": 1,
+      "PART II > Item 6. [Reserved] > Note 2 \u2013 Revenue": 4,
+      "PART II > Item 6. [Reserved] > Operating Expenses": 2,
+      "PART II > Item 6. [Reserved] > Products and Services Performance": 4,
+      "PART II > Item 6.Reserved > Critical Audit Matter > CONSOLIDATED STATEMENTS OF OPERATIONS": 2,
+      "PART II > Item 6.Reserved > Note 6 \u2014 DEBT > Income Tax Contingencies > International > AWS": 2
+    },
+    "strata": {
+      "business_growth": 12,
+      "direct_fact": 18,
+      "hard_negative": 12,
+      "mda": 12,
+      "multi_evidence": 12,
+      "narrative": 12,
+      "paraphrase": 12,
+      "risk_factors": 18,
+      "section_specific": 12
+    },
+    "unique_positive_documents": 120,
+    "unique_positive_sets": 102,
+    "unjudged_top10": {
+      "bm25_only": {
+        "returned": 1200,
+        "unjudged": 1053
+      },
+      "dense_only": {
+        "returned": 1200,
+        "unjudged": 1043
+      },
+      "hybrid": {
+        "returned": 1200,
+        "unjudged": 1039
+      },
+      "hybrid_reranker": {
+        "returned": 1200,
+        "unjudged": 1039
+      }
+    },
+    "year_normalized_unique_texts": 63
+  },
+  "semantic": {
+    "cases": 60,
+    "claim_types": {
+      "attribution": 6,
+      "calculation": 6,
+      "kb_numeric": 8,
+      "narrative": 24,
+      "structured_numeric": 42
+    },
+    "exact_duplicate_text_excess": 0,
+    "explicit_wrong_evidence_cases": 6,
+    "filings": {
+      "AAPL_2024": 10,
+      "AAPL_2025": 10,
+      "AMZN_2023": 10,
+      "AMZN_2024": 10,
+      "MSFT_2024": 10,
+      "MSFT_2025": 10
+    },
+    "gold_claims": 86,
+    "gold_kb_ids_also_retrieval_positive": 43,
+    "issuers": {
+      "AAPL": 20,
+      "AMZN": 20,
+      "MSFT": 20
+    },
+    "judge_statuses": {
+      "judge_error": 17,
+      "not_assessable": 39,
+      "valid": 4
+    },
+    "numeric_counterexamples": {
+      "correct_control": {
+        "denominator": 1,
+        "numerator": 1,
+        "rate": 1.0
+      },
+      "negation": {
+        "denominator": 1,
+        "numerator": 1,
+        "rate": 1.0
+      },
+      "rejected_answer": {
+        "denominator": 1,
+        "numerator": 1,
+        "rate": 1.0
+      },
+      "wrong_currency": {
+        "denominator": 1,
+        "numerator": 1,
+        "rate": 1.0
+      },
+      "wrong_issuer": {
+        "denominator": 1,
+        "numerator": 1,
+        "rate": 1.0
+      },
+      "wrong_quantity_role": {
+        "denominator": 1,
+        "numerator": 1,
+        "rate": 1.0
+      }
+    },
+    "numeric_metrics": {
+      "aws_leased_area": 2,
+      "aws_owned_area": 2,
+      "cash_and_cash_equivalents": 6,
+      "research_and_development": 2,
+      "revenue": 36,
+      "revenue_growth_percent": 6,
+      "services_gross_margin_percent": 2
+    },
+    "strata": {
+      "calculator": 6,
+      "comparison": 6,
+      "difficult_attribution": 6,
+      "hybrid": 6,
+      "insufficient_data": 6,
+      "multiple_claims": 6,
+      "narrative": 6,
+      "plausible_wrong_evidence": 6,
+      "structured_numeric": 12
+    },
+    "unique_gold_kb_ids": 43,
+    "year_normalized_unique_texts": 30
+  }
+}
