@@ -6,9 +6,12 @@ diagnostic-only, with 2/60 cases captured**. See the
 [baseline status](semantic_answer_v2_baseline_status.md); no controlled performance
 baseline or full-population semantic score is available.
 
-The user has now authorized [one fresh controlled attempt](semantic_answer_v2_fresh_attempt_plan.md),
-then the fixed source audit and fresh review before conditional merge. The earlier
-diagnostic and frozen benchmark remain unchanged; no new attempt has started yet.
+The subsequently authorized [one fresh attempt](semantic_answer_v2_fresh_attempt_plan.md)
+also stopped after a recorded workload violation: two captured outcomes, one
+interrupted case and 57 unstarted. Its [separate status and immutable evidence](semantic_answer_v2_fresh_attempt_status.md)
+remain diagnostic-only. Permission is exhausted; the fixed source audit and valid
+full baseline are still missing, so PR31 remains blocked. The earlier diagnostic
+and frozen benchmark remain unchanged.
 Built from PR30 merge `ef847550c80077bf9d785dc2694c1a9d6afb1ed3` on a
 separate clean branch. No production behavior or historical artifact changes.
 

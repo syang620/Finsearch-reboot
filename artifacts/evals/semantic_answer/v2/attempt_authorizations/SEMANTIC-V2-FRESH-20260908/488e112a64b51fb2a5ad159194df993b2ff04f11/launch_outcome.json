@@ -1,0 +1,11 @@
+{
+  "authorization_id": "SEMANTIC-V2-FRESH-20260908",
+  "implementation_sha": "488e112a64b51fb2a5ad159194df993b2ff04f11",
+  "consumption_marker_sha256": "87f797ebdd970561441f333ed25edc5d5fbf51ef3425475217e355a372cf091b",
+  "stage": "finished",
+  "child_started": true,
+  "child_returncode": -2,
+  "error_type": null,
+  "finished_at": "2026-09-08T14:29:11.626709+00:00",
+  "policy": "Invocation ended; permission remains consumed regardless of captured cases or exit status. Frozen completion.json alone determines baseline eligibility."
+}

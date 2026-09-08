@@ -1,6 +1,11 @@
 # One explicitly authorized fresh semantic-v2 attempt
 
-Status: authorization registered; no new attempt started. The user approved
+Current status: the single permission was consumed and the attempt stopped on a
+recorded workload violation. See the [separate preserved disposition](semantic_answer_v2_fresh_attempt_status.md).
+No new attempt or merge is authorized by this exhausted permission.
+
+The following is the registered pre-run plan. At registration no attempt had
+started. The user approved
 one fresh controlled pass, followed by the frozen 30-case source audit, evidence
 verification, fresh review, conditional PR31 merge, and a short cross-benchmark
 audit before declaring optimization readiness. This supersedes the earlier
