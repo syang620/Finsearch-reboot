@@ -135,7 +135,7 @@ rates retain all expected cases/requirements and are not relabeled accuracy when
 truth remains unassessed. Fixed-gold coverage and whole-answer groundedness must
 accompany emitted-claim rates to resist gains from claim splitting.
 
-## Current state
+## Initial planning checkpoint (historical)
 
 PR30 merged; clean v2 branch/worktree created. Audit and v1 contracts inspected.
 At this initial planning checkpoint, no v2 judge validation or current-system
