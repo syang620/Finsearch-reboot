@@ -18,7 +18,7 @@ from scripts.diagnostics.workload_control_v2 import (
 )
 
 
-CONTROLLED_GROUP = "unrelated_external_workload:controlled_cpu_v2"
+CONTROLLED_GROUP_MARKER = "CONTROL_V2_BUSY_"
 
 
 def text_lines(path):
@@ -136,7 +136,13 @@ def sustained_detections(raw, metrics, candidate_id):
                 break
             candidate = evaluated["candidates"][candidate_id]
             rising_edge = candidate["cpu_violation"] and not previous_active
-            if rising_edge and CONTROLLED_GROUP in candidate["trigger_groups"]:
+            controlled_groups = {
+                process["group_key"]
+                for process in evaluated["processes"]
+                if CONTROLLED_GROUP_MARKER.lower()
+                in str(process.get("command_line") or "").lower()
+            }
+            if rising_edge and controlled_groups.intersection(candidate["trigger_groups"]):
                 detected = elapsed - event["elapsed_seconds"]
                 break
             previous_active = candidate["cpu_violation"]
@@ -275,8 +281,8 @@ def historical_replay(preregistration, pr32_path, prior_disposition_paths):
     pr32_summary = summarize_evaluation(evaluated)
     for candidate_id, metrics in pr32_summary.items():
         metrics["interpretation"] = (
-            "exact for instantaneous/consecutive/occupancy from retained threshold crossings; "
-            "rolling burden is a lower bound because sub-threshold CPU was not retained"
+            "lower bound only: the sequential PR32 detail snapshot omitted processes hidden by "
+            "the broader v1 exemption filter and did not retain sub-threshold CPU"
         )
     sparse = []
     for path in prior_disposition_paths:

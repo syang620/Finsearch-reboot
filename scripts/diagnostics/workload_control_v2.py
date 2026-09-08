@@ -31,6 +31,32 @@ def _text(process):
     ).lower() + " " + ancestors.lower()
 
 
+def _canonical_executable(process):
+    return str(process.get("executable") or "unavailable").lower()
+
+
+def _nearest_identified_ancestor(process):
+    process_pid = process.get("pid")
+    for ancestor in process.get("ancestors", []):
+        if ancestor.get("pid") == process_pid:
+            continue
+        executable = str(ancestor.get("executable") or "").lower()
+        basename = Path(executable).name
+        if ".app/" in executable or basename in {
+            "ollama",
+            "qdrant",
+            "com.docker.backend",
+        }:
+            return executable
+    return "none"
+
+
+def _stable_group(category, process):
+    return ":".join(
+        (category, _canonical_executable(process), _nearest_identified_ancestor(process))
+    )
+
+
 def classify_process(process):
     """Return a stable category/group without granting application-wide exemptions."""
     text = _text(process)
@@ -39,14 +65,17 @@ def classify_process(process):
     command = str(process.get("command_line") or "").lower()
 
     if "control_v2_busy_" in command:
-        return "unrelated_external_workload", "unrelated_external_workload:controlled_cpu_v2"
+        category = "unrelated_external_workload"
+        return category, _stable_group(category, process)
     if process.get("observer_owned"):
-        return "calibration_harness", "calibration_harness:control_v2"
+        category = "calibration_harness"
+        return category, _stable_group(category, process)
     if (
         "run_workload_control_v2_calibration.py" in command
         or "simulate_semantic_preflight_readonly.py" in command
     ):
-        return "calibration_harness", "calibration_harness:control_v2"
+        category = "calibration_harness"
+        return category, _stable_group(category, process)
     if any(
         marker in text
         for marker in (
@@ -55,34 +84,35 @@ def classify_process(process):
             "semantic-baseline-v2",
         )
     ):
-        return "benchmark_model_process", "benchmark_model_process:semantic_v2"
+        category = "benchmark_model_process"
+        return category, _stable_group(category, process)
     real_chrome = lower_executable.endswith(
         "/google chrome.app/contents/macos/google chrome"
     )
     real_safari = lower_executable.endswith("/safari.app/contents/macos/safari")
     if real_chrome or real_safari:
-        family = "chrome" if real_chrome else "safari"
-        return "user_browser_workload", f"user_browser_workload:{family}"
+        category = "user_browser_workload"
+        return category, _stable_group(category, process)
     if "chatgpt.app/" in text or "codex framework.framework/" in text:
-        return "run_supervision_ui_tooling", "run_supervision_ui_tooling:chatgpt_codex"
+        category = "run_supervision_ui_tooling"
+        return category, _stable_group(category, process)
     if "docker desktop helper (renderer).app/" in text or (
         "docker desktop.app/" in text and "com.docker.backend" not in lower_executable
     ):
-        return "unrelated_external_workload", "unrelated_external_workload:docker_desktop_ui"
+        category = "unrelated_external_workload"
+        return category, _stable_group(category, process)
     basename = Path(executable).name.lower()
-    if (
-        basename in {"ollama", "qdrant", "com.docker.backend"}
-        or "ollama serve" in command
-        or "qdrant" in command and "docker desktop helper" not in text
-    ):
-        service = "ollama" if "ollama" in text else "qdrant_host"
-        return "required_service_host", f"required_service_host:{service}"
+    if basename in {"ollama", "qdrant", "com.docker.backend"}:
+        category = "required_service_host"
+        return category, _stable_group(category, process)
     if lower_executable.startswith(("/system/", "/usr/libexec/", "/usr/sbin/")):
-        return "os_background_service", f"os_background_service:{lower_executable}"
+        category = "os_background_service"
+        return category, _stable_group(category, process)
     if process.get("controlled_external"):
-        return "unrelated_external_workload", "unrelated_external_workload:controlled_cpu_v2"
-    stable = lower_executable or "unavailable"
-    return "unknown", f"unknown:{stable}"
+        category = "unrelated_external_workload"
+        return category, _stable_group(category, process)
+    category = "unknown"
+    return category, _stable_group(category, process)
 
 
 def classify_sample(sample):

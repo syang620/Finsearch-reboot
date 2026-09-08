@@ -58,9 +58,17 @@ def capture_processes(observer_pid, controlled_pids):
         executable = row["executable"]
         lower = executable.lower()
         browser = any(marker.lower() in lower for marker in BROWSER_MARKERS)
-        if row["cpu"] <= 0 and not browser:
+        supervision = (
+            "chatgpt.app/" in lower or "codex framework.framework/" in lower
+        )
+        if row["cpu"] <= 0 and not browser and not supervision:
             continue
-        detailed = row["cpu"] >= 5 or browser or any(marker in lower for marker in DETAIL_MARKERS)
+        detailed = (
+            row["cpu"] >= 5
+            or browser
+            or supervision
+            or any(marker in lower for marker in DETAIL_MARKERS)
+        )
         item = dict(row)
         item["process_group_id"] = process_group_id(row["pid"])
         item["command_line"] = command_line(row["pid"]) if detailed else None

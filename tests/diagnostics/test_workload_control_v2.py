@@ -7,6 +7,7 @@ from scripts.diagnostics.workload_control_v2 import (
     load_preregistration,
     summarize_evaluation,
 )
+from scripts.diagnostics import run_workload_control_v2_calibration as calibration
 
 
 PREREGISTRATION = Path("docs/evals/workload_control_v2_preregistration.json")
@@ -62,20 +63,79 @@ def test_process_classification_does_not_inherit_application_exemptions():
         "ancestors": [],
     }
     assert classify_process(backend)[0] == "required_service_host"
-    assert classify_process(renderer) == (
-        "unrelated_external_workload",
-        "unrelated_external_workload:docker_desktop_ui",
-    )
+    assert classify_process(renderer)[0] == "unrelated_external_workload"
+    assert "docker desktop helper (renderer)" in classify_process(renderer)[1]
+
+
+def test_qdrant_client_name_does_not_grant_service_exemption():
+    client = {
+        "executable": "/usr/bin/python",
+        "command_line": "python qdrant_backup.py",
+        "ancestors": [],
+    }
+    assert classify_process(client)[0] == "unknown"
+
+
+def test_capture_retains_idle_supervision_executable(monkeypatch):
+    process = {
+        "pid": 201,
+        "ppid": 1,
+        "cpu": 0.0,
+        "memory": 1.0,
+        "start_time": "now",
+        "executable": "/Applications/ChatGPT.app/Contents/MacOS/ChatGPT",
+    }
+    monkeypatch.setattr(calibration, "process_table", lambda: {201: process})
+    monkeypatch.setattr(calibration, "process_group_id", lambda pid: pid)
+    monkeypatch.setattr(calibration, "command_line", lambda pid: "ChatGPT")
+    monkeypatch.setattr(calibration, "cwd", lambda pid: None)
+    monkeypatch.setattr(calibration, "ancestor_chain", lambda pid, rows: [])
+    captured = calibration.capture_processes(999, set())
+    assert len(captured) == 1
+    assert captured[0]["executable"].endswith("/ChatGPT")
 
 
 def test_browser_and_supervision_are_visible_not_exempt():
     chrome = {"executable": "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"}
     codex = {"executable": "/Applications/ChatGPT.app/Contents/Frameworks/Codex Framework.framework/Helper"}
     assert classify_process(chrome)[0] == "user_browser_workload"
-    assert classify_process(codex) == (
-        "run_supervision_ui_tooling",
-        "run_supervision_ui_tooling:chatgpt_codex",
-    )
+    assert classify_process(codex)[0] == "run_supervision_ui_tooling"
+    assert "codex framework.framework/helper" in classify_process(codex)[1]
+
+
+def test_distinct_supervision_executables_cannot_aggregate_or_handoff_b10_streak():
+    preregistration = load_preregistration(PREREGISTRATION)
+    app = {
+        "pid": 201,
+        "ppid": 1,
+        "cpu": 30,
+        "executable": "/Applications/ChatGPT.app/Contents/MacOS/ChatGPT",
+        "command_line": "ChatGPT",
+        "ancestors": [],
+    }
+    renderer = {
+        "pid": 202,
+        "ppid": 201,
+        "cpu": 30,
+        "executable": "/Applications/ChatGPT.app/Contents/Frameworks/Codex Framework.framework/Renderer",
+        "command_line": "Codex Renderer",
+        "ancestors": [
+            {"pid": 202, "executable": "/Applications/ChatGPT.app/Contents/Frameworks/Codex Framework.framework/Renderer"},
+            {"pid": 201, "executable": "/Applications/ChatGPT.app/Contents/MacOS/ChatGPT"},
+        ],
+    }
+    combined = [sample(i, processes=[app, renderer]) for i in range(10)]
+    assert not evaluate_samples(combined, preregistration)[-1]["candidates"][
+        "B_CONSECUTIVE_10"
+    ]["cpu_violation"]
+
+    handed_off = []
+    for index in range(18):
+        process = dict(app if index % 2 == 0 else renderer, cpu=60)
+        handed_off.append(sample(index, processes=[process]))
+    assert not evaluate_samples(handed_off, preregistration)[-1]["candidates"][
+        "B_CONSECUTIVE_10"
+    ]["cpu_violation"]
 
 
 def test_safari_extension_is_not_a_real_browser_workload():
