@@ -7,7 +7,7 @@ separate clean branch. No production behavior or historical artifact changes.
 
 The original launcher stopped during preflight without starting a benchmark case.
 A [separately versioned launcher correction](semantic_answer_v2_launcher_correction.md)
-is awaiting its own review/freeze; the benchmark optimization contract stays unchanged.
+has passed its own review and freeze; the benchmark optimization contract stays unchanged.
 
 ## What changes, and why
 

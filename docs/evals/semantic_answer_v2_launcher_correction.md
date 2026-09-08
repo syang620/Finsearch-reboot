@@ -1,7 +1,7 @@
 # Semantic v2: separately versioned preflight correction
 
-Status: launcher v2.1 awaits fresh exact-head review and its own run-contract
-freeze. No semantic v2 baseline case has started. The user explicitly authorized
+Status: launcher v2.1 has passed fresh exact-head review and its own run-contract
+freeze. No semantic v2 baseline case has started yet. The user explicitly authorized
 this evaluation-only correction on 2026-09-08; it is not production tuning.
 
 ## Diagnosis and preserved record
@@ -70,7 +70,14 @@ The read-only setup diagnostic at `0e3f09b` reproduced Python at 90.4% CPU after
 index inspection, then no heavy process after the fixed 30-second wait. No
 benchmark questions were executed; this is preflight evidence only.
 
-Remaining: fresh launcher review; new
-launcher-contract freeze; one controlled unchanged-system baseline; fixed
+The [clean launcher review](https://github.com/syang620/Finsearch-reboot/pull/31#issuecomment-5585393657)
+inspected exact `f16f96d7b416a195b739cadc87bfe0b1c9a63b3b`. The separate launcher
+contract is frozen with SHA-256
+`ce1646e554cdb3f8fb583db0ea93eeb278daa13a937c641320335c33c24845ad`.
+The diagnostic is preserved under
+`artifacts/evals/semantic_answer/v2/preflight_diagnostics/0e3f09b09d6b95d610a96e9114f8046bb9027465/`,
+with its own file hash manifest. It is not baseline performance evidence.
+
+Remaining: one controlled unchanged-system baseline; fixed
 30-case source audit; immutable reporting; fresh final review. Do not merge
 PR31 automatically or tune production behavior.
