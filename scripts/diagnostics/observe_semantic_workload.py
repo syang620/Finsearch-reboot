@@ -9,6 +9,7 @@ from datetime import datetime, timezone
 import json
 import os
 from pathlib import Path
+import re
 import subprocess
 import time
 
@@ -18,6 +19,7 @@ THRESHOLD = 50.0
 BROWSER_MARKERS = ("Google Chrome", "/Safari.app/")
 EXEMPT_MARKERS = ("ollama", "qdrant", "com.docker", "virtualization")
 PRIVATE_PREFIX = str(Path.home())
+EMAIL_PATTERN = re.compile(r"(?<![\w.+-])[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}(?![\w.-])")
 
 
 def now():
@@ -26,7 +28,8 @@ def now():
 
 def sanitize(value):
     if isinstance(value, str):
-        return value.replace(PRIVATE_PREFIX, "$USER_HOME")
+        value = value.replace(PRIVATE_PREFIX, "$USER_HOME")
+        return EMAIL_PATTERN.sub("$EMAIL", value)
     if isinstance(value, list):
         return [sanitize(item) for item in value]
     if isinstance(value, dict):
