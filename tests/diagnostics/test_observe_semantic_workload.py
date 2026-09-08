@@ -1,3 +1,6 @@
+import json
+from pathlib import Path
+
 from scripts.diagnostics import observe_semantic_workload as observer
 
 
@@ -55,3 +58,27 @@ def test_summary_classifies_single_short_sustained_and_recurring():
 def test_sanitize_redacts_user_home_recursively():
     value = {"command": [f"{observer.PRIVATE_PREFIX}/bin/git", "safe"]}
     assert observer.sanitize(value) == {"command": ["$USER_HOME/bin/git", "safe"]}
+
+
+def test_published_summary_reproduces_from_raw_observation():
+    root = Path("artifacts/diagnostics/semantic-v2-workload-controls/a252feeb204ae417e2e024788cfbbff941b319ce")
+    rows = [json.loads(line) for line in (root / "formal_observation.jsonl").read_text().splitlines()]
+    samples = [row for row in rows if row["type"] == "sample"]
+    summary = json.loads((root / "summary.json").read_text())
+    observed = summary["observation"]
+    assert len(samples) == observed["sample_count"] == 1200
+    assert sum(bool(row["frozen_control"].get("browser_process_count") or
+                    row["frozen_control"].get("heavy_non_model_processes"))
+               for row in samples) == observed["frozen_control_violation_samples"] == 235
+    assert sum(row["frozen_control"].get("browser_process_count", 0) > 0
+               for row in samples) == observed["browser_process_samples"] == 0
+    assert sum(row["frozen_control"].get("ac_power") is not True
+               for row in samples) == observed["ac_power_failure_samples"] == 0
+    assert sum(row["frozen_control"].get("low_power_mode") != 0
+               for row in samples) == observed["low_power_mode_failure_samples"] == 0
+    counts = {}
+    for row in samples:
+        for process in row["frozen_control"].get("heavy_non_model_processes", []):
+            counts[process["process"]] = counts.get(process["process"], 0) + 1
+    assert counts == {row["process"]: row["samples"]
+                      for row in summary["authoritative_frozen_control_process_occurrences"]}

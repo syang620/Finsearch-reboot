@@ -1,9 +1,10 @@
 {
   "investigation": "semantic_v2_workload_controls",
-  "status": "pre_observation",
+  "status": "complete_diagnostic_control_contract_needs_review",
   "source_pr": 31,
   "source_pr_head": "7667af52169fb12965adf5680bae58a74c7c977e",
   "source_pr_state": "draft_open_release_blocked",
+  "diagnostic_implementation_sha": "a252feeb204ae417e2e024788cfbbff941b319ce",
   "dataset_sha256": "f9148a29cb5b0f2da30b6ecf5017a9d6bc4dc9fd31523643557b93906646ad7c",
   "optimization_manifest_sha256": "653a65e778a5633c4d1adc2d90ea7a56a578b81695e69d679f9d69915e54bec0",
   "scorer_sha256": {
@@ -34,7 +35,14 @@
     "authoritative_function": "scripts.evals.retrieval.run_benchmark_v3.controls",
     "benchmark_cases": 0,
     "model_inference": 0,
-    "process_termination": false
+    "process_termination": false,
+    "started_at": "2026-09-08T15:52:57.496925+00:00",
+    "finished_at": "2026-09-08T16:12:57.488396+00:00",
+    "sample_count": 1200,
+    "raw_sha256": "384003ae78c9b63e6b24a18e3067c19f2623a3554a8d67a14f39ce1b0f7c52a3",
+    "preflight_simulation_sha256": "92cd7e643c40746ed7c12f6af89fd6f386b57ac82fffe4a20affe5bd1c2f8583"
   },
-  "privacy": "Publishable process records replace the user-home prefix with $USER_HOME. Historical frozen evidence is not rewritten."
+  "privacy": "Publishable process records replace the user-home prefix with $USER_HOME. Historical frozen evidence is not rewritten.",
+  "artifact_manifest_sha256": "33100e65aa447d15aab36be7b845ff0391a998f48fcde3b4e2b846b62e32bf2f",
+  "decision": "CONTROL_CONTRACT_NEEDS_REVIEW"
 }

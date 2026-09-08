@@ -1,7 +1,6 @@
 """Read-only simulation of semantic-v2 preflight; never enters case execution."""
 import argparse
 from datetime import datetime, timezone
-import hashlib
 import json
 import os
 from pathlib import Path
@@ -45,6 +44,15 @@ def get_json(url, headers=None):
     return response.json()
 
 
+def sec_health():
+    response = requests.get(
+        "https://data.sec.gov/submissions/CIK0000320193.json",
+        headers={"User-Agent": os.environ["SEC_USER_AGENT"]}, timeout=30
+    )
+    response.raise_for_status()
+    return {"status_code": response.status_code}
+
+
 def run(index_manifest, output):
     output = Path(output)
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -69,12 +77,7 @@ def run(index_manifest, output):
                           if m["name"] in {config["analyst_model"].removeprefix("ollama/"), config["embedding_model"]}},
         "qdrant": get_json("http://127.0.0.1:6333/").get("title"),
     }))
-    records["steps"].append(timed("sec_service_health", lambda: {
-        "status_code": requests.get(
-            "https://data.sec.gov/submissions/CIK0000320193.json",
-            headers={"User-Agent": os.environ["SEC_USER_AGENT"]}, timeout=30
-        ).status_code
-    }))
+    records["steps"].append(timed("sec_service_health", sec_health))
 
     client = QdrantClient(host="127.0.0.1", port=6333, timeout=120)
     def index_identity():
