@@ -1,6 +1,9 @@
 from copy import deepcopy
 
-from scripts.diagnostics.analyze_workload_control_v2_calibration import decide
+from scripts.diagnostics.analyze_workload_control_v2_calibration import (
+    decide,
+    terminal_only_viability,
+)
 
 
 CANDIDATES = [
@@ -107,3 +110,40 @@ def test_preexisting_violation_cannot_count_as_new_detection():
     }
     result = decide(preregistration(), scenario_results(), detections, browser())
     assert not result["candidate_acceptance"]["B3"]["sustained_interference"]
+
+
+def test_terminal_viability_retains_but_distinguishes_inert_crash_handlers():
+    raw = {
+        "samples": [
+            {
+                "processes": [
+                    {
+                        "category": "run_supervision_ui_tooling",
+                        "executable": "/Applications/ChatGPT.app/Helpers/browser_crashpad_handler",
+                        "cpu": 0.0,
+                    }
+                ]
+            }
+        ]
+    }
+    result = terminal_only_viability(raw)
+    assert result["classification"] == "viable_with_inert_crash_handler_limitation"
+    assert result["active_supervision_process_records"] == 0
+    assert result["retained_inert_crash_handler_records"] == 1
+
+
+def test_terminal_viability_rejects_active_supervision_process():
+    raw = {
+        "samples": [
+            {
+                "processes": [
+                    {
+                        "category": "run_supervision_ui_tooling",
+                        "executable": "/Applications/ChatGPT.app/Contents/MacOS/ChatGPT",
+                        "cpu": 0.0,
+                    }
+                ]
+            }
+        ]
+    }
+    assert terminal_only_viability(raw)["classification"] == "not_demonstrated"

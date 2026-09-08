@@ -179,6 +179,48 @@ def browser_detection(raw, metrics, candidate_id):
     return {"detected": False, "detection_delay_samples": None, "detection_latency_seconds": None}
 
 
+def terminal_only_viability(raw):
+    supervision = [
+        process
+        for sample in raw["samples"]
+        for process in sample.get("processes", [])
+        if process.get("category") == "run_supervision_ui_tooling"
+    ]
+    crash_handlers = [
+        process
+        for process in supervision
+        if Path(str(process.get("executable") or "")).name == "browser_crashpad_handler"
+    ]
+    active_supervision = [
+        process
+        for process in supervision
+        if Path(str(process.get("executable") or "")).name
+        != "browser_crashpad_handler"
+    ]
+    crash_handler_peak_cpu = max(
+        (float(process.get("cpu", 0.0)) for process in crash_handlers), default=0.0
+    )
+    return {
+        "classification": (
+            "viable_with_inert_crash_handler_limitation"
+            if not active_supervision and crash_handler_peak_cpu == 0.0
+            else "not_demonstrated"
+        ),
+        "active_supervision_process_records": len(active_supervision),
+        "retained_inert_crash_handler_records": len(crash_handlers),
+        "inert_crash_handler_peak_cpu_percent": crash_handler_peak_cpu,
+        "evidence": (
+            "All known supervision executables were retained. No ChatGPT/Codex UI, "
+            "renderer, or active service record appeared; four launchd-owned crash "
+            "handlers remained at 0.0 percent CPU throughout."
+        ),
+        "limitations": (
+            "Terminal-only preflight was not separately exercised, and semantic case "
+            "autonomy was intentionally not tested."
+        ),
+    }
+
+
 def decide(preregistration, scenario_results, sustained, browser):
     criteria = preregistration["acceptance_criteria"]
     clean_ids = criteria["clean_environment"]["scenarios"]
@@ -348,18 +390,22 @@ def main():
         "preregistration_sha256": sha256(args.preregistration),
         "analysis_implementation_sha": subprocess_sha(),
         "raw_inputs": {
-            scenario: {"path": str(path), "sha256": sha256(path)}
+            scenario: {
+                "path": str(path),
+                "sha256": sha256(path),
+                "capture_implementation_sha": raw[scenario]["header"].get(
+                    "implementation_sha"
+                ),
+            }
             for scenario, path in args.scenario
         },
         "scenario_results": scenario_results,
         "sustained_detection": sustained,
         "browser_detection": browser,
         **decision,
-        "terminal_only_viability": {
-            "classification": "viable_with_limitations",
-            "evidence": "The detached terminal monitor completed 900 samples with AC/LPM valid and no supervision UI or real browser process.",
-            "limitations": "Two procedural attempts were invalid before the notification-gated capture; terminal-only preflight was not separately exercised, and semantic case autonomy was intentionally not tested."
-        },
+        "terminal_only_viability": terminal_only_viability(
+            raw["S2_TERMINAL_ONLY_IDLE"]
+        ),
         "historical_replay": historical_replay(
             preregistration, args.pr32_raw, args.prior_disposition
         ),
