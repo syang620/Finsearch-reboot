@@ -2,8 +2,10 @@ from copy import deepcopy
 from pathlib import Path
 
 from scripts.diagnostics.analyze_workload_control_v2_calibration import (
+    awake_protection_validation,
     decide,
     read_raw,
+    s3_preflight_validation,
     terminal_only_viability,
 )
 
@@ -170,6 +172,81 @@ def test_terminal_failure_blocks_otherwise_passing_candidate():
     assert result["decision"] == "CONTROL_V2_NOT_VALIDATED"
     assert result["selected_policy"] is None
     assert not result["candidate_acceptance"]["B3"]["terminal_only_scenario"]
+
+
+def test_awake_failure_blocks_otherwise_passing_candidate():
+    result = decide(
+        preregistration(), scenario_results(), sustained(), browser(), True, False, True
+    )
+    assert result["decision"] == "CONTROL_V2_NOT_VALIDATED"
+    assert not result["candidate_acceptance"]["B3"]["awake_protection"]
+
+
+def test_service_identity_failure_blocks_otherwise_passing_candidate():
+    result = decide(
+        preregistration(), scenario_results(), sustained(), browser(), True, True, False
+    )
+    assert result["decision"] == "CONTROL_V2_NOT_VALIDATED"
+    assert not result["candidate_acceptance"]["B3"]["required_service_identity"]
+
+
+def test_awake_validation_requires_active_evidence_in_every_sample():
+    raw = {
+        "scenario": {
+            "header": {"awake_pid": 42},
+            "samples": [
+                {"awake_protection": {"pid": 42, "active": True}},
+                {"awake_protection": {"pid": 42, "active": False}},
+            ],
+            "footer": {
+                "awake_protection_active_through_final_sample": False,
+                "awake_protection_returncode_before_cleanup": 1,
+            },
+        }
+    }
+    result = awake_protection_validation(raw)
+    assert not result["viable"]
+    assert result["scenarios"]["scenario"]["active_matching_samples"] == 1
+
+
+def test_s3_preflight_requires_exact_frozen_identity():
+    frozen = {
+        "runtime_config": {
+            "analyst_model": "ollama/model",
+            "model_digest": "model-sha",
+            "embedding_model": "embedding",
+            "embedding_digest": "embedding-sha",
+        },
+        "service_preflight": {
+            "qdrant_service": {"title": "qdrant", "version": "1", "commit": "abc"},
+            "sec_health": {"status_code": 200},
+        },
+        "index_before": {"points": 1},
+        "historical_index_before": {"points": 2},
+    }
+    results = {
+        "repository_and_freeze_checks": {"tracked_status": ""},
+        "local_service_identity": {
+            "model_digests": {"model": "model-sha", "embedding": "embedding-sha"},
+            "qdrant": {"title": "qdrant", "version": "1", "commit": "abc"},
+        },
+        "sec_service_health": {"status_code": 200},
+        "index_identity": {"current": {"points": 1}, "historical": {"points": 2}},
+        "planner_import_and_construction": {},
+        "unchanged_30_second_settle": None,
+    }
+    preflight = {
+        "steps": [
+            {"name": name, "status": "ok", "result": result}
+            for name, result in results.items()
+        ],
+        "errors": [],
+    }
+    assert s3_preflight_validation(preflight, frozen)["viable"]
+    preflight["steps"][1]["result"]["model_digests"]["model"] = "wrong"
+    result = s3_preflight_validation(preflight, frozen)
+    assert not result["viable"]
+    assert not result["checks"]["model_digests_match"]
 
 
 def test_preserved_reopened_terminal_attempt_is_not_viable():

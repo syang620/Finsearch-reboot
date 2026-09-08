@@ -259,7 +259,102 @@ def terminal_only_viability(raw):
     }
 
 
-def decide(preregistration, scenario_results, sustained, browser, terminal_viable):
+def awake_protection_validation(raw_by_scenario):
+    scenarios = {}
+    for scenario, raw in raw_by_scenario.items():
+        header_pid = raw["header"].get("awake_pid")
+        samples = raw["samples"]
+        matching_samples = sum(
+            sample.get("awake_protection")
+            == {"pid": header_pid, "active": True}
+            for sample in samples
+        )
+        footer_active = raw["footer"].get(
+            "awake_protection_active_through_final_sample"
+        ) is True
+        returncode_before_cleanup = raw["footer"].get(
+            "awake_protection_returncode_before_cleanup", "missing"
+        )
+        viable = (
+            isinstance(header_pid, int)
+            and header_pid > 0
+            and bool(samples)
+            and matching_samples == len(samples)
+            and footer_active
+            and returncode_before_cleanup is None
+        )
+        scenarios[scenario] = {
+            "viable": viable,
+            "awake_pid": header_pid,
+            "active_matching_samples": matching_samples,
+            "total_samples": len(samples),
+            "footer_active_through_final_sample": footer_active,
+            "returncode_before_cleanup": returncode_before_cleanup,
+        }
+    return {
+        "viable": bool(scenarios) and all(row["viable"] for row in scenarios.values()),
+        "scenarios": scenarios,
+    }
+
+
+def s3_preflight_validation(preflight, frozen_provenance):
+    steps = {step.get("name"): step for step in preflight.get("steps", [])}
+    required_steps = {
+        "repository_and_freeze_checks",
+        "local_service_identity",
+        "sec_service_health",
+        "index_identity",
+        "planner_import_and_construction",
+        "unchanged_30_second_settle",
+    }
+    expected_runtime = frozen_provenance["runtime_config"]
+    expected_service = frozen_provenance["service_preflight"]
+    service = steps.get("local_service_identity", {}).get("result", {})
+    index = steps.get("index_identity", {}).get("result", {})
+    expected_models = {
+        expected_runtime["analyst_model"].removeprefix("ollama/"): expected_runtime[
+            "model_digest"
+        ],
+        expected_runtime["embedding_model"]: expected_runtime["embedding_digest"],
+    }
+    observed_qdrant = service.get("qdrant")
+    expected_qdrant = expected_service["qdrant_service"]
+    qdrant_matches = isinstance(observed_qdrant, dict) and all(
+        observed_qdrant.get(key) == expected_qdrant.get(key)
+        for key in ("title", "version", "commit")
+    )
+    checks = {
+        "complete_required_steps": len(preflight.get("steps", [])) == len(required_steps)
+        and set(steps) == required_steps
+        and all(steps[name].get("status") == "ok" for name in required_steps),
+        "no_reported_errors": preflight.get("errors") == [],
+        "repository_clean": steps.get("repository_and_freeze_checks", {})
+        .get("result", {})
+        .get("tracked_status")
+        == "",
+        "model_digests_match": service.get("model_digests") == expected_models,
+        "qdrant_identity_matches": qdrant_matches,
+        "sec_service_healthy": steps.get("sec_service_health", {})
+        .get("result", {})
+        .get("status_code")
+        == expected_service["sec_health"]["status_code"],
+        "current_index_matches": index.get("current")
+        == frozen_provenance["index_before"],
+        "historical_index_matches": index.get("historical")
+        == frozen_provenance["historical_index_before"],
+    }
+    return {"viable": all(checks.values()), "checks": checks}
+
+
+def decide(
+    preregistration,
+    scenario_results,
+    sustained,
+    browser,
+    terminal_viable,
+    awake_viable=True,
+    s3_preflight_viable=True,
+):
     criteria = preregistration["acceptance_criteria"]
     clean_ids = criteria["clean_environment"]["scenarios"]
     short_id = criteria["short_bursts"]["scenario"]
@@ -305,6 +400,8 @@ def decide(preregistration, scenario_results, sustained, browser, terminal_viabl
             candidate["eligible_for_selection"]
             and all(clean.values())
             and terminal_viable
+            and awake_viable
+            and s3_preflight_viable
             and sustained_pass
             and short_pass
             and browser_pass
@@ -314,6 +411,8 @@ def decide(preregistration, scenario_results, sustained, browser, terminal_viabl
             "eligible": candidate["eligible_for_selection"],
             "clean_scenarios": clean,
             "terminal_only_scenario": terminal_viable,
+            "awake_protection": awake_viable,
+            "required_service_identity": s3_preflight_viable,
             "sustained_interference": sustained_pass,
             "short_bursts": short_pass,
             "browser_hard_rule": browser_pass,
@@ -397,6 +496,8 @@ def main():
     parser.add_argument("--scenario", action="append", nargs=2, metavar=("ID", "RAW"), required=True)
     parser.add_argument("--pr32-raw", type=Path, required=True)
     parser.add_argument("--prior-disposition", type=Path, action="append", default=[])
+    parser.add_argument("--s3-preflight", type=Path, required=True)
+    parser.add_argument("--frozen-provenance", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     if args.output.exists():
@@ -423,12 +524,19 @@ def main():
         for candidate in preregistration["candidate_policies"]
     }
     terminal = terminal_only_viability(raw["S2_TERMINAL_ONLY_IDLE"])
+    awake = awake_protection_validation(raw)
+    s3_preflight = s3_preflight_validation(
+        json.loads(args.s3_preflight.read_text()),
+        json.loads(args.frozen_provenance.read_text()),
+    )
     decision = decide(
         preregistration,
         scenario_results,
         sustained,
         browser,
         terminal["viable"],
+        awake["viable"],
+        s3_preflight["viable"],
     )
     for result in scenario_results.values():
         del result["evaluated"]
@@ -451,6 +559,14 @@ def main():
         "browser_detection": browser,
         **decision,
         "terminal_only_viability": terminal,
+        "awake_protection_validation": awake,
+        "s3_preflight_validation": {
+            **s3_preflight,
+            "path": str(args.s3_preflight),
+            "sha256": sha256(args.s3_preflight),
+            "frozen_provenance_path": str(args.frozen_provenance),
+            "frozen_provenance_sha256": sha256(args.frozen_provenance),
+        },
         "historical_replay": historical_replay(
             preregistration, args.pr32_raw, args.prior_disposition
         ),

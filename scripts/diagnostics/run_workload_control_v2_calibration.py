@@ -297,6 +297,10 @@ def run(args):
                     "browser_process_count": frozen.get("browser_process_count", 0),
                     "frozen_v1_cpu_violation": bool(frozen.get("heavy_non_model_processes")),
                     "frozen_v1_heavy_processes": frozen.get("heavy_non_model_processes", []),
+                    "awake_protection": {
+                        "pid": awake.pid,
+                        "active": awake.poll() is None,
+                    },
                     "processes": capture_processes(os.getpid(), controller.controlled_pids),
                 }
                 sample = classify_sample(sample)
@@ -306,6 +310,10 @@ def run(args):
                 time.sleep(max(0, started + index * interval - time.monotonic()))
         finally:
             controller.cleanup(time.monotonic() - started)
+            awake_active_through_final_sample = bool(
+                samples and all(sample["awake_protection"]["active"] for sample in samples)
+            )
+            awake_returncode_before_cleanup = awake.poll()
             awake.terminate()
             awake.wait(timeout=10)
             write_record(
@@ -314,6 +322,8 @@ def run(args):
                     "type": "footer",
                     "finished_at": now(),
                     "sample_count": len(samples),
+                    "awake_protection_active_through_final_sample": awake_active_through_final_sample,
+                    "awake_protection_returncode_before_cleanup": awake_returncode_before_cleanup,
                     "owned_process_cleanup": "Only scenario-owned workloads and the monitor-owned caffeinate child are terminated.",
                 },
             )
