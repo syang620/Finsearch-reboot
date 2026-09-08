@@ -169,10 +169,20 @@ accuracy, production latency SLAs, independent human validation or causal gains
 from v1→v2 evaluator/environment changes. Final metric recommendations await the
 controlled baseline and audit; no current performance claim is approved yet.
 
+## Calibration freeze checkpoint
+
+The [clean pre-calibration review](https://github.com/syang620/Finsearch-reboot/pull/31#issuecomment-5579057991)
+inspected exact construction `d2abf079837809148d5a43050d957a61e4195783`.
+Calibration inputs are now frozen before any predictions in
+`validation_manifest.json`, SHA-256
+`24da18f62d51c256670d25dd8018482d3dc579eea4112afcb2209559a6d7ebfc`.
+Dataset SHA-256 is `f9148a29cb5b0f2da30b6ecf5017a9d6bc4dc9fd31523643557b93906646ad7c`.
+This is not optimization approval: judge validation/decision and the subsequent
+benchmark-quality review must complete before the system baseline is allowed.
+
 ## Remaining release gates
 
-Pre-calibration source/evaluator review; calibration freeze and one judge
-validation; benchmark-quality audit and optimization freeze; one controlled
+One judge validation; benchmark-quality audit and optimization freeze; one controlled
 60-case unchanged-system baseline; source assessment of the predetermined
 30-case subset before enabled judge predictions; denominator/privacy/hash checks;
 immutable evidence and fresh final Codex review. Do not merge automatically.

@@ -1,5 +1,11 @@
 # Semantic v2 pre-calibration review log
 
+The final pre-calibration candidate `d2abf079837809148d5a43050d957a61e4195783`
+received a [clean Codex review](https://github.com/syang620/Finsearch-reboot/pull/31#issuecomment-5579057991).
+Calibration inputs were then hash-frozen before the first judge call. The
+development chronology below remains historical; no optimization freeze or
+baseline approval is implied by this pre-calibration review.
+
 The independent Codex review of draft `1c9c205` completed before any judge call,
 calibration freeze or production baseline. The four findings are addressed in
 evaluation-only code/data; renewed review is required. No score motivated these

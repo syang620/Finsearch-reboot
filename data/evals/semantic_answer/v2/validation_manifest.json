@@ -1,0 +1,39 @@
+{
+  "status": "CALIBRATION_FROZEN_BEFORE_JUDGE; OPTIMIZATION_BENCHMARK_NOT_YET_FROZEN",
+  "construction_sha": "d2abf079837809148d5a43050d957a61e4195783",
+  "files_sha256": {
+    "claim_lineage.jsonl": "ec97459fc9e5e5b95783a8f8d0ccefd8278ebb9fe1756ef840ea1479aa0fda62",
+    "composition.json": "4d88d3cb59dda2ba4781b499c5bb57148bdd7a4f9b2aa7f97b1db437e8b30437",
+    "draft_manifest.json": "f3b652aba670b4565bb1cc29163cae69964b9c5c5860735f58fa55f40d813a76",
+    "filing_identities.json": "4974e8320aeeccf7d4d53761f759754102481b21d19189b32297a0168db14c85",
+    "historical_sha256.json": "b521a9c8b7f284703bc53fdfa2bfdcffd9eac70dd6bbc83bdd40ea58586192ac",
+    "judge_completeness_rubric.txt": "10cf12f1bc8db6b6070b2dc3c3bf37251b696e93fc3cb9af7bc6d225688e70aa",
+    "judge_config.json": "a18b60bacfc9fa389934d3e19925ffc533e496d62d1d0dbcaa5526900f6903c5",
+    "judge_support_rubric.txt": "56c725ac51067f7c03a9cd1bfb69a730a28b12bdf4adc62912bab2bd4a5ca0e6",
+    "numeric_evidence_catalog.jsonl": "e667124f46df425504bb4dfd7ce17cd51ea0543a7ba021a011a4717a6655e7e0",
+    "queries.jsonl": "f9148a29cb5b0f2da30b6ecf5017a9d6bc4dc9fd31523643557b93906646ad7c",
+    "source_references.json": "14c102475ae30f27aaaf71c19fbaa4b388e0a9bb1196d6c82ac42e1677836e77",
+    "source_table_displays.jsonl": "b68b9c623868b192991dd26f24b6d0b6c5bbd23a97874898178ebb25e8188157",
+    "validation_fixtures.jsonl": "4e42a4c8491057f305ca5c398b744fe1c1dd96eff8fa26a37bd4a8e16049e9e3"
+  },
+  "code_sha256": {
+    "src/evals/retrieval_benchmark_v2.py": "275755963aefb8a6efdc23866ee211b76c9dd6f1bead390e57f0b0d80baa42c9",
+    "src/evals/semantic_answer_v2.py": "9e75cd2cb339e56e34307bda01a33648d0ac40488b4eac4ab82f90348689b91b",
+    "src/evals/semantic_dataset_v2.py": "c71d22e9e762611b0b39d2a635f1355093263d6a0bbdfa6702cf59a7973c6cb7",
+    "src/evals/semantic_judge_v2.py": "4682857551bfe76d458ec9f79981632840661c3d21340f7f81506fb0b2fe6b45",
+    "src/evals/semantic_metrics_v2.py": "7f70745897b9cbb7119457e2fa840bd6b7ea7ce56dfbcdb9f299628e7d2f403e",
+    "src/evals/semantic_numeric_v2.py": "53d39fac5be8a9a2382f6fd2fa455dfd50141f1cf78552238ceb94a19cb1d433",
+    "src/evals/semantic_outcomes_v2.py": "cb16d0dbdfcbf3fc1a0e24aa2c308638c8d84f118c6da979159444437f2de140",
+    "scripts/evals/agents/build_semantic_dataset_v2.py": "5d01464e13441a634e7cc3831ef7e401e7b7fd9a6421679aa73cc84c75ffedc8",
+    "scripts/evals/agents/build_semantic_displays_v2.py": "30f65b39962d5a9ec1f60b7a9c7ef75557aa7149b8ad36e25b92b1e6d90e92bf",
+    "scripts/evals/agents/build_semantic_numeric_evidence_v2.py": "f7309c4d7f20b6ed6277b31465becb01597f0419b4c77de3e5e475522af34e4f",
+    "scripts/evals/agents/build_semantic_validation_v2.py": "d5f1ffbf9a6072225baa8d6a1d798cc40205e4541cbe4d5d0cd70c66f98ac632",
+    "scripts/evals/agents/freeze_semantic_benchmark_v2.py": "7607b31a2d06b1e711a03f90cbfdd5c7713e63d2cf2352105a043d753770eedb",
+    "scripts/evals/agents/freeze_semantic_validation_v2.py": "170036e90e4d7ac8d3576b8168b4afc4d665d1d44975af4981e23bb3a3557a19",
+    "scripts/evals/agents/run_semantic_baseline_v2.py": "36727b2e53113dcf1cc84f052246fc206f72abf61e34280c01479334d6f4d211",
+    "scripts/evals/agents/run_semantic_judge_validation_v2.py": "5600faa67b4a2b644f07000aecf99b5fc422721837297e4d4e06e628795a2afa",
+    "scripts/evals/agents/semantic_annotations_v2.py": "b82a0d26224026d9efc16bc3836b9d057946f1f2517af918a295e3f59b20747e",
+    "src/evals/semantic_answer_v1.py": "81cea8cb01247b9f56b50a1638e9780f706b0129fc615d5db9e3a5017e51eb75"
+  },
+  "policy": "No label/rubric/candidate tuning after observing validation. Any failed gate disables unattended full-benchmark judging for this candidate policy."
+}
