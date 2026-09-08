@@ -56,8 +56,12 @@ def classify_process(process):
         )
     ):
         return "benchmark_model_process", "benchmark_model_process:semantic_v2"
-    if "/google chrome.app/" in lower_executable or "/safari.app/" in lower_executable:
-        family = "chrome" if "google chrome" in lower_executable else "safari"
+    real_chrome = lower_executable.endswith(
+        "/google chrome.app/contents/macos/google chrome"
+    )
+    real_safari = lower_executable.endswith("/safari.app/contents/macos/safari")
+    if real_chrome or real_safari:
+        family = "chrome" if real_chrome else "safari"
         return "user_browser_workload", f"user_browser_workload:{family}"
     if "chatgpt.app/" in text or "codex framework.framework/" in text:
         return "run_supervision_ui_tooling", "run_supervision_ui_tooling:chatgpt_codex"
@@ -89,16 +93,24 @@ def classify_sample(sample):
         item["category"], item["group_key"] = classify_process(item)
         classified.append(item)
     result["processes"] = classified
+    result["real_browser_process_count"] = sum(
+        item["category"] == "user_browser_workload" for item in classified
+    )
     return result
 
 
-def _hard_reasons(sample):
+def _hard_reasons(sample, frozen_v1=False):
     reasons = []
     if sample.get("ac_power") is not True:
         reasons.append("ac_power")
     if sample.get("low_power_mode") != 0:
         reasons.append("low_power_mode")
-    if sample.get("browser_process_count", 0):
+    browser_count = (
+        sample.get("browser_process_count", 0)
+        if frozen_v1
+        else sample.get("real_browser_process_count", 0)
+    )
+    if browser_count:
         reasons.append("browser")
     return reasons
 
@@ -129,11 +141,13 @@ class CandidateEvaluator:
     def evaluate(self, sample):
         sample = classify_sample(sample)
         grouped, categories = _group_cpu(sample)
-        hard = _hard_reasons(sample)
         results = {}
         for candidate in self.candidates:
             candidate_id = candidate["id"]
             family = candidate["family"]
+            hard = _hard_reasons(
+                sample, frozen_v1=family == "current_instantaneous_reference"
+            )
             cpu_violation = False
             trigger_groups = []
             diagnostic_value = None

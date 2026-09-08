@@ -78,6 +78,15 @@ def test_browser_and_supervision_are_visible_not_exempt():
     )
 
 
+def test_safari_extension_is_not_a_real_browser_workload():
+    extension = {
+        "executable": "/System/Volumes/Preboot/Cryptexes/App/System/Applications/Safari.app/Contents/PlugIns/CacheDeleteExtension.appex/Contents/MacOS/CacheDeleteExtension",
+        "command_line": "CacheDeleteExtension",
+        "ancestors": [],
+    }
+    assert classify_process(extension)[0] == "os_background_service"
+
+
 def test_unknown_is_retained_and_cpu_scored():
     preregistration = load_preregistration(PREREGISTRATION)
     evaluated = evaluate_samples([sample(0, cpu=75)], preregistration)
@@ -126,9 +135,33 @@ def test_fifteen_sustained_samples_detect_every_eligible_family():
 
 def test_browser_hard_rule_is_independent_of_cpu():
     preregistration = load_preregistration(PREREGISTRATION)
-    value = sample(0, cpu=0, browser_process_count=1)
+    chrome = {
+        "pid": 201,
+        "ppid": 1,
+        "cpu": 0,
+        "executable": "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+        "command_line": "Google Chrome",
+        "ancestors": [],
+    }
+    value = sample(0, cpu=0, browser_process_count=1, processes=[chrome])
     evaluated = evaluate_samples([value], preregistration)[0]["candidates"]
     assert all(item["hard_violation"] and "browser" in item["hard_reasons"] for item in evaluated.values())
+
+
+def test_v2_browser_rule_ignores_plugin_but_v1_reference_preserves_old_rule():
+    preregistration = load_preregistration(PREREGISTRATION)
+    extension = {
+        "pid": 200,
+        "ppid": 1,
+        "cpu": 1,
+        "executable": "/System/Applications/Safari.app/Contents/PlugIns/Extension.appex/Contents/MacOS/Extension",
+        "command_line": "Extension",
+        "ancestors": [],
+    }
+    value = sample(0, cpu=0, browser_process_count=1, processes=[extension])
+    candidates = evaluate_samples([value], preregistration)[0]["candidates"]
+    assert candidates["A_INSTANTANEOUS_CURRENT"]["hard_violation"]
+    assert not candidates["B_CONSECUTIVE_3"]["hard_violation"]
 
 
 def test_replay_and_summary_are_deterministic():
