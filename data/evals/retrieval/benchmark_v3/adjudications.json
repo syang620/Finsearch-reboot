@@ -1,0 +1,320 @@
+[
+  {
+    "case_id": "KBV3_AMZN_2023_05",
+    "context_anchor": "Prime memberships provide our customers with access to an evolving suite of benefits that represent a single stand-ready obligation.",
+    "corrected_gold_ids": [
+      "AMZN_10-K_2023::text::26::split::7"
+    ],
+    "evidence_id": "AMZN_10-K_2023::text::26::split::1",
+    "grade": 1,
+    "groups": [
+      "unearned"
+    ],
+    "parent_case_id": "KBV2_AMZN_2023_05",
+    "previous_gold_ids": [
+      "AMZN_10-K_2023::text::26::split::7"
+    ],
+    "previous_judgment": null,
+    "previous_status": "unjudged_scored_zero_not_proven_irrelevant",
+    "quote": "Subscriptions are paid for at the time of or in advance of delivering the services. Revenue from such arrangements is recognized over the subscription period.",
+    "reason": "Supports service-period recognition of prepaid subscriptions, but not the full general unearned-revenue rule including payments received OR due. Partial, not equivalent full gold.",
+    "reason_code": "B1_PARTIAL_POLICY_FACET",
+    "reviewer": "source-inspecting coding assistant; benchmark-quality review required before comparison"
+  },
+  {
+    "case_id": "KBV3_AMZN_2023_20",
+    "context_anchor": "Prime memberships provide our customers with access to an evolving suite of benefits that represent a single stand-ready obligation.",
+    "corrected_gold_ids": [
+      "AMZN_10-K_2023::text::1",
+      "AMZN_10-K_2023::text::26::split::1",
+      "AMZN_10-K_2023::text::26::split::7"
+    ],
+    "evidence_id": "AMZN_10-K_2023::text::26::split::1",
+    "grade": 2,
+    "groups": [
+      "unearned"
+    ],
+    "parent_case_id": "KBV2_AMZN_2023_20",
+    "previous_gold_ids": [
+      "AMZN_10-K_2023::text::1",
+      "AMZN_10-K_2023::text::26::split::7"
+    ],
+    "previous_judgment": null,
+    "previous_status": "unjudged_scored_zero_not_proven_irrelevant",
+    "quote": "Subscriptions are paid for at the time of or in advance of delivering the services. Revenue from such arrangements is recognized over the subscription period.",
+    "reason": "Prime is explicitly within the adjacent subscription-services policy. Advance payment followed by recognition over the subscription period answers the prepaid-membership accounting facet. It does not replace the separate required customer-benefits facet.",
+    "reason_code": "B1_EQUIVALENT_SUBSCRIPTION_POLICY",
+    "reviewer": "source-inspecting coding assistant; benchmark-quality review required before comparison"
+  },
+  {
+    "case_id": "KBV3_AMZN_2024_05",
+    "context_anchor": "Prime memberships provide our customers with access to an evolving suite of benefits that represent a single stand-ready obligation.",
+    "corrected_gold_ids": [
+      "AMZN_10-K_2024::text::26::split::9"
+    ],
+    "evidence_id": "AMZN_10-K_2024::text::26::split::2",
+    "grade": 1,
+    "groups": [
+      "unearned"
+    ],
+    "parent_case_id": "KBV2_AMZN_2024_05",
+    "previous_gold_ids": [
+      "AMZN_10-K_2024::text::26::split::9"
+    ],
+    "previous_judgment": null,
+    "previous_status": "unjudged_scored_zero_not_proven_irrelevant",
+    "quote": "Subscriptions are paid for at the time of or in advance of delivering the services. Revenue from such arrangements is recognized over the subscription period.",
+    "reason": "Supports service-period recognition of prepaid subscriptions, but not the full general unearned-revenue rule including payments received OR due. Partial, not equivalent full gold.",
+    "reason_code": "B1_PARTIAL_POLICY_FACET",
+    "reviewer": "source-inspecting coding assistant; benchmark-quality review required before comparison"
+  },
+  {
+    "case_id": "KBV3_AMZN_2024_20",
+    "context_anchor": "Prime memberships provide our customers with access to an evolving suite of benefits that represent a single stand-ready obligation.",
+    "corrected_gold_ids": [
+      "AMZN_10-K_2024::text::1",
+      "AMZN_10-K_2024::text::26::split::2",
+      "AMZN_10-K_2024::text::26::split::9"
+    ],
+    "evidence_id": "AMZN_10-K_2024::text::26::split::2",
+    "grade": 2,
+    "groups": [
+      "unearned"
+    ],
+    "parent_case_id": "KBV2_AMZN_2024_20",
+    "previous_gold_ids": [
+      "AMZN_10-K_2024::text::1",
+      "AMZN_10-K_2024::text::26::split::9"
+    ],
+    "previous_judgment": null,
+    "previous_status": "unjudged_scored_zero_not_proven_irrelevant",
+    "quote": "Subscriptions are paid for at the time of or in advance of delivering the services. Revenue from such arrangements is recognized over the subscription period.",
+    "reason": "Prime is explicitly within the adjacent subscription-services policy. Advance payment followed by recognition over the subscription period answers the prepaid-membership accounting facet. It does not replace the separate required customer-benefits facet.",
+    "reason_code": "B1_EQUIVALENT_SUBSCRIPTION_POLICY",
+    "reviewer": "source-inspecting coding assistant; benchmark-quality review required before comparison"
+  },
+  {
+    "case_id": "KBV3_MSFT_2024_01",
+    "corrected_gold_ids": [
+      "MSFT_10-K_2024::table::18",
+      "MSFT_10-K_2024::table::7",
+      "MSFT_10-K_2024::table::72",
+      "MSFT_10-K_2024::table::8"
+    ],
+    "evidence_id": "MSFT_10-K_2024::table::8",
+    "fiscal_year": 2024,
+    "grade": 2,
+    "groups": [
+      "revenue"
+    ],
+    "parent_case_id": "KBV2_MSFT_2024_01",
+    "previous_gold_ids": [
+      "MSFT_10-K_2024::table::18",
+      "MSFT_10-K_2024::table::7"
+    ],
+    "previous_judgment": null,
+    "previous_status": "unjudged_scored_zero_not_proven_irrelevant",
+    "reason": "Original filing segment table explicitly reports consolidated revenue and operating-income totals for the requested year; capitalized Income does not change the measure.",
+    "reason_code": "B1_MISSED_EQUIVALENT_TOTALS",
+    "reviewer": "source-inspecting coding assistant; benchmark-quality review required before comparison",
+    "source_cell_values": [
+      "245122",
+      "109433"
+    ],
+    "unit": "USD_millions"
+  },
+  {
+    "case_id": "KBV3_MSFT_2024_01",
+    "corrected_gold_ids": [
+      "MSFT_10-K_2024::table::18",
+      "MSFT_10-K_2024::table::7",
+      "MSFT_10-K_2024::table::72",
+      "MSFT_10-K_2024::table::8"
+    ],
+    "evidence_id": "MSFT_10-K_2024::table::72",
+    "fiscal_year": 2024,
+    "grade": 2,
+    "groups": [
+      "revenue"
+    ],
+    "parent_case_id": "KBV2_MSFT_2024_01",
+    "previous_gold_ids": [
+      "MSFT_10-K_2024::table::18",
+      "MSFT_10-K_2024::table::7"
+    ],
+    "previous_judgment": null,
+    "previous_status": "unjudged_scored_zero_not_proven_irrelevant",
+    "reason": "Original filing segment table explicitly reports consolidated revenue and operating-income totals for the requested year; capitalized Income does not change the measure.",
+    "reason_code": "B1_MISSED_EQUIVALENT_TOTALS",
+    "reviewer": "source-inspecting coding assistant; benchmark-quality review required before comparison",
+    "source_cell_values": [
+      "245122",
+      "109433"
+    ],
+    "unit": "USD_millions"
+  },
+  {
+    "case_id": "KBV3_MSFT_2024_11",
+    "corrected_gold_ids": [
+      "MSFT_10-K_2024::text::5::split::2"
+    ],
+    "evidence_id": "MSFT_10-K_2024::table::8",
+    "fiscal_year": 2024,
+    "grade": 1,
+    "groups": [
+      "revenue"
+    ],
+    "parent_case_id": "KBV2_MSFT_2024_11",
+    "previous_gold_ids": [
+      "MSFT_10-K_2024::text::5::split::2"
+    ],
+    "previous_judgment": null,
+    "previous_status": "unjudged_scored_zero_not_proven_irrelevant",
+    "reason": "Same source totals/segment changes provide partial numeric context but do not explain the business drivers of overall revenue growth. No full explanation credit.",
+    "reason_code": "B1_PARTIAL_NUMERIC_CONTEXT",
+    "reviewer": "source-inspecting coding assistant; benchmark-quality review required before comparison",
+    "source_cell_values": [
+      "245122",
+      "109433"
+    ],
+    "unit": "USD_millions"
+  },
+  {
+    "case_id": "KBV3_MSFT_2024_11",
+    "corrected_gold_ids": [
+      "MSFT_10-K_2024::text::5::split::2"
+    ],
+    "evidence_id": "MSFT_10-K_2024::table::72",
+    "fiscal_year": 2024,
+    "grade": 1,
+    "groups": [
+      "revenue"
+    ],
+    "parent_case_id": "KBV2_MSFT_2024_11",
+    "previous_gold_ids": [
+      "MSFT_10-K_2024::text::5::split::2"
+    ],
+    "previous_judgment": null,
+    "previous_status": "unjudged_scored_zero_not_proven_irrelevant",
+    "reason": "Same source totals/segment changes provide partial numeric context but do not explain the business drivers of overall revenue growth. No full explanation credit.",
+    "reason_code": "B1_PARTIAL_NUMERIC_CONTEXT",
+    "reviewer": "source-inspecting coding assistant; benchmark-quality review required before comparison",
+    "source_cell_values": [
+      "245122",
+      "109433"
+    ],
+    "unit": "USD_millions"
+  },
+  {
+    "case_id": "KBV3_MSFT_2025_01",
+    "corrected_gold_ids": [
+      "MSFT_10-K_2025::table::17",
+      "MSFT_10-K_2025::table::65",
+      "MSFT_10-K_2025::table::7",
+      "MSFT_10-K_2025::table::8"
+    ],
+    "evidence_id": "MSFT_10-K_2025::table::8",
+    "fiscal_year": 2025,
+    "grade": 2,
+    "groups": [
+      "revenue"
+    ],
+    "parent_case_id": "KBV2_MSFT_2025_01",
+    "previous_gold_ids": [
+      "MSFT_10-K_2025::table::17",
+      "MSFT_10-K_2025::table::7"
+    ],
+    "previous_judgment": null,
+    "previous_status": "unjudged_scored_zero_not_proven_irrelevant",
+    "reason": "Original filing segment table explicitly reports consolidated revenue and operating-income totals for the requested year; capitalized Income does not change the measure.",
+    "reason_code": "B1_MISSED_EQUIVALENT_TOTALS",
+    "reviewer": "source-inspecting coding assistant; benchmark-quality review required before comparison",
+    "source_cell_values": [
+      "281724",
+      "128528"
+    ],
+    "unit": "USD_millions"
+  },
+  {
+    "case_id": "KBV3_MSFT_2025_01",
+    "corrected_gold_ids": [
+      "MSFT_10-K_2025::table::17",
+      "MSFT_10-K_2025::table::65",
+      "MSFT_10-K_2025::table::7",
+      "MSFT_10-K_2025::table::8"
+    ],
+    "evidence_id": "MSFT_10-K_2025::table::65",
+    "fiscal_year": 2025,
+    "grade": 2,
+    "groups": [
+      "revenue"
+    ],
+    "parent_case_id": "KBV2_MSFT_2025_01",
+    "previous_gold_ids": [
+      "MSFT_10-K_2025::table::17",
+      "MSFT_10-K_2025::table::7"
+    ],
+    "previous_judgment": null,
+    "previous_status": "unjudged_scored_zero_not_proven_irrelevant",
+    "reason": "Original filing segment table explicitly reports consolidated revenue and operating-income totals for the requested year; capitalized Income does not change the measure.",
+    "reason_code": "B1_MISSED_EQUIVALENT_TOTALS",
+    "reviewer": "source-inspecting coding assistant; benchmark-quality review required before comparison",
+    "source_cell_values": [
+      "281724",
+      "128528"
+    ],
+    "unit": "USD_millions"
+  },
+  {
+    "case_id": "KBV3_MSFT_2025_11",
+    "corrected_gold_ids": [
+      "MSFT_10-K_2025::text::5::split::2"
+    ],
+    "evidence_id": "MSFT_10-K_2025::table::8",
+    "fiscal_year": 2025,
+    "grade": 1,
+    "groups": [
+      "revenue"
+    ],
+    "parent_case_id": "KBV2_MSFT_2025_11",
+    "previous_gold_ids": [
+      "MSFT_10-K_2025::text::5::split::2"
+    ],
+    "previous_judgment": null,
+    "previous_status": "unjudged_scored_zero_not_proven_irrelevant",
+    "reason": "Same source totals/segment changes provide partial numeric context but do not explain the business drivers of overall revenue growth. No full explanation credit.",
+    "reason_code": "B1_PARTIAL_NUMERIC_CONTEXT",
+    "reviewer": "source-inspecting coding assistant; benchmark-quality review required before comparison",
+    "source_cell_values": [
+      "281724",
+      "128528"
+    ],
+    "unit": "USD_millions"
+  },
+  {
+    "case_id": "KBV3_MSFT_2025_11",
+    "corrected_gold_ids": [
+      "MSFT_10-K_2025::text::5::split::2"
+    ],
+    "evidence_id": "MSFT_10-K_2025::table::65",
+    "fiscal_year": 2025,
+    "grade": 1,
+    "groups": [
+      "revenue"
+    ],
+    "parent_case_id": "KBV2_MSFT_2025_11",
+    "previous_gold_ids": [
+      "MSFT_10-K_2025::text::5::split::2"
+    ],
+    "previous_judgment": null,
+    "previous_status": "unjudged_scored_zero_not_proven_irrelevant",
+    "reason": "Same source totals/segment changes provide partial numeric context but do not explain the business drivers of overall revenue growth. No full explanation credit.",
+    "reason_code": "B1_PARTIAL_NUMERIC_CONTEXT",
+    "reviewer": "source-inspecting coding assistant; benchmark-quality review required before comparison",
+    "source_cell_values": [
+      "281724",
+      "128528"
+    ],
+    "unit": "USD_millions"
+  }
+]

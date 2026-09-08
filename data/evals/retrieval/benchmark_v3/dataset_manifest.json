@@ -1,0 +1,76 @@
+{
+  "base_commit": "25c15afbab31212a42c97e650e2418f6f82a8674",
+  "benchmark_id": "sec_retrieval_benchmark_v3",
+  "composition": {
+    "answerable": 120,
+    "canonical_positive_items": {
+      "1": 40,
+      "1A": 38,
+      "1C": 8,
+      "2": 4,
+      "7": 40,
+      "8": 56
+    },
+    "correlation_components": 36,
+    "declared_topic_families": 62,
+    "documents": 948,
+    "excluded": 6,
+    "filings": {
+      "AAPL_2024": 20,
+      "AAPL_2025": 20,
+      "AMZN_2023": 20,
+      "AMZN_2024": 20,
+      "MSFT_2024": 20,
+      "MSFT_2025": 20
+    },
+    "grade_counts": {
+      "0": 16,
+      "1": 30,
+      "2": 185
+    },
+    "issuers": {
+      "AAPL": 40,
+      "AMZN": 40,
+      "MSFT": 40
+    },
+    "normalized_question_families": 63,
+    "positive_doc_types": {
+      "table": 49,
+      "text_chunk": 136
+    },
+    "queries": 126,
+    "section_count_unit": "positive query/document/item memberships; multi-location text may count in multiple items",
+    "strata": {
+      "business_growth": 12,
+      "direct_fact": 18,
+      "hard_negative": 12,
+      "mda": 12,
+      "multi_evidence": 12,
+      "narrative": 12,
+      "paraphrase": 12,
+      "risk_factors": 18,
+      "section_specific": 12
+    },
+    "unique_filing_evidence_groups": 102,
+    "unique_positive_documents": 120
+  },
+  "construction_sha256": {
+    "scripts/evals/retrieval/adjudications_v3.py": "8eef8bd4dd22a78150ed28b287f962407b97913b82b56322ad7fdbf30370133b",
+    "scripts/evals/retrieval/build_benchmark_v3.py": "c98238c4b1dd0b2db765b9cf821aea101b6c225132ebcd0e9fc857e262ce6875",
+    "scripts/evals/retrieval/inspect_sources_v3.py": "289040b818691b2f4d456bdfd98bc44e5e2667eb1c28dbfac2d264f9c8bd561c",
+    "src/evals/retrieval_benchmark_v3.py": "3d5f42856a9f414f8ca90b54b2ecfa080632e46ea363c345148975e44b2f60e4"
+  },
+  "files": {
+    "adjudications.json": "18ddfe5c95f41bc2c98314a9f1e1703b514672202694246696a70ffac0b2831a",
+    "comparison_config.json": "410a28106bc02f5a4f635af1afb198f82b63d0175bf05643850fd28ccdb00ce1",
+    "corpus_ref.json": "10e1a3711505ade8dee2501a6061cc05de9ae73f5ba15cce2a2622e6cafbe8b4",
+    "historical_sha256.json": "8eae589e0888ae90c6f03a066abb805b6bac257375be9c203df866c9340e056a",
+    "label_changes.jsonl": "4b47188e4e64b193cd6b9ac55fe552db742ffd4a6b4448b2ea8e1beb6572e2cb",
+    "lineage.json": "27b9336d22f15bede65196ec1fefcdd6a1c163f6ef8cf6faffbba6bb9e911b9f",
+    "queries.jsonl": "308117369243451b0cdad9837beeecda541554bd7a8c8454df0886aa96d076c4",
+    "source_sections.json": "305d257948244c5aee2247a7d73c7471143baeb816234f2d6e6ce1b6446b6fcd"
+  },
+  "freeze_rule": "Commit immutable candidate hashes before benchmark-quality review. Separate approval binds exact dataset hash. No comparisons until approval.",
+  "status": "annotation_candidate_requires_benchmark_quality_review_before_comparison",
+  "version": 3
+}

@@ -1,0 +1,73 @@
+{
+  "path": "data/evals/retrieval/benchmark_v2/corpus.jsonl",
+  "reuse": "byte-identical historical corpus; no extraction/index change",
+  "sha256": "39c8d01ee5c71710e443e49698957d2aa991e71c16ad79905e7bd07d6a11fe4d",
+  "sources": [
+    {
+      "fallback_parser": false,
+      "fiscal_year": 2024,
+      "form_type": "10-K",
+      "raw_text_chunks": 101,
+      "source_html": "data/html_filings/AAPL/10-K/10-K_2024.html",
+      "source_sha256": "24a830a0f1256e371d36a1f7f72e5e85a38037d1de2f6f966eb8457db42ff6d6",
+      "tables": 48,
+      "text_chunks": 107,
+      "ticker": "AAPL"
+    },
+    {
+      "fallback_parser": false,
+      "fiscal_year": 2025,
+      "form_type": "10-K",
+      "raw_text_chunks": 104,
+      "source_html": "data/html_filings/AAPL/10-K/10-K_2025.html",
+      "source_sha256": "548ae59778cf08ee0f2ee088e7ece20d947076c3c01f74d2d65db4c2777e436a",
+      "tables": 47,
+      "text_chunks": 114,
+      "ticker": "AAPL"
+    },
+    {
+      "fallback_parser": false,
+      "fiscal_year": 2023,
+      "form_type": "10-K",
+      "raw_text_chunks": 40,
+      "source_html": "data/html_filings/AMZN/10-K/10-K_2023.html",
+      "source_sha256": "a469a0feca6dd5728b10c73076c2c120db58116938614c5b1b864fe13674266d",
+      "tables": 59,
+      "text_chunks": 76,
+      "ticker": "AMZN"
+    },
+    {
+      "fallback_parser": false,
+      "fiscal_year": 2024,
+      "form_type": "10-K",
+      "raw_text_chunks": 40,
+      "source_html": "data/html_filings/AMZN/10-K/10-K_2024.html",
+      "source_sha256": "094e0f2aa1d58203ed77340330e94ff5cb63f5168de5e08ed25a17681a1a53d9",
+      "tables": 57,
+      "text_chunks": 76,
+      "ticker": "AMZN"
+    },
+    {
+      "fallback_parser": false,
+      "fiscal_year": 2024,
+      "form_type": "10-K",
+      "raw_text_chunks": 25,
+      "source_html": "data/html_filings/MSFT/10-K/10-K_2024.html",
+      "source_sha256": "43829a12cc9cd7198474b3d735c4fc1aba1f871fb637d237aa5979d57e6b8c95",
+      "tables": 86,
+      "text_chunks": 91,
+      "ticker": "MSFT"
+    },
+    {
+      "fallback_parser": false,
+      "fiscal_year": 2025,
+      "form_type": "10-K",
+      "raw_text_chunks": 24,
+      "source_html": "data/html_filings/MSFT/10-K/10-K_2025.html",
+      "source_sha256": "99d693f6c1544144ebeee92954f151a85bc62111837530a42855953bc01d0bbe",
+      "tables": 79,
+      "text_chunks": 108,
+      "ticker": "MSFT"
+    }
+  ]
+}

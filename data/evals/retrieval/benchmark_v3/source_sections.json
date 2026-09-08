@@ -1,0 +1,440 @@
+[
+  {
+    "normalized_text_sha256": "ead3d4eb999a8a04baca1c6fa9e7b5a2a0592b337212c436afaf259181fd0a47",
+    "sections": [
+      {
+        "end": 34149,
+        "heading_anchor": "Item1.Business",
+        "item": "1",
+        "start": 20718
+      },
+      {
+        "end": 92994,
+        "heading_anchor": "Item1A.RiskFactors",
+        "item": "1A",
+        "start": 34149
+      },
+      {
+        "end": 93029,
+        "heading_anchor": "Item1B.UnresolvedStaffComments",
+        "item": "1B",
+        "start": 92994
+      },
+      {
+        "end": 95386,
+        "heading_anchor": "Item1C.Cybersecurity",
+        "item": "1C",
+        "start": 93029
+      },
+      {
+        "end": 95795,
+        "heading_anchor": "Item2.Properties",
+        "item": "2",
+        "start": 95386
+      },
+      {
+        "end": 99532,
+        "heading_anchor": "Item3.LegalProceedings",
+        "item": "3",
+        "start": 95795
+      },
+      {
+        "end": 101740,
+        "heading_anchor": "Item5.Marketfor",
+        "item": "5",
+        "start": 99532
+      },
+      {
+        "end": 114646,
+        "heading_anchor": "Item7.Management",
+        "item": "7",
+        "start": 101740
+      },
+      {
+        "end": 117207,
+        "heading_anchor": "Item7A.Quantitative",
+        "item": "7A",
+        "start": 114646
+      },
+      {
+        "end": 167840,
+        "heading_anchor": "Item8.FinancialStatements",
+        "item": "8",
+        "start": 117207
+      },
+      {
+        "end": 186712,
+        "heading_anchor": "Item9.Changesin",
+        "item": "9",
+        "start": 167840
+      }
+    ],
+    "source_html": "data/html_filings/AAPL/10-K/10-K_2024.html",
+    "source_sha256": "24a830a0f1256e371d36a1f7f72e5e85a38037d1de2f6f966eb8457db42ff6d6"
+  },
+  {
+    "normalized_text_sha256": "fd9edc75471b7b9d1df3fe2bcfcc8d4c0acfa7618cf025fc72f899adc047549a",
+    "sections": [
+      {
+        "end": 33974,
+        "heading_anchor": "Item1.Business",
+        "item": "1",
+        "start": 20301
+      },
+      {
+        "end": 92235,
+        "heading_anchor": "Item1A.RiskFactors",
+        "item": "1A",
+        "start": 33974
+      },
+      {
+        "end": 92270,
+        "heading_anchor": "Item1B.UnresolvedStaffComments",
+        "item": "1B",
+        "start": 92235
+      },
+      {
+        "end": 94599,
+        "heading_anchor": "Item1C.Cybersecurity",
+        "item": "1C",
+        "start": 92270
+      },
+      {
+        "end": 95033,
+        "heading_anchor": "Item2.Properties",
+        "item": "2",
+        "start": 94599
+      },
+      {
+        "end": 99674,
+        "heading_anchor": "Item3.LegalProceedings",
+        "item": "3",
+        "start": 95033
+      },
+      {
+        "end": 101927,
+        "heading_anchor": "Item5.Marketfor",
+        "item": "5",
+        "start": 99674
+      },
+      {
+        "end": 117140,
+        "heading_anchor": "Item7.Management",
+        "item": "7",
+        "start": 101927
+      },
+      {
+        "end": 119701,
+        "heading_anchor": "Item7A.Quantitative",
+        "item": "7A",
+        "start": 117140
+      },
+      {
+        "end": 171212,
+        "heading_anchor": "Item8.FinancialStatements",
+        "item": "8",
+        "start": 119701
+      },
+      {
+        "end": 188356,
+        "heading_anchor": "Item9.Changesin",
+        "item": "9",
+        "start": 171212
+      }
+    ],
+    "source_html": "data/html_filings/AAPL/10-K/10-K_2025.html",
+    "source_sha256": "548ae59778cf08ee0f2ee088e7ece20d947076c3c01f74d2d65db4c2777e436a"
+  },
+  {
+    "normalized_text_sha256": "41e5bd5730d44b24209db479a5a5e9586c88a520a9b21dfebcddb35e3391002a",
+    "sections": [
+      {
+        "end": 43280,
+        "heading_anchor": "Item1.Business",
+        "item": "1",
+        "start": 31973
+      },
+      {
+        "end": 93661,
+        "heading_anchor": "Item1A.RiskFactors",
+        "item": "1A",
+        "start": 43280
+      },
+      {
+        "end": 93696,
+        "heading_anchor": "Item1B.UnresolvedStaffComments",
+        "item": "1B",
+        "start": 93661
+      },
+      {
+        "end": 97151,
+        "heading_anchor": "Item1C.Cybersecurity",
+        "item": "1C",
+        "start": 93696
+      },
+      {
+        "end": 98233,
+        "heading_anchor": "Item2.Properties",
+        "item": "2",
+        "start": 97151
+      },
+      {
+        "end": 98429,
+        "heading_anchor": "Item3.LegalProceedings",
+        "item": "3",
+        "start": 98233
+      },
+      {
+        "end": 98860,
+        "heading_anchor": "Item5.Marketfor",
+        "item": "5",
+        "start": 98429
+      },
+      {
+        "end": 139696,
+        "heading_anchor": "Item7.Management",
+        "item": "7",
+        "start": 98860
+      },
+      {
+        "end": 144788,
+        "heading_anchor": "Item7A.Quantitative",
+        "item": "7A",
+        "start": 139696
+      },
+      {
+        "end": 248687,
+        "heading_anchor": "Item8.FinancialStatements",
+        "item": "8",
+        "start": 144788
+      },
+      {
+        "end": 267073,
+        "heading_anchor": "Item9.Changesin",
+        "item": "9",
+        "start": 248687
+      }
+    ],
+    "source_html": "data/html_filings/AMZN/10-K/10-K_2023.html",
+    "source_sha256": "a469a0feca6dd5728b10c73076c2c120db58116938614c5b1b864fe13674266d"
+  },
+  {
+    "normalized_text_sha256": "3a8477a99562872bd3c86906104b2b0737b1db096287b492db33d5441f44844f",
+    "sections": [
+      {
+        "end": 43098,
+        "heading_anchor": "Item1.Business",
+        "item": "1",
+        "start": 31795
+      },
+      {
+        "end": 93859,
+        "heading_anchor": "Item1A.RiskFactors",
+        "item": "1A",
+        "start": 43098
+      },
+      {
+        "end": 93911,
+        "heading_anchor": "Item1B.UnresolvedStaffComments",
+        "item": "1B",
+        "start": 93859
+      },
+      {
+        "end": 97350,
+        "heading_anchor": "Item1C.Cybersecurity",
+        "item": "1C",
+        "start": 93911
+      },
+      {
+        "end": 98433,
+        "heading_anchor": "Item2.Properties",
+        "item": "2",
+        "start": 97350
+      },
+      {
+        "end": 98629,
+        "heading_anchor": "Item3.LegalProceedings",
+        "item": "3",
+        "start": 98433
+      },
+      {
+        "end": 99060,
+        "heading_anchor": "Item5.Marketfor",
+        "item": "5",
+        "start": 98629
+      },
+      {
+        "end": 140389,
+        "heading_anchor": "Item7.Management",
+        "item": "7",
+        "start": 99060
+      },
+      {
+        "end": 145626,
+        "heading_anchor": "Item7A.Quantitative",
+        "item": "7A",
+        "start": 140389
+      },
+      {
+        "end": 246658,
+        "heading_anchor": "Item8.FinancialStatements",
+        "item": "8",
+        "start": 145626
+      },
+      {
+        "end": 264455,
+        "heading_anchor": "Item9.Changesin",
+        "item": "9",
+        "start": 246658
+      }
+    ],
+    "source_html": "data/html_filings/AMZN/10-K/10-K_2024.html",
+    "source_sha256": "094e0f2aa1d58203ed77340330e94ff5cb63f5168de5e08ed25a17681a1a53d9"
+  },
+  {
+    "normalized_text_sha256": "6078eeac9d182f2c64f72f3912df367ace08a9e7daa8ffd24734f7b7ce7f8f9d",
+    "sections": [
+      {
+        "end": 99868,
+        "heading_anchor": "ITEM1.BUSINESS",
+        "item": "1",
+        "start": 40341
+      },
+      {
+        "end": 162724,
+        "heading_anchor": "ITEM1A.RISKFACTORS",
+        "item": "1A",
+        "start": 99868
+      },
+      {
+        "end": 162951,
+        "heading_anchor": "ITEM1B.UNRESOLVEDSTAFFCOMMENTS",
+        "item": "1B",
+        "start": 162724
+      },
+      {
+        "end": 170827,
+        "heading_anchor": "ITEM1C.CYBERSECURITY",
+        "item": "1C",
+        "start": 162951
+      },
+      {
+        "end": 171978,
+        "heading_anchor": "ITEM2.PROPERTIES",
+        "item": "2",
+        "start": 170827
+      },
+      {
+        "end": 172206,
+        "heading_anchor": "ITEM3.LEGALPROCEEDINGS",
+        "item": "3",
+        "start": 171978
+      },
+      {
+        "end": 173697,
+        "heading_anchor": "ITEM5.MARKETFOR",
+        "item": "5",
+        "start": 172206
+      },
+      {
+        "end": 217592,
+        "heading_anchor": "ITEM7.MANAGEMENT",
+        "item": "7",
+        "start": 173697
+      },
+      {
+        "end": 219253,
+        "heading_anchor": "ITEM7A.QUANTITATIVE",
+        "item": "7A",
+        "start": 217592
+      },
+      {
+        "end": 311822,
+        "heading_anchor": "ITEM8.FINANCIALSTATEMENTS",
+        "item": "8",
+        "start": 219253
+      },
+      {
+        "end": 334838,
+        "heading_anchor": "ITEM9.CHANGESIN",
+        "item": "9",
+        "start": 311822
+      }
+    ],
+    "source_html": "data/html_filings/MSFT/10-K/10-K_2024.html",
+    "source_sha256": "43829a12cc9cd7198474b3d735c4fc1aba1f871fb637d237aa5979d57e6b8c95"
+  },
+  {
+    "normalized_text_sha256": "deb2de0b9a772f78d3e7a5884a3dba2c2af2440ad15f913280396fe1d9d8a5dc",
+    "sections": [
+      {
+        "end": 80239,
+        "heading_anchor": "ITEM1.BUSINESS",
+        "item": "1",
+        "start": 38480
+      },
+      {
+        "end": 139088,
+        "heading_anchor": "ITEM1A.RISKFACTORS",
+        "item": "1A",
+        "start": 80239
+      },
+      {
+        "end": 139315,
+        "heading_anchor": "ITEM1B.UNRESOLVEDSTAFFCOMMENTS",
+        "item": "1B",
+        "start": 139088
+      },
+      {
+        "end": 147252,
+        "heading_anchor": "ITEM1C.CYBERSECURITY",
+        "item": "1C",
+        "start": 139315
+      },
+      {
+        "end": 148403,
+        "heading_anchor": "ITEM2.PROPERTIES",
+        "item": "2",
+        "start": 147252
+      },
+      {
+        "end": 148631,
+        "heading_anchor": "ITEM3.LEGALPROCEEDINGS",
+        "item": "3",
+        "start": 148403
+      },
+      {
+        "end": 150716,
+        "heading_anchor": "ITEM5.MARKETFOR",
+        "item": "5",
+        "start": 148631
+      },
+      {
+        "end": 191376,
+        "heading_anchor": "ITEM7.MANAGEMENT",
+        "item": "7",
+        "start": 150716
+      },
+      {
+        "end": 193038,
+        "heading_anchor": "ITEM7A.QUANTITATIVE",
+        "item": "7A",
+        "start": 191376
+      },
+      {
+        "end": 277155,
+        "heading_anchor": "ITEM8.FINANCIALSTATEMENTS",
+        "item": "8",
+        "start": 193038
+      },
+      {
+        "end": 298036,
+        "heading_anchor": "ITEM9.CHANGESIN",
+        "item": "9",
+        "start": 277155
+      }
+    ],
+    "source_html": "data/html_filings/MSFT/10-K/10-K_2025.html",
+    "source_sha256": "99d693f6c1544144ebeee92954f151a85bc62111837530a42855953bc01d0bbe"
+  }
+]
