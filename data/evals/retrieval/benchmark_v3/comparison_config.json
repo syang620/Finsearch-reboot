@@ -1,0 +1,18 @@
+{
+  "modes": ["bm25_only", "dense_only", "hybrid", "hybrid_reranker"],
+  "retrieval_top_k": 50,
+  "branch_limit": 500,
+  "rerank_candidate_limit": 10,
+  "rerank_top_k": 10,
+  "rrf_k": 60,
+  "rrf_weights": [1.0, 1.0],
+  "doc_types": ["text_chunk", "table", "table_row"],
+  "embedding_model": "qwen3-embedding:8b",
+  "embedding_digest": "64b933495768fbd3b87c20583d379728a07471e0c66733a9df87cd1901b3c44b",
+  "reranker_model": "Qwen/Qwen3-Reranker-8B",
+  "order_seed": 20260906,
+  "query_cache_policy": "Default caching enabled; separate initially empty cache namespace per mode. Every query-mode pair measured once. Shared model/process warm state; rotating mode order.",
+  "metrics": ["recall@5", "recall@10", "mrr@10", "ndcg@5", "ndcg@10", "evidence_group_recall@10"],
+  "latency_percentile_method": "nearest-rank ceil(p*n); wall-clock total retrieval includes query embedding, search, fusion, enrichment and reranking; rerank-only timing when applicable",
+  "run_policy": "Freeze dataset then harness SHA before measurement. No retries by harness, no optimization. Preserve errors and partial runs; never overwrite an existing SHA-keyed output directory."
+}

@@ -1,0 +1,662 @@
+{
+  "audit_findings": [
+    "B1",
+    "B5"
+  ],
+  "audit_head": "f190180c2e0e48d10a95f13d9d81082ca214d029",
+  "grade_changes_on_previously_judged_ids": 0,
+  "identity_mapping": [
+    {
+      "new": "KBV3_AAPL_2024_01",
+      "old": "KBV2_AAPL_2024_01",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_AAPL_2024_02",
+      "old": "KBV2_AAPL_2024_02",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_AAPL_2024_03",
+      "old": "KBV2_AAPL_2024_03",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_AAPL_2024_04",
+      "old": "KBV2_AAPL_2024_04",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_AAPL_2024_05",
+      "old": "KBV2_AAPL_2024_05",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_AAPL_2024_06",
+      "old": "KBV2_AAPL_2024_06",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_AAPL_2024_07",
+      "old": "KBV2_AAPL_2024_07",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_AAPL_2024_08",
+      "old": "KBV2_AAPL_2024_08",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_AAPL_2024_09",
+      "old": "KBV2_AAPL_2024_09",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_AAPL_2024_10",
+      "old": "KBV2_AAPL_2024_10",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_AAPL_2024_11",
+      "old": "KBV2_AAPL_2024_11",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_AAPL_2024_12",
+      "old": "KBV2_AAPL_2024_12",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_AAPL_2024_13",
+      "old": "KBV2_AAPL_2024_13",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_AAPL_2024_14",
+      "old": "KBV2_AAPL_2024_14",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_AAPL_2024_15",
+      "old": "KBV2_AAPL_2024_15",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_AAPL_2024_16",
+      "old": "KBV2_AAPL_2024_16",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_AAPL_2024_17",
+      "old": "KBV2_AAPL_2024_17",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_AAPL_2024_18",
+      "old": "KBV2_AAPL_2024_18",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_AAPL_2024_19",
+      "old": "KBV2_AAPL_2024_19",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_AAPL_2024_20",
+      "old": "KBV2_AAPL_2024_20",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_AAPL_2024_EX",
+      "old": "KBV2_AAPL_2024_EX",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_AAPL_2025_01",
+      "old": "KBV2_AAPL_2025_01",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_AAPL_2025_02",
+      "old": "KBV2_AAPL_2025_02",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_AAPL_2025_03",
+      "old": "KBV2_AAPL_2025_03",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_AAPL_2025_04",
+      "old": "KBV2_AAPL_2025_04",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_AAPL_2025_05",
+      "old": "KBV2_AAPL_2025_05",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_AAPL_2025_06",
+      "old": "KBV2_AAPL_2025_06",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_AAPL_2025_07",
+      "old": "KBV2_AAPL_2025_07",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_AAPL_2025_08",
+      "old": "KBV2_AAPL_2025_08",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_AAPL_2025_09",
+      "old": "KBV2_AAPL_2025_09",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_AAPL_2025_10",
+      "old": "KBV2_AAPL_2025_10",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_AAPL_2025_11",
+      "old": "KBV2_AAPL_2025_11",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_AAPL_2025_12",
+      "old": "KBV2_AAPL_2025_12",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_AAPL_2025_13",
+      "old": "KBV2_AAPL_2025_13",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_AAPL_2025_14",
+      "old": "KBV2_AAPL_2025_14",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_AAPL_2025_15",
+      "old": "KBV2_AAPL_2025_15",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_AAPL_2025_16",
+      "old": "KBV2_AAPL_2025_16",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_AAPL_2025_17",
+      "old": "KBV2_AAPL_2025_17",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_AAPL_2025_18",
+      "old": "KBV2_AAPL_2025_18",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_AAPL_2025_19",
+      "old": "KBV2_AAPL_2025_19",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_AAPL_2025_20",
+      "old": "KBV2_AAPL_2025_20",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_AAPL_2025_EX",
+      "old": "KBV2_AAPL_2025_EX",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_AMZN_2023_01",
+      "old": "KBV2_AMZN_2023_01",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_AMZN_2023_02",
+      "old": "KBV2_AMZN_2023_02",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_AMZN_2023_03",
+      "old": "KBV2_AMZN_2023_03",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_AMZN_2023_04",
+      "old": "KBV2_AMZN_2023_04",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_AMZN_2023_05",
+      "old": "KBV2_AMZN_2023_05",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_AMZN_2023_06",
+      "old": "KBV2_AMZN_2023_06",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_AMZN_2023_07",
+      "old": "KBV2_AMZN_2023_07",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_AMZN_2023_08",
+      "old": "KBV2_AMZN_2023_08",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_AMZN_2023_09",
+      "old": "KBV2_AMZN_2023_09",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_AMZN_2023_10",
+      "old": "KBV2_AMZN_2023_10",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_AMZN_2023_11",
+      "old": "KBV2_AMZN_2023_11",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_AMZN_2023_12",
+      "old": "KBV2_AMZN_2023_12",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_AMZN_2023_13",
+      "old": "KBV2_AMZN_2023_13",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_AMZN_2023_14",
+      "old": "KBV2_AMZN_2023_14",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_AMZN_2023_15",
+      "old": "KBV2_AMZN_2023_15",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_AMZN_2023_16",
+      "old": "KBV2_AMZN_2023_16",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_AMZN_2023_17",
+      "old": "KBV2_AMZN_2023_17",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_AMZN_2023_18",
+      "old": "KBV2_AMZN_2023_18",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_AMZN_2023_19",
+      "old": "KBV2_AMZN_2023_19",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_AMZN_2023_20",
+      "old": "KBV2_AMZN_2023_20",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_AMZN_2023_EX",
+      "old": "KBV2_AMZN_2023_EX",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_AMZN_2024_01",
+      "old": "KBV2_AMZN_2024_01",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_AMZN_2024_02",
+      "old": "KBV2_AMZN_2024_02",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_AMZN_2024_03",
+      "old": "KBV2_AMZN_2024_03",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_AMZN_2024_04",
+      "old": "KBV2_AMZN_2024_04",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_AMZN_2024_05",
+      "old": "KBV2_AMZN_2024_05",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_AMZN_2024_06",
+      "old": "KBV2_AMZN_2024_06",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_AMZN_2024_07",
+      "old": "KBV2_AMZN_2024_07",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_AMZN_2024_08",
+      "old": "KBV2_AMZN_2024_08",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_AMZN_2024_09",
+      "old": "KBV2_AMZN_2024_09",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_AMZN_2024_10",
+      "old": "KBV2_AMZN_2024_10",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_AMZN_2024_11",
+      "old": "KBV2_AMZN_2024_11",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_AMZN_2024_12",
+      "old": "KBV2_AMZN_2024_12",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_AMZN_2024_13",
+      "old": "KBV2_AMZN_2024_13",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_AMZN_2024_14",
+      "old": "KBV2_AMZN_2024_14",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_AMZN_2024_15",
+      "old": "KBV2_AMZN_2024_15",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_AMZN_2024_16",
+      "old": "KBV2_AMZN_2024_16",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_AMZN_2024_17",
+      "old": "KBV2_AMZN_2024_17",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_AMZN_2024_18",
+      "old": "KBV2_AMZN_2024_18",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_AMZN_2024_19",
+      "old": "KBV2_AMZN_2024_19",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_AMZN_2024_20",
+      "old": "KBV2_AMZN_2024_20",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_AMZN_2024_EX",
+      "old": "KBV2_AMZN_2024_EX",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_MSFT_2024_01",
+      "old": "KBV2_MSFT_2024_01",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_MSFT_2024_02",
+      "old": "KBV2_MSFT_2024_02",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_MSFT_2024_03",
+      "old": "KBV2_MSFT_2024_03",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_MSFT_2024_04",
+      "old": "KBV2_MSFT_2024_04",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_MSFT_2024_05",
+      "old": "KBV2_MSFT_2024_05",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_MSFT_2024_06",
+      "old": "KBV2_MSFT_2024_06",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_MSFT_2024_07",
+      "old": "KBV2_MSFT_2024_07",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_MSFT_2024_08",
+      "old": "KBV2_MSFT_2024_08",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_MSFT_2024_09",
+      "old": "KBV2_MSFT_2024_09",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_MSFT_2024_10",
+      "old": "KBV2_MSFT_2024_10",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_MSFT_2024_11",
+      "old": "KBV2_MSFT_2024_11",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_MSFT_2024_12",
+      "old": "KBV2_MSFT_2024_12",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_MSFT_2024_13",
+      "old": "KBV2_MSFT_2024_13",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_MSFT_2024_14",
+      "old": "KBV2_MSFT_2024_14",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_MSFT_2024_15",
+      "old": "KBV2_MSFT_2024_15",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_MSFT_2024_16",
+      "old": "KBV2_MSFT_2024_16",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_MSFT_2024_17",
+      "old": "KBV2_MSFT_2024_17",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_MSFT_2024_18",
+      "old": "KBV2_MSFT_2024_18",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_MSFT_2024_19",
+      "old": "KBV2_MSFT_2024_19",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_MSFT_2024_20",
+      "old": "KBV2_MSFT_2024_20",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_MSFT_2024_EX",
+      "old": "KBV2_MSFT_2024_EX",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_MSFT_2025_01",
+      "old": "KBV2_MSFT_2025_01",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_MSFT_2025_02",
+      "old": "KBV2_MSFT_2025_02",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_MSFT_2025_03",
+      "old": "KBV2_MSFT_2025_03",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_MSFT_2025_04",
+      "old": "KBV2_MSFT_2025_04",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_MSFT_2025_05",
+      "old": "KBV2_MSFT_2025_05",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_MSFT_2025_06",
+      "old": "KBV2_MSFT_2025_06",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_MSFT_2025_07",
+      "old": "KBV2_MSFT_2025_07",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_MSFT_2025_08",
+      "old": "KBV2_MSFT_2025_08",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_MSFT_2025_09",
+      "old": "KBV2_MSFT_2025_09",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_MSFT_2025_10",
+      "old": "KBV2_MSFT_2025_10",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_MSFT_2025_11",
+      "old": "KBV2_MSFT_2025_11",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_MSFT_2025_12",
+      "old": "KBV2_MSFT_2025_12",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_MSFT_2025_13",
+      "old": "KBV2_MSFT_2025_13",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_MSFT_2025_14",
+      "old": "KBV2_MSFT_2025_14",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_MSFT_2025_15",
+      "old": "KBV2_MSFT_2025_15",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_MSFT_2025_16",
+      "old": "KBV2_MSFT_2025_16",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_MSFT_2025_17",
+      "old": "KBV2_MSFT_2025_17",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_MSFT_2025_18",
+      "old": "KBV2_MSFT_2025_18",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_MSFT_2025_19",
+      "old": "KBV2_MSFT_2025_19",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_MSFT_2025_20",
+      "old": "KBV2_MSFT_2025_20",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    },
+    {
+      "new": "KBV3_MSFT_2025_EX",
+      "old": "KBV2_MSFT_2025_EX",
+      "reason_code": "EXPLICIT_VERSION_ID_MIGRATION"
+    }
+  ],
+  "label_diff": "label_changes.jsonl",
+  "membership_additions": [],
+  "membership_reason": "Preserve all correlated parent cases and exclusions; no outcome-based selection",
+  "membership_removals": [],
+  "metadata_reason_codes": [
+    "SOURCE_VERIFIED_SECTION_PROVENANCE",
+    "CORRELATED_FAMILY_AND_SHARED_EVIDENCE_GROUPING"
+  ],
+  "new_benchmark": "sec_retrieval_benchmark_v3",
+  "new_judgments": 12,
+  "new_queries_sha256": "308117369243451b0cdad9837beeecda541554bd7a8c8454df0886aa96d076c4",
+  "parent_benchmark": "sec_retrieval_benchmark_v2",
+  "parent_files_sha256": {
+    "ANNOTATION.md": "d722ce611c9196fca647b46094df2969ee4d74ef25160a3ce978599bd404a1e5",
+    "comparison_config.json": "410a28106bc02f5a4f635af1afb198f82b63d0175bf05643850fd28ccdb00ce1",
+    "corpus.jsonl": "39c8d01ee5c71710e443e49698957d2aa991e71c16ad79905e7bd07d6a11fe4d",
+    "corpus_manifest.json": "23fe45dcaf640eba7bdab1342e680e892c0468025ad09204416d8b6b5a6fae29",
+    "dataset_manifest.json": "83c31e4a307d68d77bb051658c4e45bec21764eb6b62e9974cfd151bab22adb3",
+    "queries.jsonl": "e356eab5c78f027c570daa05945b4688e152ab3e54c79070862d9759fc2cc9d9",
+    "seed_compatibility.json": "35a7197fc4784500f4aad6c8d9b16d4d0d703c9983d8a26d0c6669559ab08fea"
+  },
+  "scope_decision": "retain 3 issuers / 6 filings; no sector-diversity or unseen-holdout claim"
+}
