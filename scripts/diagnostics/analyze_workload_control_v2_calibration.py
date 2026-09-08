@@ -117,21 +117,35 @@ def sustained_detections(raw, metrics, candidate_id):
     detections = []
     for event in starts:
         detected = None
-        for sample, evaluated in zip(raw["samples"], metrics["evaluated"]):
+        start_position = next(
+            index
+            for index, sample in enumerate(raw["samples"])
+            if sample["elapsed_seconds"] >= event["elapsed_seconds"]
+        )
+        previous_active = (
+            metrics["evaluated"][start_position - 1]["candidates"][candidate_id]["cpu_violation"]
+            if start_position
+            else False
+        )
+        preexisting_violation = previous_active
+        for sample, evaluated in zip(
+            raw["samples"][start_position:], metrics["evaluated"][start_position:]
+        ):
             elapsed = sample["elapsed_seconds"]
-            if elapsed < event["elapsed_seconds"]:
-                continue
             if elapsed - event["elapsed_seconds"] > 45:
                 break
             candidate = evaluated["candidates"][candidate_id]
-            if candidate["cpu_violation"] and CONTROLLED_GROUP in candidate["trigger_groups"]:
+            rising_edge = candidate["cpu_violation"] and not previous_active
+            if rising_edge and CONTROLLED_GROUP in candidate["trigger_groups"]:
                 detected = elapsed - event["elapsed_seconds"]
                 break
+            previous_active = candidate["cpu_violation"]
         detections.append(
             {
                 "repetition": event["key"],
                 "detected": detected is not None,
                 "detection_latency_seconds": detected,
+                "preexisting_violation_at_workload_start": preexisting_violation,
             }
         )
     return detections

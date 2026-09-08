@@ -96,3 +96,14 @@ def test_browser_delay_beyond_two_samples_fails():
     browser_rows["B3"]["detection_delay_samples"] = 3
     result = decide(preregistration(), scenario_results(), sustained(), browser_rows)
     assert not result["candidate_acceptance"]["B3"]["browser_hard_rule"]
+
+
+def test_preexisting_violation_cannot_count_as_new_detection():
+    detections = sustained()
+    detections["B3"][0] = {
+        "detected": False,
+        "detection_latency_seconds": None,
+        "preexisting_violation_at_workload_start": True,
+    }
+    result = decide(preregistration(), scenario_results(), detections, browser())
+    assert not result["candidate_acceptance"]["B3"]["sustained_interference"]
