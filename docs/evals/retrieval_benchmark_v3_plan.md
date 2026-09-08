@@ -50,10 +50,14 @@ Unjudged remains unknown, even where known-label metrics assign zero gain.
 
 ## Current state
 
-The source-adjudicated candidate and harness are ready for their initial commit
-and benchmark-quality review. Query SHA-256 is
+The source-adjudicated candidate and harness passed renewed benchmark-quality
+review on `87073ab4fb50b9f99ddb1fbe9ab9cabf3ff1546a`, after two P1 harness
+guard fixes. Query SHA-256 remains
 `308117369243451b0cdad9837beeecda541554bd7a8c8454df0886aa96d076c4`;
 manifest SHA-256 is
 `db89aa15436a82b66ec9636ae452901f1047c732baf1ea03364ccd0a8097ed2a`.
-No benchmark-quality approval has been granted and no v3 retrieval measurement
-has occurred. The review gate remains closed.
+The verified review is recorded separately under
+`artifacts/evals/retrieval/benchmark_v3/reviews/87073ab4fb50b9f99ddb1fbe9ab9cabf3ff1546a/annotation_approval.json`.
+No v3 retrieval measurement has occurred. Next: clean implementation freeze,
+one unchanged four-mode baseline under the required execution controls, immutable
+evidence, and a fresh evidence-head review. No optimization or automatic merge.

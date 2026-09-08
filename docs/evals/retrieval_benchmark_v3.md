@@ -22,6 +22,15 @@ committed review record must bind the exact dataset-manifest hash and reviewed
 commit before the runner can measure anything. Later review/evidence commits do
 not rewrite a dataset's candidate-status field to manufacture approval.
 
+**Current status:** the renewed benchmark-quality review completed cleanly on
+`87073ab4fb50b9f99ddb1fbe9ab9cabf3ff1546a` after both P1 guard fixes. The
+[verified review](https://github.com/syang620/Finsearch-reboot/pull/30#issuecomment-5577356419)
+and exact body hash are captured in
+`artifacts/evals/retrieval/benchmark_v3/reviews/87073ab4fb50b9f99ddb1fbe9ab9cabf3ff1546a/annotation_approval.json`.
+This clears only the narrow benchmark-quality contract above. Labels and
+membership are frozen with their original v3 hashes. No v3 measurement has run;
+the one-pass baseline and subsequent evidence-head review remain outstanding.
+
 ## Source adjudication and v2→v3 changes
 
 The new `data/evals/retrieval/benchmark_v3/` directory contains:
