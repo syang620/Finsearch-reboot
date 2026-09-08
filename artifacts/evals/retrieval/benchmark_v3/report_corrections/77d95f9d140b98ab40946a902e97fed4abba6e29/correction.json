@@ -1,0 +1,11 @@
+{
+  "reason": "Withdraw live server-version claim absent from frozen run provenance; no metric/source/runtime change or rerun",
+  "finding_url": "https://github.com/syang620/Finsearch-reboot/pull/30#discussion_r3953494401",
+  "original_evidence_head": "77d95f9d140b98ab40946a902e97fed4abba6e29",
+  "implementation_sha": "fc988918a0e4101196a21fb1642a7c9794f2e4fc",
+  "original_report_sha256": "d856e3b6ff63e3f32bb3009ff75588d60bf8062d652dedea929e71268641e34b",
+  "corrected_report_sha256": "fb776ec0c5f83f7775a0aace0f50ad8c973bc17bbe45343dd2018c24ca68b682",
+  "original_artifact_inventory_sha256": "d2ae321c8849ec2f9cf6295d3066feb3f81af6a7dc23d76402d7bd77b67a27f5",
+  "all_original_inventory_hashes_unchanged": true,
+  "all_report_table_rows_unchanged": true
+}

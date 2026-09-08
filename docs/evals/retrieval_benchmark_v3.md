@@ -31,13 +31,18 @@ This clears only the narrow benchmark-quality contract above. Labels and
 membership are frozen with their original v3 hashes. The one-pass baseline on
 `fc988918a0e4101196a21fb1642a7c9794f2e4fc` completed **480/480 pairs with zero
 retrieval errors** and passed offline verification. See the
-[immutable baseline report](../../artifacts/evals/retrieval/benchmark_v3/baselines/fc988918a0e4101196a21fb1642a7c9794f2e4fc/REPORT.md)
+[corrected baseline report](../../artifacts/evals/retrieval/benchmark_v3/report_corrections/77d95f9d140b98ab40946a902e97fed4abba6e29/REPORT.md)
 for full metrics, grouping, hashes and limitations. Hybrid + Qwen3 recorded
 known-label Recall@10 **0.8750**, MRR@10 **0.7327**, and nDCG@10 **0.7213**;
 these are not v2→v3 model gains or semantic answer-quality metrics. Background
 CPU bursts were recorded: latency remains observational. Fresh evidence-head
 review is tracked in [PR30](https://github.com/syang620/Finsearch-reboot/pull/30);
 no merge or retrieval optimization is authorized by recording this baseline.
+The final review identified one unsupported live-server-version statement in the
+original report. The separately versioned correction withdraws that statement;
+the frozen artifacts establish archived build version and index fingerprints,
+not live Qdrant binary identity. Original artifacts remain byte-identical, and no
+runtime/evaluator/metric change or rerun was made.
 
 ## Source adjudication and v2→v3 changes
 
