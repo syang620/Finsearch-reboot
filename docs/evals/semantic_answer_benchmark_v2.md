@@ -182,7 +182,10 @@ benchmark-quality review must complete before the system baseline is allowed.
 
 ## Remaining release gates
 
-One judge validation; benchmark-quality audit and optimization freeze; one controlled
+The single judge validation is complete and failed; see
+`semantic_answer_v2_judge_validation.md` for all gates and immutable evidence.
+Full-benchmark judging is disabled. Remaining: benchmark-quality review of
+`semantic_answer_v2_quality_audit.md` and optimization freeze; one controlled
 60-case unchanged-system baseline; source assessment of the predetermined
 30-case subset before enabled judge predictions; denominator/privacy/hash checks;
 immutable evidence and fresh final Codex review. Do not merge automatically.

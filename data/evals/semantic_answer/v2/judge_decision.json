@@ -1,0 +1,139 @@
+{
+  "full_benchmark_judge_enabled": false,
+  "validation_path": "artifacts/evals/semantic_answer/v2/judge_validation/100ff6fc082cb28e971abb9c7a5ae84b3e0af79b",
+  "raw_artifact_manifest_sha256": "66a3efc3ee943d7f1b3caeb1e05206ed6114a29ec4fa031f4c5e1a15ced643bf",
+  "validation_metrics_sha256": "ae6a613f781eb36de6ad47c533556cff65e0d0445d455b951c3cfe8aa1d0d3b0",
+  "metrics": {
+    "metrics": {
+      "parse_success": {
+        "numerator": 29,
+        "denominator": 36,
+        "rate": 0.8055555555555556
+      },
+      "claim_agreement": {
+        "numerator": 22,
+        "denominator": 39,
+        "rate": 0.5641025641025641
+      },
+      "supported_precision": {
+        "numerator": 17,
+        "denominator": 29,
+        "rate": 0.5862068965517241
+      },
+      "supported_recall": {
+        "numerator": 17,
+        "denominator": 19,
+        "rate": 0.8947368421052632
+      },
+      "unsupported_recall": {
+        "numerator": 4,
+        "denominator": 14,
+        "rate": 0.2857142857142857
+      },
+      "partial_agreement": {
+        "numerator": 1,
+        "denominator": 6,
+        "rate": 0.16666666666666666
+      },
+      "grounded_answer_agreement": {
+        "numerator": 14,
+        "denominator": 36,
+        "rate": 0.3888888888888889
+      },
+      "completeness_agreement": {
+        "numerator": 28,
+        "denominator": 36,
+        "rate": 0.7777777777777778
+      },
+      "repeat_agreement": {
+        "numerator": 11,
+        "denominator": 12,
+        "rate": 0.9166666666666666
+      },
+      "requirement_agreement": {
+        "numerator": 42,
+        "denominator": 65,
+        "rate": 0.6461538461538462
+      },
+      "partial_fulfillment_recall": {
+        "numerator": 0,
+        "denominator": 3,
+        "rate": 0.0
+      },
+      "off_topic_recall": {
+        "numerator": 1,
+        "denominator": 2,
+        "rate": 0.5
+      },
+      "unbound_prose_recall": {
+        "numerator": 0,
+        "denominator": 2,
+        "rate": 0.0
+      },
+      "cross_filing_generic_supported": {
+        "numerator": 1,
+        "denominator": 1,
+        "rate": 1.0
+      },
+      "cross_filing_named_rejected": {
+        "numerator": 0,
+        "denominator": 1,
+        "rate": 0.0
+      }
+    },
+    "thresholds": {
+      "parse_success": 0.95,
+      "claim_agreement": 0.85,
+      "supported_precision": 0.9,
+      "supported_recall": 0.85,
+      "unsupported_recall": 0.9,
+      "partial_agreement": 0.8,
+      "grounded_answer_agreement": 0.9,
+      "completeness_agreement": 0.85,
+      "repeat_agreement": 0.9,
+      "requirement_agreement": 0.85,
+      "partial_fulfillment_recall": 0.8,
+      "off_topic_recall": 0.9,
+      "unbound_prose_recall": 0.9,
+      "cross_filing_generic_supported": 1.0,
+      "cross_filing_named_rejected": 1.0
+    },
+    "gates_passed": {
+      "parse_success": false,
+      "claim_agreement": false,
+      "supported_precision": false,
+      "supported_recall": true,
+      "unsupported_recall": false,
+      "partial_agreement": false,
+      "grounded_answer_agreement": false,
+      "completeness_agreement": false,
+      "repeat_agreement": true,
+      "requirement_agreement": false,
+      "partial_fulfillment_recall": false,
+      "off_topic_recall": false,
+      "unbound_prose_recall": false,
+      "cross_filing_generic_supported": true,
+      "cross_filing_named_rejected": false
+    },
+    "full_benchmark_judge_enabled": false,
+    "gold_label_distribution": {
+      "fully_supported": 19,
+      "unsupported": 14,
+      "partially_supported": 6
+    },
+    "predicted_label_distribution": {
+      "fully_supported": 29,
+      "unsupported": 5,
+      "partially_supported": 1
+    },
+    "gold_requirement_label_distribution": {
+      "complete": 23,
+      "missing": 39,
+      "partial": 3
+    },
+    "invalid_or_missing_cases": 7,
+    "repeat_valid_pairs": 11
+  },
+  "decision_rule": "All preregistered gates must pass; no exception or post-result tuning.",
+  "interpretation": "Candidate failed validation. Full-benchmark automated judge disabled; publish source-adjudicated subset metrics with coverage, not a fabricated full-population semantic score."
+}
