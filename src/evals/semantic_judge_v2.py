@@ -14,7 +14,8 @@ GATES = {'parse_success': .95, 'claim_agreement': .85, 'supported_precision': .9
          'supported_recall': .85, 'unsupported_recall': .90, 'partial_agreement': .80,
          'grounded_answer_agreement': .90, 'completeness_agreement': .85, 'repeat_agreement': .90,
          'requirement_agreement': .85, 'partial_fulfillment_recall': .80,
-         'off_topic_recall': .90, 'unbound_prose_recall': .90}
+         'off_topic_recall': .90, 'unbound_prose_recall': .90,
+         'cross_filing_generic_supported':1.0,'cross_filing_named_rejected':1.0}
 
 
 def packets(case, output):
@@ -113,11 +114,17 @@ def validation_metrics(fixtures, assessments, repeats):
     gold_counts = Counter(); pred_counts = Counter(); true_positive = Counter()
     gold_fulfillment=Counter(); correct_fulfillment=Counter()
     off_topic=unbound=off_topic_correct=unbound_correct=0
+    scope_total=Counter(); scope_correct=Counter()
     valid = agreement = grounded = complete = repeat_agreement = 0
     repeat_ids = [f['id'] for f in fixtures if f['repeat_selected']]
     if len(repeat_ids) != 12: raise ValueError('Expected 12 frozen repeat fixtures')
     for f in fixtures:
         expected = f['labels']; predicted = assessments.get(f['id'])
+        scope_class=f.get('validation_class')
+        if scope_class in {'cross_filing_generic_supported','cross_filing_named_rejected'}:
+            scope_total[scope_class]+=1
+            scope_correct[scope_class]+=(predicted is not None and predicted['claims']==expected['claims']
+                                         and predicted['fully_grounded']==expected['fully_grounded'])
         gold_counts.update(expected['claims'].values())
         gold_fulfillment.update(expected['requirements'].values())
         off_topic+=not expected['answer_relevant']; unbound+=expected['unbound_factual_prose']
@@ -147,6 +154,7 @@ def validation_metrics(fixtures, assessments, repeats):
                'requirement_agreement':rate(sum(correct_fulfillment.values()),sum(gold_fulfillment.values())),
                'partial_fulfillment_recall':rate(correct_fulfillment['partial'],gold_fulfillment['partial']),
                'off_topic_recall':rate(off_topic_correct,off_topic),'unbound_prose_recall':rate(unbound_correct,unbound)}
+    metrics.update({k:rate(scope_correct[k],scope_total[k]) for k in ('cross_filing_generic_supported','cross_filing_named_rejected')})
     passed = {k: metrics[k]['rate'] is not None and metrics[k]['rate'] >= threshold for k, threshold in GATES.items()}
     return {'metrics': metrics, 'thresholds': GATES, 'gates_passed': passed, 'full_benchmark_judge_enabled': all(passed.values()),
             'gold_label_distribution': dict(gold_counts), 'predicted_label_distribution': dict(pred_counts),

@@ -41,6 +41,7 @@ def test_hash_guard_detects_missing_or_edited_file(tmp_path):
 
 def test_validation_composition_and_packet_isolation():
     fixtures=read(ROOT/'validation_fixtures.jsonl')
+    cases={c['id']:c for c in read(ROOT/'queries.jsonl')}
     assert len(fixtures)==36 and sum(f['repeat_selected'] for f in fixtures)==12
     counts=Counter(label for f in fixtures for label in f['labels']['claims'].values())
     assert counts==Counter({'fully_supported':19,'partially_supported':6,'unsupported':14})
@@ -48,7 +49,16 @@ def test_validation_composition_and_packet_isolation():
     assert sum(label=='partial' for f in fixtures for label in f['labels']['requirements'].values())>=3
     assert sum(not f['labels']['answer_relevant'] for f in fixtures)==2
     assert sum(f['labels']['unbound_factual_prose'] for f in fixtures)==2
+    classes={f['validation_class']:f for f in fixtures if f.get('validation_class')}
+    assert set(classes)=={'cross_filing_generic_supported','cross_filing_named_rejected'}
+    generic=classes['cross_filing_generic_supported']; named=classes['cross_filing_named_rejected']
+    assert generic['labels']['fully_grounded'] and not named['labels']['fully_grounded']
+    assert named['labels']['requirements']=={'current_revenue':'complete','previous_revenue':'missing'}
+    for f in (generic,named):
+        context=f['output']['evaluation_trace']['analyst_packet']['context_items'][0]['structured_fact']
+        assert context['report_date']=='2025-09-27' and context['fiscal_year']==2024
     for f in fixtures:
+        assert f['case']==cases[f['case']['id']]
         p=packets(f['case'],f['output'])
         assert 'labels' not in p['support'] and 'labels' not in p['completeness']
         assert 'requirements' not in p['support'] and 'cited_contexts' not in p['completeness']

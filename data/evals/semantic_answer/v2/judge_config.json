@@ -26,6 +26,8 @@
     "requirement_agreement": 0.85,
     "partial_fulfillment_recall": 0.8,
     "off_topic_recall": 0.9,
-    "unbound_prose_recall": 0.9
+    "unbound_prose_recall": 0.9,
+    "cross_filing_generic_supported": 1.0,
+    "cross_filing_named_rejected": 1.0
   }
 }

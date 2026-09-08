@@ -53,7 +53,8 @@ def fixtures():
     rows = []
     for i in range(36):
         label = ['fully_supported','partially_supported','unsupported'][i%3]
-        rows.append({'id': str(i), 'repeat_selected': i<12, 'labels': {
+        rows.append({'id': str(i), 'repeat_selected': i<12,
+                     'validation_class':'cross_filing_generic_supported' if i==0 else 'cross_filing_named_rejected' if i==2 else None, 'labels': {
             'claims': {'c': label}, 'requirements': {'g': ['complete','partial','missing'][i%3]}, 'fully_grounded': label=='fully_supported' and i not in {2,3},
             'complete': i%3==0 and i not in {0,1}, 'answerability_correct': True, 'answer_relevant': i not in {0,1}, 'unbound_factual_prose': i in {2,3}}})
     return rows
@@ -100,3 +101,12 @@ def test_constant_answer_wide_flags_fail_sensitivity_gates():
     assert r['metrics']['off_topic_recall']['rate']==0
     assert r['metrics']['unbound_prose_recall']['rate']==0
     assert not r['full_benchmark_judge_enabled']
+
+
+@pytest.mark.parametrize('index,gate',[('0','cross_filing_generic_supported'),('2','cross_filing_named_rejected')])
+def test_overall_agreement_cannot_hide_filing_scope_failure(index,gate):
+    f=fixtures(); predictions={r['id']:deepcopy(r['labels']) for r in f}
+    predictions[index]['claims']['c']='partially_supported'
+    result=validation_metrics(f,predictions,predictions)
+    assert result['gates_passed']['claim_agreement']
+    assert not result['gates_passed'][gate] and not result['full_benchmark_judge_enabled']

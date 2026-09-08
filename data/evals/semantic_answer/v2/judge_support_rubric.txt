@@ -17,6 +17,14 @@ Incomplete is not the same as unsupported: do not penalize an emitted true claim
 for facts it does not assert. Completeness is assessed separately. Inspect final
 answer prose for material factual assertions not bound to supplied claims and
 set unbound_factual_prose accordingly. Do not silently create claim IDs for them.
+An explanation of a scoped inability to establish the requested actual is an
+abstention stance, not itself unbound factual prose. Additional factual amounts,
+predictions or causal assertions outside claims must still be flagged.
+
+Distinguish a fact's fiscal period from the filing's report date. A generic
+fact-period question may be supported by equivalent comparative evidence in
+another filing. An explicit attribution to a named filing requires evidence
+from that filing; equal financial amounts alone do not prove that attribution.
 
 For fully/partially supported claims provide at least one short verbatim quote
 from a context cited by that claim. Copy quote text exactly from its supplied

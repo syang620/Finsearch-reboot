@@ -125,6 +125,11 @@ and partial-fulfillment recall are independently gated, as are recall on both
 non-default answer-wide flags. Whole-answer booleans cannot mask the wrong
 missing-facet decision. This amendment occurred before any judge predictions.
 
+The generic cross-filing positive and named-filing rejection are explicitly
+tested and individually gated. A high overall agreement score cannot hide a
+failure of either scope rule. This replaces one redundant wrong-metric example;
+all required numeric adversary classes remain represented before prediction.
+
 Support packets contain only cited visible evidence, not gold requirements or
 uncited-context rescue. Completeness packets contain atomic requirements and
 the answer, not source evidence. Strict schema checks enforce exact unique IDs,
@@ -150,6 +155,10 @@ requirement-family, metric, stratum and filing counts are published in
 `composition.json`. Technology/commerce issuers and future-actual abstention
 questions dominate their respective categories; fiscal calendars differ, but
 this is not broad sector/calendar coverage. Sources overlap retrieval benchmarks.
+The official deterministic summary includes all 30 question-family breakdowns
+and all requirement-family counts, case-level execution and family-restricted
+numeric checks. Non-numeric fulfillment remains a separate semantic assessment;
+overlapping family counts must not be summed into independent-trial claims.
 
 Scope expansion was declined before any v2 results to keep this correction PR
 bounded, not to select where the system wins. Future resume claims may describe

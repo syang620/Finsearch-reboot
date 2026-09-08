@@ -27,6 +27,18 @@ All 60 benchmark questions and all numeric targets remain unchanged.
 
 ## Files and checks
 
+### Third review of `43c9a1c`
+
+- [P1 cross-filing judge coverage](https://github.com/syang620/Finsearch-reboot/pull/31#discussion_r3954119215): the generic numeric positive now uses its accepted comparative fact from the other filing. One redundant wrong-metric fixture becomes an explicit named-filing attribution with only the other filing's evidence. It is unsupported despite matching financial digits; current-year completeness and missing prior-year completeness are labeled independently. Both scope classes have individual 100% acceptance gates before predictions. Existing wrong-issuer/currency/scale/sign/negation/metric/period examples remain. The 36-answer / 39-claim / 12-repeat counts and support-label distribution remain unchanged.
+- [P2 missing family summaries](https://github.com/syang620/Finsearch-reboot/pull/31#discussion_r3954119220): the baseline writer now emits the preregistered question-family and requirement-family breakdowns. Requirement-family numeric denominators include only that family's requirements; case execution stays explicitly case-level. Overlapping families are not independent samples.
+
+The prospective support rubric explicitly distinguishes a comparative fact period
+from filing identity, and scoped abstention explanations from additional unbound
+factual assertions. No judge prediction informed these clarifications. Current
+fixture SHA-256: `4e42a4c8491057f305ca5c398b744fe1c1dd96eff8fa26a37bd4a8e16049e9e3`.
+Verification: **158 new tests pass** within the full suite; **1,136 tests and
+47 subtests pass**, with the same two pre-existing failures and 25 warnings.
+
 ### Second review of `5ebd169`
 
 This review also completed before calibration or any v2 model result. All three

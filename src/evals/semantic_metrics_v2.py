@@ -51,6 +51,30 @@ def enabled_judge_policy(data_root):
     return {'optimization_manifest_sha256':sha(manifest_path),'judge_decision_sha256':sha(decision_path)}
 
 
+def deterministic_breakdowns(cases,rows):
+    """Expose correlated question and requirement families, without pooling them."""
+    case_map={c['id']:c for c in cases}; row_map={r['case_id']:r for r in rows}
+    if len(case_map)!=len(cases) or len(row_map)!=len(rows) or set(case_map)!=set(row_map):
+        raise ValueError('Complete unique case membership required for breakdowns')
+    result={'overall':deterministic_summary(rows)}
+    for key,name in [('stratum','by_stratum'),('ticker','by_issuer'),('question_family','by_question_family')]:
+        result[name]={value:deterministic_summary([row_map[c['id']] for c in cases if c[key]==value])
+                      for value in sorted({c[key] for c in cases})}
+    families=sorted({g['requirement_family'] for c in cases for g in c['required_claims']})
+    result['by_requirement_family']={}
+    for family in families:
+        members={c['id']:[g['claim_id'] for g in c['required_claims'] if g['requirement_family']==family]
+                 for c in cases if any(g['requirement_family']==family for g in c['required_claims'])}
+        selected=[{**row_map[cid],'numeric_checks':[n for n in row_map[cid]['numeric_checks'] if n['claim_id'] in ids]}
+                  for cid,ids in members.items()]
+        result['by_requirement_family'][family]={'gold_requirements':sum(map(len,members.values())),
+            'case_requirement_ids':members,'execution_of_containing_cases':summarize_outcomes(selected),
+            'numeric_requirements':summarize_numeric(selected),
+            'note':'Execution is case-level; numeric checks are restricted to this requirement family. Non-numeric fulfillment requires the separate semantic assessment channel.'}
+    result['family_note']='Families overlap and share evidence; do not sum their case counts or treat paired-year cases as independent trials.'
+    return result
+
+
 def semantic_summary(cases, outputs, deterministic, assessments, *, scope_ids, channel,
                      data_root='data/evals/semantic_answer/v2'):
     """Validated support/completeness assessments for a declared fixed scope.

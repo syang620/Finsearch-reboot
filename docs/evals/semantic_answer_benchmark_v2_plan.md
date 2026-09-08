@@ -106,6 +106,14 @@ and two positive examples for each answer-wide flag. These strengthen the gates
 before observing results; they are not tuned to judge predictions. Preserve the
 36 fixture count, 12 preselected repeats and all original acceptance gates.
 
+A later pre-calibration review requires explicit cross-filing sensitivity. The
+generic-revenue positive now cites the independently equivalent FY2025-filing
+comparative fact; one redundant wrong-metric fixture becomes an explicit
+FY2024-filing attribution with only FY2025 evidence (unsupported). The other
+wrong-metric adversary remains. Require both cross-filing class gates to pass
+100% in addition to overall agreement; aggregate agreement cannot mask either
+scope error. The 36 answers, 39 emitted claims and 12 repeats are retained.
+
 ## Numeric and denominator contract to implement
 
 Use Decimal-based normalization with explicit units and documented display

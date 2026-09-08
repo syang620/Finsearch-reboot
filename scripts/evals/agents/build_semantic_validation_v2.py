@@ -79,14 +79,15 @@ def build(out):
             'fiscal_year':source['fact_fiscal_year'],'status':'ok'}}
 
     def add(case_id, texts, support, fulfillment, *, answerability=True, status='ok', kb=False, reason, computation=None,
-            answer_tail='', relevant=True, unbound=False):
+            answer_tail='', relevant=True, unbound=False, source_override=None, validation_class=None):
         case=deepcopy(cases[case_id]); contexts=[]; claims=[]
         sources={}
         for g in case['required_claims']:
             for s in g['sources']:
                 identity=s.get('fact_id',s.get('evidence_id'))
                 sources.setdefault(identity,s)
-        for s in sources.values(): contexts.append(context(s,f'e{len(contexts)+1}',kb))
+        for s in sources.values() if source_override is None else source_override:
+            contexts.append(context(s,f'e{len(contexts)+1}',kb))
         refs=[c['context_id'] for c in contexts]
         for i,text in enumerate(texts):
             g=case['required_claims'][min(i,len(case['required_claims'])-1)] if case['required_claims'] else {}
@@ -109,10 +110,12 @@ def build(out):
                 'fully_grounded':answerability and not unbound and all(s=='fully_supported' for s in support) and (bool(claims) or status=='insufficient_data'),
                 'complete':answerability and relevant and all(f=='complete' for f in fulfillment)}
         rows.append({'id':f'SEM2_VALID_{number:02}','case':case,'output':output,'labels':labels,
+                     'validation_class':validation_class,
                      'repeat_selected':number in REPEATS,'adjudication_reason':reason,
                      'annotation_method':'Prospectively source-authored synthetic answer and coding-assistant source adjudication before judge predictions; not a production sample or independent human label.'})
 
     revenue='SEM2_AAPL_2024_01'
+    cross_filing=cases[revenue]['required_claims'][0]['acceptable_source_alternatives'][0]
     texts=[(revenue,'Apple FY2024 revenue was $391.035 billion.'), (revenue,'Microsoft FY2024 revenue was $391.035 billion.'),
            ('SEM2_AMZN_2024_01','Amazon FY2024 revenue was 637959 million EUR.'),
            ('SEM2_MSFT_2025_01','Microsoft FY2025 revenue was $281724 billion.'),
@@ -124,7 +127,9 @@ def build(out):
     for i,(case_id,text) in enumerate(texts):
         correct=i in {0,8}
         add(case_id,[text],['fully_supported' if correct else 'unsupported'],['complete' if correct else 'missing'],kb=i==8,
-            reason='The case carries the original issuer/year consolidated revenue fact and source element. Issuer, fiscal period, currency, scale, sign, metric and affirmation are material; matching digits alone do not establish truth. KB table alternative is linked by original inline fact element, not retrieval ranking.')
+            source_override=[cross_filing] if i==0 else None,
+            validation_class='cross_filing_generic_supported' if i==0 else None,
+            reason=('A generic FY2024 revenue question is fully supported by the independently re-extracted comparative FY2024 revenue fact in the FY2025 filing; the source filing year is not a fact-period mismatch. ' if i==0 else '')+'The case carries the original issuer/year consolidated revenue fact and source element. Issuer, fiscal period, currency, scale, sign, metric and affirmation are material; matching digits alone do not establish truth. KB table alternative is linked by original inline fact element, not retrieval ranking.')
     add('SEM2_AAPL_2024_09',['Apple FY2024 Services gross-margin percentage was 73.9%.'],['fully_supported'],['complete'],
         reason='The original Services margin-percentage table reports 73.9; gross-profit dollars are a different quantity.')
     case=cases['SEM2_AAPL_2024_06']; values=[g['numeric']['value'] for g in case['required_claims']]
@@ -133,8 +138,9 @@ def build(out):
                    f'Apple FY2024 revenue growth was {growth:.2f}%.'], ['fully_supported']*3,['complete']*3,
         computation={'expression':'(current - previous) / previous * 100','variables':{'previous':'383285','current':'391035'},'result':float(growth)},
         reason='Both original comparative revenue facts and the bound growth calculation support the three assertions. Two-decimal rounding uses the frozen tolerance.')
-    add('SEM2_MSFT_2025_01',['Microsoft FY2025 operating income was $281.724 billion.'],['unsupported'],['missing'],
-        reason='Revenue evidence does not support a different metric merely because the digits match.')
+    add('SEM2_AAPL_2024_05',["Apple's FY2024 10-K reports FY2024 revenue of $391.035 billion."],['unsupported'],['complete','missing'],
+        source_override=[cross_filing],validation_class='cross_filing_named_rejected',
+        reason='The answer explicitly attributes the amount to the FY2024 filing, but its only cited evidence is the FY2025 filing. The financial amount matches; that does not establish the named-filing attribution from supplied evidence. The current-year requirement is stated, the prior-year comparison is missing, and source support fails. This replaces one redundant wrong-metric fixture; the cash-vs-revenue wrong-metric adversary remains.')
     for case_id,full,partial,wrong in NARRATIVE:
         n=len(cases[case_id]['required_claims'])
         fulfillment=['complete']*n

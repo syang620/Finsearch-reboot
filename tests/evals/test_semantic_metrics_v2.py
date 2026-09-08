@@ -3,7 +3,7 @@ import json
 import pytest
 
 from evals.semantic_answer_v2 import deterministic_case
-from evals.semantic_metrics_v2 import deterministic_summary, semantic_summary
+from evals.semantic_metrics_v2 import deterministic_summary, semantic_summary, deterministic_breakdowns
 from evals.semantic_dataset_v2 import sha
 
 
@@ -78,3 +78,21 @@ def test_enabled_judge_reports_exact_frozen_policy_hashes(tmp_path):
     result=semantic_summary(*sample(),scope_ids=['0','1','2','3'],channel='validated_secondary_judge',data_root=tmp_path)
     assert result['frozen_judge_policy']['judge_decision_sha256']==sha(tmp_path/'judge_decision.json')
     assert result['population_size']==4
+
+
+def test_family_summaries_keep_correlated_cases_and_requirement_denominators():
+    cases,outputs,rows,_=sample()
+    for i,c in enumerate(cases):
+        c['question_family']=str(i//2)
+        c['required_claims']=[{'claim_id':'a','requirement_family':'revenue'},
+                              {'claim_id':'b','requirement_family':'cash'}]
+        rows[i]['numeric_checks']=[{'claim_id':'a','truth':'correct' if rows[i]['execution']['eligible'] else 'unassessed','credit':rows[i]['execution']['eligible']},
+                                  {'claim_id':'b','truth':'unknown' if rows[i]['execution']['eligible'] else 'unassessed','credit':False}]
+    result=deterministic_breakdowns(cases,rows)
+    assert len(result['by_question_family'])==2
+    assert result['by_question_family']['1']['execution']['outcomes']['analyst_timeout']==1
+    revenue=result['by_requirement_family']['revenue']; cash=result['by_requirement_family']['cash']
+    assert revenue['gold_requirements']==4
+    assert revenue['numeric_requirements']['verified_numeric_credit_over_all_gold']['rate']==.75
+    assert cash['numeric_requirements']['verified_numeric_credit_over_all_gold']['rate']==0
+    assert revenue['numeric_requirements']['verified_numeric_credit_given_eligible_answer']['denominator']==3

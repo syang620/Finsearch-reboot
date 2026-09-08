@@ -19,7 +19,7 @@ from qdrant_client import QdrantClient, models as qmodels
 
 from evals.semantic_answer_v2 import deterministic_case
 from evals.semantic_dataset_v2 import load_dataset, load_numeric_catalog, read, sha, verify_files
-from evals.semantic_metrics_v2 import deterministic_summary
+from evals.semantic_metrics_v2 import deterministic_breakdowns
 from scripts.evals.agents.run_semantic_v1 import append, save, now, runtime_environment
 from scripts.evals.retrieval.run_benchmark_v3 import (clean_checkout, committed_approval, controls, git,
     hardware, snapshot, verify_index, verify_remote_review)
@@ -181,9 +181,7 @@ async def run(args):
         valid=finalize_validity(ending,[c['id'] for c in cases],[r['case_id'] for r in rows])
         save(out/'completion.json',ending); client.close()
         if valid:
-            save(out/'deterministic_summary.json',{'overall':deterministic_summary(rows),
-                 'by_stratum':{s:deterministic_summary([r for r in rows if r['stratum']==s]) for s in sorted({c['stratum'] for c in cases})},
-                 'by_issuer':{s:deterministic_summary([r for r in rows if r['ticker']==s]) for s in sorted({c['ticker'] for c in cases})}})
+            save(out/'deterministic_summary.json',deterministic_breakdowns(cases,rows))
         save(out/'files_sha256.json',{p.name:sha(p) for p in sorted(out.iterdir()) if p.is_file()})
 
 
