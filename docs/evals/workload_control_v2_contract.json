@@ -1,0 +1,79 @@
+{
+  "contract_id": "SEMANTIC_WORKLOAD_CONTROL_V2",
+  "version": "2.0.0",
+  "status": "validated_frozen_candidate",
+  "selected_policy": "B_CONSECUTIVE_10",
+  "source_state": {
+    "pr31_head": "7667af52169fb12965adf5680bae58a74c7c977e",
+    "pr32_head": "a6c264652096a0811693a82b901780b7bc8419ff",
+    "preregistration_sha256": "0c6c4ac93cee1b23e33ea2ea93ded0a9b56092cd9898045b44a0bb7595463483",
+    "analysis_implementation_sha": "7d68a8c96edf2d5f2f2a4996b88e384946973670",
+    "comparison_sha256": "8d89e6ba6bb5373c0b0846a10968fed6d79adb70252d34e347168d102db67100"
+  },
+  "hard_requirements": {
+    "ac_power": true,
+    "low_power_mode": 0,
+    "awake_protection": true,
+    "real_browser_workload": "No process whose executable is the actual Google Chrome or Safari browser binary. Browser helpers/extensions remain visible but do not satisfy this identity rule by substring alone.",
+    "model_index_service_identity": "Must match the separately frozen benchmark provenance."
+  },
+  "cpu_interference_rule": {
+    "sampling": "Continuous one-second samples from the end of preflight settling through final benchmark artifact closure.",
+    "threshold_percent": 50.0,
+    "identity": "Stable process group is category plus canonical executable path plus nearest identified application/service ancestor; PID is evidence, not the stable key.",
+    "aggregation": "Sum CPU percent for CPU-scored processes sharing the stable group key within each sample.",
+    "violation": "The same CPU-scored stable process group is at or above 50 percent for 10 consecutive samples.",
+    "reset": "The group's streak resets to zero whenever the group is absent or below 50 percent.",
+    "action": "Invalidate the run at the first qualifying streak; preserve the triggering samples and process identities."
+  },
+  "process_categories": {
+    "excluded_from_external_cpu_scoring_but_retained": [
+      "benchmark_model_process",
+      "required_service_host",
+      "calibration_harness"
+    ],
+    "cpu_scored_and_retained": [
+      "user_browser_workload",
+      "run_supervision_ui_tooling",
+      "unrelated_external_workload",
+      "os_background_service",
+      "unknown"
+    ],
+    "service_host_boundary": "Only directly evidenced service hosts are excluded. Docker Desktop UI/renderers, ChatGPT, and Codex do not inherit an application-wide exemption.",
+    "unknown_rule": "Unknown processes remain visible and CPU-scored."
+  },
+  "validation_result": {
+    "clean_cpu_invalidation_episodes": {
+      "passive_supervised_idle_900_samples": 0,
+      "terminal_only_idle_900_samples": 0,
+      "required_service_activity_180_samples": 0
+    },
+    "sustained_interference": "3/3 detected; latencies 9.9996, 9.9999, and 9.9999 seconds",
+    "short_bursts": "0 invalidation episodes across six 1.5-second controlled bursts",
+    "browser": "Detected by the independent hard rule in the first sampled browser interval",
+    "evidence_retention": 1.0
+  },
+  "limitations": [
+    "The clean calibration covers 33 minutes across three scenarios, not a full multi-hour 60-case run or an hour-scale statistical upper bound.",
+    "The supervised-idle maximum same-group streak was nine samples, one below the selected boundary.",
+    "Calibration does not establish that CPU interference caused any historical analyst timeout.",
+    "Terminal-only control monitoring is demonstrated; terminal-only semantic case execution was intentionally not run.",
+    "This contract does not modify or retroactively validate any historical artifact."
+  ],
+  "publication_privacy": {
+    "rule": "User-home prefixes and email addresses in captured process command lines are replaced with $USER_HOME and $EMAIL.",
+    "semantic_effect": "None; publication sanitization changes string evidence and file hashes only, before the artifact freeze.",
+    "superseded_comparison_preserved": true
+  },
+  "adoption": {
+    "current_pr31_launcher_unchanged": true,
+    "opt_in_required": true,
+    "future_run_must_record": [
+      "this contract SHA-256",
+      "control implementation SHA-256",
+      "continuous raw control observations",
+      "process classification evidence",
+      "trigger decision"
+    ]
+  }
+}

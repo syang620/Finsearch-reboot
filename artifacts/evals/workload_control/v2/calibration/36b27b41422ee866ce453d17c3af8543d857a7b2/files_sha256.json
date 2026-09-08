@@ -1,0 +1,34 @@
+{
+  "status": "frozen_calibration_inputs",
+  "capture_implementation_sha": "36b27b41422ee866ce453d17c3af8543d857a7b2",
+  "publication_sanitizer_implementation_sha": "7d68a8c96edf2d5f2f2a4996b88e384946973670",
+  "publication_sanitization": {
+    "substitutions": [
+      "$USER_HOME",
+      "$EMAIL"
+    ],
+    "semantic_effect": "none",
+    "affected_release_inputs": [
+      "raw/S1_PASSIVE_SUPERVISED_IDLE.jsonl.gz"
+    ],
+    "affected_invalid_diagnostics": [
+      "invalid_protocol_attempts/S2_attempt_3_reopened_at_sample_891.jsonl.gz"
+    ]
+  },
+  "release_inputs": {
+    "raw/S1_PASSIVE_SUPERVISED_IDLE.jsonl.gz": "88d925811287c91b8244717128b879c4f4c126a8ce4970eb10626133fddeb230",
+    "raw/S2_TERMINAL_ONLY_IDLE.jsonl.gz": "b3ce4b6e29a6a1ef426097aee3f660eabdf396e74d3375e65702f9aadb4c9641",
+    "raw/S3_REQUIRED_SERVICE_ACTIVITY.jsonl.gz": "58eabb731e90347a8c46e5887c20669ed8f7a4588b0cf4cfc6f3acde0c09d665",
+    "raw/S3_preflight.json": "c27f7c7802616fc0ab707167d83bb1bcbc913b1495be9e55af567388d37aa7bc",
+    "raw/S4_SUSTAINED_CPU_INTERFERENCE.jsonl.gz": "714c4dec4788075437c053838000214a4719c12abe66af1d1f4b318d3f665bb1",
+    "raw/S5_SHORT_CPU_BURSTS.jsonl.gz": "cde5f60ab8f9cff70435136c6937c3117ccc6dc85bd96829049f04beafd9f91a",
+    "raw/S6_BROWSER_WORKLOAD.jsonl.gz": "bd9a6aab598a4edbff2e266be46e32c8e0921318a58d9de91545771ad506a4d7"
+  },
+  "invalid_diagnostics": {
+    "invalid_analysis_comparison.json": "9e3a28c986f8472769bfe9d83bc35d6de16ed496a6e1f20eb5f546b3308cd817",
+    "invalid_pre_publication_comparison.json": "88aac2fbe6b433a8c8cef5df8dbf295b56485658148556076febaa604b4ba0ec",
+    "invalid_protocol_attempts/S2_attempt_1_supervision_present.jsonl.gz": "4144143a792f67f5a131f071dec1278ccd45a98542bcc5824dd0267c0d4503b6",
+    "invalid_protocol_attempts/S2_attempt_3_reopened_at_sample_891.jsonl.gz": "2300a1eef51789adae558e084cfa2279cea6955c186645f00baa6cb2fca01ef6",
+    "invalid_protocol_attempts/manifest.json": "bb901c3ff48dd307ea7955d3c06b1d2c3ed5a811b03d4e7a4a8b5f1bb3a69069"
+  }
+}
