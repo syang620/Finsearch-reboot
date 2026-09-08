@@ -1,7 +1,9 @@
 # Semantic v2: separately versioned preflight correction
 
 Status: launcher v2.1 has passed fresh exact-head review and its own run-contract
-freeze. No semantic v2 baseline case has started yet. The user explicitly authorized
+freeze. Its baseline attempt recorded a later workload violation and was
+user-stopped with two cases captured; see [baseline status](semantic_answer_v2_baseline_status.md).
+The user explicitly authorized
 this evaluation-only correction on 2026-09-08; it is not production tuning.
 
 ## Diagnosis and preserved record
@@ -78,6 +80,7 @@ The diagnostic is preserved under
 `artifacts/evals/semantic_answer/v2/preflight_diagnostics/0e3f09b09d6b95d610a96e9114f8046bb9027465/`,
 with its own file hash manifest. It is not baseline performance evidence.
 
-Remaining: one controlled unchanged-system baseline; fixed
+The launched attempt is diagnostic-only and incomplete; no automatic rerun is
+authorized. Unmet benchmark gates: one controlled unchanged-system baseline; fixed
 30-case source audit; immutable reporting; fresh final review. Do not merge
 PR31 automatically or tune production behavior.

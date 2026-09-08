@@ -5,7 +5,10 @@ Status: **quality review complete and optimization contract frozen**.
 found no major issues on `a73ce7535c00ab67d9b7c5ede65a18708f883840`.
 The source/scorer candidate passed pre-calibration review at `d2abf07983`;
 the subsequent frozen judge trial failed and full-population judging is disabled.
-No production baseline has yet run. This audit is a source/evaluation inspection,
+A subsequent baseline attempt captured two cases and was stopped by the user
+after a workload violation; it is diagnostic-only, not a completed baseline.
+See [baseline status](semantic_answer_v2_baseline_status.md).
+This audit is a source/evaluation inspection,
 not independent human certification of financial accuracy.
 
 ## Defects corrected and evidence boundaries
@@ -94,7 +97,10 @@ artifact reproduction, historical hash, privacy and whitespace checks pass.
 
 The complete gold/scorer/calibration/decision evidence passed fresh review.
 The optimization manifest and quality-approval record now bind that reviewed
-candidate. Next, freeze the implementation and capture all 60 system cases once. Failed power/workload,
+candidate. The subsequent frozen implementation's attempted capture is now an
+incomplete diagnostic, as described above. Failed power/workload,
 model/index-integrity or capture/scoring completeness checks produce diagnostic-only evidence,
 not an official baseline summary or automatic retry. Source-audit the fixed subset,
 commit immutable evidence, complete fresh final review and stop without merging.
+The original baseline and source-audit gates remain unmet; a replacement run
+requires new explicit authorization and must preserve the diagnostic attempt.
