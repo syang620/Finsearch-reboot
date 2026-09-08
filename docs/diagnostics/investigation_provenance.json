@@ -44,6 +44,6 @@
     "preflight_simulation_sha256": "92cd7e643c40746ed7c12f6af89fd6f386b57ac82fffe4a20affe5bd1c2f8583"
   },
   "privacy": "Publishable process records replace the user-home prefix with $USER_HOME. Historical frozen evidence is not rewritten.",
-  "artifact_manifest_sha256": "2c5d13d9988bac96a101a1015aa121135cc046732741d958d697f22d1ae8717d",
+  "artifact_manifest_sha256": "f515207a423fc6ddb1caec79f91cb3435952109458ef8e9d8f1d779024d301b3",
   "decision": "CONTROL_CONTRACT_NEEDS_REVIEW"
 }

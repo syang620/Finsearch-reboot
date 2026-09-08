@@ -28,7 +28,7 @@
   "commands": [
     "lsof -nP -iTCP:6333 -sTCP:LISTEN",
     "ps -p 28230 -o pid=,ppid=,lstart=,comm=,command=",
-    "docker ps --no-trunc --format <fixed fields>",
+    "docker ps --no-trunc --format '{{.ID}}|{{.Image}}|{{.Names}}|{{.Status}}|{{.Ports}}'",
     "curl -s http://127.0.0.1:6333/",
     "tmutil status",
     "mdutil -s /"

@@ -19,7 +19,7 @@ PYTHONPATH=src:. $FINSEARCH_PYTHON -u \
   --output .cache/semantic_workload_investigation_20260908/preflight_simulation.json
 
 lsof -nP -iTCP:6333 -sTCP:LISTEN
-docker ps --format '{{.ID}} {{.Image}} {{.Names}} {{.Status}}'
+docker ps --no-trunc --format '{{.ID}}|{{.Image}}|{{.Names}}|{{.Status}}|{{.Ports}}'
 tmutil status
 mdutil -s /
 log show --style compact --start '2026-09-08 10:27:30' \
