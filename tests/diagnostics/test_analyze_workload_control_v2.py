@@ -1,7 +1,9 @@
 from copy import deepcopy
+from pathlib import Path
 
 from scripts.diagnostics.analyze_workload_control_v2_calibration import (
     decide,
+    read_raw,
     terminal_only_viability,
 )
 
@@ -64,7 +66,7 @@ def browser():
 
 
 def test_selection_uses_preregistered_preference_order():
-    result = decide(preregistration(), scenario_results(), sustained(), browser())
+    result = decide(preregistration(), scenario_results(), sustained(), browser(), True)
     assert result["decision"] == "WORKLOAD_CONTROL_V2_VALIDATED"
     assert result["selected_policy"] == "B3"
     assert not result["candidate_acceptance"]["A"]["passes_all"]
@@ -73,7 +75,7 @@ def test_selection_uses_preregistered_preference_order():
 def test_any_failed_clean_scenario_rejects_candidate():
     scenarios = scenario_results()
     scenarios["clean2"]["candidates"]["B3"]["cpu_violation_episodes"] = 1
-    result = decide(preregistration(), scenarios, sustained(), browser())
+    result = decide(preregistration(), scenarios, sustained(), browser(), True)
     assert not result["candidate_acceptance"]["B3"]["passes_all"]
     assert result["selected_policy"] == "B5"
 
@@ -82,7 +84,7 @@ def test_no_post_result_compromise_when_all_candidates_fail():
     detections = sustained()
     for candidate in ("B3", "B5"):
         detections[candidate][0] = {"detected": False, "detection_latency_seconds": None}
-    result = decide(preregistration(), scenario_results(), detections, browser())
+    result = decide(preregistration(), scenario_results(), detections, browser(), True)
     assert result["decision"] == "CONTROL_V2_NOT_VALIDATED"
     assert result["selected_policy"] is None
 
@@ -90,14 +92,14 @@ def test_no_post_result_compromise_when_all_candidates_fail():
 def test_detection_over_fifteen_seconds_fails_fixed_bound():
     detections = sustained()
     detections["B3"][1]["detection_latency_seconds"] = 15.1
-    result = decide(preregistration(), scenario_results(), detections, browser())
+    result = decide(preregistration(), scenario_results(), detections, browser(), True)
     assert not result["candidate_acceptance"]["B3"]["sustained_interference"]
 
 
 def test_browser_delay_beyond_two_samples_fails():
     browser_rows = deepcopy(browser())
     browser_rows["B3"]["detection_delay_samples"] = 3
-    result = decide(preregistration(), scenario_results(), sustained(), browser_rows)
+    result = decide(preregistration(), scenario_results(), sustained(), browser_rows, True)
     assert not result["candidate_acceptance"]["B3"]["browser_hard_rule"]
 
 
@@ -108,7 +110,7 @@ def test_preexisting_violation_cannot_count_as_new_detection():
         "detection_latency_seconds": None,
         "preexisting_violation_at_workload_start": True,
     }
-    result = decide(preregistration(), scenario_results(), detections, browser())
+    result = decide(preregistration(), scenario_results(), detections, browser(), True)
     assert not result["candidate_acceptance"]["B3"]["sustained_interference"]
 
 
@@ -121,15 +123,25 @@ def test_terminal_viability_retains_but_distinguishes_inert_crash_handlers():
                         "category": "run_supervision_ui_tooling",
                         "executable": "/Applications/ChatGPT.app/Helpers/browser_crashpad_handler",
                         "cpu": 0.0,
+                        "pid": 10,
+                        "start_time": "now",
+                        "ancestors": [
+                            {"pid": 10, "executable": "/Applications/ChatGPT.app/Helpers/browser_crashpad_handler"},
+                            {"pid": 1, "executable": "/sbin/launchd"},
+                        ],
                     }
                 ]
             }
         ]
     }
     result = terminal_only_viability(raw)
+    assert result["viable"]
     assert result["classification"] == "viable_with_inert_crash_handler_limitation"
     assert result["active_supervision_process_records"] == 0
     assert result["retained_inert_crash_handler_records"] == 1
+    assert result["unique_inert_crash_handlers"] == 1
+    assert result["samples_with_inert_crash_handlers"] == 1
+    assert "1 unique crash handlers across 1/1 samples" in result["evidence"]
 
 
 def test_terminal_viability_rejects_active_supervision_process():
@@ -146,4 +158,28 @@ def test_terminal_viability_rejects_active_supervision_process():
             }
         ]
     }
-    assert terminal_only_viability(raw)["classification"] == "not_demonstrated"
+    result = terminal_only_viability(raw)
+    assert not result["viable"]
+    assert result["classification"] == "not_demonstrated"
+
+
+def test_terminal_failure_blocks_otherwise_passing_candidate():
+    result = decide(
+        preregistration(), scenario_results(), sustained(), browser(), False
+    )
+    assert result["decision"] == "CONTROL_V2_NOT_VALIDATED"
+    assert result["selected_policy"] is None
+    assert not result["candidate_acceptance"]["B3"]["terminal_only_scenario"]
+
+
+def test_preserved_reopened_terminal_attempt_is_not_viable():
+    path = Path(
+        "artifacts/evals/workload_control/v2/calibration/"
+        "36b27b41422ee866ce453d17c3af8543d857a7b2/invalid_protocol_attempts/"
+        "S2_attempt_3_reopened_at_sample_891.jsonl.gz"
+    )
+    result = terminal_only_viability(read_raw(path))
+    assert not result["viable"]
+    assert result["active_supervision_process_records"] > 0
+    assert result["classification"] == "not_demonstrated"
+    assert f"Observed {result['active_supervision_process_records']}" in result["evidence"]

@@ -200,19 +200,57 @@ def terminal_only_viability(raw):
     crash_handler_peak_cpu = max(
         (float(process.get("cpu", 0.0)) for process in crash_handlers), default=0.0
     )
+    unique_crash_handlers = {
+        (
+            process.get("pid"),
+            process.get("start_time"),
+            process.get("executable"),
+        )
+        for process in crash_handlers
+    }
+    samples_with_crash_handlers = sum(
+        any(
+            Path(str(process.get("executable") or "")).name
+            == "browser_crashpad_handler"
+            for process in sample.get("processes", [])
+        )
+        for sample in raw["samples"]
+    )
+    crash_handlers_launchd_owned = all(
+        any(
+            str(ancestor.get("executable") or "").lower() == "/sbin/launchd"
+            for ancestor in process.get("ancestors", [])
+            if ancestor.get("pid") != process.get("pid")
+        )
+        for process in crash_handlers
+    )
+    viable = (
+        not active_supervision
+        and crash_handler_peak_cpu == 0.0
+        and crash_handlers_launchd_owned
+    )
     return {
         "classification": (
             "viable_with_inert_crash_handler_limitation"
-            if not active_supervision and crash_handler_peak_cpu == 0.0
+            if viable and crash_handlers
+            else "viable_no_supervision_processes"
+            if viable
             else "not_demonstrated"
         ),
+        "viable": viable,
         "active_supervision_process_records": len(active_supervision),
         "retained_inert_crash_handler_records": len(crash_handlers),
+        "unique_inert_crash_handlers": len(unique_crash_handlers),
+        "samples_with_inert_crash_handlers": samples_with_crash_handlers,
+        "total_samples": len(raw["samples"]),
         "inert_crash_handler_peak_cpu_percent": crash_handler_peak_cpu,
+        "all_retained_crash_handlers_launchd_owned": crash_handlers_launchd_owned,
         "evidence": (
-            "All known supervision executables were retained. No ChatGPT/Codex UI, "
-            "renderer, or active service record appeared; four launchd-owned crash "
-            "handlers remained at 0.0 percent CPU throughout."
+            f"Observed {len(active_supervision)} active supervision records and "
+            f"{len(crash_handlers)} records from {len(unique_crash_handlers)} unique "
+            f"crash handlers across {samples_with_crash_handlers}/{len(raw['samples'])} "
+            f"samples; crash-handler peak CPU was {crash_handler_peak_cpu:.1f} percent "
+            f"and launchd_owned_all={str(crash_handlers_launchd_owned).lower()}."
         ),
         "limitations": (
             "Terminal-only preflight was not separately exercised, and semantic case "
@@ -221,7 +259,7 @@ def terminal_only_viability(raw):
     }
 
 
-def decide(preregistration, scenario_results, sustained, browser):
+def decide(preregistration, scenario_results, sustained, browser, terminal_viable):
     criteria = preregistration["acceptance_criteria"]
     clean_ids = criteria["clean_environment"]["scenarios"]
     short_id = criteria["short_bursts"]["scenario"]
@@ -266,6 +304,7 @@ def decide(preregistration, scenario_results, sustained, browser):
         passes = (
             candidate["eligible_for_selection"]
             and all(clean.values())
+            and terminal_viable
             and sustained_pass
             and short_pass
             and browser_pass
@@ -274,6 +313,7 @@ def decide(preregistration, scenario_results, sustained, browser):
         candidate_results[candidate_id] = {
             "eligible": candidate["eligible_for_selection"],
             "clean_scenarios": clean,
+            "terminal_only_scenario": terminal_viable,
             "sustained_interference": sustained_pass,
             "short_bursts": short_pass,
             "browser_hard_rule": browser_pass,
@@ -382,7 +422,14 @@ def main():
         )
         for candidate in preregistration["candidate_policies"]
     }
-    decision = decide(preregistration, scenario_results, sustained, browser)
+    terminal = terminal_only_viability(raw["S2_TERMINAL_ONLY_IDLE"])
+    decision = decide(
+        preregistration,
+        scenario_results,
+        sustained,
+        browser,
+        terminal["viable"],
+    )
     for result in scenario_results.values():
         del result["evaluated"]
     output = {
@@ -403,9 +450,7 @@ def main():
         "sustained_detection": sustained,
         "browser_detection": browser,
         **decision,
-        "terminal_only_viability": terminal_only_viability(
-            raw["S2_TERMINAL_ONLY_IDLE"]
-        ),
+        "terminal_only_viability": terminal,
         "historical_replay": historical_replay(
             preregistration, args.pr32_raw, args.prior_disposition
         ),
