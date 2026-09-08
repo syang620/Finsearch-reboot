@@ -5,6 +5,10 @@ frozen for optimization; no v2 production baseline run yet**.
 Built from PR30 merge `ef847550c80077bf9d785dc2694c1a9d6afb1ed3` on a
 separate clean branch. No production behavior or historical artifact changes.
 
+The original launcher stopped during preflight without starting a benchmark case.
+A [separately versioned launcher correction](semantic_answer_v2_launcher_correction.md)
+is awaiting its own review/freeze; the benchmark optimization contract stays unchanged.
+
 ## What changes, and why
 
 The v1 benchmark-quality audit identified numeric substring false positives,
