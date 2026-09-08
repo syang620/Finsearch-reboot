@@ -7,8 +7,8 @@
     "pr31_head": "7667af52169fb12965adf5680bae58a74c7c977e",
     "pr32_head": "a6c264652096a0811693a82b901780b7bc8419ff",
     "preregistration_sha256": "0c6c4ac93cee1b23e33ea2ea93ded0a9b56092cd9898045b44a0bb7595463483",
-    "analysis_implementation_sha": "77cd78f3a397124f8a96041fe99b0d868a3f1718",
-    "comparison_sha256": "e0c5853b30b41ddf456c5b427e67acb8d2f6ea8e5f2296d9388d5aebffb2feba"
+    "analysis_implementation_sha": "7f90a5e432e27d1113b7ec2c01b5b83d7376f90e",
+    "comparison_sha256": "291a58d0cc2758fcec25db050465ff779bc6ba5af897729f7b84e04488b610a5"
   },
   "hard_requirements": {
     "ac_power": true,
@@ -51,6 +51,7 @@
     "sustained_interference": "3/3 detected; latencies 9.9996, 9.9999, and 9.9999 seconds",
     "short_bursts": "0 invalidation episodes across six 1.5-second controlled bursts",
     "browser": "Detected by the independent hard rule in the first sampled browser interval",
+    "terminal_only_scenario_gates_validation": true,
     "evidence_retention": 1.0
   },
   "limitations": [

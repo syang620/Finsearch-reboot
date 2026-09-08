@@ -37,6 +37,15 @@ was superseded by a fresh notification-gated capture at `afd3d0d` and the full
 comparison was re-frozen at `77cd78f`. No candidate, parameter, preference, or
 acceptance criterion changed.
 
+A second independent review found that terminal viability was reported alongside,
+but did not gate, the final selection and that its evidence sentence was static.
+The final analyzer at `7f90a5e` requires a viable terminal scenario before any
+candidate can pass and derives every terminal count, CPU peak, ancestry result,
+and coverage statement from the input. The preserved reopened-at-sample-891
+attempt is an adversarial regression: it is `not_demonstrated` and blocks an
+otherwise passing selection. The valid corrected S2 still passes, so B10 remains
+the preregistered selection.
+
 ## Old and new rules
 
 The v1 reference invalidates on one sample containing a real-or-substring-matched
