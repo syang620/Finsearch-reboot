@@ -58,6 +58,10 @@ manifest SHA-256 is
 `db89aa15436a82b66ec9636ae452901f1047c732baf1ea03364ccd0a8097ed2a`.
 The verified review is recorded separately under
 `artifacts/evals/retrieval/benchmark_v3/reviews/87073ab4fb50b9f99ddb1fbe9ab9cabf3ff1546a/annotation_approval.json`.
-No v3 retrieval measurement has occurred. Next: clean implementation freeze,
-one unchanged four-mode baseline under the required execution controls, immutable
-evidence, and a fresh evidence-head review. No optimization or automatic merge.
+Implementation `fc988918a0e4101196a21fb1642a7c9794f2e4fc` completed one unchanged
+four-mode baseline: 480/480 pairs, zero errors, successful offline verification.
+Immutable evidence lives under the corresponding SHA in
+`artifacts/evals/retrieval/benchmark_v3/baselines/`. Labels/corpus/index/config
+were preserved. Latency is observational because background CPU bursts were
+recorded despite all browser/power checks passing. Fresh evidence-head review is
+tracked in PR30. No optimization or automatic merge.

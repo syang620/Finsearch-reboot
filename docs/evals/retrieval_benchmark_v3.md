@@ -28,8 +28,16 @@ not rewrite a dataset's candidate-status field to manufacture approval.
 and exact body hash are captured in
 `artifacts/evals/retrieval/benchmark_v3/reviews/87073ab4fb50b9f99ddb1fbe9ab9cabf3ff1546a/annotation_approval.json`.
 This clears only the narrow benchmark-quality contract above. Labels and
-membership are frozen with their original v3 hashes. No v3 measurement has run;
-the one-pass baseline and subsequent evidence-head review remain outstanding.
+membership are frozen with their original v3 hashes. The one-pass baseline on
+`fc988918a0e4101196a21fb1642a7c9794f2e4fc` completed **480/480 pairs with zero
+retrieval errors** and passed offline verification. See the
+[immutable baseline report](../../artifacts/evals/retrieval/benchmark_v3/baselines/fc988918a0e4101196a21fb1642a7c9794f2e4fc/REPORT.md)
+for full metrics, grouping, hashes and limitations. Hybrid + Qwen3 recorded
+known-label Recall@10 **0.8750**, MRR@10 **0.7327**, and nDCG@10 **0.7213**;
+these are not v2→v3 model gains or semantic answer-quality metrics. Background
+CPU bursts were recorded: latency remains observational. Fresh evidence-head
+review is tracked in [PR30](https://github.com/syang620/Finsearch-reboot/pull/30);
+no merge or retrieval optimization is authorized by recording this baseline.
 
 ## Source adjudication and v2→v3 changes
 
