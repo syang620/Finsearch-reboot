@@ -26,6 +26,17 @@ regenerated at `7d68a8c96edf2d5f2f2a4996b88e384946973670`. This changed file has
 process identity, classification, CPU value, policy result, or selection. The
 pre-sanitization comparison is retained and explicitly excluded from release use.
 
+The first independent review then found that the evaluator grouped distinct
+ChatGPT/Codex and Docker executables under family-wide constants and that any
+command containing `qdrant` could receive a service exemption. The corrected
+implementation uses the preregistered category + canonical executable + nearest
+identified application/service ancestor key, and exempts only exact service
+executables. It also retains zero-CPU supervision executables. Because the latter
+made the prior terminal-only absence claim unverifiable, that 900-sample capture
+was superseded by a fresh notification-gated capture at `afd3d0d` and the full
+comparison was re-frozen at `77cd78f`. No candidate, parameter, preference, or
+acceptance criterion changed.
+
 ## Old and new rules
 
 The v1 reference invalidates on one sample containing a real-or-substring-matched
@@ -52,14 +63,14 @@ are reported separately in the comparison artifact.
 
 | Candidate | Supervised idle | Terminal idle | Service activity | Sustained load | Short bursts | Browser load | Accepted |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |
-| A instantaneous v1 | 156/199 | 6/6 | 14/20 | 12/145 | 20/21 | 7/35 | reference only |
-| B consecutive 3 | 12/32 | 0/0 | 1/1 | 4/128 | 1/2 | 1/27 | no |
-| B consecutive 5 | 5/13 | 0/0 | 0/0 | 3/120 | 0/0 | 1/25 | no |
+| A instantaneous v1 | 156/199 | 4/4 | 14/20 | 12/145 | 20/21 | 7/35 | reference only |
+| B consecutive 3 | 2/10 | 0/0 | 0/0 | 3/126 | 0/0 | 1/27 | no |
+| B consecutive 5 | 2/6 | 0/0 | 0/0 | 3/120 | 0/0 | 1/25 | no |
 | **B consecutive 10** | **0/0** | **0/0** | **0/0** | **3/105** | **0/0** | **1/20** | **yes** |
-| C occupancy 5/30 | 3/885 | 0/0 | 1/171 | 1/204 | 1/111 | 1/54 | no |
-| C occupancy 12/60 | 3/845 | 0/0 | 1/157 | 1/192 | 1/97 | 1/44 | no |
-| D burden 25/30 | 1/894 | 2/62 | 1/175 | 1/204 | 1/115 | 1/54 | no |
-| D burden 20/60 | 1/890 | 2/132 | 1/171 | 1/201 | 1/112 | 1/51 | no |
+| C occupancy 5/30 | 18/713 | 0/0 | 2/52 | 1/193 | 2/57 | 1/47 | no |
+| C occupancy 12/60 | 15/507 | 0/0 | 0/0 | 1/186 | 0/0 | 1/40 | no |
+| D burden 25/30 | 1/894 | 2/59 | 1/175 | 1/204 | 1/115 | 1/54 | no |
+| D burden 20/60 | 1/890 | 6/223 | 1/171 | 1/201 | 1/112 | 1/51 | no |
 
 B10 passed every registered clean scenario with zero CPU or hard-rule episodes.
 It detected all three 45-second one-core workloads at approximately 10 seconds,
@@ -68,8 +79,7 @@ It ignored all six 1.5-second bursts and detected the real Chrome workload in th
 first browser sample. Process records were classified or retained as unknown at
 100%.
 
-B3 failed supervised idle, service activity, and short-burst acceptance. B5 failed
-supervised idle. The occupancy and burden candidates frequently stayed active
+B3 and B5 failed supervised idle. The occupancy and burden candidates frequently stayed active
 during clean or transient conditions and could not receive sustained-detection
 credit when already invalid before the controlled workload began.
 
@@ -86,12 +96,12 @@ cwd when available, and ancestry. Docker's directly evidenced backend/Qdrant hos
 is distinct from Docker Desktop UI/renderers. ChatGPT/Codex UI remains scored.
 Unknown processes remain visible and scored.
 
-Terminal-only execution is **viable with limitations**. A notification-gated
-Terminal launch produced 900/900 one-second samples with valid AC/LPM state and
-zero ChatGPT/Codex or actual-browser records. Two prior procedural captures are
-preserved: one retained ChatGPT throughout, one was reopened at sample 891. A
-wrapper attempt produced no samples because it waited on inert crash-report
-handlers. Only the final capture satisfies the registered scenario.
+Terminal-only execution is **viable with an inert-crash-handler limitation**. A
+fresh notification-gated Terminal launch produced 900/900 one-second samples with
+valid AC/LPM state and zero actual-browser, ChatGPT/Codex UI, renderer, or active
+service records. Four launchd-owned `browser_crashpad_handler` processes were
+explicitly retained in all 900 samples and stayed at 0.0% CPU. Earlier procedural
+and pre-review captures remain preserved but are not official terminal evidence.
 
 This proves detached control monitoring and autonomous evidence writing. It does
 not prove terminal-only semantic execution because semantic cases were forbidden,
@@ -101,11 +111,12 @@ requires review.
 
 ## Historical replay
 
-Selection occurred before replay. Applying B10 offline to PR32's 1,200 samples
-produces zero v2 CPU episodes, compared with 188 v1 episodes / 235 v1 samples.
-This does **not** relabel PR32 or any prior run. PR32 retains threshold-crossing
-identity needed for consecutive and occupancy replay; burden replay is only a lower
-bound because sub-threshold CPU was not retained.
+Selection occurred before replay. Applying B10 offline to the retained portion of
+PR32's 1,200 samples produces zero observed v2 CPU episodes, compared with 188 v1
+episodes / 235 v1 samples. This is a **lower bound, not an exact replay**: PR32's
+sequential detail snapshot omitted processes hidden by the broader v1 exemption
+filter and did not retain sub-threshold CPU. It does **not** relabel PR32 or any
+prior run.
 
 The two earlier invalid diagnostics are indeterminate under v2 because their sparse
 records lack consecutive cadence and executable/ancestry identity. Their

@@ -7,8 +7,8 @@
     "pr31_head": "7667af52169fb12965adf5680bae58a74c7c977e",
     "pr32_head": "a6c264652096a0811693a82b901780b7bc8419ff",
     "preregistration_sha256": "0c6c4ac93cee1b23e33ea2ea93ded0a9b56092cd9898045b44a0bb7595463483",
-    "analysis_implementation_sha": "7d68a8c96edf2d5f2f2a4996b88e384946973670",
-    "comparison_sha256": "8d89e6ba6bb5373c0b0846a10968fed6d79adb70252d34e347168d102db67100"
+    "analysis_implementation_sha": "77cd78f3a397124f8a96041fe99b0d868a3f1718",
+    "comparison_sha256": "e0c5853b30b41ddf456c5b427e67acb8d2f6ea8e5f2296d9388d5aebffb2feba"
   },
   "hard_requirements": {
     "ac_power": true,
@@ -57,13 +57,13 @@
     "The clean calibration covers 33 minutes across three scenarios, not a full multi-hour 60-case run or an hour-scale statistical upper bound.",
     "The supervised-idle maximum same-group streak was nine samples, one below the selected boundary.",
     "Calibration does not establish that CPU interference caused any historical analyst timeout.",
-    "Terminal-only control monitoring is demonstrated; terminal-only semantic case execution was intentionally not run.",
+    "Terminal-only control monitoring retained four launchd-owned crash handlers at 0.0 percent CPU throughout; no active UI, renderer, or service record appeared. Terminal-only semantic case execution was intentionally not run.",
     "This contract does not modify or retroactively validate any historical artifact."
   ],
   "publication_privacy": {
     "rule": "User-home prefixes and email addresses in captured process command lines are replaced with $USER_HOME and $EMAIL.",
     "semantic_effect": "None; publication sanitization changes string evidence and file hashes only, before the artifact freeze.",
-    "superseded_comparison_preserved": true
+    "superseded_comparisons_preserved": true
   },
   "adoption": {
     "current_pr31_launcher_unchanged": true,
