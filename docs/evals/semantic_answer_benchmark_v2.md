@@ -1,7 +1,7 @@
-# Semantic Answer Benchmark v2 — correction draft
+# Semantic Answer Benchmark v2
 
 Status: **judge calibration completed and failed; full-benchmark judge disabled;
-not yet frozen for optimization; no v2 production baseline run**.
+frozen for optimization; no v2 production baseline run yet**.
 Built from PR30 merge `ef847550c80077bf9d785dc2694c1a9d6afb1ed3` on a
 separate clean branch. No production behavior or historical artifact changes.
 
@@ -178,17 +178,21 @@ Calibration inputs are now frozen before any predictions in
 `validation_manifest.json`, SHA-256
 `24da18f62d51c256670d25dd8018482d3dc579eea4112afcb2209559a6d7ebfc`.
 Dataset SHA-256 is `f9148a29cb5b0f2da30b6ecf5017a9d6bc4dc9fd31523643557b93906646ad7c`.
-This is not optimization approval: judge validation/decision and the subsequent
-benchmark-quality review must complete before the system baseline is allowed.
+That calibration freeze was not optimization approval. The subsequent
+[clean quality review](https://github.com/syang620/Finsearch-reboot/pull/31#issuecomment-5579446066)
+inspected exact candidate `a73ce7535c00ab67d9b7c5ede65a18708f883840` after
+the failed judge decision. The separate `optimization_manifest.json` now freezes
+labels, scoring and disabled-judge policy, with SHA-256
+`653a65e778a5633c4d1adc2d90ea7a56a578b81695e69d679f9d69915e54bec0`.
+Any future correction requires v3; optimization must retain this contract.
 
 ## Remaining release gates
 
 The single judge validation is complete and failed; see
 `semantic_answer_v2_judge_validation.md` for all gates and immutable evidence.
-Full-benchmark judging is disabled. Remaining: benchmark-quality review of
-`semantic_answer_v2_quality_audit.md` and optimization freeze; one controlled
-60-case unchanged-system baseline; source assessment of the predetermined
-30-case subset before enabled judge predictions; denominator/privacy/hash checks;
+Full-benchmark judging is disabled. Quality review and optimization freeze are
+complete. Remaining: one controlled 60-case unchanged-system baseline;
+source assessment of the predetermined 30-case subset; denominator/privacy/hash checks;
 immutable evidence and fresh final Codex review. Do not merge automatically.
 
 Initial checkpoint verification: 102 focused tests passed. Full suite: 1,080 passed, 47 subtests

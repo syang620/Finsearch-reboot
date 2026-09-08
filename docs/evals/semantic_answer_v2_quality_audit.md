@@ -1,6 +1,8 @@
 # Semantic v2 benchmark-quality audit before optimization freeze
 
-Status: ready for fresh external Codex review, **not yet optimization-frozen**.
+Status: **quality review complete and optimization contract frozen**.
+[Exact-head review](https://github.com/syang620/Finsearch-reboot/pull/31#issuecomment-5579446066)
+found no major issues on `a73ce7535c00ab67d9b7c5ede65a18708f883840`.
 The source/scorer candidate passed pre-calibration review at `d2abf07983`;
 the subsequent frozen judge trial failed and full-population judging is disabled.
 No production baseline has yet run. This audit is a source/evaluation inspection,
@@ -90,9 +92,9 @@ pass, and the same two pre-existing planner/retrieval tests fail (25 warnings).
 No source/script/test diff exists from the reviewed construction. Frozen input,
 artifact reproduction, historical hash, privacy and whitespace checks pass.
 
-Require fresh review of the complete gold/scorer/calibration/decision evidence.
-Only then create the optimization manifest and quality-approval record, freeze
-the implementation and capture all 60 system cases once. Failed power/workload,
+The complete gold/scorer/calibration/decision evidence passed fresh review.
+The optimization manifest and quality-approval record now bind that reviewed
+candidate. Next, freeze the implementation and capture all 60 system cases once. Failed power/workload,
 model/index-integrity or capture/scoring completeness checks produce diagnostic-only evidence,
 not an official baseline summary or automatic retry. Source-audit the fixed subset,
 commit immutable evidence, complete fresh final review and stop without merging.
