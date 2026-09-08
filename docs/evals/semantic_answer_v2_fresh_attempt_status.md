@@ -34,9 +34,11 @@ case was interrupted without a final output, and 57 were unstarted. The 58
 uncaptured cases are not semantic failures or inferred timeouts. Neither captured
 output is eligible for semantic credit; retained rejected prose is not an answer.
 
-Cleanup completed at 14:29:01 UTC with unchanged model identities and both index
-snapshots, and no scoring or runtime-cleanup errors. The wrapper's outcome was
-written at 14:29:11 UTC. Child return code `-2` records SIGINT; the outer shell
+Finalization began at 14:29:01 UTC (the runner assigns `finished_at` on entering
+its cleanup block). Cleanup and verification subsequently succeeded with unchanged
+model identities and both index snapshots, and no scoring or runtime-cleanup
+errors. Their exact completion time is not separately recorded; they finished
+before the wrapper's outcome at 14:29:11 UTC. Child return code `-2` records SIGINT; the outer shell
 reported 254. `completion.json` explicitly records `invalid_diagnostic`, incomplete
 capture/evaluation and a control violation. No official deterministic summary was
 created. No full-corpus judge or source-subset assessment was run.

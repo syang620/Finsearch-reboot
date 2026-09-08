@@ -207,12 +207,14 @@ The single judge validation is complete and failed; see
 Full-benchmark judging is disabled. Quality review and optimization freeze are
 complete. Remaining: one controlled 60-case unchanged-system baseline;
 source assessment of the predetermined 30-case subset; denominator/privacy/hash checks;
-immutable evidence and fresh final Codex review. Do not merge automatically.
+immutable evidence and fresh final Codex review. Do not merge while these gates
+remain unmet.
 
 The attempted baseline was stopped at user direction after a workload violation.
-These baseline/audit gates remain unmet. A later, separately registered user
-authorization now permits one fresh attempt, not alteration of the diagnostic
-or another attempt beyond that allowance.
+These baseline/audit gates remain unmet. The later, separately registered
+authorization was consumed by the fresh `488e112` attempt, which also stopped
+after a recorded workload violation. Both diagnostics remain immutable. No
+permission for another attempt remains; PR31 is blocked pending new direction.
 
 Initial checkpoint verification: 102 focused tests passed. Full suite: 1,080 passed, 47 subtests
 pass, 2 unchanged pre-existing failures (`alias_002` planner route and retrieval
