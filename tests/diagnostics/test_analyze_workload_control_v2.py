@@ -1,0 +1,98 @@
+from copy import deepcopy
+
+from scripts.diagnostics.analyze_workload_control_v2_calibration import decide
+
+
+CANDIDATES = [
+    {"id": "A", "eligible_for_selection": False},
+    {"id": "B3", "eligible_for_selection": True},
+    {"id": "B5", "eligible_for_selection": True},
+]
+
+
+def preregistration():
+    return {
+        "candidate_policies": CANDIDATES,
+        "acceptance_criteria": {
+            "clean_environment": {
+                "scenarios": ["clean1", "clean2", "clean3"],
+                "maximum_cpu_invalidation_episodes_per_complete_scenario": 0,
+            },
+            "sustained_interference": {
+                "required_detection_repetitions": 3,
+                "maximum_detection_delay_seconds": 15,
+            },
+            "short_bursts": {"scenario": "short", "maximum_cpu_invalidation_episodes": 0},
+            "browser": {"maximum_detection_delay_samples": 2},
+            "evidence_visibility": {"classified_or_unknown_process_retention_rate": 1.0},
+        },
+        "selection_rule": {"eligible_candidate_preference_order": ["B3", "B5"]},
+    }
+
+
+def scenario_results():
+    result = {}
+    for scenario in ("clean1", "clean2", "clean3", "short"):
+        result[scenario] = {
+            "classified_or_unknown_retention_rate": 1.0,
+            "candidates": {
+                item["id"]: {"cpu_violation_episodes": 0, "hard_violation_episodes": 0}
+                for item in CANDIDATES
+            },
+        }
+    return result
+
+
+def sustained():
+    return {
+        item["id"]: [
+            {"detected": True, "detection_latency_seconds": delay}
+            for delay in (3, 4, 5)
+        ]
+        for item in CANDIDATES
+    }
+
+
+def browser():
+    return {
+        item["id"]: {"detected": True, "detection_delay_samples": 0}
+        for item in CANDIDATES
+    }
+
+
+def test_selection_uses_preregistered_preference_order():
+    result = decide(preregistration(), scenario_results(), sustained(), browser())
+    assert result["decision"] == "WORKLOAD_CONTROL_V2_VALIDATED"
+    assert result["selected_policy"] == "B3"
+    assert not result["candidate_acceptance"]["A"]["passes_all"]
+
+
+def test_any_failed_clean_scenario_rejects_candidate():
+    scenarios = scenario_results()
+    scenarios["clean2"]["candidates"]["B3"]["cpu_violation_episodes"] = 1
+    result = decide(preregistration(), scenarios, sustained(), browser())
+    assert not result["candidate_acceptance"]["B3"]["passes_all"]
+    assert result["selected_policy"] == "B5"
+
+
+def test_no_post_result_compromise_when_all_candidates_fail():
+    detections = sustained()
+    for candidate in ("B3", "B5"):
+        detections[candidate][0] = {"detected": False, "detection_latency_seconds": None}
+    result = decide(preregistration(), scenario_results(), detections, browser())
+    assert result["decision"] == "CONTROL_V2_NOT_VALIDATED"
+    assert result["selected_policy"] is None
+
+
+def test_detection_over_fifteen_seconds_fails_fixed_bound():
+    detections = sustained()
+    detections["B3"][1]["detection_latency_seconds"] = 15.1
+    result = decide(preregistration(), scenario_results(), detections, browser())
+    assert not result["candidate_acceptance"]["B3"]["sustained_interference"]
+
+
+def test_browser_delay_beyond_two_samples_fails():
+    browser_rows = deepcopy(browser())
+    browser_rows["B3"]["detection_delay_samples"] = 3
+    result = decide(preregistration(), scenario_results(), sustained(), browser_rows)
+    assert not result["candidate_acceptance"]["B3"]["browser_hard_rule"]
