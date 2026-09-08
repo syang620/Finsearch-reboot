@@ -1,7 +1,10 @@
 from collections import Counter
 from copy import deepcopy
 import json
+import os
 from pathlib import Path
+import subprocess
+import sys
 import pytest
 
 from evals.semantic_dataset_v2 import load_dataset, read, sha, validate_lineage, verify_files
@@ -42,6 +45,9 @@ def test_validation_composition_and_packet_isolation():
     counts=Counter(label for f in fixtures for label in f['labels']['claims'].values())
     assert counts==Counter({'fully_supported':19,'partially_supported':6,'unsupported':14})
     assert sum(f['labels']['fully_grounded'] and not f['labels']['complete'] for f in fixtures)==2
+    assert sum(label=='partial' for f in fixtures for label in f['labels']['requirements'].values())>=3
+    assert sum(not f['labels']['answer_relevant'] for f in fixtures)==2
+    assert sum(f['labels']['unbound_factual_prose'] for f in fixtures)==2
     for f in fixtures:
         p=packets(f['case'],f['output'])
         assert 'labels' not in p['support'] and 'labels' not in p['completeness']
@@ -52,3 +58,11 @@ def test_validation_composition_and_packet_isolation():
 
 def test_judge_thresholds_match_preregistered_config():
     assert json.loads((ROOT/'judge_config.json').read_text())['acceptance_thresholds']==GATES
+
+
+def test_source_only_rebuild_is_byte_deterministic_after_v2_exists(tmp_path):
+    out=tmp_path/'draft'
+    subprocess.run([sys.executable,'scripts/evals/agents/build_semantic_dataset_v2.py','--out-dir',str(out)],
+                   check=True,capture_output=True,env={**os.environ,'PYTHONPATH':'src:.'})
+    for path in out.iterdir():
+        assert path.read_bytes()==(ROOT/path.name).read_bytes(),path.name

@@ -55,6 +55,12 @@ def test_wrong_metric_does_not_borrow_declared_claim_metadata():
     assert result['status'] == 'incorrect' and 'metric_id' in result['mismatches']
 
 
+@pytest.mark.parametrize('metric',['operating income','net income','total assets'])
+def test_explicit_wrong_financial_metric_is_diagnosed(metric):
+    value=assess_statement(f'Apple FY2024 {metric} was 391035 million USD.',GOLD)
+    assert value['status']=='incorrect' and 'metric_id' in value['mismatches']
+
+
 @pytest.mark.parametrize('delta,expected', [(500000,'correct'), (500001,'incorrect'), (-500001,'incorrect')])
 def test_absolute_display_tolerance_boundary(delta, expected):
     assert assess_statement(f'Apple FY2024 revenue was {GOLD["value"]+delta} USD.', GOLD)['status'] == expected

@@ -22,6 +22,11 @@ def test_outer_failure_excludes_retained_success(field, value):
     assert accepted_answer(out) is None
 
 
+def test_outer_error_diagnostic_cannot_retain_a_semantic_success():
+    out=answer(); out['error']='Provider disconnected after producing a candidate.'
+    assert accepted_answer(out) is None
+
+
 def test_degraded_success_remains_eligible():
     out = answer(); out['status'] = 'degraded'
     out['open_issues'] = [{'code': 'KB_HYDRATION_ERROR', 'message': 'One recovered lane loss.'}]
@@ -44,7 +49,7 @@ def test_abstention_not_automatically_correct():
 
 
 def test_failures_do_not_become_wrong_claims_or_disappear():
-    rows = [{'execution': {'eligible': e}, 'numeric_checks': [{'truth': t}]} for e, t in
+    rows = [{'execution': {'eligible': e}, 'numeric_checks': [{'truth': t, 'credit':t=='correct'}]} for e, t in
             [(True, 'correct'), (True, 'incorrect'), (True, 'unknown'), (True, 'missing'), (False, 'unassessed')]]
     s = summarize_numeric(rows)
     assert s['verified_numeric_credit_over_all_gold'] == {'numerator': 1, 'denominator': 5, 'rate': .2}
@@ -52,6 +57,14 @@ def test_failures_do_not_become_wrong_claims_or_disappear():
     assert s['numeric_correctness_resolved_only']['denominator'] == 2
     assert s['unassessed_due_to_execution'] == 1
     assert s['eligible_requirement_outcomes']['incorrect'] == 1
+
+
+def test_truth_without_evidence_or_calculator_is_not_verified_credit():
+    s=summarize_numeric([{'execution':{'eligible':True},'numeric_checks':[{'truth':'correct','credit':False}]}])
+    assert s['verified_numeric_credit_over_all_gold']['numerator']==0
+    assert s['verified_numeric_credit_given_eligible_answer']['numerator']==0
+    assert s['parsed_numeric_truth_given_eligible_answer']['numerator']==1
+    assert s['numeric_correctness_resolved_only']['rate']==1
 
 
 def test_empty_denominators_are_unknown_not_one():

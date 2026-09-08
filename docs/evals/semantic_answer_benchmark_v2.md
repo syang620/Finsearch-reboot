@@ -26,6 +26,10 @@ measurement, not the system. **V1→v2 scores cannot be called system improvemen
 - A new 225-link source catalog connects all 80 original numeric catalog facts
   to KB tables through original inline-XBRL element IDs and immutable table
   sidecars, never retriever ranking. This is annotation, not XBRL tool execution.
+- A separate 68-table presentation catalog derives the unchanged runtime's
+  hydrated display forms from those same source sidecars. Full source-table
+  evidence must actually be visible; a correct stable payload hash alone cannot
+  rescue altered or invisible displayed evidence. Prefix row text is allowed.
 
 `claim_lineage.jsonl` preserves the original case/claim identity, canonical
 UTF-8 JSON SHA-256 (`sort_keys=True`, `ensure_ascii=False`), new requirement IDs
@@ -91,6 +95,12 @@ but incomplete answers, 3 correct abstentions and 3 incorrect refusals. Twelve
 identical repeats are selected before calls. This is not a random production
 sample or an estimate of production error prevalence.
 
+Pre-calibration review added three partial-fulfillment labels, two off-topic
+answers and two answers with unbound factual prose. Requirement-level agreement
+and partial-fulfillment recall are independently gated, as are recall on both
+non-default answer-wide flags. Whole-answer booleans cannot mask the wrong
+missing-facet decision. This amendment occurred before any judge predictions.
+
 Support packets contain only cited visible evidence, not gold requirements or
 uncited-context rescue. Completeness packets contain atomic requirements and
 the answer, not source evidence. Strict schema checks enforce exact unique IDs,
@@ -134,7 +144,8 @@ validation; benchmark-quality audit and optimization freeze; one controlled
 30-case subset before enabled judge predictions; denominator/privacy/hash checks;
 immutable evidence and fresh final Codex review. Do not merge automatically.
 
-Current verification: 102 focused tests pass. Full suite: 1,080 pass, 47 subtests
+Initial checkpoint verification: 102 focused tests passed. Full suite: 1,080 passed, 47 subtests
 pass, 2 unchanged pre-existing failures (`alias_002` planner route and retrieval
 no-tool-call attempt count), 25 warnings. No dependency changes. These are draft
 development checks, not a release gate or evidence that semantic accuracy passes.
+See the review-fix log for subsequent checks and pending gates.

@@ -54,8 +54,8 @@ def fixtures():
     for i in range(36):
         label = ['fully_supported','partially_supported','unsupported'][i%3]
         rows.append({'id': str(i), 'repeat_selected': i<12, 'labels': {
-            'claims': {'c': label}, 'requirements': {'g': 'complete'}, 'fully_grounded': label=='fully_supported',
-            'complete': True, 'answerability_correct': True, 'answer_relevant': True, 'unbound_factual_prose': False}})
+            'claims': {'c': label}, 'requirements': {'g': ['complete','partial','missing'][i%3]}, 'fully_grounded': label=='fully_supported' and i not in {2,3},
+            'complete': i%3==0 and i not in {0,1}, 'answerability_correct': True, 'answer_relevant': i not in {0,1}, 'unbound_factual_prose': i in {2,3}}})
     return rows
 
 
@@ -80,4 +80,23 @@ def test_parse_failures_and_invalid_repeats_are_not_dropped():
     assert r['metrics']['unsupported_recall']['numerator']==11
     assert r['metrics']['claim_agreement']['denominator']==36
     assert r['metrics']['repeat_agreement']['rate']==0
+    assert not r['full_benchmark_judge_enabled']
+
+
+def test_wrong_facet_labels_cannot_hide_behind_correct_whole_answer_booleans():
+    f=fixtures(); predictions={r['id']:deepcopy(r['labels']) for r in f}
+    for p in predictions.values(): p['requirements']['g']='complete'
+    r=validation_metrics(f,predictions,predictions)
+    assert r['metrics']['completeness_agreement']['rate']==1
+    assert not r['gates_passed']['requirement_agreement']
+    assert not r['gates_passed']['partial_fulfillment_recall']
+    assert not r['full_benchmark_judge_enabled']
+
+
+def test_constant_answer_wide_flags_fail_sensitivity_gates():
+    f=fixtures(); predictions={r['id']:deepcopy(r['labels']) for r in f}
+    for p in predictions.values(): p.update(answer_relevant=True,unbound_factual_prose=False)
+    r=validation_metrics(f,predictions,predictions)
+    assert r['metrics']['off_topic_recall']['rate']==0
+    assert r['metrics']['unbound_prose_recall']['rate']==0
     assert not r['full_benchmark_judge_enabled']

@@ -12,6 +12,9 @@ ENTITIES = {"AAPL": r"(?:Apple(?: Inc\.?)?|AAPL)",
             "MSFT": r"(?:Microsoft(?: Corporation)?|MSFT)"}
 METRICS = {
     "revenue": r"(?:(?:total|consolidated)\s+)?(?:revenue|revenues|net sales)",
+    "operating_income": r"operating income",
+    "net_income": r"net income",
+    "total_assets": r"total assets",
     "cash_and_cash_equivalents": r"cash and cash equivalents",
     "research_and_development": r"(?:research and development|R&D) (?:expense|expenses)",
     "services_gross_margin_percent": r"Services gross[- ]margin (?:percentage|percent)",

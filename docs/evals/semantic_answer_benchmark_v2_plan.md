@@ -96,6 +96,16 @@ calibration set, not proof of human-equivalent judgment or broad generalization.
 Source adjudication is performed by the coding assistant independently of judge
 predictions; do not describe it as independent human financial annotation.
 
+### Pre-calibration review amendment (before any judge predictions)
+
+The independent review of draft `1c9c205` identified missing validation coverage.
+Before calibration freeze, additionally require per-requirement fulfillment
+agreement ≥85%, partial-fulfillment recall ≥80%, off-topic-answer recall ≥90%
+and unbound-factual-prose recall ≥90%. Add three gold partial-fulfillment examples
+and two positive examples for each answer-wide flag. These strengthen the gates
+before observing results; they are not tuned to judge predictions. Preserve the
+36 fixture count, 12 preselected repeats and all original acceptance gates.
+
 ## Numeric and denominator contract to implement
 
 Use Decimal-based normalization with explicit units and documented display

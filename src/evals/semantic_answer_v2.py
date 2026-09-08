@@ -4,6 +4,7 @@ Numeric grammar coverage and unknowns are explicit. Source-adjudicated support
 and the independently validated secondary judge supply broader semantic checks.
 """
 from decimal import Decimal, InvalidOperation
+import ast
 import hashlib
 import math
 import re
@@ -27,8 +28,10 @@ def canonical_prose(text):
 def evidence_support(context, gold, catalog):
     """Exact proven source succeeds; absence from examples is unknown, not false.
 
-    A valid ID alone cannot pass: KB content must be exactly the frozen source
-    table; structured evidence must expose compatible fact and period metadata.
+    A valid ID alone cannot pass: the visible KB evidence must contain a frozen
+    source-derived table representation. Prefix row evidence and presentation
+    changes do not invalidate a table, but invisible/altered source rows cannot
+    pass from a stable payload hash alone.
     """
     number = gold['numeric']
     if context.get('kind') == 'structured_fact':
@@ -36,7 +39,9 @@ def evidence_support(context, gold, catalog):
         if fact.get('status') != 'ok': return 'unsupported'
         if any(fact.get(k) != number[k] for k in ('metric_id','ticker','fiscal_year','unit')): return 'unsupported'
         value = decimal(fact.get('value'))
-        if value is None or abs(value - Decimal(str(number['value']))) > Decimal(str(number['absolute_tolerance'])): return 'unsupported'
+        # Display tolerance applies to answer formatting, not to the raw source
+        # fact. A nearby but different source value is not the annotated fact.
+        if value is None or value != Decimal(str(number['value'])): return 'unsupported'
         # Exact source filing provenance is required for filing-scoped questions.
         # Runtime context that lacks it remains unknown, not assumed equivalent.
         originals = [s for s in gold['sources'] if s['kind'] == 'inline_xbrl']
@@ -50,12 +55,23 @@ def evidence_support(context, gold, catalog):
     if context.get('kind') not in {'text','table'}: return 'unsupported'
     source = context.get('source') or {}; payload = context.get('payload') or {}
     doc_id = source.get('doc_id') or payload.get('doc_id')
-    digest = hashlib.sha256(evidence_text(context).encode()).hexdigest()
+    visible=evidence_text(context)
+    digest = hashlib.sha256(visible.encode()).hexdigest()
+    links=catalog.get('facts',[]) if isinstance(catalog,dict) else catalog
+    displays=catalog.get('displays',{}) if isinstance(catalog,dict) else {}
     candidates = [s for s in gold['sources'] if s['kind'] == 'kb']
     fact_ids = {s['fact_id'] for s in gold['sources'] if s['kind'] == 'inline_xbrl'}
-    candidates += [r for r in catalog if r['fact_id'] in fact_ids]
+    candidates += [r for r in links if r['fact_id'] in fact_ids]
     for candidate in candidates:
-        if candidate['evidence_id'] == doc_id and candidate['content_sha256'] == digest: return 'supported'
+        if candidate['evidence_id'] != doc_id: continue
+        display=displays.get(doc_id)
+        if display is not None:
+            if display['content_sha256']!=candidate['content_sha256']: continue
+            for key in ('ticker','fiscal_year','form_type'):
+                if any(container.get(key) is not None and container[key]!=display['metadata'][key] for container in (source,payload)):
+                    return 'unsupported'
+            if any(r['text'].strip() and r['text'].strip() in visible for r in display['representations']): return 'supported'
+        if candidate['content_sha256'] == digest: return 'supported'
     return 'unknown'
 
 
@@ -75,8 +91,11 @@ def calculator_provenance(gold, claim, contexts, analyst, catalog):
         return {'status':'unknown', 'reason':'selected_computation_incomplete'}
     calls = [c for c in trace.get('tool_calls',[]) if c.get('name') == 'financial_evaluator']
     normalize = lambda s: re.sub(r'\s+', '', s)
+    def variables_equal(raw):
+        return (isinstance(raw,dict) and set(raw)==set(variables)
+                and all(decimal(raw[k]) is not None and decimal(raw[k])==decimal(variables[k]) for k in variables))
     if not any(isinstance(c.get('args'),dict) and normalize(str(c['args'].get('expression',''))) == normalize(expression)
-               and c['args'].get('variables') == variables for c in calls):
+               and variables_equal(c['args'].get('variables')) for c in calls):
         return {'status':'unknown', 'reason':'no_exact_recorded_call_binding'}
     refs = [contexts[c] for c in claim.get('context_ids',[]) if c in contexts]
     operands = []
@@ -89,18 +108,29 @@ def calculator_provenance(gold, claim, contexts, analyst, catalog):
         operands.append(Decimal(str(source['value'])))
     # Bounded growth expression, not arbitrary eval. Variable names do not imply
     # roles; their numeric values must bind to the original source periods.
-    parsed = re.fullmatch(r'\((?P<current>[A-Za-z_]\w*)-(?P<previous>[A-Za-z_]\w*)\)/(?P<denominator>[A-Za-z_]\w*)(?P<percent>\*100)?', normalize(expression))
-    if parsed is None or parsed['previous'] != parsed['denominator']:
+    try: tree=ast.parse(expression.strip(),mode='eval').body
+    except (SyntaxError,ValueError): tree=None
+    percent=False
+    if isinstance(tree,ast.BinOp) and isinstance(tree.op,ast.Mult):
+        if isinstance(tree.right,ast.Constant) and type(tree.right.value) in (int,float) and tree.right.value==100:
+            tree=tree.left; percent=True
+        elif isinstance(tree.left,ast.Constant) and type(tree.left.value) in (int,float) and tree.left.value==100:
+            tree=tree.right; percent=True
+    valid=(isinstance(tree,ast.BinOp) and isinstance(tree.op,ast.Div) and isinstance(tree.left,ast.BinOp)
+           and isinstance(tree.left.op,ast.Sub) and isinstance(tree.left.left,ast.Name)
+           and isinstance(tree.left.right,ast.Name) and isinstance(tree.right,ast.Name)
+           and tree.left.right.id==tree.right.id)
+    if not valid:
         return {'status':'unknown','reason':'expression_outside_bound_growth_grammar'}
-    current = decimal(variables.get(parsed['current'])); previous = decimal(variables.get(parsed['previous']))
+    current = decimal(variables.get(tree.left.left.id)); previous = decimal(variables.get(tree.left.right.id))
     if current is None or previous is None or not previous:
         return {'status':'incorrect','reason':'invalid_bound_operands'}
     if not any(previous == operands[0]/scale and current == operands[1]/scale for scale in (Decimal(1),Decimal(10**6),Decimal(10**9))):
         return {'status':'incorrect','reason':'wrong_operand_entity_metric_period_or_scale'}
-    calculated = (current-previous)/previous * (100 if parsed['percent'] else 1)
+    calculated = (current-previous)/previous * (100 if percent else 1)
     if abs(calculated-value) > Decimal('0.00000001'):
         return {'status':'incorrect','reason':'selected_result_disagrees_with_expression'}
-    percentage = value if parsed['percent'] else value*100
+    percentage = value if percent else value*100
     if abs(percentage-Decimal(str(gold['numeric']['value']))) > Decimal(str(gold['numeric']['absolute_tolerance'])):
         return {'status':'incorrect','reason':'wrong_calculated_percentage'}
     return {'status':'supported','reason':'source_bound_operands_recorded_call_selected_result_agree',
@@ -134,6 +164,7 @@ def numeric_check(gold, output, contexts, catalog):
         evidence='supported' if 'supported' in support else ('unsupported' if not refs or any(c not in contexts for c in refs) or support and all(s=='unsupported' for s in support) else 'unknown')
         calc=calculator_provenance(gold,claim,contexts,output['analyst'],catalog)
         if gold['claim_type']=='calculation': evidence=calc['status'] if calc['status'] in {'supported','unsupported'} else 'unknown'
+        if any(c not in contexts for c in refs): evidence='unsupported'
         results.append({'emitted_claim_id':claim['claim_id'], 'truth':assessment['status'], 'reason':assessment['reason'],
                         'evidence_support':evidence, 'calculator':calc,
                         'credit':assessment['status']=='correct' and evidence=='supported' and calc['status'] in {'supported','not_applicable'}})
@@ -142,7 +173,9 @@ def numeric_check(gold, output, contexts, catalog):
     if 'incorrect' in truths: truth='incorrect'
     elif truths=={'correct'}: truth='correct'
     else: truth='unknown'
-    return {'claim_id':gold['claim_id'], 'truth':truth, 'evidence_support':'supported' if any(r['evidence_support']=='supported' for r in results) else 'unknown',
+    evidence_statuses={r['evidence_support'] for r in results}
+    combined_evidence='supported' if 'supported' in evidence_statuses else ('unsupported' if evidence_statuses=={'unsupported'} else 'unknown')
+    return {'claim_id':gold['claim_id'], 'truth':truth, 'evidence_support':combined_evidence,
             'credit':truth=='correct' and any(r['credit'] for r in results), 'assertions':results}
 
 
@@ -161,7 +194,7 @@ def deterministic_case(case, output, catalog=()):
         kind=claim.get('claim_type')
         if kind=='structured_numeric':
             structured_total+=1
-            compatible=any(contexts[c].get('kind')=='structured_fact' and (contexts[c].get('structured_fact') or {}).get('status')=='ok' and (contexts[c].get('structured_fact') or {}).get('metric_id')==claim.get('metric_id') for c in valid)
+            compatible=bool(claim.get('metric_id')) and any(contexts[c].get('kind')=='structured_fact' and (contexts[c].get('structured_fact') or {}).get('status')=='ok' and (contexts[c].get('structured_fact') or {}).get('metric_id')==claim.get('metric_id') for c in valid)
             structured_ok+=compatible
             if not compatible: flags.append('evidence_type_mismatch')
         elif kind in {'narrative','attribution','kb_numeric'}:

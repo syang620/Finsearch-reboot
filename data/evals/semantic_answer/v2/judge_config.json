@@ -22,6 +22,10 @@
     "partial_agreement": 0.8,
     "grounded_answer_agreement": 0.9,
     "completeness_agreement": 0.85,
-    "repeat_agreement": 0.9
+    "repeat_agreement": 0.9,
+    "requirement_agreement": 0.85,
+    "partial_fulfillment_recall": 0.8,
+    "off_topic_recall": 0.9,
+    "unbound_prose_recall": 0.9
   }
 }

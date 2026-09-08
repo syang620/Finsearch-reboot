@@ -83,6 +83,25 @@ def test_missing_citation_is_not_grounded_numeric_credit():
     assert row['truth']=='correct' and not row['credit']
 
 
+def test_answer_display_tolerance_does_not_relax_source_fact_identity():
+    out=output()
+    out['evaluation_trace']['analyst_packet']['context_items'][0]['structured_fact']['value']+=1
+    row=deterministic_case(CASE,out)['numeric_checks'][0]
+    assert row['truth']=='correct' and not row['credit']
+
+
+def test_one_valid_reference_does_not_rescue_an_invented_reference():
+    out=output(); out['analyst']['claims'][0]['context_ids'].append('invented')
+    row=deterministic_case(CASE,out)['numeric_checks'][0]
+    assert row['truth']=='correct' and row['evidence_support']=='unsupported' and not row['credit']
+
+
+def test_missing_metric_ids_are_not_a_compatible_pair():
+    out=output(); out['analyst']['claims'][0].pop('metric_id')
+    out['evaluation_trace']['analyst_packet']['context_items'][0]['structured_fact'].pop('metric_id')
+    assert deterministic_case(CASE,out)['structured_evidence_compatibility']['numerator']==0
+
+
 def calc():
     previous={**SOURCE,'fact_id':'f0','fact_fiscal_year':2023,'value':383285000000,'start_date':'2022-09-25','report_date':'2023-09-30'}
     growth=(NUMBER['value']-previous['value'])/previous['value']*100
@@ -99,6 +118,15 @@ def test_calculator_requires_bound_call_operands_result_not_matching_digits():
     args=calc(); assert calculator_provenance(*args,[])['status']=='supported'
     args[3]['trace']['used_financial_evaluator']=False
     assert calculator_provenance(*args,[])['status']=='missing'
+
+
+@pytest.mark.parametrize('expression',['((current - previous) / previous) * 100','100 * ((current - previous) / previous)'])
+def test_calculator_equivalent_parentheses_and_argument_types(expression):
+    args=calc(); analyst=args[3]
+    analyst['computation']['expression']=expression
+    analyst['trace']['tool_calls'][0]['args']['expression']=expression
+    analyst['trace']['tool_calls'][0]['args']['variables']={'current':391035,'previous':383285}
+    assert calculator_provenance(*args,[])['status']=='supported'
 
 
 @pytest.mark.parametrize('mutation',['wrong_operand','wrong_result','no_call','wrong_period','bare_percent_match'])

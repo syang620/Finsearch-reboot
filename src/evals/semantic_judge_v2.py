@@ -12,7 +12,9 @@ SUPPORT = {'fully_supported', 'partially_supported', 'unsupported'}
 FULFILLMENT = {'complete', 'partial', 'missing'}
 GATES = {'parse_success': .95, 'claim_agreement': .85, 'supported_precision': .90,
          'supported_recall': .85, 'unsupported_recall': .90, 'partial_agreement': .80,
-         'grounded_answer_agreement': .90, 'completeness_agreement': .85, 'repeat_agreement': .90}
+         'grounded_answer_agreement': .90, 'completeness_agreement': .85, 'repeat_agreement': .90,
+         'requirement_agreement': .85, 'partial_fulfillment_recall': .80,
+         'off_topic_recall': .90, 'unbound_prose_recall': .90}
 
 
 def packets(case, output):
@@ -109,20 +111,29 @@ def validation_metrics(fixtures, assessments, repeats):
     """
     if len(fixtures) != 36 or len({f['id'] for f in fixtures}) != 36: raise ValueError('Expected frozen 36 fixtures')
     gold_counts = Counter(); pred_counts = Counter(); true_positive = Counter()
+    gold_fulfillment=Counter(); correct_fulfillment=Counter()
+    off_topic=unbound=off_topic_correct=unbound_correct=0
     valid = agreement = grounded = complete = repeat_agreement = 0
     repeat_ids = [f['id'] for f in fixtures if f['repeat_selected']]
     if len(repeat_ids) != 12: raise ValueError('Expected 12 frozen repeat fixtures')
     for f in fixtures:
         expected = f['labels']; predicted = assessments.get(f['id'])
         gold_counts.update(expected['claims'].values())
+        gold_fulfillment.update(expected['requirements'].values())
+        off_topic+=not expected['answer_relevant']; unbound+=expected['unbound_factual_prose']
         if predicted is not None:
             if set(predicted['claims']) != set(expected['claims']): raise ValueError('Unvalidated prediction IDs')
+            if set(predicted['requirements']) != set(expected['requirements']): raise ValueError('Unvalidated requirement IDs')
             valid += 1; pred_counts.update(predicted['claims'].values())
             for cid, label in expected['claims'].items():
                 if predicted['claims'][cid] == label:
                     agreement += 1; true_positive[label] += 1
             grounded += predicted['fully_grounded'] == expected['fully_grounded']
             complete += predicted['complete'] == expected['complete']
+            for gid,label in expected['requirements'].items():
+                if predicted['requirements'][gid]==label: correct_fulfillment[label]+=1
+            off_topic_correct+=(not expected['answer_relevant'] and predicted['answer_relevant'] is False)
+            unbound_correct+=(expected['unbound_factual_prose'] and predicted['unbound_factual_prose'] is True)
         repeated = repeats.get(f['id'])
         if f['id'] in repeat_ids and predicted is not None and repeated is not None:
             repeat_agreement += all(predicted[k] == repeated[k] for k in ('claims', 'requirements', 'fully_grounded', 'complete', 'answerability_correct', 'unbound_factual_prose', 'answer_relevant'))
@@ -132,8 +143,12 @@ def validation_metrics(fixtures, assessments, repeats):
                'unsupported_recall': rate(true_positive['unsupported'], gold_counts['unsupported']),
                'partial_agreement': rate(true_positive['partially_supported'], gold_counts['partially_supported']),
                'grounded_answer_agreement': rate(grounded, len(fixtures)), 'completeness_agreement': rate(complete, len(fixtures)),
-               'repeat_agreement': rate(repeat_agreement, len(repeat_ids))}
+               'repeat_agreement': rate(repeat_agreement, len(repeat_ids)),
+               'requirement_agreement':rate(sum(correct_fulfillment.values()),sum(gold_fulfillment.values())),
+               'partial_fulfillment_recall':rate(correct_fulfillment['partial'],gold_fulfillment['partial']),
+               'off_topic_recall':rate(off_topic_correct,off_topic),'unbound_prose_recall':rate(unbound_correct,unbound)}
     passed = {k: metrics[k]['rate'] is not None and metrics[k]['rate'] >= threshold for k, threshold in GATES.items()}
     return {'metrics': metrics, 'thresholds': GATES, 'gates_passed': passed, 'full_benchmark_judge_enabled': all(passed.values()),
             'gold_label_distribution': dict(gold_counts), 'predicted_label_distribution': dict(pred_counts),
+            'gold_requirement_label_distribution':dict(gold_fulfillment),
             'invalid_or_missing_cases': len(fixtures)-valid, 'repeat_valid_pairs': sum(assessments.get(i) is not None and repeats.get(i) is not None for i in repeat_ids)}

@@ -87,11 +87,13 @@ def summarize_numeric(rows):
     eligible = [c for r in rows if r["execution"]["eligible"] for c in r["numeric_checks"]]
     counts = Counter(c["truth"] for c in eligible)
     correct = counts["correct"]
+    credited = sum(c.get('credit') is True for c in eligible)
     resolved = counts["correct"] + counts["incorrect"]
     return {"gold_numeric_requirements": len(all_checks), "eligible_requirement_outcomes": dict(sorted(counts.items())),
             "unassessed_due_to_execution": len(all_checks) - len(eligible),
-            "verified_numeric_credit_over_all_gold": rate(correct, len(all_checks)),
-            "verified_numeric_credit_given_eligible_answer": rate(correct, len(eligible)),
+            "verified_numeric_credit_over_all_gold": rate(credited, len(all_checks)),
+            "verified_numeric_credit_given_eligible_answer": rate(credited, len(eligible)),
+            "parsed_numeric_truth_given_eligible_answer": rate(correct, len(eligible)),
             "numeric_correctness_resolved_only": rate(correct, resolved),
             "deterministic_resolution_coverage_given_eligible": rate(resolved, len(eligible)),
             "note": "Verified-credit rates are not general semantic accuracy. Unknown and missing are not asserted wrong; resolved-only correctness requires its coverage."}

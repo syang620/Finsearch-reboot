@@ -37,6 +37,12 @@ def unique(rows,key):
     return {r[key]:r for r in rows}
 
 
+def load_numeric_catalog(root):
+    root=Path(root)
+    return {'facts':read(root/'numeric_evidence_catalog.jsonl'),
+            'displays':unique(read(root/'source_table_displays.jsonl'),'evidence_id')}
+
+
 def validate_lineage(cases,old,lineage):
     unique(cases,'id'); previous=unique(old,'id')
     if len(cases)!=len(old) or {c['v1_id'] for c in cases}!=set(previous): raise ValueError('Unexpected v1 membership difference')

@@ -21,7 +21,7 @@ REPEATS={1,2,7,11,13,14,15,22,23,24,31,34}
 NARRATIVE=[
     ('SEM2_AAPL_2024_03',
      ['Apple treats highly liquid investments maturing within three months of purchase as cash equivalents.'],
-     'Apple treats highly liquid investments maturing within three months of purchase as cash equivalents, and guarantees these investments can never lose value.',
+     'Some highly liquid investments qualify as Apple cash equivalents, and Apple guarantees these investments can never lose value.',
      'Apple treats all investments maturing within five years of purchase as cash equivalents.'),
     ('SEM2_AAPL_2025_07',
      ['Some custom Apple components are obtained from a single or limited source.',
@@ -58,19 +58,25 @@ def build(out):
     if out.exists(): raise ValueError('Refusing to overwrite validation fixtures')
     cases={c['id']:c for c in read(ROOT/'queries.jsonl')}; docs={d['id']:d for d in read(CORPUS)}
     links=read(ROOT/'numeric_evidence_catalog.jsonl')
+    displays={r['evidence_id']:r for r in read(ROOT/'source_table_displays.jsonl')}
     rows=[]
 
     def context(source, cid, kb=False):
         if source['kind']=='kb' or kb:
             doc_id=source['evidence_id'] if source['kind']=='kb' else next(r['evidence_id'] for r in links if r['fact_id']==source['fact_id'])
             doc=docs[doc_id]
+            body=doc['content']
+            if doc_id in displays:
+                body=next(r['text'] for r in displays[doc_id]['representations'] if r['format']=='hydrated_markdown')
             return {'context_id':cid,'kind':'table' if doc['metadata']['doc_type']=='table' else 'text',
-                    'source':{'doc_id':doc_id,**doc['metadata']},'payload':{'content':doc['content']}}
+                    'source':{'doc_id':doc_id,**doc['metadata']},'payload':{'content':doc['content'],
+                       'table_markdown':('matched_row: source table evidence\n\n'+body) if doc_id in displays else body}}
         return {'context_id':cid,'kind':'structured_fact','structured_fact':{
             **{k:source.get(k) for k in ('ticker','metric_id','value','unit','form_type','report_date','start_date','source_sha256')},
             'fiscal_year':source['fact_fiscal_year'],'status':'ok'}}
 
-    def add(case_id, texts, support, fulfillment, *, answerability=True, status='ok', kb=False, reason, computation=None):
+    def add(case_id, texts, support, fulfillment, *, answerability=True, status='ok', kb=False, reason, computation=None,
+            answer_tail='', relevant=True, unbound=False):
         case=deepcopy(cases[case_id]); contexts=[]; claims=[]
         sources={}
         for g in case['required_claims']:
@@ -85,6 +91,7 @@ def build(out):
             if g.get('numeric'): claim['metric_id']=g['numeric']['metric_id']
             claims.append(claim)
         answer='\n'.join(texts)
+        if answer_tail: answer+='\n'+answer_tail
         if status=='insufficient_data':
             answer=(f"The specified FY{case['fiscal_year']} filing cannot establish audited actual net income for FY{case['fiscal_year']+1}; that later fiscal year's actuals are outside this filing." if answerability else 'I cannot answer this question from the filing.')
         output={'ok':True,'status':'completed','failure_stage':'none','analyst':{
@@ -95,9 +102,9 @@ def build(out):
         number=len(rows)+1
         labels={'claims':{c['claim_id']:s for c,s in zip(claims,support,strict=True)},
                 'requirements':{g['claim_id']:f for g,f in zip(case['required_claims'],fulfillment,strict=True)},
-                'answerability_correct':answerability,'answer_relevant':True,'unbound_factual_prose':False,
-                'fully_grounded':answerability and all(s=='fully_supported' for s in support) and (bool(claims) or status=='insufficient_data'),
-                'complete':answerability and all(f=='complete' for f in fulfillment)}
+                'answerability_correct':answerability,'answer_relevant':relevant,'unbound_factual_prose':unbound,
+                'fully_grounded':answerability and not unbound and all(s=='fully_supported' for s in support) and (bool(claims) or status=='insufficient_data'),
+                'complete':answerability and relevant and all(f=='complete' for f in fulfillment)}
         rows.append({'id':f'SEM2_VALID_{number:02}','case':case,'output':output,'labels':labels,
                      'repeat_selected':number in REPEATS,'adjudication_reason':reason,
                      'annotation_method':'Prospectively source-authored synthetic answer and coding-assistant source adjudication before judge predictions; not a production sample or independent human label.'})
@@ -129,16 +136,23 @@ def build(out):
         n=len(cases[case_id]['required_claims'])
         fulfillment=['complete']*n
         if case_id=='SEM2_MSFT_2024_07':
-            full=full[:2]; fulfillment[-1]='missing'
+            full=[full[0],'Board cybersecurity reviews are scheduled at least once per year.']
+            fulfillment=['complete','partial','missing']
         if case_id=='SEM2_AMZN_2023_03':
-            full=[full[0],full[2]]; fulfillment[1]='missing'
+            full=[full[0],'Amazon recognizes that revenue over time.']; fulfillment=['complete','missing','partial']
+        tail=('Apple stock will double tomorrow.' if case_id=='SEM2_AAPL_2024_03' else
+              'AWS sales will double next quarter.' if case_id=='SEM2_AMZN_2024_08' else '')
         add(case_id,full,['fully_supported']*len(full),fulfillment,
-            reason='Each emitted paraphrase is fully source-supported. The Amazon-policy fixture intentionally omits the due-payment trigger; the Microsoft-governance fixture intentionally omits the cyberthreat explanation. These are grounded but incomplete answers: source-only details cannot earn completeness credit.')
+            answer_tail=tail,unbound=bool(tail),
+            reason='Each emitted claim is fully source-supported. Amazon-policy omits the due trigger and states recognition over time without the service-period boundary; Microsoft-governance weakens quarterly to the entailed but incomplete annual minimum and omits the threat explanation. Those two answers are grounded but incomplete. Apple-policy and AWS-attribution add an unsupported future prediction outside emitted claims: unbound_factual_prose=true, so their whole answers are not fully grounded.')
         # The first required facet is retained; other facets absent/contradicted.
-        add(case_id,[partial],['partially_supported'],['complete']+['missing']*(n-1),
+        partial_labels=['partial' if case_id=='SEM2_AAPL_2024_03' else 'complete']+['missing']*(n-1)
+        add(case_id,[partial],['partially_supported'],partial_labels,
             reason='The first source-backed facet is asserted alongside a separable unsupported or contradictory assertion. Mixed claim support is partial, not fully supported; absent/contradicted other requirements receive no completeness credit.')
-        add(case_id,[wrong],['unsupported'],['missing']*n,
-            reason='The central assertion contradicts the cited original filing or attributes it to the wrong entity/driver. A valid citation ID cannot make it supported.')
+        off_topic=case_id in {'SEM2_AAPL_2024_03','SEM2_AMZN_2023_03'}
+        if off_topic: wrong='Tomorrow the weather in Paris will certainly be sunny.'
+        add(case_id,[wrong],['unsupported'],['missing']*n,relevant=not off_topic,
+            reason='The central assertion is unsupported by the cited filing. Apple-policy and Amazon-policy wrong variants are deliberately off-topic weather answers (answer_relevant=false); other wrong variants contradict issuer, driver or policy. A valid citation ID cannot make them supported.')
     for case_id in ('SEM2_AAPL_2024_10','SEM2_AMZN_2023_10','SEM2_MSFT_2024_10'):
         add(case_id,[],[],[],status='insufficient_data',reason='Correct scoped abstention: future audited actuals cannot be established by the earlier named filing; no fabricated amount or later filing is used.')
     for case_id in ('SEM2_AAPL_2024_03','SEM2_AMZN_2023_03','SEM2_MSFT_2024_03'):

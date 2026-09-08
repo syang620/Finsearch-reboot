@@ -56,6 +56,8 @@ def run(out):
     control=controls()
     if "'AC Power'" not in control['battery'] or any(line.split()[-1]!='0' for line in control['power_settings'].splitlines() if line.strip().startswith('lowpowermode')):
         raise RuntimeError('AC power and Low Power Mode off required')
+    if out.exists() and any(out.glob('*/provenance.json')):
+        raise RuntimeError('This calibration was already attempted; a new SHA is not permission to rerun the candidate')
     out=out/implementation
     if out.exists(): raise RuntimeError('Refusing to overwrite an existing calibration run')
     out.mkdir(parents=True)
@@ -81,6 +83,9 @@ def run(out):
                                      {'role':'user','content':json.dumps(p[phase],sort_keys=True)}]}
                 try:
                     raw=request('/api/chat',payload,timeout=config['timeout_seconds']); record['raw_response']=raw
+                    if (raw.get('done') is not True or raw.get('done_reason')=='length'
+                        or raw.get('prompt_eval_count',0)>=config['num_ctx']-config['num_predict']):
+                        raise ValueError('Incomplete generation or context capacity reached; assessment unknown')
                     parsed=json.loads(raw['message']['content'])
                     validator=validate_support if phase=='support' else validate_completeness
                     pair[phase]=validator(p[phase],parsed); record['validated']=pair[phase]

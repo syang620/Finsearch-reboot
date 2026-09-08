@@ -10,6 +10,7 @@ import hashlib
 import json
 from pathlib import Path
 import re
+import subprocess
 
 from bs4 import BeautifulSoup
 from build_semantic_dataset_v1 import canonical
@@ -18,6 +19,7 @@ from semantic_annotations_v2 import EQUIVALENCE, facets, optional_detail
 
 V1 = Path('data/evals/semantic_answer/v1')
 CORPUS = Path('data/evals/retrieval/benchmark_v2/corpus.jsonl')
+BASE = 'ef847550c80077bf9d785dc2694c1a9d6afb1ed3'
 
 
 def digest(path): return hashlib.sha256(Path(path).read_bytes()).hexdigest()
@@ -118,7 +120,11 @@ def build(out):
         years = sorted({c['fiscal_year'] for c in old if c['ticker'] == case['ticker']})
         case['baseline_audit_selected'] = case['fiscal_year'] == years[(order + issuer) % 2]
         cases.append(case)
-    historical = {str(p): digest(p) for base in (Path('data/evals'), Path('artifacts/evals')) for p in sorted(base.rglob('*')) if p.is_file()}
+    historical_paths=subprocess.check_output(['git','ls-tree','-r','--name-only',BASE,'--','data/evals','artifacts/evals'],text=True).splitlines()
+    historical = {p:digest(p) for prefix in ('data/evals/','artifacts/evals/') for p in sorted(historical_paths,key=Path) if p.startswith(prefix)}
+    for path,value in historical.items():
+        original=subprocess.check_output(['git','show',f'{BASE}:{path}'])
+        if hashlib.sha256(original).hexdigest()!=value: raise ValueError('Pre-v2 historical file changed')
     report = {'status': 'DRAFT_NOT_OPTIMIZATION_FROZEN', 'cases': len(cases), 'v1_required_claims': len(lineage),
               'v2_required_claims': sum(len(c['required_claims']) for c in cases),
               'issuers': dict(Counter(c['ticker'] for c in cases)),
