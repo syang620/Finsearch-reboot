@@ -8,9 +8,10 @@ The 20-minute diagnostic did not produce a reproducible clean external procedure
 Even with AC power, Low Power Mode off, awake protection, no Chrome/Safari process
 and no benchmark/model/retrieval call, the exact frozen control reported a violation
 in 235/1,200 one-second samples (19.6%). Required current tooling was a substantial
-source: ChatGPT/Codex UI processes crossed the threshold in 142 process-samples,
-and Docker Desktop's renderer did so in 85. The latter belongs to the process tree
-hosting the required Qdrant container.
+source: ChatGPT/Codex UI processes crossed the threshold in 142 process-samples.
+Docker Desktop's renderer did so in 85 and belongs to the same process tree whose
+backend hosted Qdrant in a post-observation snapshot; whether Qdrant caused or
+required those renderer bursts is unknown.
 
 This report does not change or criticize the threshold by inference. It recommends
 a separate control-design decision before any new run authority. PR31 remains
@@ -26,7 +27,9 @@ at one-second diagnostic intervals. Every sample called the imported frozen
 command, cwd and ancestry without replacing the frozen decision.
 
 All samples recorded AC power and Low Power Mode zero. Browser count was zero.
-The observer held awake protection. No process was killed. No benchmark case,
+The observer held awake protection. No pre-existing or competing workload process
+was killed; after the final sample the observer terminated its own `caffeinate`
+child. No benchmark case,
 planner/analyst call, retrieval query, embedding, reranker request or other model
 inference occurred. A 41-second marked simulation performed only read-only
 repository/freeze, service identity, index identity, import and planner-construction
@@ -74,18 +77,21 @@ Classification: **required tooling activity for this agent-driven run**. It migh
 be avoidable only with a separately validated terminal-only launch in which Codex
 does not supervise the run. This investigation did not test or authorize that.
 
-### Docker Desktop renderer — identity and origin high
+### Docker Desktop renderer — identity/origin high, activity cause low
 
 The full command names Docker Desktop's renderer. Its ancestors are Docker Desktop
-and `com.docker.backend`; cwd is Docker's container data directory. Read-only
-checks confirmed `com.docker` owns port 6333 and a `qdrant/qdrant:v1.16.2` container
-provides the required index service. The renderer crossed the threshold throughout
-passive, simulation and post phases.
+and `com.docker.backend`; cwd is Docker's container data directory. A preserved
+post-observation snapshot at 16:34:17 UTC confirms `com.docker` owned port 6333
+and a `qdrant/qdrant:v1.16.2` container served it at that instant. The endpoint
+also responded during the preflight simulation. These facts do not show that
+Qdrant caused the renderer's CPU or that service state persisted uninterrupted.
+The renderer crossed the threshold in passive, simulation and post phases.
 
-Classification: **required current service-hosting process tree; renderer-specific
-avoidability unknown**. The control's `com.docker` exemption matches the backend
-name but not the renderer path. This is an observed identity mismatch, not authority
-to edit the exemption or host Qdrant differently.
+Classification: **unknown**. Docker's backend is required by the current Qdrant
+setup, but the renderer's necessity and avoidability are not established. The
+control's `com.docker` exemption matches the backend name but not the renderer
+path. This is an observed identity mismatch, not authority to edit the exemption
+or host Qdrant differently.
 
 ### Historical `git` — cause unresolved, confidence low
 
@@ -127,8 +133,9 @@ same boundary. No `git` violation reproduced.
 
 ## System-event correlation
 
-Docker/Qdrant linkage is directly verified. Time Machine was not running in the
-post-observation check. Spotlight was enabled, but no Spotlight process crossed
+Docker/Qdrant linkage is directly verified only for the timestamped post-observation
+snapshot; renderer causation is not. Time Machine was not running then. Spotlight
+was enabled, but no Spotlight process crossed
 the threshold. No backup, Chrome, Safari, or Git violation appeared in the formal
 window. These negative observations do not reconstruct the two earlier snapshots.
 

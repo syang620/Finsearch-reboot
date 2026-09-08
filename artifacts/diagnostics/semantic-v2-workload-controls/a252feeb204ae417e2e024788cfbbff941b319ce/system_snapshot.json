@@ -1,0 +1,36 @@
+{
+  "observed_at": "2026-09-08T16:34:17Z",
+  "timing_scope": "Post-observation point-in-time snapshot; not evidence that state persisted throughout the 20-minute window.",
+  "tcp_6333_listener": {
+    "command": "com.docker.backend",
+    "pid": 28230,
+    "user": "$USER",
+    "endpoint": "127.0.0.1:6333",
+    "state": "LISTEN",
+    "full_command": "/Applications/Docker.app/Contents/MacOS/com.docker.backend services",
+    "ppid": 28229,
+    "process_start_time": "Wed Sep 2 23:53:25 2026"
+  },
+  "docker_container": {
+    "id": "873f0eca04018ef8f0b42190a29cd58364a805b2b6f47a5b89f63e8047d5aa8b",
+    "image": "qdrant/qdrant:v1.16.2",
+    "name": "finsearch-pr6-eval-01a064fd",
+    "status": "Up 3 days",
+    "ports": "127.0.0.1:6333->6333/tcp"
+  },
+  "qdrant_endpoint": {
+    "title": "qdrant - vector search engine",
+    "version": "1.16.2",
+    "commit": "d2834de0b51be23a7b22b023e424cbb9456d0e75"
+  },
+  "time_machine": {"client": "com.apple.backupd", "running": false},
+  "spotlight": {"volume": "/", "indexing": "enabled"},
+  "commands": [
+    "lsof -nP -iTCP:6333 -sTCP:LISTEN",
+    "ps -p 28230 -o pid=,ppid=,lstart=,comm=,command=",
+    "docker ps --no-trunc --format <fixed fields>",
+    "curl -s http://127.0.0.1:6333/",
+    "tmutil status",
+    "mdutil -s /"
+  ]
+}

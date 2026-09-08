@@ -48,9 +48,10 @@
     },
     "docker_desktop_renderer": {
       "identity_confidence": "high",
-      "activity_cause_confidence": "high",
-      "evidence": "Full command and ancestry lead from Docker Desktop Helper Renderer through Docker Desktop to com.docker.backend. com.docker owns port 6333 and the qdrant/qdrant:v1.16.2 container was running throughout.",
-      "required_classification": "required current service-hosting process tree; renderer-specific avoidability is unknown"
+      "origin_confidence": "high",
+      "activity_cause_confidence": "low",
+      "evidence": "Full command and ancestry lead from Docker Desktop Helper Renderer through Docker Desktop to com.docker.backend. A separately timestamped post-observation snapshot shows that backend owning port 6333 and a qdrant/qdrant:v1.16.2 container serving it. It does not show that Qdrant caused the renderer bursts.",
+      "required_classification": "unknown: Docker backend is required by the current service setup, but renderer necessity and avoidability are not established"
     },
     "historical_git": {
       "identity_confidence": "low",
@@ -82,7 +83,7 @@
     "interpretation": "The existing settle removed the simulation process's setup spike, but an unrelated required UI process still violated afterward. Git did not reproduce."
   },
   "system_correlation": {
-    "qdrant_host": "Docker container qdrant/qdrant:v1.16.2; com.docker listening on 127.0.0.1:6333",
+    "qdrant_host": "Post-observation snapshot at 2026-09-08T16:34:17Z: Docker container qdrant/qdrant:v1.16.2 and com.docker listener on 127.0.0.1:6333. This is not evidence of uninterrupted state throughout the window.",
     "backup_status_after_observation": "not running",
     "spotlight_status_after_observation": "enabled; no Spotlight process crossed the threshold during observation",
     "browser_rule_during_formal_observation": "no Chrome or Safari.app process",
@@ -95,5 +96,5 @@
     ]
   },
   "decision": "CONTROL_CONTRACT_NEEDS_REVIEW",
-  "decision_reason": "A clean power/browser precondition was insufficient: required current tooling and service-hosting process trees repeatedly crossed the unchanged rule during passive and post-simulation phases. No verified external procedure can remove both while preserving this agent-driven workflow and Docker-hosted Qdrant. Do not change the rule in this investigation and do not authorize another baseline yet."
+  "decision_reason": "A clean power/browser precondition was insufficient: required ChatGPT/Codex supervision repeatedly crossed the unchanged rule, while a Docker renderer in the current Qdrant-hosting process tree also recurred but has unknown necessity. No verified external procedure removes those risks while preserving this agent-driven workflow and current service setup. Do not change the rule in this investigation and do not authorize another baseline yet."
 }

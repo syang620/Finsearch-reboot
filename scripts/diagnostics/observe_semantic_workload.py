@@ -234,6 +234,7 @@ def run(output, duration_seconds, interval_seconds):
                     for row in samples
                 ),
                 "process_summaries": summarize(samples),
+                "owned_process_cleanup": "Observer terminates only its own caffeinate child after the final sample; no pre-existing or competing workload process is terminated.",
             }
             stream.write(json.dumps(footer) + "\n")
     print(json.dumps({"output": str(output), "sample_count": len(samples)}))

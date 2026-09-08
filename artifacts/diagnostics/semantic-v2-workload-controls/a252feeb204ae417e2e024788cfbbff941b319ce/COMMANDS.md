@@ -31,7 +31,10 @@ PYTHONPATH=src:. $FINSEARCH_PYTHON -m pytest \
 git diff --check
 ```
 
-The historical unified-log query returned no matching retained event. Process
+The timestamped post-observation system-command results are preserved in
+`system_snapshot.json`; they establish point-in-time state only. The historical
+unified-log query returned no matching retained event. Process
 command/parent recovery for the old `git` and browser samples was therefore
 unavailable. No hooks, Git configuration, service configuration or process state
-was changed.
+was changed. The observer terminated only its own `caffeinate` child after the
+final sample; it did not terminate a pre-existing or competing workload process.

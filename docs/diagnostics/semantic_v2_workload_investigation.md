@@ -34,7 +34,8 @@ embedding, reranker call or other model inference. The reranker health probe is
 intentionally omitted because it would be inference; this limitation will be in
 the final report.
 
-No observed process is killed. No threshold, exemption, cadence, production code,
+No pre-existing or competing workload process is killed. After its final sample,
+the observer terminates only its own awake-protection child. No threshold, exemption, cadence, production code,
 model, timeout, retry, benchmark case, gold label or historical artifact changes.
 The final recommendation must be exactly one of `ENVIRONMENT_CAN_BE_CLEANED`,
 `CONTROL_CONTRACT_NEEDS_REVIEW` or `ROOT_CAUSE_UNRESOLVED`.

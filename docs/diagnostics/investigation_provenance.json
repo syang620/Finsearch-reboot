@@ -35,7 +35,8 @@
     "authoritative_function": "scripts.evals.retrieval.run_benchmark_v3.controls",
     "benchmark_cases": 0,
     "model_inference": 0,
-    "process_termination": false,
+    "pre_existing_or_competing_process_termination": false,
+    "observer_owned_caffeinate_terminated_after_sampling": true,
     "started_at": "2026-09-08T15:52:57.496925+00:00",
     "finished_at": "2026-09-08T16:12:57.488396+00:00",
     "sample_count": 1200,
@@ -43,6 +44,6 @@
     "preflight_simulation_sha256": "92cd7e643c40746ed7c12f6af89fd6f386b57ac82fffe4a20affe5bd1c2f8583"
   },
   "privacy": "Publishable process records replace the user-home prefix with $USER_HOME. Historical frozen evidence is not rewritten.",
-  "artifact_manifest_sha256": "33100e65aa447d15aab36be7b845ff0391a998f48fcde3b4e2b846b62e32bf2f",
+  "artifact_manifest_sha256": "2c5d13d9988bac96a101a1015aa121135cc046732741d958d697f22d1ae8717d",
   "decision": "CONTROL_CONTRACT_NEEDS_REVIEW"
 }
