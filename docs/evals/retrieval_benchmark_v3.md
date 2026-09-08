@@ -171,6 +171,23 @@ workload, errors, model/service identity and index fingerprints. Latency remains
 **observational**, even when sampled AC/Low Power Mode/browser checks pass;
 these checks do not prove continuous laboratory isolation or service stability.
 
+The index-origin guard is separate from the before/after mutation check. Before
+any query, the completed build manifest must equal its immutable historical
+copy, the sibling `embedded.jsonl` bytes must match that build's recorded hash,
+and the live dense/sparse-vector, payload, point-ID and collection-configuration
+fingerprint must equal the earliest archived v2 post-build snapshot. The reference
+is `2d50cfe0dc7b624676b472b7407aab7dc11f9648/manifest.json`, SHA-256
+`625047fc2cb5039ec0ee44af4979e7c2ee5bde32b6587a286d04658dce54219e`.
+Its payload/vector digest is
+`641f5ee5c465daaa7106717eb4e4a8a4e145cdfd04e4e8afd202a892d2e53630`.
+This is a **historical post-build reference**, not a retroactively claimed
+build-time snapshot: the old builder recorded the embedding-cache hash but no
+served-vector fingerprint at completion. V3 proves identity to the previously
+evaluated stack, not independent mathematical reconstruction of that index.
+No current live fingerprint is promoted to expected gold or accepted merely
+because it stays unchanged. These manifest fields are used only for index
+provenance, never for relevance annotation or selecting benchmark cases.
+
 ## Claims after approval and baseline recording
 
 Allowed: built a source-backed, versioned known-label KB benchmark; measured
@@ -257,3 +274,17 @@ to the evaluated commit. Labels and their hashes are unchanged. Verification
 after this fix: **53 focused tests passed; 966 full-suite tests and 47 subtests
 passed, with the same two pre-existing failures and 25 warnings**. No ranking
 comparison ran between candidates. A fresh exact-head review is required.
+
+The next review of `208d86512c44e177b990f99b11859122d70e0cfd` found a second
+P1: corpus IDs/payloads plus an unchanged-during-run index did not prove vector
+identity to the historical build. The index-origin guard above addresses it
+without rebuilding, querying, relabeling or altering any historical artifact.
+The dataset hashes remain unchanged; source changes require another exact-head
+review before comparison.
+
+Verification after the index-origin fix: **65 focused tests passed; 978 full-
+suite tests and 47 subtests passed**, with the same two pre-existing failures and
+25 warnings. All 323 historical hashes remain unchanged; diff/privacy checks
+passed. A read-only live snapshot and original embedding-cache hash matched the
+frozen historical reference for all 948 points. This was provenance inspection,
+not a query/ranking comparison.

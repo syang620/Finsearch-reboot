@@ -10,6 +10,7 @@ from evals.retrieval_benchmark_v3 import (
     sha256, summarize, verify_history, validate_pairs,
 )
 from scripts.evals.retrieval.verify_benchmark_v2 import values_match
+from scripts.evals.retrieval.index_provenance_v3 import verify_frozen_index
 
 
 def verify_committed_approval(manifest):
@@ -37,6 +38,9 @@ def verify(dataset, baseline):
         if sha256(safe_relative(name)) != digest:
             raise ValueError("Evaluated source changed")
     verify_committed_approval(manifest)
+    reference = verify_frozen_index(manifest["index"], manifest["index_before"], manifest["build_embedding_cache_sha256"])
+    if manifest["index_provenance"] != reference:
+        raise ValueError("Captured index provenance mismatch")
     case_map = {c["id"]: c for c in cases}
     rows = read_jsonl(baseline / "per_query.jsonl")
     modes = manifest["config"]["modes"]

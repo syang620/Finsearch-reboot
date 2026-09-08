@@ -20,6 +20,7 @@ from qdrant_client import QdrantClient
 
 from evals.retrieval_benchmark_v3 import (METRICS, load_dataset, metrics, sha256,
     classify_results, summarize, verify_history)
+from scripts.evals.retrieval.index_provenance_v3 import verify_frozen_index
 
 BASE="25c15afbab31212a42c97e650e2418f6f82a8674"
 REVIEW_REPOSITORY="syang620/Finsearch-reboot"
@@ -243,6 +244,8 @@ def main():
     client=QdrantClient(host=a.qdrant_host,port=a.qdrant_port,timeout=120)
     before,records=snapshot(client,collection)
     verify_index(records,docs)
+    embedded_digest=sha256(a.index_manifest.parent/"embedded.jsonl")
+    index_provenance=verify_frozen_index(index,before,embedded_digest)
     # Keep a read-only guard on the historical collection as well.
     historical="sec_docs_dense_bm25_pr2_63dcec0"
     historical_before,_=snapshot(client,historical)
@@ -261,6 +264,7 @@ def main():
               "historical_integrity_before":history_before,
               "dataset_manifest_sha256":sha256(a.dataset/"dataset_manifest.json"),
               "config":config,"validation":validation,"index":index,
+              "index_provenance":index_provenance,"build_embedding_cache_sha256":embedded_digest,
               "index_before":before,"historical_index_before":historical_before,
               "tracked_worktree_clean":True,"started_at":datetime.now(timezone.utc).isoformat(),
               "packages":{name:importlib.metadata.version(name) for name in ["qdrant-client","pytest","requests","langchain-ollama"]},

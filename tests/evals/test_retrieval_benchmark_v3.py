@@ -328,3 +328,52 @@ def test_github_findings_all_pages_are_checked(monkeypatch):
         return json.dumps([[], [finding]])
     monkeypatch.setattr(runner.subprocess, "check_output", output)
     assert runner.github_json("repos/example/pulls/30/comments", paginate=True) == [finding]
+
+
+def test_original_build_and_archived_vector_reference():
+    from scripts.evals.retrieval.index_provenance_v3 import frozen_index_reference, verify_frozen_index
+    reference = frozen_index_reference()
+    assert reference["snapshot"]["points"] == 948
+    assert verify_frozen_index(reference["build"], reference["snapshot"], reference["build"]["embedded_sha256"]) == reference
+
+
+@pytest.mark.parametrize("mutation", ["manifest", "embedding_cache", "vector_digest", "config", "point_count"])
+def test_unchanged_but_wrong_index_cannot_pass(mutation):
+    from scripts.evals.retrieval.index_provenance_v3 import frozen_index_reference, verify_frozen_index
+    reference = frozen_index_reference()
+    index, snapshot = deepcopy(reference["build"]), deepcopy(reference["snapshot"])
+    digest = index["embedded_sha256"]
+    if mutation == "manifest": index["embedding_model"] = "other-model"
+    elif mutation == "embedding_cache": digest = "0" * 64
+    elif mutation == "vector_digest": snapshot["payload_vectors_sha256"] = "0" * 64
+    elif mutation == "config": snapshot["config"]["params"]["sparse_vectors"]["bm25"]["modifier"] = None
+    else: snapshot["points"] -= 1
+    # Even if this changed snapshot equals itself before and after a run,
+    # it must not pass the historical origin binding.
+    with pytest.raises(ValueError): verify_frozen_index(index, snapshot, digest)
+
+
+def test_archived_reference_tampering_rejected(monkeypatch):
+    from scripts.evals.retrieval import index_provenance_v3 as provenance
+    monkeypatch.setattr(provenance, "REFERENCE_SHA256", "0" * 64)
+    with pytest.raises(ValueError, match="provenance hash mismatch"):
+        provenance.frozen_index_reference()
+
+
+@pytest.mark.parametrize("mutation", ["dense", "sparse_index", "sparse_weight", "payload", "point_id"])
+def test_live_snapshot_digest_covers_dense_and_sparse_vectors(mutation):
+    from types import SimpleNamespace
+    from scripts.evals.retrieval.run_benchmark_v3 import snapshot
+    record = {"id": "point", "payload": {"doc_id": "doc", "content": "source"},
+              "vector": {"dense": [1.0, 0.0], "bm25": {"indices": [1, 2], "values": [.4, .6]}}}
+    client = SimpleNamespace(
+        scroll=lambda **kw: ([SimpleNamespace(model_dump=lambda **kw: deepcopy(record))], None),
+        get_collection=lambda name: SimpleNamespace(config=SimpleNamespace(model_dump=lambda **kw: {})))
+    before, _ = snapshot(client, "collection")
+    if mutation == "dense": record["vector"]["dense"][0] = .5
+    elif mutation == "sparse_index": record["vector"]["bm25"]["indices"][0] = 3
+    elif mutation == "sparse_weight": record["vector"]["bm25"]["values"][0] = .5
+    elif mutation == "payload": record["payload"]["content"] = "changed"
+    else: record["id"] = "different-point"
+    after, _ = snapshot(client, "collection")
+    assert before["payload_vectors_sha256"] != after["payload_vectors_sha256"]
