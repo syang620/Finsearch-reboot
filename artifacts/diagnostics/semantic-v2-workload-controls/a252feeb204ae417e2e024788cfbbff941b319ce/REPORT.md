@@ -6,7 +6,7 @@
 
 The 20-minute diagnostic did not produce a reproducible clean external procedure.
 Even with AC power, Low Power Mode off, awake protection, no Chrome/Safari process
-and no benchmark/model/retrieval call, the exact frozen control reported a violation
+and no benchmark/model or semantic-search retrieval call, the exact frozen control reported a violation
 in 235/1,200 one-second samples (19.6%). Required current tooling was a substantial
 source: ChatGPT/Codex UI processes crossed the threshold in 142 process-samples.
 Docker Desktop's renderer did so in 85 and belongs to the same process tree whose
@@ -29,11 +29,15 @@ command, cwd and ancestry without replacing the frozen decision.
 All samples recorded AC power and Low Power Mode zero. Browser count was zero.
 The observer held awake protection. No pre-existing or competing workload process
 was killed; after the final sample the observer terminated its own `caffeinate`
-child. No benchmark case,
-planner/analyst call, retrieval query, embedding, reranker request or other model
-inference occurred. A 41-second marked simulation performed only read-only
-repository/freeze, service identity, index identity, import and planner-construction
-steps, followed by the existing 30-second settle.
+child. No benchmark case, planner/analyst call, benchmark or semantic-search
+retrieval, embedding, reranker request or other model inference occurred. A
+41-second marked simulation performed only read-only repository/freeze, service
+identity, index identity, import and planner-construction steps, followed by the
+existing 30-second settle. Index identity made two read-only Qdrant collection
+snapshot calls that enumerated the current and historical records. The broader
+`retrieval query` shorthand preserved in the immutable raw preflight policy string
+means benchmark/semantic-search retrieval; it does not exclude those two index
+inspection reads.
 
 | Phase | Samples | Violation samples |
 | --- | ---: | ---: |

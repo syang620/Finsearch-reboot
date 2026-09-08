@@ -209,7 +209,7 @@ def run(output, duration_seconds, interval_seconds):
             "observer_pid": os.getpid(),
             "awake_pid": awake.pid,
             "privacy": "User-home prefixes are replaced with $USER_HOME; other command-line content is retained.",
-            "policy": "No benchmark cases, model inference, retrieval, external-process termination, or control modification.",
+            "policy": "No benchmark cases, model inference, benchmark or semantic-search retrieval, external-process termination, or control modification.",
         }
         stream.write(json.dumps(header) + "\n")
         try:

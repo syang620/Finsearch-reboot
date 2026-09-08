@@ -29,8 +29,11 @@ The formal window is 1,200 seconds: passive observation, an explicitly marked
 read-only launch-sequence simulation, then continued observation. Awake protection
 is active. The simulation verifies repository/freeze state, service/model identity,
 both indexes, imports and planner construction, followed by the existing 30-second
-settle. It performs no benchmark case, planner call, analyst call, retrieval query,
-embedding, reranker call or other model inference. The reranker health probe is
+settle. It performs no benchmark case, planner call, analyst call, benchmark or
+semantic-search retrieval, embedding, reranker call or other model inference.
+Index verification does enumerate both Qdrant collections through two read-only
+snapshot calls; the broader `retrieval query` shorthand in the immutable raw
+preflight policy string refers only to benchmark/semantic search. The reranker health probe is
 intentionally omitted because it would be inference; this limitation will be in
 the final report.
 

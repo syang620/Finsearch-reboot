@@ -35,6 +35,8 @@
     "authoritative_function": "scripts.evals.retrieval.run_benchmark_v3.controls",
     "benchmark_cases": 0,
     "model_inference": 0,
+    "benchmark_or_semantic_search_retrieval_calls": 0,
+    "qdrant_collection_snapshot_reads": 2,
     "pre_existing_or_competing_process_termination": false,
     "observer_owned_caffeinate_terminated_after_sampling": true,
     "started_at": "2026-09-08T15:52:57.496925+00:00",
@@ -44,6 +46,6 @@
     "preflight_simulation_sha256": "92cd7e643c40746ed7c12f6af89fd6f386b57ac82fffe4a20affe5bd1c2f8583"
   },
   "privacy": "Publishable process records replace the user-home prefix with $USER_HOME. Historical frozen evidence is not rewritten.",
-  "artifact_manifest_sha256": "f515207a423fc6ddb1caec79f91cb3435952109458ef8e9d8f1d779024d301b3",
+  "artifact_manifest_sha256": "0d9e2841c5c30c2e38e0690c9274c89e70ae90cca8f3a87c77c1b069e91fa03d",
   "decision": "CONTROL_CONTRACT_NEEDS_REVIEW"
 }

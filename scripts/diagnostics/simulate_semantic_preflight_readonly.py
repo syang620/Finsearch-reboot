@@ -63,7 +63,7 @@ def run(index_manifest, output):
         "status": "diagnostic_only",
         "started_at": now(),
         "implementation_sha": subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip(),
-        "policy": "Read-only launch-sequence simulation. No benchmark case, planner call, analyst call, retrieval query, embedding, reranker call, or model inference.",
+        "policy": "Read-only launch-sequence simulation. No benchmark case, planner call, analyst call, benchmark or semantic-search retrieval, embedding, reranker call, or model inference. Index identity performs two read-only Qdrant collection snapshots.",
         "steps": [],
     }
 

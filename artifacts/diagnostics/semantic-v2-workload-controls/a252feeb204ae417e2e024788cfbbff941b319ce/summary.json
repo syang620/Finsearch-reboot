@@ -77,6 +77,8 @@
     "started_at": "2026-09-08T16:04:11.865005+00:00",
     "finished_at": "2026-09-08T16:04:52.912980+00:00",
     "cases_or_model_calls": 0,
+    "benchmark_or_semantic_search_retrieval_calls": 0,
+    "qdrant_collection_snapshot_reads": 2,
     "setup_python_peak_cpu": 449.4,
     "controls_after_setup": {"browser_process_count": 0, "heavy_non_model_processes": [{"process": "python", "cpu": 90.8}]},
     "controls_after_30_second_settle": {"browser_process_count": 0, "heavy_non_model_processes": [{"process": "ChatGPT", "cpu": 64.1}]},
