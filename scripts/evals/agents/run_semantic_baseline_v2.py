@@ -58,6 +58,26 @@ def check_controls(state):
         raise ValueError('Close browsers and settle other heavy workloads before baseline')
 
 
+def finalize_validity(ending, expected_ids, evaluated_ids):
+    """Raw capture completion is not approval to publish a controlled baseline."""
+    reasons=[]
+    captured=ending['captured_cases']
+    if len(captured)!=len(set(captured)) or set(captured)!=set(expected_ids): reasons.append('incomplete_or_duplicate_capture')
+    if len(evaluated_ids)!=len(set(evaluated_ids)) or set(evaluated_ids)!=set(expected_ids): reasons.append('incomplete_or_duplicate_evaluation')
+    if ending.get('evaluation_errors'): reasons.append('evaluation_errors')
+    if ending.get('control_violations'): reasons.append('control_violations')
+    try: check_controls(ending.get('controls_after',{}))
+    except ValueError: reasons.append('final_control_check_failed')
+    for field in ('model_identities_unchanged','index_unchanged'):
+        if ending.get(field) is not True: reasons.append(field+'_not_verified')
+    for field in ('model_verification_error','index_verification_error','runtime_cleanup_error'):
+        if ending.get(field): reasons.append(field)
+    ending.update(status='complete' if not reasons else 'invalid_diagnostic',
+                  official_baseline_eligible=not reasons,invalidity_reasons=reasons,
+                  capture_complete=len(captured)==len(expected_ids) and set(captured)==set(expected_ids))
+    return not reasons
+
+
 def service_preflight(config):
     def get(url,headers=None):
         start=time.perf_counter(); r=requests.get(url,headers=headers,timeout=30); r.raise_for_status()
@@ -158,8 +178,9 @@ async def run(args):
             after,_=snapshot(client,config['collection']); historical_after,_=snapshot(client,config['historical_collection'])
             ending.update(index_after=after,historical_index_after=historical_after,index_unchanged=before==after and historical==historical_after)
         except Exception as exc: ending['index_verification_error']=f'{type(exc).__name__}: {exc}'
+        valid=finalize_validity(ending,[c['id'] for c in cases],[r['case_id'] for r in rows])
         save(out/'completion.json',ending); client.close()
-        if len(rows)==len(cases) and not evaluation_errors:
+        if valid:
             save(out/'deterministic_summary.json',{'overall':deterministic_summary(rows),
                  'by_stratum':{s:deterministic_summary([r for r in rows if r['stratum']==s]) for s in sorted({c['stratum'] for c in cases})},
                  'by_issuer':{s:deterministic_summary([r for r in rows if r['ticker']==s]) for s in sorted({c['ticker'] for c in cases})}})

@@ -1,8 +1,11 @@
 """Explicit population/assessment denominators; never extrapolate a subset."""
 from collections import Counter
+import json
 import math
+from pathlib import Path
 
 from evals.semantic_answer_v1 import rate
+from evals.semantic_dataset_v2 import sha, verify_files
 from evals.semantic_judge_v2 import packets, validate_support, validate_completeness, whole_answer
 from evals.semantic_outcomes_v2 import summarize_numeric, summarize_outcomes
 
@@ -30,7 +33,26 @@ def deterministic_summary(rows):
     return summary
 
 
-def semantic_summary(cases, outputs, deterministic, assessments, *, scope_ids, channel):
+def enabled_judge_policy(data_root):
+    """Read the frozen decision, never trust a caller's channel label alone."""
+    root=Path(data_root)
+    manifest_path=root/'optimization_manifest.json'
+    if not manifest_path.is_file(): raise ValueError('Frozen enabled judge decision required')
+    manifest=json.loads(manifest_path.read_text())
+    if manifest.get('status')!='OPTIMIZATION_FROZEN' or manifest.get('judge_enabled') is not True:
+        raise ValueError('Full-benchmark secondary judge is disabled')
+    files=manifest['files_sha256']
+    if not {'judge_decision.json','judge_config.json','validation_manifest.json'}<=set(files):
+        raise ValueError('Judge policy missing from optimization freeze')
+    verify_files(root,files)
+    decision_path=root/'judge_decision.json'; decision=json.loads(decision_path.read_text())
+    if decision.get('full_benchmark_judge_enabled') is not True or decision.get('metrics',{}).get('full_benchmark_judge_enabled') is not True:
+        raise ValueError('Full-benchmark secondary judge is disabled')
+    return {'optimization_manifest_sha256':sha(manifest_path),'judge_decision_sha256':sha(decision_path)}
+
+
+def semantic_summary(cases, outputs, deterministic, assessments, *, scope_ids, channel,
+                     data_root='data/evals/semantic_answer/v2'):
     """Validated support/completeness assessments for a declared fixed scope.
 
     `scope_ids` must be the preregistered audit subset or all cases for an enabled
@@ -38,6 +60,7 @@ def semantic_summary(cases, outputs, deterministic, assessments, *, scope_ids, c
     losses. All semantic rates below describe ONLY this declared scope.
     """
     if channel not in {'source_adjudicated_subset','validated_secondary_judge'}: raise ValueError('Unknown assessment channel')
+    policy=enabled_judge_policy(data_root) if channel=='validated_secondary_judge' else None
     case_map={c['id']:c for c in cases}; row_map={r['case_id']:r for r in deterministic}
     if len(case_map)!=len(cases) or len(row_map)!=len(deterministic) or set(row_map)!=set(case_map) or set(outputs)!=set(case_map):
         raise ValueError('Complete unique benchmark execution membership required')
@@ -66,7 +89,7 @@ def semantic_summary(cases, outputs, deterministic, assessments, *, scope_ids, c
         unsupported_valid+=(any(c['support']=='unsupported' for c in support['claims']) and row['claim_citation_coverage']['rate']==1 and row['valid_context_id_rate']['rate']==1)
     insufficient_scope={cid for cid in scope if case_map[cid]['expected_answerability']=='insufficient_data'}
     judged_insufficient=sum(cid in insufficient_scope and assessments.get(cid) is not None for cid in eligible)
-    return {'assessment_channel':channel,'population_case_ids':sorted(scope),'population_size':len(scope),
+    return {'assessment_channel':channel,'frozen_judge_policy':policy,'population_case_ids':sorted(scope),'population_size':len(scope),
             'benchmark_size':len(cases),'population_note':'All semantic rates are restricted to the declared assessment population; subset results are not full-benchmark accuracy.',
             'execution_in_population':summarize_outcomes([row_map[cid] for cid in sorted(scope)]),
             'assessed_eligible_answers':rate(assessed,len(eligible)),

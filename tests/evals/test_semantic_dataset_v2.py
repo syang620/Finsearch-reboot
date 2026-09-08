@@ -60,6 +60,22 @@ def test_judge_thresholds_match_preregistered_config():
     assert json.loads((ROOT/'judge_config.json').read_text())['acceptance_thresholds']==GATES
 
 
+def test_all_synthetic_structured_contexts_are_runtime_shaped():
+    from agents.contracts import StructuredFactEvidence
+    from evals.semantic_dataset_v2 import load_numeric_catalog
+    from evals.semantic_answer_v2 import deterministic_case
+    catalog=load_numeric_catalog(ROOT)
+    for fixture in read(ROOT/'validation_fixtures.jsonl'):
+        for context in fixture['output']['evaluation_trace']['analyst_packet']['context_items']:
+            if context['kind']=='structured_fact':
+                fact=context['structured_fact']
+                assert 'source_sha256' not in fact
+                StructuredFactEvidence.model_validate(fact)
+        if fixture['id'] in {'SEM2_VALID_01','SEM2_VALID_09','SEM2_VALID_10','SEM2_VALID_11'}:
+            row=deterministic_case(fixture['case'],fixture['output'],catalog)
+            assert all(check['credit'] for check in row['numeric_checks'])
+
+
 def test_source_only_rebuild_is_byte_deterministic_after_v2_exists(tmp_path):
     out=tmp_path/'draft'
     subprocess.run([sys.executable,'scripts/evals/agents/build_semantic_dataset_v2.py','--out-dir',str(out)],

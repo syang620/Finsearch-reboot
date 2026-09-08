@@ -40,7 +40,8 @@ def unique(rows,key):
 def load_numeric_catalog(root):
     root=Path(root)
     return {'facts':read(root/'numeric_evidence_catalog.jsonl'),
-            'displays':unique(read(root/'source_table_displays.jsonl'),'evidence_id')}
+            'displays':unique(read(root/'source_table_displays.jsonl'),'evidence_id'),
+            'filings':unique(json.loads((root/'filing_identities.json').read_text()),'source_sha256')}
 
 
 def validate_lineage(cases,old,lineage):
@@ -79,6 +80,11 @@ def load_dataset(root, repository='.'):
         verify_files(repository,{source['source_html']:source['source_sha256'],
                                 'data/evals/semantic_answer/v1/'+source['table_sidecar']:source['table_sha256']})
     verify_files(repository,json.loads((root/'historical_sha256.json').read_text()))
+    filings=unique(json.loads((root/'filing_identities.json').read_text()),'source_sha256')
+    for filing in filings.values():
+        verify_files(repository,{filing['source_html']:filing['source_sha256']})
+    if set(filings)!={s['source_sha256'] for s in refs['source_manifest']['sources']}:
+        raise ValueError('Incomplete original filing identity catalog')
     cases=read(root/'queries.jsonl')
     validate_lineage(cases,read(repository/'data/evals/semantic_answer/v1/queries.jsonl'),read(root/'claim_lineage.jsonl'))
     docs=unique(read(repository/refs['corpus_path']),'id')

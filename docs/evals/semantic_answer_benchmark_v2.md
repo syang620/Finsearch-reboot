@@ -86,6 +86,22 @@ claims. Emitted-claim support rates must be paired with fixed-required-facet
 coverage and whole-answer measures to resist claim-splitting gains. Citation-ID
 validity, type compatibility and PR6 structural grounding are not semantic truth.
 
+Structured source binding uses the independently verified six-filing identity
+catalog: original local HTML bytes match the SEC primary-document SHA-256;
+accession, URL, filing report date and filed date come from the SEC filing index.
+The scorer checks these runtime-exposed fields, plus the fact's start date and
+financial meaning. It never requires a nonexistent runtime `source_sha256`.
+Filing report date denotes the anchor filing, not the end of a comparative fact.
+Missing or unadjudicated filing identity remains unknown; a matching value or
+invented local source hash cannot substitute for provenance.
+
+The full-population semantic channel requires an enabled judge decision bound
+by the optimization manifest. A caller-provided channel name is not permission
+to report a disabled judge. Baseline completion likewise requires complete
+unique capture/scoring, no control violations, and successful unchanged-model
+and index checks. Any failed check preserves the raw run as `invalid_diagnostic`
+and withholds the official summary; it does not authorize another attempt.
+
 ## Judge calibration, not judge certification
 
 The preregistered plan defines acceptance gates before predictions. The draft

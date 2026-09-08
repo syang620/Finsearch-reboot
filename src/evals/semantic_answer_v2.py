@@ -46,11 +46,16 @@ def evidence_support(context, gold, catalog):
         # Runtime context that lacks it remains unknown, not assumed equivalent.
         originals = [s for s in gold['sources'] if s['kind'] == 'inline_xbrl']
         if not originals: return 'unknown'
+        filings=catalog.get('filings',{}) if isinstance(catalog,dict) else {}
         for source in originals:
-            if any(fact.get(k) != source.get(k) for k in ('form_type','start_date','report_date')): continue
-            # Filed-year guesses are forbidden; URL equality must be independently
-            # source-adjudicated when original HTML provenance is unavailable.
-            if fact.get('source_sha256') == source['source_sha256']: return 'supported'
+            filing=filings.get(source['source_sha256'])
+            if filing is None or fact.get('start_date')!=source.get('start_date'): continue
+            # report_date describes the filing anchor, not necessarily the end
+            # of a comparative fact. Bind the source bytes to independently
+            # verified SEC identity using fields the real runtime exports.
+            if all(fact.get(k)==filing[k] for k in
+                   ('ticker','form_type','accession_number','report_date','filed_date','source_url')):
+                return 'supported'
         return 'unknown'
     if context.get('kind') not in {'text','table'}: return 'unsupported'
     source = context.get('source') or {}; payload = context.get('payload') or {}

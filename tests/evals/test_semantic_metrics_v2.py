@@ -1,8 +1,10 @@
 from copy import deepcopy
+import json
 import pytest
 
 from evals.semantic_answer_v2 import deterministic_case
 from evals.semantic_metrics_v2 import deterministic_summary, semantic_summary
+from evals.semantic_dataset_v2 import sha
 
 
 def sample():
@@ -52,3 +54,27 @@ def test_deterministic_empty_and_no_numeric_denominators():
     assert summary['execution']['eligible_produced_answers']['denominator']==4
     assert summary['claim_citation_coverage']['denominator']==3
     assert deterministic_summary([])['orchestrator_latency_ms']['p50'] is None
+
+
+def frozen_policy(root,enabled):
+    decision={'full_benchmark_judge_enabled':enabled,'metrics':{'full_benchmark_judge_enabled':enabled}}
+    for name,record in [('judge_decision.json',decision),('judge_config.json',{}),('validation_manifest.json',{})]:
+        (root/name).write_text(json.dumps(record))
+    manifest={'status':'OPTIMIZATION_FROZEN','judge_enabled':enabled,
+              'files_sha256':{p.name:sha(p) for p in root.iterdir()}}
+    (root/'optimization_manifest.json').write_text(json.dumps(manifest))
+
+
+@pytest.mark.parametrize('state',['missing','disabled','changed'])
+def test_channel_string_cannot_enable_unfrozen_or_disabled_judge(tmp_path,state):
+    if state!='missing': frozen_policy(tmp_path,state=='changed')
+    if state=='changed': (tmp_path/'judge_decision.json').write_text('{}')
+    with pytest.raises(ValueError):
+        semantic_summary(*sample(),scope_ids=['0','1','2','3'],channel='validated_secondary_judge',data_root=tmp_path)
+
+
+def test_enabled_judge_reports_exact_frozen_policy_hashes(tmp_path):
+    frozen_policy(tmp_path,True)
+    result=semantic_summary(*sample(),scope_ids=['0','1','2','3'],channel='validated_secondary_judge',data_root=tmp_path)
+    assert result['frozen_judge_policy']['judge_decision_sha256']==sha(tmp_path/'judge_decision.json')
+    assert result['population_size']==4

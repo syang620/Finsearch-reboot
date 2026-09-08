@@ -71,8 +71,11 @@ def build(out):
             return {'context_id':cid,'kind':'table' if doc['metadata']['doc_type']=='table' else 'text',
                     'source':{'doc_id':doc_id,**doc['metadata']},'payload':{'content':doc['content'],
                        'table_markdown':('matched_row: source table evidence\n\n'+body) if doc_id in displays else body}}
+        filing=next(f for f in json.loads((ROOT/'filing_identities.json').read_text()) if f['source_sha256']==source['source_sha256'])
         return {'context_id':cid,'kind':'structured_fact','structured_fact':{
-            **{k:source.get(k) for k in ('ticker','metric_id','value','unit','form_type','report_date','start_date','source_sha256')},
+            **{k:source.get(k) for k in ('ticker','metric_id','value','unit','start_date')},
+            **{k:filing[k] for k in ('form_type','report_date','filed_date','accession_number','source_url')},
+            'metric_label':source['metric_id'],
             'fiscal_year':source['fact_fiscal_year'],'status':'ok'}}
 
     def add(case_id, texts, support, fulfillment, *, answerability=True, status='ok', kb=False, reason, computation=None,

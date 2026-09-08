@@ -27,6 +27,31 @@ All 60 benchmark questions and all numeric targets remain unchanged.
 
 ## Files and checks
 
+### Second review of `5ebd169`
+
+This review also completed before calibration or any v2 model result. All three
+findings are corrected in the unfrozen evaluation draft:
+
+| Finding | Correction | Regression evidence |
+| --- | --- | --- |
+| [P1 runtime cannot expose required source hash](https://github.com/syang620/Finsearch-reboot/pull/31#discussion_r3954002960) | New six-filing identity catalog binds source HTML hashes to independently inspected SEC accession, primary-document URL, report date and filed date. All six SEC primary-document downloads match the immutable local bytes. Structured scoring uses runtime-exposed provenance; synthetic fixtures now conform to the real structured contract. | Correct runtime-shaped evidence passes; missing/wrong accession, URL, dates and fabricated hashes cannot pass. Calculator source operands use the same binding. |
+| [P1 disabled judge channel could be selected](https://github.com/syang620/Finsearch-reboot/pull/31#discussion_r3954002966) | Full-population semantic reporting verifies the enabled decision and hash-bound optimization policy. | Missing, disabled and modified policies reject; enabled policy hashes are reported. |
+| [P1 invalid controlled run could publish summary](https://github.com/syang620/Finsearch-reboot/pull/31#discussion_r3954002970) | Final validity gate requires complete unique capture/scoring, no control violations and successful unchanged model/index verification. | Power/workload violations, failed/missing integrity checks and incomplete scoring become `invalid_diagnostic`; no official summary, raw evidence retained, no automatic retry. |
+
+The filing identity catalog records direct SEC index/document URLs and the
+independent byte-match verification date. Gold question text, numeric targets,
+source facts and all 36 calibration labels remain unchanged. Only ten synthetic
+fixture context records change to expose realistic structured provenance.
+The new fixture SHA-256 is
+`85e6ff7dd07ed4555a91b9b4f833b848df4f7afcec3e60920e01e3554130188b`.
+The second-round focused suite has **154 passing tests** (153 in the first
+focused run plus the subsequently added all-fixture runtime-contract regression,
+which passes within the ten-test dataset suite). The full suite before that
+last added test has **1,131 passing tests**, 47 passing subtests and the same two
+pre-existing failures. No production/dependency diff or local-path leak exists.
+
+### Change inventory
+
 New benchmark data live only under `data/evals/semantic_answer/v2/`: queries,
 claim lineage, composition, source references, historical hashes, numeric-source
 links, source display forms, validation fixtures, two judge rubrics and config.
