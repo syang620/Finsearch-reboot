@@ -1,0 +1,332 @@
+{
+  "status": "DRAFT_NOT_OPTIMIZATION_FROZEN",
+  "cases": 60,
+  "v1_required_claims": 86,
+  "v2_required_claims": 119,
+  "issuers": {
+    "AAPL": 20,
+    "AMZN": 20,
+    "MSFT": 20
+  },
+  "filings": {
+    "AAPL:2024": 10,
+    "AAPL:2025": 10,
+    "AMZN:2023": 10,
+    "AMZN:2024": 10,
+    "MSFT:2024": 10,
+    "MSFT:2025": 10
+  },
+  "strata": {
+    "structured_numeric": 12,
+    "narrative": 6,
+    "hybrid": 6,
+    "comparison": 6,
+    "calculator": 6,
+    "multiple_claims": 6,
+    "difficult_attribution": 6,
+    "plausible_wrong_evidence": 6,
+    "insufficient_data": 6
+  },
+  "normalized_question_families": 30,
+  "required_claim_families": {
+    "revenue": 36,
+    "cash_and_cash_equivalents": 6,
+    "AAPL:policy:definition": 2,
+    "AAPL:growth_drivers:advertising": 2,
+    "AAPL:growth_drivers:app_store": 2,
+    "AAPL:growth_drivers:cloud": 2,
+    "revenue_growth_percent": 6,
+    "AAPL:business_or_governance:sourcing": 2,
+    "AAPL:risk:supply": 2,
+    "AAPL:risk:pricing": 2,
+    "AAPL:attribution:mix": 2,
+    "services_gross_margin_percent": 2,
+    "AAPL:attribution:cost_offset": 1,
+    "AMZN:policy:received": 2,
+    "AMZN:policy:due": 2,
+    "AMZN:policy:recognition": 2,
+    "AMZN:growth_drivers:usage": 2,
+    "AMZN:growth_drivers:pricing_offset": 2,
+    "AMZN:growth_drivers:contracts": 2,
+    "AMZN:business_or_governance:networks": 2,
+    "AMZN:business_or_governance:partners": 2,
+    "AMZN:business_or_governance:digital": 2,
+    "AMZN:business_or_governance:stores": 2,
+    "AMZN:risk:carrier_risk": 2,
+    "AMZN:attribution:usage": 2,
+    "AMZN:attribution:offset": 2,
+    "aws_leased_area": 2,
+    "aws_owned_area": 2,
+    "MSFT:policy:definition": 2,
+    "MSFT:growth_drivers:intelligent_cloud": 2,
+    "MSFT:growth_drivers:productivity": 2,
+    "MSFT:growth_drivers:personal_computing": 2,
+    "MSFT:business_or_governance:board": 2,
+    "MSFT:business_or_governance:cadence": 2,
+    "MSFT:risk:evolution": 2,
+    "MSFT:attribution:gaming": 2,
+    "MSFT:attribution:cloud": 2,
+    "MSFT:attribution:acquisition": 2,
+    "research_and_development": 2
+  },
+  "numeric_metric_distribution": {
+    "revenue": 36,
+    "cash_and_cash_equivalents": 6,
+    "revenue_growth_percent": 6,
+    "services_gross_margin_percent": 2,
+    "aws_leased_area": 2,
+    "aws_owned_area": 2,
+    "research_and_development": 2
+  },
+  "shared_evidence_groups": {
+    "AAPL_10-K_2024::table::5": [
+      "SEM2_AAPL_2024_09"
+    ],
+    "AAPL_10-K_2024::text::14::split::1": [
+      "SEM2_AAPL_2024_07"
+    ],
+    "AAPL_10-K_2024::text::32": [
+      "SEM2_AAPL_2024_04"
+    ],
+    "AAPL_10-K_2024::text::33": [
+      "SEM2_AAPL_2024_08"
+    ],
+    "AAPL_10-K_2024::text::46": [
+      "SEM2_AAPL_2024_03"
+    ],
+    "AAPL_10-K_2024::text::6": [
+      "SEM2_AAPL_2024_07"
+    ],
+    "AAPL_10-K_2024::text::75": [
+      "SEM2_AAPL_2024_07"
+    ],
+    "AAPL_10-K_2025::table::5": [
+      "SEM2_AAPL_2025_09"
+    ],
+    "AAPL_10-K_2025::text::14::split::0": [
+      "SEM2_AAPL_2025_07"
+    ],
+    "AAPL_10-K_2025::text::33": [
+      "SEM2_AAPL_2025_04"
+    ],
+    "AAPL_10-K_2025::text::34": [
+      "SEM2_AAPL_2025_08"
+    ],
+    "AAPL_10-K_2025::text::48": [
+      "SEM2_AAPL_2025_03"
+    ],
+    "AAPL_10-K_2025::text::6": [
+      "SEM2_AAPL_2025_07"
+    ],
+    "AAPL_10-K_2025::text::77": [
+      "SEM2_AAPL_2025_07"
+    ],
+    "AAPL_2024:cash_and_cash_equivalents:instant:2024-09-28": [
+      "SEM2_AAPL_2024_02"
+    ],
+    "AAPL_2024:revenue:2022-09-25:2023-09-30": [
+      "SEM2_AAPL_2024_05",
+      "SEM2_AAPL_2024_06"
+    ],
+    "AAPL_2024:revenue:2023-10-01:2024-09-28": [
+      "SEM2_AAPL_2024_01",
+      "SEM2_AAPL_2024_04",
+      "SEM2_AAPL_2024_05",
+      "SEM2_AAPL_2024_06"
+    ],
+    "AAPL_2025:cash_and_cash_equivalents:instant:2025-09-27": [
+      "SEM2_AAPL_2025_02"
+    ],
+    "AAPL_2025:revenue:2023-10-01:2024-09-28": [
+      "SEM2_AAPL_2025_05",
+      "SEM2_AAPL_2025_06"
+    ],
+    "AAPL_2025:revenue:2024-09-29:2025-09-27": [
+      "SEM2_AAPL_2025_01",
+      "SEM2_AAPL_2025_04",
+      "SEM2_AAPL_2025_05",
+      "SEM2_AAPL_2025_06"
+    ],
+    "AMZN_10-K_2023::table::3": [
+      "SEM2_AMZN_2023_09"
+    ],
+    "AMZN_10-K_2023::text::1": [
+      "SEM2_AMZN_2023_07"
+    ],
+    "AMZN_10-K_2023::text::15::split::3": [
+      "SEM2_AMZN_2023_07"
+    ],
+    "AMZN_10-K_2023::text::23::split::0": [
+      "SEM2_AMZN_2023_04",
+      "SEM2_AMZN_2023_08"
+    ],
+    "AMZN_10-K_2023::text::26::split::7": [
+      "SEM2_AMZN_2023_03"
+    ],
+    "AMZN_10-K_2024::table::3": [
+      "SEM2_AMZN_2024_09"
+    ],
+    "AMZN_10-K_2024::text::1": [
+      "SEM2_AMZN_2024_07"
+    ],
+    "AMZN_10-K_2024::text::15::split::2": [
+      "SEM2_AMZN_2024_07"
+    ],
+    "AMZN_10-K_2024::text::15::split::3": [
+      "SEM2_AMZN_2024_07"
+    ],
+    "AMZN_10-K_2024::text::23::split::0": [
+      "SEM2_AMZN_2024_04",
+      "SEM2_AMZN_2024_08"
+    ],
+    "AMZN_10-K_2024::text::26::split::9": [
+      "SEM2_AMZN_2024_03"
+    ],
+    "AMZN_2023:cash_and_cash_equivalents:instant:2023-12-31": [
+      "SEM2_AMZN_2023_02"
+    ],
+    "AMZN_2023:revenue:2022-01-01:2022-12-31": [
+      "SEM2_AMZN_2023_05",
+      "SEM2_AMZN_2023_06"
+    ],
+    "AMZN_2023:revenue:2023-01-01:2023-12-31": [
+      "SEM2_AMZN_2023_01",
+      "SEM2_AMZN_2023_04",
+      "SEM2_AMZN_2023_05",
+      "SEM2_AMZN_2023_06"
+    ],
+    "AMZN_2024:cash_and_cash_equivalents:instant:2024-12-31": [
+      "SEM2_AMZN_2024_02"
+    ],
+    "AMZN_2024:revenue:2023-01-01:2023-12-31": [
+      "SEM2_AMZN_2024_05",
+      "SEM2_AMZN_2024_06"
+    ],
+    "AMZN_2024:revenue:2024-01-01:2024-12-31": [
+      "SEM2_AMZN_2024_01",
+      "SEM2_AMZN_2024_04",
+      "SEM2_AMZN_2024_05",
+      "SEM2_AMZN_2024_06"
+    ],
+    "MSFT_10-K_2024::table::18": [
+      "SEM2_MSFT_2024_09"
+    ],
+    "MSFT_10-K_2024::table::9": [
+      "SEM2_MSFT_2024_09"
+    ],
+    "MSFT_10-K_2024::text::0::split::19": [
+      "SEM2_MSFT_2024_07"
+    ],
+    "MSFT_10-K_2024::text::0::split::20": [
+      "SEM2_MSFT_2024_07"
+    ],
+    "MSFT_10-K_2024::text::0::split::42": [
+      "SEM2_MSFT_2024_07"
+    ],
+    "MSFT_10-K_2024::text::12::split::3": [
+      "SEM2_MSFT_2024_03"
+    ],
+    "MSFT_10-K_2024::text::12::split::4": [
+      "SEM2_MSFT_2024_03"
+    ],
+    "MSFT_10-K_2024::text::5::split::2": [
+      "SEM2_MSFT_2024_04"
+    ],
+    "MSFT_10-K_2024::text::5::split::3": [
+      "SEM2_MSFT_2024_08"
+    ],
+    "MSFT_10-K_2025::table::17": [
+      "SEM2_MSFT_2025_09"
+    ],
+    "MSFT_10-K_2025::table::9": [
+      "SEM2_MSFT_2025_09"
+    ],
+    "MSFT_10-K_2025::text::0::split::26": [
+      "SEM2_MSFT_2025_07"
+    ],
+    "MSFT_10-K_2025::text::0::split::27": [
+      "SEM2_MSFT_2025_07"
+    ],
+    "MSFT_10-K_2025::text::0::split::48": [
+      "SEM2_MSFT_2025_07"
+    ],
+    "MSFT_10-K_2025::text::11::split::7": [
+      "SEM2_MSFT_2025_03"
+    ],
+    "MSFT_10-K_2025::text::11::split::9": [
+      "SEM2_MSFT_2025_03"
+    ],
+    "MSFT_10-K_2025::text::5::split::2": [
+      "SEM2_MSFT_2025_04"
+    ],
+    "MSFT_10-K_2025::text::5::split::3": [
+      "SEM2_MSFT_2025_08"
+    ],
+    "MSFT_2024:cash_and_cash_equivalents:instant:2024-06-30": [
+      "SEM2_MSFT_2024_02"
+    ],
+    "MSFT_2024:revenue:2022-07-01:2023-06-30": [
+      "SEM2_MSFT_2024_05",
+      "SEM2_MSFT_2024_06"
+    ],
+    "MSFT_2024:revenue:2023-07-01:2024-06-30": [
+      "SEM2_MSFT_2024_01",
+      "SEM2_MSFT_2024_04",
+      "SEM2_MSFT_2024_05",
+      "SEM2_MSFT_2024_06"
+    ],
+    "MSFT_2025:cash_and_cash_equivalents:instant:2025-06-30": [
+      "SEM2_MSFT_2025_02"
+    ],
+    "MSFT_2025:revenue:2023-07-01:2024-06-30": [
+      "SEM2_MSFT_2025_05",
+      "SEM2_MSFT_2025_06"
+    ],
+    "MSFT_2025:revenue:2024-07-01:2025-06-30": [
+      "SEM2_MSFT_2025_01",
+      "SEM2_MSFT_2025_04",
+      "SEM2_MSFT_2025_05",
+      "SEM2_MSFT_2025_06"
+    ]
+  },
+  "baseline_audit_ids": [
+    "SEM2_AAPL_2024_02",
+    "SEM2_AAPL_2024_04",
+    "SEM2_AAPL_2024_06",
+    "SEM2_AAPL_2024_08",
+    "SEM2_AAPL_2024_10",
+    "SEM2_AAPL_2025_01",
+    "SEM2_AAPL_2025_03",
+    "SEM2_AAPL_2025_05",
+    "SEM2_AAPL_2025_07",
+    "SEM2_AAPL_2025_09",
+    "SEM2_AMZN_2023_01",
+    "SEM2_AMZN_2023_03",
+    "SEM2_AMZN_2023_05",
+    "SEM2_AMZN_2023_07",
+    "SEM2_AMZN_2023_09",
+    "SEM2_AMZN_2024_02",
+    "SEM2_AMZN_2024_04",
+    "SEM2_AMZN_2024_06",
+    "SEM2_AMZN_2024_08",
+    "SEM2_AMZN_2024_10",
+    "SEM2_MSFT_2024_02",
+    "SEM2_MSFT_2024_04",
+    "SEM2_MSFT_2024_06",
+    "SEM2_MSFT_2024_08",
+    "SEM2_MSFT_2024_10",
+    "SEM2_MSFT_2025_01",
+    "SEM2_MSFT_2025_03",
+    "SEM2_MSFT_2025_05",
+    "SEM2_MSFT_2025_07",
+    "SEM2_MSFT_2025_09"
+  ],
+  "membership_added": [],
+  "membership_removed": [],
+  "question_text_changes": [],
+  "limitations": [
+    "Three technology/commerce issuers, six filings; exposed correlated question families, not an unseen or cross-sector holdout.",
+    "Atomic splitting changes denominators; v1 to v2 is measurement correction, not system improvement.",
+    "No independent human financial annotation. Source-first assistant adjudication requires external review."
+  ]
+}

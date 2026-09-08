@@ -1,0 +1,10 @@
+{
+  "version": "semantic_answer_v2_draft",
+  "files_sha256": {
+    "queries.jsonl": "14ef725a9d11452406d483668d198278a77fcd57474e82bfaf3bd3d04e599b7e",
+    "claim_lineage.jsonl": "f0aebb168ba06706a1e40b72829b505eaa10cfd53edb8b8ded94edf3eb1f1b91",
+    "composition.json": "0c3059c5748b827dde38def6bcff0362a5bb071e0aca6074320b745558cf727e",
+    "historical_sha256.json": "b521a9c8b7f284703bc53fdfa2bfdcffd9eac70dd6bbc83bdd40ea58586192ac",
+    "source_references.json": "14c102475ae30f27aaaf71c19fbaa4b388e0a9bb1196d6c82ac42e1677836e77"
+  }
+}

@@ -1,0 +1,140 @@
+# Semantic Answer Benchmark v2 — correction draft
+
+Status: **not frozen for optimization; no v2 production baseline or judge run**.
+Built from PR30 merge `ef847550c80077bf9d785dc2694c1a9d6afb1ed3` on a
+separate clean branch. No production behavior or historical artifact changes.
+
+## What changes, and why
+
+The v1 benchmark-quality audit identified numeric substring false positives,
+error-channel leakage, weak judge validation, ambiguous bundled requirements,
+correlated coverage and contaminated execution conditions (B2–B6). V2 corrects
+measurement, not the system. **V1→v2 scores cannot be called system improvement.**
+
+- The same 60 questions retain exact wording, issuer, filing and answerability.
+  Case IDs change deterministically from `SEM1_` to `SEM2_`.
+- All 86 original requirements have explicit lineage into 119 required facets.
+  The 56 numeric targets and tolerances are unchanged. Original consolidated
+  source facts re-extract exactly from all six original filing HTML files.
+- Apple custom-component sourcing does not require the extra new-product detail.
+  Amazon receipt/due-payment triggers and revenue recognition are separate.
+  Multi-driver, fulfillment-method and oversight/cadence requirements are split
+  so omissions do not become imaginary false emitted claims.
+- Original source IDs remain inspectable. Adjudicated narrative spans repair
+  v1 sentence truncation at decimal points and ambiguous anchor offsets. Canonical
+  SEC Item locations are recorded separately from faulty historical chunk headers.
+- A new 225-link source catalog connects all 80 original numeric catalog facts
+  to KB tables through original inline-XBRL element IDs and immutable table
+  sidecars, never retriever ranking. This is annotation, not XBRL tool execution.
+
+`claim_lineage.jsonl` preserves the original case/claim identity, canonical
+UTF-8 JSON SHA-256 (`sort_keys=True`, `ensure_ascii=False`), new requirement IDs
+and reasons. `source_references.json` and `historical_sha256.json` preserve
+original source, corpus, v1 and historical artifact identities. No labels are
+derived from new system answers or judge predictions. The coding assistant had
+access to the v1 audit; this is not blind or independent human annotation.
+
+## Scoring boundaries and denominators
+
+Execution is classified before semantic scoring. A failed outer run, rejected
+analyst result, grounding error or retained error text cannot become an eligible
+answer. Completed degraded answers can remain eligible. Terminal precedence is
+clarification → planner failure → analyst timeout → grounding fail-closed →
+retrieval failure → tool failure → unknown failure. All detected signals remain
+visible; detected service errors are an additional diagnostic flag, not causal
+attribution from guessed free text. Abstention status is only a candidate until
+its filing scope and answer content are adjudicated.
+
+Numeric scoring separates:
+
+1. Explicit financial meaning in the answer: entity, metric, fiscal year,
+   value/tolerance, currency/unit, scale, sign and affirmative statement.
+2. Evidence support and source/period binding.
+3. Declared structured/KB evidence-type compatibility.
+4. Calculator call, operands, expression and selected-result provenance.
+
+The deterministic parser intentionally supports only a bounded single-assertion
+grammar with explicit financial fields and an exact standalone answer assertion.
+Negation, missing units, complex prose and unresolved source provenance remain
+**unknown**, not guessed correct or wrong. It is not general semantic entailment.
+Structured contexts lacking independently established original-filing provenance
+can be numerically consistent but evidence-unknown; source assessment can accept
+genuinely equivalent evidence under the frozen scope rules. Unlisted valid
+evidence is not automatically irrelevant. Financially correct KB-table evidence
+can pass truth/support while failing the separate structured-route policy metric.
+
+USD targets retain ±500,000 dollars for amounts requested in whole USD millions;
+percentage/area source targets retain ±0.000001 in their stated units; calculated
+growth retains ±0.005001 percentage points for two-decimal display. Decimal
+normalization accepts equivalent explicit scales, not wrong-currency magnitudes.
+
+Calculator evaluation checks source-bound current/prior operands, a recorded
+matching call, a bounded growth expression and selected result. The unchanged
+runtime does not export an independent raw calculator-response ledger. Report
+this as recorded trace provenance, not independent observation of tool execution.
+
+Every rate must expose numerator/denominator. Fixed numeric-gold denominators
+include all expected numeric requirements for unconditional verified-credit
+rates. Conditional denominators include requirements in eligible answers, with
+missing/unknown outcomes disclosed. Resolved-only correctness must accompany its
+resolution coverage. Execution losses are unassessed requirements, not wrong
+claims. Emitted-claim support rates must be paired with fixed-required-facet
+coverage and whole-answer measures to resist claim-splitting gains. Citation-ID
+validity, type compatibility and PR6 structural grounding are not semantic truth.
+
+## Judge calibration, not judge certification
+
+The preregistered plan defines acceptance gates before predictions. The draft
+calibration set has 36 source-authored synthetic answers, including 19 fully
+supported, 6 partially supported and 14 unsupported emitted claims, 2 grounded
+but incomplete answers, 3 correct abstentions and 3 incorrect refusals. Twelve
+identical repeats are selected before calls. This is not a random production
+sample or an estimate of production error prevalence.
+
+Support packets contain only cited visible evidence, not gold requirements or
+uncited-context rescue. Completeness packets contain atomic requirements and
+the answer, not source evidence. Strict schema checks enforce exact unique IDs,
+real booleans and verbatim quotations from the correct supplied channel.
+Completeness quotations must occur in final-answer prose, not merely claim
+metadata. Quotation validity does not itself establish entailment.
+
+The only preregistered candidate is existing local `gemma4:e4b`, exact digest in
+`judge_config.json`, unchanged candidate settings, one attempt per phase. Any
+failed gate disables unattended full-benchmark judging under this candidate
+policy. No candidate/rubric search against the final baseline. Failure does not
+prove that every available judge would fail. Calibration labels/rubrics are
+separately hashed before predictions; optimization freeze occurs later, after
+judge decision and benchmark-quality audit.
+
+## Composition and claims
+
+There are 20 cases per issuer (AAPL, AMZN, MSFT), ten per filing across six
+10-Ks, 12 structured-numeric cases and six in each of eight other strata.
+Only 30 year-normalized question strings exist. Revenue (36) and revenue-growth
+(6) account for 42/56 numeric requirements. Shared evidence groups and all
+requirement-family, metric, stratum and filing counts are published in
+`composition.json`. Technology/commerce issuers and future-actual abstention
+questions dominate their respective categories; fiscal calendars differ, but
+this is not broad sector/calendar coverage. Sources overlap retrieval benchmarks.
+
+Scope expansion was declined before any v2 results to keep this correction PR
+bounded, not to select where the system wins. Future resume claims may describe
+exact observed performance on this frozen exposed SEC-research sample, separating
+availability, conditional quality, assessment coverage and same-version paired
+before→after changes. Do not claim unseen generalization, broad financial QA
+accuracy, production latency SLAs, independent human validation or causal gains
+from v1→v2 evaluator/environment changes. Final metric recommendations await the
+controlled baseline and audit; no current performance claim is approved yet.
+
+## Remaining release gates
+
+Pre-calibration source/evaluator review; calibration freeze and one judge
+validation; benchmark-quality audit and optimization freeze; one controlled
+60-case unchanged-system baseline; source assessment of the predetermined
+30-case subset before enabled judge predictions; denominator/privacy/hash checks;
+immutable evidence and fresh final Codex review. Do not merge automatically.
+
+Current verification: 102 focused tests pass. Full suite: 1,080 pass, 47 subtests
+pass, 2 unchanged pre-existing failures (`alias_002` planner route and retrieval
+no-tool-call attempt count), 25 warnings. No dependency changes. These are draft
+development checks, not a release gate or evidence that semantic accuracy passes.

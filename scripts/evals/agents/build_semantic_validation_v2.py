@@ -1,0 +1,154 @@
+"""Prospective source-authored judge calibration, not production answer samples.
+
+Answers below are authored and labeled before any judge invocation. Changing
+these labels after observing judge behavior is prohibited by the validation
+freeze. Each fixture carries its original-filing gold/source provenance.
+"""
+from collections import Counter
+from copy import deepcopy
+from decimal import Decimal
+import json
+from pathlib import Path
+
+from build_semantic_dataset_v2 import read, digest, stable, CORPUS
+
+ROOT=Path('data/evals/semantic_answer/v2')
+REPEATS={1,2,7,11,13,14,15,22,23,24,31,34}
+
+# Six distinct source scopes, not six variants of the same passage. Each has a
+# supported, mixed-support, and centrally wrong answer. Mixed-support explicitly
+# combines a source-supported assertion with an unsupported separable assertion.
+NARRATIVE=[
+    ('SEM2_AAPL_2024_03',
+     ['Apple treats highly liquid investments maturing within three months of purchase as cash equivalents.'],
+     'Apple treats highly liquid investments maturing within three months of purchase as cash equivalents, and guarantees these investments can never lose value.',
+     'Apple treats all investments maturing within five years of purchase as cash equivalents.'),
+    ('SEM2_AAPL_2025_07',
+     ['Some custom Apple components are obtained from a single or limited source.',
+      'This sourcing exposes Apple to significant supply risk.', 'It also exposes Apple to significant pricing risk.'],
+     'Some custom Apple components are obtained from a single or limited source, and Apple guarantees suppliers will never raise prices.',
+     'Apple sources all custom components from many interchangeable suppliers and therefore has no supply or pricing risk.'),
+    ('SEM2_AMZN_2023_03',
+     ['Amazon records unearned revenue when payments are received before the service is performed.',
+      'Payments due before the service is performed also trigger unearned revenue.',
+      'Amazon recognizes that revenue over the service period.'],
+     'Amazon records unearned revenue when payments are received before service, and recognizes all of it immediately on receipt.',
+     'Amazon records unearned revenue only after all service obligations have been performed.'),
+    ('SEM2_AMZN_2024_08',
+     ['Increased customer usage was the primary driver of AWS sales growth.',
+      'Pricing changes partially offset that growth; higher pricing was not the stated positive driver.'],
+     'Increased customer usage was the primary AWS growth driver, and higher prices were another positive growth driver.',
+     'Higher prices, rather than increased customer usage, were the primary driver of AWS sales growth.'),
+    ('SEM2_MSFT_2024_07',
+     ['The Microsoft Board of Directors oversees cybersecurity risk.',
+      'Its cybersecurity reviews are scheduled at least quarterly.',
+      'Evolving and increasingly sophisticated, complex cyberthreats make detection and defense harder.'],
+     'The Microsoft Board of Directors oversees cybersecurity risk, and is required to conduct those reviews every day.',
+     'Microsoft delegates all cybersecurity oversight exclusively to its external auditor and the board has no role.'),
+    ('SEM2_MSFT_2025_08',
+     ['Gaming contributed to Microsoft’s R&D expense increase, so the increase was not attributed solely to AI.',
+      'Investments in cloud and AI engineering also contributed.',
+      'The Gaming contribution included the impact of the Activision Blizzard acquisition.'],
+     'Gaming contributed to Microsoft’s R&D expense increase, and the filing says the acquisition of Apple was the reason.',
+     'Microsoft attributed the entire R&D expense increase solely to AI; Gaming and acquisitions contributed nothing.'),
+]
+
+
+def build(out):
+    if out.exists(): raise ValueError('Refusing to overwrite validation fixtures')
+    cases={c['id']:c for c in read(ROOT/'queries.jsonl')}; docs={d['id']:d for d in read(CORPUS)}
+    links=read(ROOT/'numeric_evidence_catalog.jsonl')
+    rows=[]
+
+    def context(source, cid, kb=False):
+        if source['kind']=='kb' or kb:
+            doc_id=source['evidence_id'] if source['kind']=='kb' else next(r['evidence_id'] for r in links if r['fact_id']==source['fact_id'])
+            doc=docs[doc_id]
+            return {'context_id':cid,'kind':'table' if doc['metadata']['doc_type']=='table' else 'text',
+                    'source':{'doc_id':doc_id,**doc['metadata']},'payload':{'content':doc['content']}}
+        return {'context_id':cid,'kind':'structured_fact','structured_fact':{
+            **{k:source.get(k) for k in ('ticker','metric_id','value','unit','form_type','report_date','start_date','source_sha256')},
+            'fiscal_year':source['fact_fiscal_year'],'status':'ok'}}
+
+    def add(case_id, texts, support, fulfillment, *, answerability=True, status='ok', kb=False, reason, computation=None):
+        case=deepcopy(cases[case_id]); contexts=[]; claims=[]
+        sources={}
+        for g in case['required_claims']:
+            for s in g['sources']:
+                identity=s.get('fact_id',s.get('evidence_id'))
+                sources.setdefault(identity,s)
+        for s in sources.values(): contexts.append(context(s,f'e{len(contexts)+1}',kb))
+        refs=[c['context_id'] for c in contexts]
+        for i,text in enumerate(texts):
+            g=case['required_claims'][min(i,len(case['required_claims'])-1)] if case['required_claims'] else {}
+            claim={'claim_id':f'c{i+1}','text':text,'claim_type':g.get('claim_type','narrative'),'context_ids':refs}
+            if g.get('numeric'): claim['metric_id']=g['numeric']['metric_id']
+            claims.append(claim)
+        answer='\n'.join(texts)
+        if status=='insufficient_data':
+            answer=(f"The specified FY{case['fiscal_year']} filing cannot establish audited actual net income for FY{case['fiscal_year']+1}; that later fiscal year's actuals are outside this filing." if answerability else 'I cannot answer this question from the filing.')
+        output={'ok':True,'status':'completed','failure_stage':'none','analyst':{
+            'ok':True,'status':status,'answer':answer,'claims':claims,'compare_rows':[],
+            'computation':computation, 'trace':{'analyst_visible_context_ids':refs,'used_financial_evaluator':computation is not None,
+                'tool_calls':[{'name':'financial_evaluator','args':{k:v for k,v in computation.items() if k!='result'}}] if computation else []}},
+            'evaluation_trace':{'analyst_packet':{'context_items':contexts}}}
+        number=len(rows)+1
+        labels={'claims':{c['claim_id']:s for c,s in zip(claims,support,strict=True)},
+                'requirements':{g['claim_id']:f for g,f in zip(case['required_claims'],fulfillment,strict=True)},
+                'answerability_correct':answerability,'answer_relevant':True,'unbound_factual_prose':False,
+                'fully_grounded':answerability and all(s=='fully_supported' for s in support) and (bool(claims) or status=='insufficient_data'),
+                'complete':answerability and all(f=='complete' for f in fulfillment)}
+        rows.append({'id':f'SEM2_VALID_{number:02}','case':case,'output':output,'labels':labels,
+                     'repeat_selected':number in REPEATS,'adjudication_reason':reason,
+                     'annotation_method':'Prospectively source-authored synthetic answer and coding-assistant source adjudication before judge predictions; not a production sample or independent human label.'})
+
+    revenue='SEM2_AAPL_2024_01'
+    texts=[(revenue,'Apple FY2024 revenue was $391.035 billion.'), (revenue,'Microsoft FY2024 revenue was $391.035 billion.'),
+           ('SEM2_AMZN_2024_01','Amazon FY2024 revenue was 637959 million EUR.'),
+           ('SEM2_MSFT_2025_01','Microsoft FY2025 revenue was $281724 billion.'),
+           (revenue,'Apple FY2024 revenue was not $391.035 billion.'),
+           ('SEM2_AMZN_2023_01','Amazon FY2023 revenue was -574785 million USD.'),
+           ('SEM2_MSFT_2024_01','Microsoft FY2024 cash and cash equivalents were $245.122 billion.'),
+           ('SEM2_AMZN_2024_01','Amazon FY2023 revenue was $637.959 billion.'),
+           (revenue,'Apple FY2024 revenue was 391,035 million USD.')]
+    for i,(case_id,text) in enumerate(texts):
+        correct=i in {0,8}
+        add(case_id,[text],['fully_supported' if correct else 'unsupported'],['complete' if correct else 'missing'],kb=i==8,
+            reason='The case carries the original issuer/year consolidated revenue fact and source element. Issuer, fiscal period, currency, scale, sign, metric and affirmation are material; matching digits alone do not establish truth. KB table alternative is linked by original inline fact element, not retrieval ranking.')
+    add('SEM2_AAPL_2024_09',['Apple FY2024 Services gross-margin percentage was 73.9%.'],['fully_supported'],['complete'],
+        reason='The original Services margin-percentage table reports 73.9; gross-profit dollars are a different quantity.')
+    case=cases['SEM2_AAPL_2024_06']; values=[g['numeric']['value'] for g in case['required_claims']]
+    growth=(Decimal(values[1])-Decimal(values[0]))/Decimal(values[0])*100
+    add(case['id'],['Apple FY2023 revenue was 383285 million USD.', 'Apple FY2024 revenue was 391035 million USD.',
+                   f'Apple FY2024 revenue growth was {growth:.2f}%.'], ['fully_supported']*3,['complete']*3,
+        computation={'expression':'(current - previous) / previous * 100','variables':{'previous':'383285','current':'391035'},'result':float(growth)},
+        reason='Both original comparative revenue facts and the bound growth calculation support the three assertions. Two-decimal rounding uses the frozen tolerance.')
+    add('SEM2_MSFT_2025_01',['Microsoft FY2025 operating income was $281.724 billion.'],['unsupported'],['missing'],
+        reason='Revenue evidence does not support a different metric merely because the digits match.')
+    for case_id,full,partial,wrong in NARRATIVE:
+        n=len(cases[case_id]['required_claims'])
+        fulfillment=['complete']*n
+        if case_id=='SEM2_MSFT_2024_07':
+            full=full[:2]; fulfillment[-1]='missing'
+        if case_id=='SEM2_AMZN_2023_03':
+            full=[full[0],full[2]]; fulfillment[1]='missing'
+        add(case_id,full,['fully_supported']*len(full),fulfillment,
+            reason='Each emitted paraphrase is fully source-supported. The Amazon-policy fixture intentionally omits the due-payment trigger; the Microsoft-governance fixture intentionally omits the cyberthreat explanation. These are grounded but incomplete answers: source-only details cannot earn completeness credit.')
+        # The first required facet is retained; other facets absent/contradicted.
+        add(case_id,[partial],['partially_supported'],['complete']+['missing']*(n-1),
+            reason='The first source-backed facet is asserted alongside a separable unsupported or contradictory assertion. Mixed claim support is partial, not fully supported; absent/contradicted other requirements receive no completeness credit.')
+        add(case_id,[wrong],['unsupported'],['missing']*n,
+            reason='The central assertion contradicts the cited original filing or attributes it to the wrong entity/driver. A valid citation ID cannot make it supported.')
+    for case_id in ('SEM2_AAPL_2024_10','SEM2_AMZN_2023_10','SEM2_MSFT_2024_10'):
+        add(case_id,[],[],[],status='insufficient_data',reason='Correct scoped abstention: future audited actuals cannot be established by the earlier named filing; no fabricated amount or later filing is used.')
+    for case_id in ('SEM2_AAPL_2024_03','SEM2_AMZN_2023_03','SEM2_MSFT_2024_03'):
+        add(case_id,[],[],['missing']*len(cases[case_id]['required_claims']),status='insufficient_data',answerability=False,
+            reason='Incorrect refusal of an answerable question: the source filing explicitly provides the policy. Retrieval failure would not change gold answerability.')
+    assert len(rows)==36
+    counts=Counter(s for f in rows for s in f['labels']['claims'].values())
+    assert counts['fully_supported']>=12 and counts['unsupported']>=10 and counts['partially_supported']>=6
+    out.write_text(''.join(stable(r)+'\n' for r in rows))
+    print(json.dumps({'fixtures':len(rows),'labels':dict(counts),'repeats':sum(r['repeat_selected'] for r in rows),'sha256':digest(out)}))
+
+
+if __name__=='__main__': build(ROOT/'validation_fixtures.jsonl')
