@@ -93,6 +93,6 @@ artifact reproduction, historical hash, privacy and whitespace checks pass.
 Require fresh review of the complete gold/scorer/calibration/decision evidence.
 Only then create the optimization manifest and quality-approval record, freeze
 the implementation and capture all 60 system cases once. Failed power/workload,
-model/index-integrity or completeness checks produce diagnostic-only evidence,
+model/index-integrity or capture/scoring completeness checks produce diagnostic-only evidence,
 not an official baseline summary or automatic retry. Source-audit the fixed subset,
 commit immutable evidence, complete fresh final review and stop without merging.

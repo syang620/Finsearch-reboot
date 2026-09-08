@@ -138,5 +138,6 @@ accompany emitted-claim rates to resist gains from claim splitting.
 ## Current state
 
 PR30 merged; clean v2 branch/worktree created. Audit and v1 contracts inspected.
-No v2 judge validation or current-system baseline has run. This plan sets scope
+At this initial planning checkpoint, no v2 judge validation or current-system
+baseline had run. This plan sets scope
 and judge acceptance criteria before constructing labels or observing v2 results.

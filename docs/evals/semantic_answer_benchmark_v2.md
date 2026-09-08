@@ -1,6 +1,7 @@
 # Semantic Answer Benchmark v2 — correction draft
 
-Status: **not frozen for optimization; no v2 production baseline or judge run**.
+Status: **judge calibration completed and failed; full-benchmark judge disabled;
+not yet frozen for optimization; no v2 production baseline run**.
 Built from PR30 merge `ef847550c80077bf9d785dc2694c1a9d6afb1ed3` on a
 separate clean branch. No production behavior or historical artifact changes.
 

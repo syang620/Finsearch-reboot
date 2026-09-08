@@ -1,5 +1,19 @@
 # Semantic v2 pre-calibration review log
 
+Current post-calibration state is documented in `semantic_answer_v2_judge_validation.md`:
+the one fixed trial completed and failed, full-benchmark judging is disabled,
+and the production baseline has not run. The entries below describe earlier
+development checkpoints, not a claim that calibration is still pending.
+
+The post-calibration review of `2cac500` found one
+[P2 stale top-level status](https://github.com/syang620/Finsearch-reboot/pull/31#discussion_r3954387619).
+The current status now explicitly distinguishes completed failed calibration
+from the not-yet-run system baseline. Earlier plan/checkpoint statements are
+marked historical. The quality-audit wording also clarifies that incomplete
+capture/scoring invalidates a run; poor semantic answer completeness does not.
+These are documentation-only corrections; frozen evidence and evaluation code
+are unchanged and no evaluation rerun is required.
+
 The final pre-calibration candidate `d2abf079837809148d5a43050d957a61e4195783`
 received a [clean Codex review](https://github.com/syang620/Finsearch-reboot/pull/31#issuecomment-5579057991).
 Calibration inputs were then hash-frozen before the first judge call. The
@@ -138,6 +152,6 @@ git diff --check
 During pre-freeze editing, revised fixture drafts were generated in temporary
 directories and applied as explicit patches; the builders refuse overwriting an
 existing dataset. Historical hash validation and source/corpus compatibility
-checks run in the focused tests. No judge-run or baseline-run command has yet
-been executed. Full changed-file inventory/diff is in PR31; production paths and
+checks run in the focused tests. At that pre-calibration checkpoint, no judge-run
+or baseline-run command had been executed. Full changed-file inventory/diff is in PR31; production paths and
 all pre-existing datasets/artifacts remain unchanged.
