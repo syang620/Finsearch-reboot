@@ -53,11 +53,22 @@ documentation SHA. This correction does not authorize selective reruns.
 
 ## Remaining
 
-Verification: 39 launcher/baseline-control tests pass (20 new launcher tests).
-Full suite: 1,159 passed, 47 subtests passed, the same two pre-existing failures
+The first launcher review on `0e3f09b` found one compatibility omission: the
+original optional `--env-file` argument. It is restored with the same
+`load_dotenv(..., override=False)` behavior before baseline execution; inherited
+credentials remain supported. Two new regressions cover both launch modes.
+
+Previous checkpoint verification: 39 launcher/baseline-control tests passed
+(20 new launcher tests). Full suite: 1,159 passed, 47 subtests passed, the same two pre-existing failures
 (planner alias route and retrieval attempt count), and 25 unchanged warnings.
 Original frozen file hashes, production/data diffs, privacy and whitespace checks
 pass. No dependency changes.
+
+After the credential-option fix: 41 launcher/control tests pass (22 new);
+full suite 1,161 passed, 47 subtests passed, the same two failures and 25 warnings.
+The read-only setup diagnostic at `0e3f09b` reproduced Python at 90.4% CPU after
+index inspection, then no heavy process after the fixed 30-second wait. No
+benchmark questions were executed; this is preflight evidence only.
 
 Remaining: fresh launcher review; new
 launcher-contract freeze; one controlled unchanged-system baseline; fixed

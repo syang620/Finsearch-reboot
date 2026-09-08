@@ -129,3 +129,23 @@ def test_awake_cleanup_also_runs_when_preflight_fails(monkeypatch):
     monkeypatch.setattr(launcher,'run_once',fail)
     with pytest.raises(ValueError): asyncio.run(launcher.run(None))
     assert calls==['terminate',('wait',10)]
+
+
+def test_original_env_file_option_loads_without_overriding_environment(monkeypatch):
+    import dotenv
+    calls=[]
+    monkeypatch.setattr(dotenv,'load_dotenv',lambda path,override:calls.append(('env',path,override)))
+    async def run(args): calls.append(('run',args.index_manifest))
+    monkeypatch.setattr(launcher,'run',run)
+    launcher.main(['--env-file','local.env','--index-manifest','index.json'])
+    assert calls==[('env',Path('local.env'),False),('run',Path('index.json'))]
+
+
+def test_inherited_environment_needs_no_env_file(monkeypatch):
+    import dotenv
+    monkeypatch.setattr(dotenv,'load_dotenv',lambda *a,**k:pytest.fail('No file requested'))
+    called=[]
+    async def run(args): called.append(args.env_file)
+    monkeypatch.setattr(launcher,'run',run)
+    launcher.main(['--index-manifest','index.json'])
+    assert called==[None]

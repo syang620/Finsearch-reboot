@@ -201,15 +201,23 @@ async def run(args):
         awake.terminate(); awake.wait(timeout=10)
 
 
-if __name__=='__main__':
+def main(argv=None):
     parser=argparse.ArgumentParser()
     parser.add_argument('--approval',type=Path,default=Path('docs/evals/semantic_answer_v2_quality_approval.json'))
     parser.add_argument('--index-manifest',type=Path)
+    parser.add_argument('--env-file',type=Path)
     parser.add_argument('--out-root',type=Path,default=Path('artifacts/evals/semantic_answer/v2/baselines'))
     parser.add_argument('--freeze-review-comment',type=int); parser.add_argument('--pr',type=int,default=31)
-    args=parser.parse_args()
+    args=parser.parse_args(argv)
     if args.freeze_review_comment:
         freeze_launcher(args.approval,args.pr,args.freeze_review_comment)
     else:
         if args.index_manifest is None: parser.error('--index-manifest required')
+        if args.env_file:
+            from dotenv import load_dotenv
+            load_dotenv(args.env_file,override=False)
         asyncio.run(run(args))
+
+
+if __name__=='__main__':
+    main()
