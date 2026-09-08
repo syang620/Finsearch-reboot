@@ -5,6 +5,10 @@ frozen for optimization; the first baseline attempt was user-stopped and is
 diagnostic-only, with 2/60 cases captured**. See the
 [baseline status](semantic_answer_v2_baseline_status.md); no controlled performance
 baseline or full-population semantic score is available.
+
+The user has now authorized [one fresh controlled attempt](semantic_answer_v2_fresh_attempt_plan.md),
+then the fixed source audit and fresh review before conditional merge. The earlier
+diagnostic and frozen benchmark remain unchanged; no new attempt has started yet.
 Built from PR30 merge `ef847550c80077bf9d785dc2694c1a9d6afb1ed3` on a
 separate clean branch. No production behavior or historical artifact changes.
 
@@ -203,7 +207,9 @@ source assessment of the predetermined 30-case subset; denominator/privacy/hash 
 immutable evidence and fresh final Codex review. Do not merge automatically.
 
 The attempted baseline was stopped at user direction after a workload violation.
-These baseline/audit gates remain unmet; a replacement run is not authorized.
+These baseline/audit gates remain unmet. A later, separately registered user
+authorization now permits one fresh attempt, not alteration of the diagnostic
+or another attempt beyond that allowance.
 
 Initial checkpoint verification: 102 focused tests passed. Full suite: 1,080 passed, 47 subtests
 pass, 2 unchanged pre-existing failures (`alias_002` planner route and retrieval

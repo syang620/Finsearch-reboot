@@ -1,8 +1,10 @@
 # Semantic v2 baseline: stopped diagnostic, not a release baseline
 
 Status: **incomplete and invalid for controlled performance claims**. The user
-requested stopping and preserving the run after a workload violation. No new
-attempt is authorized. PR31 remains unmerged; the full benchmark task is not
+requested stopping and preserving the run after a workload violation. At that
+checkpoint no new attempt was authorized. A later, separate
+[one-attempt authorization](semantic_answer_v2_fresh_attempt_plan.md) preserves this
+record unchanged in meaning. PR31 remains unmerged; the full benchmark task is not
 complete, and there is no current-system semantic performance baseline to cite.
 
 ## Frozen implementation and observations
@@ -70,5 +72,7 @@ Do not rerun or relax the workload rule automatically. Any later attempt needs
 explicit user authorization and a separately reviewed execution plan that
 preserves this failed attempt and the frozen evaluation contract. The existing
 single-pass launcher correctly refuses to start again while this attempt exists.
-Fresh review of this diagnostic disposition is the remaining preservation step;
-it would not make the incomplete benchmark baseline complete or authorize merge.
+The [clean preservation review](https://github.com/syang620/Finsearch-reboot/pull/31#issuecomment-5585770010)
+inspected `6b1f60d427bf3b617ccab267246fa71107fa0470`. It did not make the
+incomplete benchmark baseline complete or authorize merge. The later fresh-attempt
+and conditional-merge authority is recorded separately in the linked execution plan.
