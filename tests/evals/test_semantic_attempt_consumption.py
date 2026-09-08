@@ -92,7 +92,8 @@ def test_interrupt_forwards_to_child_and_preserves_outcome(tmp_path,monkeypatch)
     assert record['error_type']=='KeyboardInterrupt' and record['child_returncode']==130
 
 
-@pytest.mark.parametrize('bad',[None,'attempts','root','wrapper_hash','authorization_hash'])
+@pytest.mark.parametrize('bad',[None,'attempts','root','wrapper_hash','authorization_hash',
+    'short_sha','uppercase_sha','nonhex_sha','missing_sha','nonstring_sha'])
 def test_local_registration_requires_committed_review_bound_identity(tmp_path,monkeypatch,bad):
     registration=operation.registration
     setup_operation(tmp_path,monkeypatch)
@@ -108,6 +109,11 @@ def test_local_registration_requires_committed_review_bound_identity(tmp_path,mo
         'operation_wrapper_sha256':operation.sha(operation.WRAPPER),'reviewed_commit':'a'*40}
     if bad=='wrapper_hash': review['operation_wrapper_sha256']='changed'
     if bad=='authorization_hash': review['authorization_sha256']='changed'
+    if bad=='short_sha': review['reviewed_commit']='a'*10
+    if bad=='uppercase_sha': review['reviewed_commit']='A'*40
+    if bad=='nonhex_sha': review['reviewed_commit']='g'*40
+    if bad=='missing_sha': del review['reviewed_commit']
+    if bad=='nonstring_sha': review['reviewed_commit']=123
     operation.REVIEW.write_text(json.dumps(review))
     monkeypatch.setattr(operation,'git',lambda *a:'a'*40 if a[0]=='rev-parse' else '')
     monkeypatch.setattr(operation.subprocess,'check_output',lambda command:Path(command[-1][5:]).read_bytes())

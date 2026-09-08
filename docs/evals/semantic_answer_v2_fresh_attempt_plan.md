@@ -97,3 +97,10 @@ and retrieval-attempt failures, and 25 warnings. Original `src`, `scripts/evals`
 and dataset files remain unchanged; privacy/hash/whitespace checks pass. The
 consumption marker and new staging root do not yet exist. Fresh review of this
 corrected execution contract is required before allocating the one invocation.
+
+The follow-up review on `72dc799` found that an abbreviated reviewed SHA could
+miss full-SHA GitHub findings. Registration now requires exactly 40 lowercase
+hexadecimal characters before ancestry or remote checks. Five additional cases
+reject abbreviated, uppercase, non-hex, missing and non-string identities; all
+17 operation tests pass. The full-suite counts above describe the preceding
+wrapper revision. No frozen benchmark/launcher file or run permission changed.

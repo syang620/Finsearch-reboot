@@ -10,6 +10,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import re
 import signal
 import subprocess
 import sys
@@ -60,7 +61,9 @@ def registration():
         or review.get('authorization_sha256')!=sha(AUTH)
         or review.get('operation_wrapper_sha256')!=sha(WRAPPER)):
         raise ValueError('Registered one-attempt identity changed')
-    reviewed=review['reviewed_commit']
+    reviewed=review.get('reviewed_commit')
+    if not isinstance(reviewed,str) or not re.fullmatch(r'[0-9a-f]{40}',reviewed):
+        raise ValueError('Reviewed commit identity changed: full lowercase SHA required')
     git('merge-base','--is-ancestor',reviewed,'HEAD')
     if git('diff',reviewed,'--',str(AUTH),str(WRAPPER)):
         raise ValueError('Authorization/wrapper changed after review')
