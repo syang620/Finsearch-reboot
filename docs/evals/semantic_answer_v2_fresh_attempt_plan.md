@@ -10,15 +10,24 @@ no-rerun/no-merge instruction only within those conditions.
 
 The benchmark/scorer contract, original launcher, separately reviewed v2.1
 launcher, judge calibration/disabled decision and first invalid diagnostic stay
-byte-unchanged. The authorization JSON binds their hashes. No new launcher code,
-dependency, model call, threshold or runtime behavior is introduced by this plan.
+byte-unchanged. The authorization JSON binds their hashes. An external operation
+wrapper records permission consumption; it does not implement or patch the
+launcher, scoring or runtime. No dependency, model/configuration or threshold change.
 
 Use the existing v2.1 launcher's supported output-root option with the single
 new root registered in `semantic_answer_v2_fresh_attempt_20260908.json`. The
 original diagnostic remains exactly as `invalid_diagnostic`, not “baseline 1.”
-The launcher still refuses any subsequent run once a `started.json` exists in
-the newly registered root, even under another implementation SHA. This is one
-explicitly authorized attempt, not a general bypass of its single-pass guard.
+The original launcher writes `started.json` only after fallible preflight, so that
+file alone cannot enforce this authorization. Invoke only the registered operation
+wrapper: after local committed-registration checks it exclusively creates the
+fixed consumption marker, flushes/fsyncs its bytes and parent directory, and only
+then imports project code, verifies remote review or launches the frozen child.
+Even a review outage, import failure or zero-case preflight refusal consumes the
+permission. A second invocation fails without changing marker/outcome evidence,
+irrespective of a new implementation SHA. Never delete/reset the marker or invoke
+the underlying launcher directly for this permission. The original root-local
+`started.json` guard remains an additional safeguard. This is one explicitly
+authorized attempt, not permission for preflight retries or arbitrary new roots.
 
 To reduce live UI/log activity, redirect console output to an ignored local log
 and stage runner files under the registered ignored cache root. Monitor compact
@@ -32,11 +41,15 @@ directory containing byte-identical copies of every generated file. Check full
 file-set equality and hashes before committing. No edited manifests, filtered
 cases, suppressed failures or relabeled outputs are permitted. Failed/incomplete
 capture is published as diagnostic-only, regardless of directory naming.
+Preserve and publish consumption/outcome records separately with their own hashes,
+including when preflight produces no runner directory. Console logs remain local;
+any public preflight failure explanation must avoid credentials and private paths.
 
 ## Ordered gates
 
-1. Fresh review of this execution plan; record that exact-head review separately,
-   commit the approval, and verify a clean launch SHA. Verify all frozen hashes,
+1. Fresh review of this execution plan and external wrapper; record that exact-head
+   review plus authorization/wrapper hashes separately, commit the approval, and
+   verify a clean launch SHA. Verify all frozen hashes,
    preserved diagnostic hashes, unused staging root and existing model/index
    provenance. No re-calibration or benchmark editing.
 2. One sequential 60-case run on AC, Low Power Mode off, awake, no browsers/heavy
@@ -68,3 +81,19 @@ capture is published as diagnostic-only, regardless of directory naming.
 
 The final cross-benchmark audit is a release-readiness declaration, not permission
 to mutate either benchmark or a claim of independent external certification.
+
+## Pre-launch review correction and verification
+
+Review of `7a3a74a` identified that `started.json` alone left preflight failures
+outside the one-attempt boundary. The external wrapper fixes only that bookkeeping:
+exclusive durable consumption precedes fallible operational work, failures retain
+an outcome record, interruption is forwarded to the exact child, and the original
+launcher is invoked unchanged. Registration, duplicate invocation, review failure,
+child launch/exit and interruption paths have 12 new regression tests.
+
+Focused consumption/launcher/control/semantic-summary checks: 62 passed. Full
+suite: 1,173 passed, 47 subtests passed, the same two pre-existing planner-route
+and retrieval-attempt failures, and 25 warnings. Original `src`, `scripts/evals`
+and dataset files remain unchanged; privacy/hash/whitespace checks pass. The
+consumption marker and new staging root do not yet exist. Fresh review of this
+corrected execution contract is required before allocating the one invocation.
