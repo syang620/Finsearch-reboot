@@ -207,7 +207,19 @@ PYTHONPATH=src:. python -m pytest tests -q --import-mode=importlib
 ```
 
 Only after a matching benchmark-quality review record and clean implementation
-freeze, run the unchanged stack once:
+freeze, run the unchanged stack once. The approval JSON must be committed at
+the evaluated HEAD with byte-identical working-tree contents. It records
+`status`, the full `reviewed_commit`, `dataset_manifest_sha256`, `pull_request`,
+`review_comment_id`, `review_url`, and `review_body_sha256`. The runner uses the
+authenticated GitHub CLI to verify the actual comment's repository, PR, author
+(`chatgpt-codex-connector[bot]`), body hash and reviewed commit. The supported
+protocol is the bot's “Didn't find any major issues” completion comment for
+the open benchmark PR; a fabricated local status or URL is not approval.
+Requested changes or inline Codex findings on that exact commit block execution;
+all pages are checked. Prior-commit findings require a new clean reviewed commit,
+not a local override. GitHub verification failure blocks comparison. The offline
+verifier checks that the captured approval bytes were committed in the evaluated
+implementation; it does not need to contact GitHub again.
 
 ```sh
 PYTHONPATH=src:. python scripts/evals/retrieval/run_benchmark_v3.py --approval APPROVAL_JSON --index-manifest EXISTING_INDEX_MANIFEST --env-file LOCAL_CREDENTIAL_FILE
@@ -225,7 +237,7 @@ Queries SHA-256:
 Dataset manifest SHA-256:
 `db89aa15436a82b66ec9636ae452901f1047c732baf1ea03364ccd0a8097ed2a`.
 
-Before submission: **31 new focused tests passed**. Full suite: **944 passed,
+Initial submission: **31 new focused tests passed**. Full suite: **944 passed,
 47 subtests passed, two pre-existing failures, 25 warnings**. Unchanged failures
 are planner `alias_recognition/alias_002` and the retrieval no-tool-call attempt
 count. Warnings are the existing table-render fallback and source-parser
@@ -236,3 +248,12 @@ capital” after whitespace normalization, not a secret.
 
 No v3 ranking results or baseline exist at this review stage. Passing tests and
 a committed candidate do not themselves grant benchmark-quality approval.
+
+The first review of `14121c5b7e0c9460885e93909c5ac72c3658b9c9` found one P1:
+an uncommitted, fabricated approval JSON could bypass the pre-comparison gate.
+The follow-up requires committed bytes and live GitHub review verification,
+including paginated findings; offline evidence verification now binds approval
+to the evaluated commit. Labels and their hashes are unchanged. Verification
+after this fix: **53 focused tests passed; 966 full-suite tests and 47 subtests
+passed, with the same two pre-existing failures and 25 warnings**. No ranking
+comparison ran between candidates. A fresh exact-head review is required.

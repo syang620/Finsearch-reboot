@@ -22,10 +22,74 @@ from evals.retrieval_benchmark_v3 import (METRICS, load_dataset, metrics, sha256
     classify_results, summarize, verify_history)
 
 BASE="25c15afbab31212a42c97e650e2418f6f82a8674"
+REVIEW_REPOSITORY="syang620/Finsearch-reboot"
+REVIEW_AUTHOR="chatgpt-codex-connector[bot]"
+
+
+def committed_approval(path):
+    path=Path(path)
+    contents=path.read_bytes()
+    root=Path(git("rev-parse","--show-toplevel")).resolve()
+    try:
+        relative=path.resolve().relative_to(root).as_posix()
+    except ValueError as exc:
+        raise ValueError("Approval must be committed inside this repository") from exc
+    try:
+        committed=subprocess.check_output(["git","show",f"HEAD:{relative}"],stderr=subprocess.DEVNULL)
+    except subprocess.CalledProcessError as exc:
+        raise ValueError("Approval is not committed at HEAD") from exc
+    if contents!=committed:
+        raise ValueError("Approval has uncommitted changes")
+    return json.loads(contents)
+
+
+def github_json(endpoint,paginate=False):
+    command=["gh","api",endpoint]
+    if paginate: command.extend(["--paginate","--slurp"])
+    try:
+        value=json.loads(subprocess.check_output(command,text=True,stderr=subprocess.DEVNULL))
+    except (OSError,subprocess.CalledProcessError,json.JSONDecodeError) as exc:
+        raise ValueError("Cannot verify benchmark review with GitHub; comparison remains blocked") from exc
+    return [item for page in value for item in page] if paginate else value
+
+
+def verify_remote_review(approval):
+    pr=approval.get("pull_request")
+    comment_id=approval.get("review_comment_id")
+    if type(pr) is not int or pr<=0 or type(comment_id) is not int or comment_id<=0:
+        raise ValueError("Approval requires numeric PR and review-comment identities")
+    prefix=f"repos/{REVIEW_REPOSITORY}"
+    comment=github_json(f"{prefix}/issues/comments/{comment_id}")
+    expected_url=f"https://github.com/{REVIEW_REPOSITORY}/pull/{pr}#issuecomment-{comment_id}"
+    if (comment.get("id")!=comment_id or comment.get("html_url")!=expected_url
+        or approval.get("review_url")!=expected_url
+        or comment.get("issue_url")!=f"https://api.github.com/{prefix}/issues/{pr}"):
+        raise ValueError("Review URL/PR/comment provenance mismatch")
+    author=comment.get("user") or {}
+    if author.get("login")!=REVIEW_AUTHOR or author.get("type")!="Bot":
+        raise ValueError("Approval is not from the expected Codex reviewer")
+    body=comment.get("body","")
+    if hashlib.sha256(body.encode()).hexdigest()!=approval.get("review_body_sha256"):
+        raise ValueError("Review body changed or was not captured accurately")
+    reviewed=re.search(r"\*\*Reviewed commit:\*\*\s*`([0-9a-f]{10,40})`",body)
+    if (not reviewed or not approval["reviewed_commit"].startswith(reviewed.group(1))
+        or not body.strip().startswith("Codex Review: Didn't find any major issues.")):
+        raise ValueError("No clean Codex review of the exact candidate")
+    pull=github_json(f"{prefix}/pulls/{pr}")
+    if (pull.get("base",{}).get("repo",{}).get("full_name")!=REVIEW_REPOSITORY
+        or pull.get("state")!="open"):
+        raise ValueError("Review does not belong to the open benchmark PR")
+    reviews=github_json(f"{prefix}/pulls/{pr}/reviews",paginate=True)
+    if any(r.get("commit_id")==approval["reviewed_commit"] and r.get("state")=="CHANGES_REQUESTED" for r in reviews):
+        raise ValueError("Reviewed commit has requested changes")
+    findings=github_json(f"{prefix}/pulls/{pr}/comments",paginate=True)
+    if any((r.get("user") or {}).get("login")==REVIEW_AUTHOR
+           and r.get("original_commit_id",r.get("commit_id"))==approval["reviewed_commit"] for r in findings):
+        raise ValueError("Reviewed commit has inline Codex findings; renewed clean review required")
 
 
 def verify_approval(path, dataset):
-    approval=json.loads(Path(path).read_text())
+    approval=committed_approval(path)
     if approval.get("status")!="approved_for_narrow_known_label_baseline":
         raise ValueError("Benchmark-quality approval is required before comparison")
     freeze=approval.get("reviewed_commit","")
@@ -40,6 +104,7 @@ def verify_approval(path, dataset):
         raise ValueError("Reviewed annotation/scoring/runtime changed; renewed review required")
     if git("diff",BASE,"--","src/agents","src/mcp_server","src/ingestion","src/evals/retrieval_ablation.py"):
         raise ValueError("This baseline must measure unchanged production and ranking behavior")
+    verify_remote_review(approval)
     return freeze,approval
 
 
@@ -191,6 +256,8 @@ def main():
     source_paths=git("ls-files","src","scripts/evals/retrieval","data/evals/retrieval/benchmark_v3").splitlines()
     manifest={"implementation_sha":head,"dataset_freeze_sha":freeze,"annotation_approval":approval,
               "annotation_approval_sha256":sha256(a.approval),"runtime_base":BASE,
+              "annotation_approval_path":a.approval.resolve().relative_to(Path(git("rev-parse","--show-toplevel")).resolve()).as_posix(),
+              "review_verified_live_at":datetime.now(timezone.utc).isoformat(),
               "historical_integrity_before":history_before,
               "dataset_manifest_sha256":sha256(a.dataset/"dataset_manifest.json"),
               "config":config,"validation":validation,"index":index,

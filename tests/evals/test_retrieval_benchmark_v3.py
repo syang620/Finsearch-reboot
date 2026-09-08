@@ -1,8 +1,10 @@
 from copy import deepcopy
+import hashlib
 import json
 import math
 import os
 from pathlib import Path
+import subprocess
 
 import pytest
 
@@ -185,6 +187,8 @@ def test_no_comparison_before_matching_benchmark_review(dataset, tmp_path, monke
                 "dataset_manifest_sha256": sha256(DATA / "dataset_manifest.json"),
                 "review_url": "https://github.com/syang620/Finsearch-reboot/pull/30#issuecomment-test"}
     monkeypatch.setattr(runner, "git", lambda *args: "")
+    monkeypatch.setattr(runner, "committed_approval", lambda p: json.loads(p.read_text()))
+    monkeypatch.setattr(runner, "verify_remote_review", lambda a: pytest.fail("Invalid local binding reached GitHub"))
     path = tmp_path / "approval.json"
     if mutation == "absent":
         with pytest.raises(FileNotFoundError): runner.verify_approval(path, DATA)
@@ -196,3 +200,131 @@ def test_no_comparison_before_matching_benchmark_review(dataset, tmp_path, monke
     else: monkeypatch.setattr(runner, "git", lambda *args: "changed" if args[0] == "diff" else "")
     path.write_text(json.dumps(approval))
     with pytest.raises(ValueError): runner.verify_approval(path, DATA)
+
+
+@pytest.fixture
+def approval_repo(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    subprocess.run(["git", "init", "-q"], check=True)
+    subprocess.run(["git", "config", "user.name", "Benchmark Test"], check=True)
+    subprocess.run(["git", "config", "user.email", "benchmark@example.invalid"], check=True)
+    path = tmp_path / "approval.json"
+    path.write_text(json.dumps({"status": "approved_for_narrow_known_label_baseline",
+                                "dataset_manifest_sha256": "d" * 64, "reviewed_commit": "a" * 40}))
+    return path
+
+
+def test_approval_must_be_committed_and_byte_identical(approval_repo):
+    from scripts.evals.retrieval.run_benchmark_v3 import committed_approval
+    with pytest.raises(ValueError, match="not committed"):
+        committed_approval(approval_repo)
+    subprocess.run(["git", "add", "approval.json"], check=True)
+    with pytest.raises(ValueError, match="not committed"):
+        committed_approval(approval_repo)
+    subprocess.run(["git", "commit", "-qm", "Freeze test approval"], check=True)
+    assert committed_approval(approval_repo) == json.loads(approval_repo.read_text())
+    approval_repo.write_text(approval_repo.read_text() + "\n")
+    with pytest.raises(ValueError, match="uncommitted changes"):
+        committed_approval(approval_repo)
+
+
+def test_approval_outside_repo_rejected(approval_repo, monkeypatch):
+    from scripts.evals.retrieval import run_benchmark_v3 as runner
+    monkeypatch.setattr(runner, "git", lambda *a: str(approval_repo.parent / "nested"))
+    with pytest.raises(ValueError, match="inside this repository"):
+        runner.committed_approval(approval_repo)
+
+
+def test_offline_approval_is_bound_to_evaluated_commit(approval_repo):
+    from scripts.evals.retrieval.verify_benchmark_v3 import verify_committed_approval
+    subprocess.run(["git", "add", "approval.json"], check=True)
+    subprocess.run(["git", "commit", "-qm", "Freeze test approval"], check=True)
+    approval = json.loads(approval_repo.read_text())
+    manifest = {"implementation_sha": subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip(),
+                "annotation_approval": approval, "annotation_approval_path": "approval.json",
+                "annotation_approval_sha256": hashlib.sha256(approval_repo.read_bytes()).hexdigest(),
+                "dataset_manifest_sha256": "d" * 64, "dataset_freeze_sha": "a" * 40}
+    verify_committed_approval(manifest)
+    for field in ("annotation_approval_sha256", "dataset_freeze_sha", "dataset_manifest_sha256"):
+        altered = {**manifest, field: "bad"}
+        with pytest.raises(ValueError): verify_committed_approval(altered)
+    with pytest.raises(ValueError):
+        verify_committed_approval({**manifest, "annotation_approval": {**approval, "status": "pending"}})
+    with pytest.raises(ValueError):
+        verify_committed_approval({**manifest, "annotation_approval_path": "../approval.json"})
+
+
+@pytest.fixture
+def remote_review(monkeypatch):
+    from scripts.evals.retrieval import run_benchmark_v3 as runner
+    prefix = f"repos/{runner.REVIEW_REPOSITORY}"
+    body = "Codex Review: Didn't find any major issues.\n\n**Reviewed commit:** `aaaaaaaaaa`"
+    approval = {"pull_request": 30, "review_comment_id": 123, "reviewed_commit": "a" * 40,
+                "review_url": f"https://github.com/{runner.REVIEW_REPOSITORY}/pull/30#issuecomment-123",
+                "review_body_sha256": hashlib.sha256(body.encode()).hexdigest()}
+    responses = {
+        f"{prefix}/issues/comments/123": {"id": 123, "html_url": approval["review_url"],
+            "issue_url": f"https://api.github.com/{prefix}/issues/30", "body": body,
+            "user": {"login": runner.REVIEW_AUTHOR, "type": "Bot"}},
+        f"{prefix}/pulls/30": {"state": "open", "base": {"repo": {"full_name": runner.REVIEW_REPOSITORY}}},
+        f"{prefix}/pulls/30/reviews": [], f"{prefix}/pulls/30/comments": [],
+    }
+    def api(endpoint, paginate=False):
+        assert paginate == (endpoint.endswith("/reviews") or endpoint.endswith("/comments"))
+        return responses[endpoint]
+    monkeypatch.setattr(runner, "github_json", api)
+    return approval, responses, prefix
+
+
+def test_verified_clean_review_accepts_old_sha_findings(remote_review):
+    from scripts.evals.retrieval import run_benchmark_v3 as runner
+    approval, responses, prefix = remote_review
+    responses[f"{prefix}/pulls/30/comments"] = [{"user": {"login": runner.REVIEW_AUTHOR}, "original_commit_id": "b" * 40}]
+    runner.verify_remote_review(approval)
+
+
+@pytest.mark.parametrize("mutation", ["wrong_id", "invented_url", "wrong_pr", "wrong_author", "not_bot",
+    "body_changed", "wrong_sha", "findings_body", "wrong_repo", "closed_pr", "changes_requested", "inline", "inline_fallback", "missing_id"])
+def test_remote_approval_adversarial_bindings(remote_review, mutation):
+    from scripts.evals.retrieval import run_benchmark_v3 as runner
+    approval, responses, prefix = remote_review
+    comment = responses[f"{prefix}/issues/comments/123"]
+    if mutation == "wrong_id": comment["id"] = 999
+    elif mutation == "invented_url": approval["review_url"] += "fabricated"
+    elif mutation == "wrong_pr": comment["issue_url"] = comment["issue_url"].replace("/30", "/29")
+    elif mutation == "wrong_author": comment["user"]["login"] = "untrusted"
+    elif mutation == "not_bot": comment["user"]["type"] = "User"
+    elif mutation == "body_changed": comment["body"] += " altered"
+    elif mutation in ("wrong_sha", "findings_body"):
+        comment["body"] = comment["body"].replace("aaaaaaaaaa", "bbbbbbbbbb") if mutation == "wrong_sha" else "Found issues. **Reviewed commit:** `aaaaaaaaaa`"
+        approval["review_body_sha256"] = hashlib.sha256(comment["body"].encode()).hexdigest()
+    elif mutation == "wrong_repo": responses[f"{prefix}/pulls/30"]["base"]["repo"]["full_name"] = "other/repo"
+    elif mutation == "closed_pr": responses[f"{prefix}/pulls/30"]["state"] = "closed"
+    elif mutation == "changes_requested": responses[f"{prefix}/pulls/30/reviews"] = [{"commit_id": "a" * 40, "state": "CHANGES_REQUESTED"}]
+    elif mutation in ("inline", "inline_fallback"):
+        key = "original_commit_id" if mutation == "inline" else "commit_id"
+        responses[f"{prefix}/pulls/30/comments"] = [{"user": {"login": runner.REVIEW_AUTHOR}, key: "a" * 40}]
+    else: approval["review_comment_id"] = True
+    with pytest.raises(ValueError): runner.verify_remote_review(approval)
+
+
+@pytest.mark.parametrize("failure", [FileNotFoundError(), subprocess.CalledProcessError(1, "gh"), "invalid-json"])
+def test_github_unavailable_fails_closed(monkeypatch, failure):
+    from scripts.evals.retrieval import run_benchmark_v3 as runner
+    def output(*a, **kw):
+        if isinstance(failure, Exception): raise failure
+        return failure
+    monkeypatch.setattr(runner.subprocess, "check_output", output)
+    with pytest.raises(ValueError, match="comparison remains blocked"):
+        runner.github_json("repos/example/missing")
+
+
+def test_github_findings_all_pages_are_checked(monkeypatch):
+    from scripts.evals.retrieval import run_benchmark_v3 as runner
+    # Exercise the real pagination adapter: a finding on the second page is retained.
+    finding = {"user": {"login": runner.REVIEW_AUTHOR}, "original_commit_id": "a" * 40}
+    def output(command, **kw):
+        assert command[-2:] == ["--paginate", "--slurp"]
+        return json.dumps([[], [finding]])
+    monkeypatch.setattr(runner.subprocess, "check_output", output)
+    assert runner.github_json("repos/example/pulls/30/comments", paginate=True) == [finding]

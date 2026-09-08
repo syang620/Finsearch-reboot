@@ -1,13 +1,25 @@
 """Offline verification only; never contacts ranking/model services."""
 import argparse
+import hashlib
 import json
 from pathlib import Path
+import subprocess
 
 from evals.retrieval_benchmark_v3 import (
     METRICS, classify_results, load_dataset, metrics, read_jsonl, safe_relative,
     sha256, summarize, verify_history, validate_pairs,
 )
 from scripts.evals.retrieval.verify_benchmark_v2 import values_match
+
+
+def verify_committed_approval(manifest):
+    approval = manifest["annotation_approval"]
+    approval_path = safe_relative(manifest["annotation_approval_path"]).as_posix()
+    committed = subprocess.check_output(["git", "show", f'{manifest["implementation_sha"]}:{approval_path}'])
+    if hashlib.sha256(committed).hexdigest() != manifest["annotation_approval_sha256"] or json.loads(committed) != approval:
+        raise ValueError("Approval was not committed with evaluated implementation")
+    if approval["status"] != "approved_for_narrow_known_label_baseline" or approval["dataset_manifest_sha256"] != manifest["dataset_manifest_sha256"] or approval["reviewed_commit"] != manifest["dataset_freeze_sha"]:
+        raise ValueError("Invalid annotation approval binding")
 
 
 def verify(dataset, baseline):
@@ -24,9 +36,7 @@ def verify(dataset, baseline):
     for name, digest in manifest["source_sha256"].items():
         if sha256(safe_relative(name)) != digest:
             raise ValueError("Evaluated source changed")
-    approval = manifest["annotation_approval"]
-    if approval["status"] != "approved_for_narrow_known_label_baseline" or approval["dataset_manifest_sha256"] != manifest["dataset_manifest_sha256"] or approval["reviewed_commit"] != manifest["dataset_freeze_sha"]:
-        raise ValueError("Invalid annotation approval binding")
+    verify_committed_approval(manifest)
     case_map = {c["id"]: c for c in cases}
     rows = read_jsonl(baseline / "per_query.jsonl")
     modes = manifest["config"]["modes"]
