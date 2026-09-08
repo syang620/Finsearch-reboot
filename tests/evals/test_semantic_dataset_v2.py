@@ -76,6 +76,23 @@ def test_all_synthetic_structured_contexts_are_runtime_shaped():
             assert all(check['credit'] for check in row['numeric_checks'])
 
 
+def test_generic_fact_alternative_does_not_relax_named_filing_comparison():
+    from evals.semantic_dataset_v2 import load_numeric_catalog
+    from evals.semantic_answer_v2 import evidence_support
+    cases={c['id']:c for c in read(ROOT/'queries.jsonl')}; catalog=load_numeric_catalog(ROOT)
+    generic=cases['SEM2_AAPL_2024_01']['required_claims'][0]
+    alternative=generic['acceptable_source_alternatives'][0]
+    filing=catalog['filings'][alternative['source_sha256']]
+    fact={**{k:alternative[k] for k in ('ticker','metric_id','value','unit','start_date')},
+          **{k:filing[k] for k in ('form_type','accession_number','report_date','filed_date','source_url')},
+          'fiscal_year':2024,'status':'ok'}
+    context={'kind':'structured_fact','structured_fact':fact}
+    assert evidence_support(context,generic,catalog)=='supported'
+    named=next(g for g in cases['SEM2_AAPL_2024_05']['required_claims'] if g['numeric']['fiscal_year']==2024)
+    assert named['source_scope']['mode']=='named_filing' and not named['acceptable_source_alternatives']
+    assert evidence_support(context,named,catalog)=='unknown'
+
+
 def test_source_only_rebuild_is_byte_deterministic_after_v2_exists(tmp_path):
     out=tmp_path/'draft'
     subprocess.run([sys.executable,'scripts/evals/agents/build_semantic_dataset_v2.py','--out-dir',str(out)],

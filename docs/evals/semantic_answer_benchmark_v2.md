@@ -95,6 +95,14 @@ Filing report date denotes the anchor filing, not the end of a comparative fact.
 Missing or unadjudicated filing identity remains unknown; a matching value or
 invented local source hash cannot substitute for provenance.
 
+Source-only scope adjudication distinguishes 22 generic numeric requirements
+from 34 explicitly filing-bound requirements. Nine equivalent inline-fact
+alternatives were re-extracted from the six original filings for generic
+questions. Generic questions do not silently acquire a filing-year restriction
+absent from the question. Explicit comparisons/calculations and named-filing
+disclosures remain filing-bound. Unlisted equivalent sources require logged
+source inspection; they are not automatically irrelevant or automatically valid.
+
 The full-population semantic channel requires an enabled judge decision bound
 by the optimization manifest. A caller-provided channel name is not permission
 to report a disabled judge. Baseline completion likewise requires complete

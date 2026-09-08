@@ -52,6 +52,23 @@ pre-existing failures. No production/dependency diff or local-path leak exists.
 
 ### Change inventory
 
+A subsequent source-only ambiguity check clarifies generic numeric scope before
+calibration. Twenty-two numeric requirements ask for a fact period without an
+explicit filing-year restriction; 34 remain named-filing-bound. Nine equivalent
+inline facts from other original filings are explicitly cataloged for the generic
+requirements. The same source cannot substitute in an explicit named-filing
+comparison. All numeric targets, question text, membership and calibration labels
+are retained. Case/claim lineage and shared-evidence composition are regenerated
+deterministically; calibration fixture case metadata follows the corrected gold.
+Current fixture SHA-256:
+`744b71c2f3e2e0a877d142f1d77f0d5b1d05932391c5d0a424ea6f135e427ae9`.
+This supersedes the draft fixture hash above before any predictions.
+Verification after scope clarification: **155 new tests pass** within the full
+suite; **1,133 tests and 47 subtests pass**, with the same two pre-existing
+failures and 25 warnings. The regenerated draft is byte-reproducible. A temporary
+patch-placement error in composition metadata was caught by the hash/rebuild
+tests and corrected before commit; it did not change labels or any model run.
+
 New benchmark data live only under `data/evals/semantic_answer/v2/`: queries,
 claim lineage, composition, source references, historical hashes, numeric-source
 links, source display forms, validation fixtures, two judge rubrics and config.

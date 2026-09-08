@@ -102,15 +102,24 @@ def build(out):
                 reason = 'B4: source-adjudicated atomic facets and material qualifiers; optional detail separated; repaired source quotation/offset precision.'
             else:
                 gold['requirement_family'] = gold['numeric']['metric_id']
-                gold['source_scope'] = {'ticker': case['ticker'], 'filing_fiscal_year': case['fiscal_year'], 'form_type': '10-K'}
-                gold['accepted_financial_evidence'] = 'same-filing equivalent numeric source; adjudicate explicit semantics independently from declared claim/evidence type'
+                generic = case['id'][-2:] in {'01','02','04'} or (case['id'].endswith('_09') and case['ticker']!='AMZN')
+                gold['source_scope'] = {'ticker': case['ticker'], 'filing_fiscal_year': case['fiscal_year'], 'form_type': '10-K',
+                                       'mode':'fact_period_equivalent' if generic else 'named_filing'}
+                gold['accepted_financial_evidence'] = ('equivalent original fact-period evidence, including independently verified comparative facts from another filing' if generic else 'same-filing equivalent numeric source')+'; adjudicate explicit semantics independently from declared claim/evidence type'
+                gold['acceptable_source_alternatives'] = []
+                if generic:
+                    number=gold['numeric']; original_ids={s.get('fact_id') for s in gold['sources']}
+                    for fact in sorted(extracted.values(),key=lambda f:f['fact_id']):
+                        if fact['fact_id'] in original_ids: continue
+                        if all(fact[k]==number[n] for k,n in [('ticker','ticker'),('metric_id','metric_id'),('fact_fiscal_year','fiscal_year'),('value','value'),('unit','unit')]):
+                            gold['acceptable_source_alternatives'].append({'kind':'inline_xbrl',**fact})
                 expanded = [gold]
-                reason = 'B2/B4: numeric target and tolerance preserved and reverified from original source; financial evidence equivalence separated from production route compatibility.'
+                reason = 'B2/B4: numeric target and tolerance preserved and reverified from original source; financial evidence equivalence separated from production route compatibility. Explicit filing questions remain filing-bound; generic numeric questions admit source-reextracted equivalent original facts from other filings, not arbitrary same-digit evidence.'
             requirements += expanded
             lineage.append({'v1_case_id': old_case['id'], 'v2_case_id': case['id'], 'v1_claim_id': old_gold['claim_id'],
                             'v1_claim_sha256': digest_text(stable(old_gold)), 'v2_claim_ids': [g['claim_id'] for g in expanded],
                             'reason': reason, 'numeric_target_changed': False})
-            for s in gold['sources']:
+            for s in gold['sources']+gold.get('acceptable_source_alternatives',[]):
                 evidence_groups[s.get('evidence_id', s.get('fact_id'))].append(case['id'])
         case['required_claims'] = requirements
         case['question_family'] = re.sub(r'20\d{2}', '<YEAR>', case['user_query'])
@@ -133,6 +142,8 @@ def build(out):
               'normalized_question_families': len({c['question_family'] for c in cases}),
               'required_claim_families': dict(Counter(g['requirement_family'] for c in cases for g in c['required_claims'])),
               'numeric_metric_distribution': dict(Counter(g['numeric']['metric_id'] for c in cases for g in c['required_claims'] if g.get('numeric'))),
+              'numeric_source_scopes':dict(Counter(g['source_scope']['mode'] for c in cases for g in c['required_claims'] if g.get('numeric'))),
+              'explicit_equivalent_source_alternatives':sum(len(g.get('acceptable_source_alternatives',[])) for c in cases for g in c['required_claims']),
               'shared_evidence_groups': {k: sorted(set(v)) for k,v in sorted(evidence_groups.items())},
               'baseline_audit_ids': [c['id'] for c in cases if c['baseline_audit_selected']],
               'membership_added': [], 'membership_removed': [], 'question_text_changes': [],

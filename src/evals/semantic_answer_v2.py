@@ -44,7 +44,8 @@ def evidence_support(context, gold, catalog):
         if value is None or value != Decimal(str(number['value'])): return 'unsupported'
         # Exact source filing provenance is required for filing-scoped questions.
         # Runtime context that lacks it remains unknown, not assumed equivalent.
-        originals = [s for s in gold['sources'] if s['kind'] == 'inline_xbrl']
+        sources=gold['sources']+gold.get('acceptable_source_alternatives',[])
+        originals = [s for s in sources if s['kind'] == 'inline_xbrl']
         if not originals: return 'unknown'
         filings=catalog.get('filings',{}) if isinstance(catalog,dict) else {}
         for source in originals:
@@ -64,8 +65,9 @@ def evidence_support(context, gold, catalog):
     digest = hashlib.sha256(visible.encode()).hexdigest()
     links=catalog.get('facts',[]) if isinstance(catalog,dict) else catalog
     displays=catalog.get('displays',{}) if isinstance(catalog,dict) else {}
-    candidates = [s for s in gold['sources'] if s['kind'] == 'kb']
-    fact_ids = {s['fact_id'] for s in gold['sources'] if s['kind'] == 'inline_xbrl'}
+    sources=gold['sources']+gold.get('acceptable_source_alternatives',[])
+    candidates = [s for s in sources if s['kind'] == 'kb']
+    fact_ids = {s['fact_id'] for s in sources if s['kind'] == 'inline_xbrl'}
     candidates += [r for r in links if r['fact_id'] in fact_ids]
     for candidate in candidates:
         if candidate['evidence_id'] != doc_id: continue

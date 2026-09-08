@@ -88,8 +88,15 @@ def load_dataset(root, repository='.'):
     cases=read(root/'queries.jsonl')
     validate_lineage(cases,read(repository/'data/evals/semantic_answer/v1/queries.jsonl'),read(root/'claim_lineage.jsonl'))
     docs=unique(read(repository/refs['corpus_path']),'id')
+    original_facts=unique(read(repository/refs['numeric_catalog_path']),'fact_id')
     for case in cases:
         for gold in case['required_claims']:
+            for alternative in gold.get('acceptable_source_alternatives',[]):
+                original=original_facts.get(alternative.get('fact_id'))
+                if (gold['source_scope']['mode']!='fact_period_equivalent' or original is None
+                    or alternative!={'kind':'inline_xbrl',**original}
+                    or any(original[k]!=gold['numeric'][n] for k,n in [('ticker','ticker'),('metric_id','metric_id'),('fact_fiscal_year','fiscal_year'),('value','value'),('unit','unit')])):
+                    raise ValueError('Unverified or out-of-scope numeric evidence alternative')
             for source in gold['sources']:
                 if source['kind']!='kb': continue
                 doc=docs.get(source['evidence_id'])
