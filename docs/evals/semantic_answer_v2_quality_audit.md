@@ -90,10 +90,12 @@ contract, not an in-place rewrite of this baseline or its scoring inputs.
 
 ## Remaining gate
 
-Verification after calibration/decision publication: 1,139 tests pass, 47 subtests
-pass, and the same two pre-existing planner/retrieval tests fail (25 warnings).
-No source/script/test diff exists from the reviewed construction. Frozen input,
-artifact reproduction, historical hash, privacy and whitespace checks pass.
+Historical verification at calibration/decision publication: 1,139 tests passed,
+47 subtests passed, and the same two pre-existing planner/retrieval tests failed
+(25 warnings). No source/script/test diff existed from the reviewed construction
+at that checkpoint. The later, separately reviewed launcher-only correction
+adds 22 passing tests (1,161 total); all original frozen code and inputs remain
+unchanged. Artifact reproduction, historical hash, privacy and whitespace checks pass.
 
 The complete gold/scorer/calibration/decision evidence passed fresh review.
 The optimization manifest and quality-approval record now bind that reviewed
