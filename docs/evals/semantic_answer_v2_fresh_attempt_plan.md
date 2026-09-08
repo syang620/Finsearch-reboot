@@ -104,3 +104,9 @@ hexadecimal characters before ancestry or remote checks. Five additional cases
 reject abbreviated, uppercase, non-hex, missing and non-string identities; all
 17 operation tests pass. The full-suite counts above describe the preceding
 wrapper revision. No frozen benchmark/launcher file or run permission changed.
+
+The corrected wrapper received clean exact-head review at `26993ea6f6`, recorded
+in the separate hash-bound approval JSON. Full verification on that revision:
+1,178 passed, 47 subtests passed, the same two pre-existing failures and 25
+warnings. The approval commit is bookkeeping only; no baseline has started at
+its creation. Capture validity and the later final review remain separate gates.
