@@ -1,0 +1,155 @@
+{
+  "fixture_id": "SEM2_VALID_11",
+  "repeat": true,
+  "phase": "completeness",
+  "started_at": "2026-09-08T04:29:30.879327+00:00",
+  "packet": {
+    "question": "Calculate Apple's revenue growth from FY2023 to FY2024 using its FY2024 10-K. Show the two revenues in USD millions and the percentage change rounded to two decimals.",
+    "answer": {
+      "status": "ok",
+      "answer": "Apple FY2023 revenue was 383285 million USD.\nApple FY2024 revenue was 391035 million USD.\nApple FY2024 revenue growth was 2.02%.",
+      "claims": [
+        {
+          "claim_id": "c1",
+          "claim_type": "structured_numeric",
+          "context_ids": [
+            "e1",
+            "e2"
+          ],
+          "metric_id": "revenue",
+          "text": "Apple FY2023 revenue was 383285 million USD."
+        },
+        {
+          "claim_id": "c2",
+          "claim_type": "structured_numeric",
+          "context_ids": [
+            "e1",
+            "e2"
+          ],
+          "metric_id": "revenue",
+          "text": "Apple FY2024 revenue was 391035 million USD."
+        },
+        {
+          "claim_id": "c3",
+          "claim_type": "calculation",
+          "context_ids": [
+            "e1",
+            "e2"
+          ],
+          "metric_id": "revenue_growth_percent",
+          "text": "Apple FY2024 revenue growth was 2.02%."
+        }
+      ],
+      "compare_rows": [],
+      "computation": {
+        "expression": "(current - previous) / previous * 100",
+        "result": 2.021994077514121,
+        "variables": {
+          "current": "391035",
+          "previous": "383285"
+        }
+      }
+    },
+    "expected_answerability": "answerable",
+    "answerability_reason": null,
+    "equivalence_rules": {
+      "abstention": "For future-actual questions, explicitly identify that the named filing cannot establish audited actuals for the later year; no guessed value or later-filing substitution. For answerable questions a refusal is incomplete/incorrect answerability, even if the system failed to retrieve evidence. Execution failures are a different layer.",
+      "evidence": "Listed source passages are independently verified examples, not an exhaustive whitelist for semantic adjudication. Inspect any unlisted passage against its original filing and the requirement scope before accepting it. Generic numeric evidence may come from another filing only when financial equivalence is established. Log its identity/span and rationale without rewriting frozen gold.",
+      "numeric_evidence": "Financial truth is independent of route: an original-filing table/text with explicit correct metric, issuer, period, unit and amount may support a numeric claim. Structured numeric-to-structured evidence policy is a separate compatibility metric. No credit from context metadata without matching answer semantics.",
+      "partial": "Omitting a qualifying facet may be incomplete while all emitted claims remain supported. Contradicting a material qualifier, issuer, period, amount or attribution is unsupported, not merely incomplete. Mixed true and unsupported separable assertions in one emitted claim are partially supported; a wrong central numeric fact is unsupported.",
+      "phrasing": "Synonyms, reordered clauses, issuer names/tickers, equivalent explicit units and non-contradictory concise paraphrases are acceptable. Gold wording is not a required string.",
+      "scope": "Use the named issuer and fiscal period. Explicit named-filing questions, comparisons and calculations remain bound to that filing. Generic numeric questions without an explicit filing-year restriction may use independently verified equivalent evidence for the same original amount, entity, metric and fact period; a later filing is not wrong merely because it repeats that fact. Different restated values, segments, periods or metrics are not interchangeable. Narrative/attribution facets retain their named fiscal-year disclosure scope."
+    },
+    "optional_detail": [],
+    "requirements": [
+      {
+        "claim_id": "previous_revenue",
+        "requirement": "Apple FY2023 revenue is 383285000000 USD.",
+        "numeric": {
+          "absolute_tolerance": 500000,
+          "fiscal_year": 2023,
+          "metric_id": "revenue",
+          "requested_display_unit": "USD_millions",
+          "ticker": "AAPL",
+          "unit": "USD",
+          "value": 383285000000
+        }
+      },
+      {
+        "claim_id": "current_revenue",
+        "requirement": "Apple FY2024 revenue is 391035000000 USD.",
+        "numeric": {
+          "absolute_tolerance": 500000,
+          "fiscal_year": 2024,
+          "metric_id": "revenue",
+          "requested_display_unit": "USD_millions",
+          "ticker": "AAPL",
+          "unit": "USD",
+          "value": 391035000000
+        }
+      },
+      {
+        "claim_id": "growth_percent",
+        "requirement": "Revenue grew by 2.02% from FY2023 to FY2024.",
+        "numeric": {
+          "absolute_tolerance": 0.005001,
+          "fiscal_year": 2024,
+          "metric_id": "revenue_growth_percent",
+          "requested_display_unit": "percent",
+          "ticker": "AAPL",
+          "unit": "percent",
+          "value": 2.021994077514121
+        }
+      }
+    ]
+  },
+  "raw_response": {
+    "model": "gemma4:e4b",
+    "created_at": "2026-09-08T04:29:43.93954Z",
+    "message": {
+      "role": "assistant",
+      "content": "{\"requirements\":[{\"claim_id\": \"previous_revenue\", \"fulfillment\": \"complete\", \"reason\": \"The final answer explicitly states 'Apple FY2023 revenue was 383285 million USD.', which conveys the required entity (Apple), period (FY2023), metric (revenue), quantity/unit (383285 million USD), and qualifiers (Apple).\", \"answer_quotes\": [\"Apple FY2023 revenue was 383285 million USD.\"]}, {\"claim_id\": \"current_revenue\", \"fulfillment\": \"complete\", \"reason\": \"The final answer explicitly states 'Apple FY2024 revenue was 391035 million USD.', which conveys the required entity (Apple), period (FY2024), metric (revenue), quantity/unit (391035 million USD), and qualifiers (Apple).\", \"answer_quotes\": [\"Apple FY2024 revenue was 391035 million USD.\"]}, {\"claim_id\": \"growth_percent\", \"fulfillment\": \"complete\", \"reason\": \"The final answer explicitly states 'Apple FY2024 revenue growth was 2.02%.', which conveys the required metric (revenue growth), period (FY2024), quantity/unit (2.02%), and qualifiers (Apple).\", \"answer_quotes\": [\"Apple FY2024 revenue growth was 2.02%.\"]}],\"answer_relevant\":true,\"answerability_correct\":true,\"reason\":\"The provided answer successfully addresses all three requirements by stating the FY2023 revenue, the FY2024 revenue, and the calculated growth percentage, all with the correct entity and period context.\"}"
+    },
+    "done": true,
+    "done_reason": "stop",
+    "total_duration": 13059533834,
+    "load_duration": 794917,
+    "prompt_eval_count": 1621,
+    "prompt_eval_duration": 129732000,
+    "eval_count": 374,
+    "eval_duration": 12908027000
+  },
+  "validated": {
+    "requirements": [
+      {
+        "claim_id": "previous_revenue",
+        "fulfillment": "complete",
+        "reason": "The final answer explicitly states 'Apple FY2023 revenue was 383285 million USD.', which conveys the required entity (Apple), period (FY2023), metric (revenue), quantity/unit (383285 million USD), and qualifiers (Apple).",
+        "answer_quotes": [
+          "Apple FY2023 revenue was 383285 million USD."
+        ]
+      },
+      {
+        "claim_id": "current_revenue",
+        "fulfillment": "complete",
+        "reason": "The final answer explicitly states 'Apple FY2024 revenue was 391035 million USD.', which conveys the required entity (Apple), period (FY2024), metric (revenue), quantity/unit (391035 million USD), and qualifiers (Apple).",
+        "answer_quotes": [
+          "Apple FY2024 revenue was 391035 million USD."
+        ]
+      },
+      {
+        "claim_id": "growth_percent",
+        "fulfillment": "complete",
+        "reason": "The final answer explicitly states 'Apple FY2024 revenue growth was 2.02%.', which conveys the required metric (revenue growth), period (FY2024), quantity/unit (2.02%), and qualifiers (Apple).",
+        "answer_quotes": [
+          "Apple FY2024 revenue growth was 2.02%."
+        ]
+      }
+    ],
+    "answer_relevant": true,
+    "answerability_correct": true,
+    "reason": "The provided answer successfully addresses all three requirements by stating the FY2023 revenue, the FY2024 revenue, and the calculated growth percentage, all with the correct entity and period context."
+  },
+  "wall_ms": 13060.789500013925,
+  "finished_at": "2026-09-08T04:29:43.940094+00:00"
+}

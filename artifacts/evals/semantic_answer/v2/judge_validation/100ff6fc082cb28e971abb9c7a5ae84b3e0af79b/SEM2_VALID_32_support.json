@@ -1,0 +1,40 @@
+{
+  "fixture_id": "SEM2_VALID_32",
+  "repeat": false,
+  "phase": "support",
+  "started_at": "2026-09-08T04:27:01.055120+00:00",
+  "packet": {
+    "question": "Using only Amazon's FY2023 10-K, what was its audited actual net income for FY2024? Do not use later filings or forecasts; say if the specified filing cannot establish it.",
+    "answer": {
+      "status": "insufficient_data",
+      "answer": "The specified FY2023 filing cannot establish audited actual net income for FY2024; that later fiscal year's actuals are outside this filing.",
+      "claims": [],
+      "compare_rows": [],
+      "computation": null
+    },
+    "cited_contexts": []
+  },
+  "raw_response": {
+    "model": "gemma4:e4b",
+    "created_at": "2026-09-08T04:27:05.227851Z",
+    "message": {
+      "role": "assistant",
+      "content": "{\"claims\": [], \"unbound_factual_prose\":false, \"reason\": \"The provided answer correctly states that the FY2023 filing cannot establish audited actual net income for FY2024 because that fiscal year's actuals are outside the scope of the filing. Since no evidence was provided, no claims could be assessed against evidence.\"}"
+    },
+    "done": true,
+    "done_reason": "stop",
+    "total_duration": 4172228417,
+    "load_duration": 767709,
+    "prompt_eval_count": 681,
+    "prompt_eval_duration": 1616914000,
+    "eval_count": 76,
+    "eval_duration": 2547299000
+  },
+  "validated": {
+    "claims": [],
+    "unbound_factual_prose": false,
+    "reason": "The provided answer correctly states that the FY2023 filing cannot establish audited actual net income for FY2024 because that fiscal year's actuals are outside the scope of the filing. Since no evidence was provided, no claims could be assessed against evidence."
+  },
+  "wall_ms": 4172.955332964193,
+  "finished_at": "2026-09-08T04:27:05.228068+00:00"
+}

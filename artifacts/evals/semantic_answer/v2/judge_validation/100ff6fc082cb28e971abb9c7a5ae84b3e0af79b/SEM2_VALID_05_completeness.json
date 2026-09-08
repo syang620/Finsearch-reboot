@@ -1,0 +1,85 @@
+{
+  "fixture_id": "SEM2_VALID_05",
+  "repeat": false,
+  "phase": "completeness",
+  "started_at": "2026-09-08T04:15:29.810346+00:00",
+  "packet": {
+    "question": "What total revenue did Apple report for FY2024 in its 10-K? Give the value in USD millions.",
+    "answer": {
+      "status": "ok",
+      "answer": "Apple FY2024 revenue was not $391.035 billion.",
+      "claims": [
+        {
+          "claim_id": "c1",
+          "claim_type": "structured_numeric",
+          "context_ids": [
+            "e1"
+          ],
+          "metric_id": "revenue",
+          "text": "Apple FY2024 revenue was not $391.035 billion."
+        }
+      ],
+      "compare_rows": [],
+      "computation": null
+    },
+    "expected_answerability": "answerable",
+    "answerability_reason": null,
+    "equivalence_rules": {
+      "abstention": "For future-actual questions, explicitly identify that the named filing cannot establish audited actuals for the later year; no guessed value or later-filing substitution. For answerable questions a refusal is incomplete/incorrect answerability, even if the system failed to retrieve evidence. Execution failures are a different layer.",
+      "evidence": "Listed source passages are independently verified examples, not an exhaustive whitelist for semantic adjudication. Inspect any unlisted passage against its original filing and the requirement scope before accepting it. Generic numeric evidence may come from another filing only when financial equivalence is established. Log its identity/span and rationale without rewriting frozen gold.",
+      "numeric_evidence": "Financial truth is independent of route: an original-filing table/text with explicit correct metric, issuer, period, unit and amount may support a numeric claim. Structured numeric-to-structured evidence policy is a separate compatibility metric. No credit from context metadata without matching answer semantics.",
+      "partial": "Omitting a qualifying facet may be incomplete while all emitted claims remain supported. Contradicting a material qualifier, issuer, period, amount or attribution is unsupported, not merely incomplete. Mixed true and unsupported separable assertions in one emitted claim are partially supported; a wrong central numeric fact is unsupported.",
+      "phrasing": "Synonyms, reordered clauses, issuer names/tickers, equivalent explicit units and non-contradictory concise paraphrases are acceptable. Gold wording is not a required string.",
+      "scope": "Use the named issuer and fiscal period. Explicit named-filing questions, comparisons and calculations remain bound to that filing. Generic numeric questions without an explicit filing-year restriction may use independently verified equivalent evidence for the same original amount, entity, metric and fact period; a later filing is not wrong merely because it repeats that fact. Different restated values, segments, periods or metrics are not interchangeable. Narrative/attribution facets retain their named fiscal-year disclosure scope."
+    },
+    "optional_detail": [],
+    "requirements": [
+      {
+        "claim_id": "revenue",
+        "requirement": "Apple FY2024 revenue is 391035000000 USD.",
+        "numeric": {
+          "absolute_tolerance": 500000,
+          "fiscal_year": 2024,
+          "metric_id": "revenue",
+          "requested_display_unit": "USD_millions",
+          "ticker": "AAPL",
+          "unit": "USD",
+          "value": 391035000000
+        }
+      }
+    ]
+  },
+  "raw_response": {
+    "model": "gemma4:e4b",
+    "created_at": "2026-09-08T04:15:42.09227Z",
+    "message": {
+      "role": "assistant",
+      "content": "{\"requirements\":[{\"claim_id\":\"revenue\",\"fulfillment\":\"partial\",\"reason\":\"The requirement asks for Apple's FY2024 revenue in USD millions, specifically stating the value should be 391035000000 USD. The provided answer states that Apple FY2024 revenue was *not* $391.035 billion, which addresses the value but fails to provide the actual required value or confirm the correct value. The answer only negates the value rather than stating the correct one or confirming the required structure.\",\"answer_quotes\":[\"Apple FY2024 revenue was not $391.035 billion.\"]}],\"answer_relevant\":true,\"answerability_correct\":true,\"reason\":\"The question asks for a specific numeric value (Apple FY2024 revenue in USD millions). The provided answer makes a statement about what the revenue was *not*, which is a form of answerability (it addresses the topic) but does not fulfill the core requirement of stating the correct value. Since the provided answer does not give the required value, it is only partially fulfilling the requirement, although the system correctly identified that the question was answerable based on the context/scope rules.\"}"
+    },
+    "done": true,
+    "done_reason": "stop",
+    "total_duration": 12281540792,
+    "load_duration": 728417,
+    "prompt_eval_count": 1140,
+    "prompt_eval_duration": 3445854000,
+    "eval_count": 257,
+    "eval_duration": 8826174000
+  },
+  "validated": {
+    "requirements": [
+      {
+        "claim_id": "revenue",
+        "fulfillment": "partial",
+        "reason": "The requirement asks for Apple's FY2024 revenue in USD millions, specifically stating the value should be 391035000000 USD. The provided answer states that Apple FY2024 revenue was *not* $391.035 billion, which addresses the value but fails to provide the actual required value or confirm the correct value. The answer only negates the value rather than stating the correct one or confirming the required structure.",
+        "answer_quotes": [
+          "Apple FY2024 revenue was not $391.035 billion."
+        ]
+      }
+    ],
+    "answer_relevant": true,
+    "answerability_correct": true,
+    "reason": "The question asks for a specific numeric value (Apple FY2024 revenue in USD millions). The provided answer makes a statement about what the revenue was *not*, which is a form of answerability (it addresses the topic) but does not fulfill the core requirement of stating the correct value. Since the provided answer does not give the required value, it is only partially fulfilling the requirement, although the system correctly identified that the question was answerable based on the context/scope rules."
+  },
+  "wall_ms": 12282.450292026624,
+  "finished_at": "2026-09-08T04:15:42.092770+00:00"
+}

@@ -1,0 +1,85 @@
+{
+  "fixture_id": "SEM2_VALID_07",
+  "repeat": true,
+  "phase": "completeness",
+  "started_at": "2026-09-08T04:28:39.290130+00:00",
+  "packet": {
+    "question": "What total revenue did Microsoft report for FY2024 in its 10-K? Give the value in USD millions.",
+    "answer": {
+      "status": "ok",
+      "answer": "Microsoft FY2024 cash and cash equivalents were $245.122 billion.",
+      "claims": [
+        {
+          "claim_id": "c1",
+          "claim_type": "structured_numeric",
+          "context_ids": [
+            "e1"
+          ],
+          "metric_id": "revenue",
+          "text": "Microsoft FY2024 cash and cash equivalents were $245.122 billion."
+        }
+      ],
+      "compare_rows": [],
+      "computation": null
+    },
+    "expected_answerability": "answerable",
+    "answerability_reason": null,
+    "equivalence_rules": {
+      "abstention": "For future-actual questions, explicitly identify that the named filing cannot establish audited actuals for the later year; no guessed value or later-filing substitution. For answerable questions a refusal is incomplete/incorrect answerability, even if the system failed to retrieve evidence. Execution failures are a different layer.",
+      "evidence": "Listed source passages are independently verified examples, not an exhaustive whitelist for semantic adjudication. Inspect any unlisted passage against its original filing and the requirement scope before accepting it. Generic numeric evidence may come from another filing only when financial equivalence is established. Log its identity/span and rationale without rewriting frozen gold.",
+      "numeric_evidence": "Financial truth is independent of route: an original-filing table/text with explicit correct metric, issuer, period, unit and amount may support a numeric claim. Structured numeric-to-structured evidence policy is a separate compatibility metric. No credit from context metadata without matching answer semantics.",
+      "partial": "Omitting a qualifying facet may be incomplete while all emitted claims remain supported. Contradicting a material qualifier, issuer, period, amount or attribution is unsupported, not merely incomplete. Mixed true and unsupported separable assertions in one emitted claim are partially supported; a wrong central numeric fact is unsupported.",
+      "phrasing": "Synonyms, reordered clauses, issuer names/tickers, equivalent explicit units and non-contradictory concise paraphrases are acceptable. Gold wording is not a required string.",
+      "scope": "Use the named issuer and fiscal period. Explicit named-filing questions, comparisons and calculations remain bound to that filing. Generic numeric questions without an explicit filing-year restriction may use independently verified equivalent evidence for the same original amount, entity, metric and fact period; a later filing is not wrong merely because it repeats that fact. Different restated values, segments, periods or metrics are not interchangeable. Narrative/attribution facets retain their named fiscal-year disclosure scope."
+    },
+    "optional_detail": [],
+    "requirements": [
+      {
+        "claim_id": "revenue",
+        "requirement": "Microsoft FY2024 revenue is 245122000000 USD.",
+        "numeric": {
+          "absolute_tolerance": 500000,
+          "fiscal_year": 2024,
+          "metric_id": "revenue",
+          "requested_display_unit": "USD_millions",
+          "ticker": "MSFT",
+          "unit": "USD",
+          "value": 245122000000
+        }
+      }
+    ]
+  },
+  "raw_response": {
+    "model": "gemma4:e4b",
+    "created_at": "2026-09-08T04:28:47.767698Z",
+    "message": {
+      "role": "assistant",
+      "content": "{\"requirements\":[{\"claim_id\":\"revenue\",\"fulfillment\":\"partial\",\"reason\":\"The requirement asks for 'revenue' for Microsoft in FY2024, but the provided answer states a value for 'cash and cash equivalents' ($245.122 billion), not revenue. The required metric is incorrect in the answer provided.\",\"answer_quotes\":[\"Microsoft FY2024 cash and cash equivalents were $245.122 billion.\"]}],\"answer_relevant\":true,\"answerability_correct\":false,\"reason\":\"The provided answer incorrectly reports 'cash and cash equivalents' when the question explicitly asks for 'revenue'. Therefore, the answer is factually incorrect relative to the requirement.\"}"
+    },
+    "done": true,
+    "done_reason": "stop",
+    "total_duration": 8477004333,
+    "load_duration": 777958,
+    "prompt_eval_count": 1145,
+    "prompt_eval_duration": 3446965000,
+    "eval_count": 146,
+    "eval_duration": 5017919000
+  },
+  "validated": {
+    "requirements": [
+      {
+        "claim_id": "revenue",
+        "fulfillment": "partial",
+        "reason": "The requirement asks for 'revenue' for Microsoft in FY2024, but the provided answer states a value for 'cash and cash equivalents' ($245.122 billion), not revenue. The required metric is incorrect in the answer provided.",
+        "answer_quotes": [
+          "Microsoft FY2024 cash and cash equivalents were $245.122 billion."
+        ]
+      }
+    ],
+    "answer_relevant": true,
+    "answerability_correct": false,
+    "reason": "The provided answer incorrectly reports 'cash and cash equivalents' when the question explicitly asks for 'revenue'. Therefore, the answer is factually incorrect relative to the requirement."
+  },
+  "wall_ms": 8478.079084015917,
+  "finished_at": "2026-09-08T04:28:47.768199+00:00"
+}

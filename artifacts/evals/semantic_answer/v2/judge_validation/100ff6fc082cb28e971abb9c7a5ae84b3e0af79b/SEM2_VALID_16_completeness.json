@@ -1,0 +1,123 @@
+{
+  "fixture_id": "SEM2_VALID_16",
+  "repeat": false,
+  "phase": "completeness",
+  "started_at": "2026-09-08T04:19:54.481623+00:00",
+  "packet": {
+    "question": "According to Apple's FY2025 10-K, how does it source some custom components, and what supply/pricing exposure does that create?",
+    "answer": {
+      "status": "ok",
+      "answer": "Some custom Apple components are obtained from a single or limited source.\nThis sourcing exposes Apple to significant supply risk.\nIt also exposes Apple to significant pricing risk.",
+      "claims": [
+        {
+          "claim_id": "c1",
+          "claim_type": "narrative",
+          "context_ids": [
+            "e1",
+            "e2",
+            "e3"
+          ],
+          "text": "Some custom Apple components are obtained from a single or limited source."
+        },
+        {
+          "claim_id": "c2",
+          "claim_type": "narrative",
+          "context_ids": [
+            "e1",
+            "e2",
+            "e3"
+          ],
+          "text": "This sourcing exposes Apple to significant supply risk."
+        },
+        {
+          "claim_id": "c3",
+          "claim_type": "narrative",
+          "context_ids": [
+            "e1",
+            "e2",
+            "e3"
+          ],
+          "text": "It also exposes Apple to significant pricing risk."
+        }
+      ],
+      "compare_rows": [],
+      "computation": null
+    },
+    "expected_answerability": "answerable",
+    "answerability_reason": null,
+    "equivalence_rules": {
+      "abstention": "For future-actual questions, explicitly identify that the named filing cannot establish audited actuals for the later year; no guessed value or later-filing substitution. For answerable questions a refusal is incomplete/incorrect answerability, even if the system failed to retrieve evidence. Execution failures are a different layer.",
+      "evidence": "Listed source passages are independently verified examples, not an exhaustive whitelist for semantic adjudication. Inspect any unlisted passage against its original filing and the requirement scope before accepting it. Generic numeric evidence may come from another filing only when financial equivalence is established. Log its identity/span and rationale without rewriting frozen gold.",
+      "numeric_evidence": "Financial truth is independent of route: an original-filing table/text with explicit correct metric, issuer, period, unit and amount may support a numeric claim. Structured numeric-to-structured evidence policy is a separate compatibility metric. No credit from context metadata without matching answer semantics.",
+      "partial": "Omitting a qualifying facet may be incomplete while all emitted claims remain supported. Contradicting a material qualifier, issuer, period, amount or attribution is unsupported, not merely incomplete. Mixed true and unsupported separable assertions in one emitted claim are partially supported; a wrong central numeric fact is unsupported.",
+      "phrasing": "Synonyms, reordered clauses, issuer names/tickers, equivalent explicit units and non-contradictory concise paraphrases are acceptable. Gold wording is not a required string.",
+      "scope": "Use the named issuer and fiscal period. Explicit named-filing questions, comparisons and calculations remain bound to that filing. Generic numeric questions without an explicit filing-year restriction may use independently verified equivalent evidence for the same original amount, entity, metric and fact period; a later filing is not wrong merely because it repeats that fact. Different restated values, segments, periods or metrics are not interchangeable. Narrative/attribution facets retain their named fiscal-year disclosure scope."
+    },
+    "optional_detail": [
+      "New products often use custom components available from only one source. The question asks sourcing and exposure, not a new-product-specific qualifier."
+    ],
+    "requirements": [
+      {
+        "claim_id": "business_or_governance_sourcing",
+        "requirement": "Apple uses some custom components available from a single or limited source; this is not a statement that all components are single-sourced."
+      },
+      {
+        "claim_id": "risk_supply",
+        "requirement": "Single or limited component sourcing exposes Apple to significant supply risk."
+      },
+      {
+        "claim_id": "risk_pricing",
+        "requirement": "Single or limited component sourcing exposes Apple to significant pricing risk."
+      }
+    ]
+  },
+  "raw_response": {
+    "model": "gemma4:e4b",
+    "created_at": "2026-09-08T04:20:06.285327Z",
+    "message": {
+      "role": "assistant",
+      "content": "{\"requirements\": [{\"claim_id\": \"business_or_governance_sourcing\", \"fulfillment\": \"complete\", \"reason\": \"The final answer explicitly states that \\\"Some custom Apple components are obtained from a single or limited source.\\\"\", \"answer_quotes\": [\"Some custom Apple components are obtained from a single or limited source.\"]}, {\"claim_id\": \"risk_supply\", \"fulfillment\": \"complete\", \"reason\": \"The final answer explicitly states that \\\"This sourcing exposes Apple to significant supply risk.\\\"\", \"answer_quotes\": [\"This sourcing exposes Apple to significant supply risk.\"]}, {\"claim_id\": \"risk_pricing\", \"fulfillment\": \"complete\", \"reason\": \"The final answer explicitly states that \\\"It also exposes Apple to significant pricing risk.\\\"\", \"answer_quotes\": [\"It also exposes Apple to significant pricing risk.\"]}], \"answer_relevant\": true, \"answerability_correct\": true, \"reason\": \"The provided answer directly addresses all three required components: the limited sourcing of custom components, the resulting supply risk, and the resulting pricing risk, matching the meaning of the requirements.\"}"
+    },
+    "done": true,
+    "done_reason": "stop",
+    "total_duration": 11802652000,
+    "load_duration": 950542,
+    "prompt_eval_count": 1264,
+    "prompt_eval_duration": 3821204000,
+    "eval_count": 233,
+    "eval_duration": 7962590000
+  },
+  "validated": {
+    "requirements": [
+      {
+        "claim_id": "business_or_governance_sourcing",
+        "fulfillment": "complete",
+        "reason": "The final answer explicitly states that \"Some custom Apple components are obtained from a single or limited source.\"",
+        "answer_quotes": [
+          "Some custom Apple components are obtained from a single or limited source."
+        ]
+      },
+      {
+        "claim_id": "risk_supply",
+        "fulfillment": "complete",
+        "reason": "The final answer explicitly states that \"This sourcing exposes Apple to significant supply risk.\"",
+        "answer_quotes": [
+          "This sourcing exposes Apple to significant supply risk."
+        ]
+      },
+      {
+        "claim_id": "risk_pricing",
+        "fulfillment": "complete",
+        "reason": "The final answer explicitly states that \"It also exposes Apple to significant pricing risk.\"",
+        "answer_quotes": [
+          "It also exposes Apple to significant pricing risk."
+        ]
+      }
+    ],
+    "answer_relevant": true,
+    "answerability_correct": true,
+    "reason": "The provided answer directly addresses all three required components: the limited sourcing of custom components, the resulting supply risk, and the resulting pricing risk, matching the meaning of the requirements."
+  },
+  "wall_ms": 11803.979583026376,
+  "finished_at": "2026-09-08T04:20:06.285587+00:00"
+}

@@ -1,0 +1,69 @@
+{
+  "fixture_id": "SEM2_VALID_02",
+  "repeat": false,
+  "phase": "support",
+  "started_at": "2026-09-08T04:14:27.174093+00:00",
+  "packet": {
+    "question": "What total revenue did Apple report for FY2024 in its 10-K? Give the value in USD millions.",
+    "answer": {
+      "status": "ok",
+      "answer": "Microsoft FY2024 revenue was $391.035 billion.",
+      "claims": [
+        {
+          "claim_id": "c1",
+          "claim_type": "structured_numeric",
+          "context_ids": [
+            "e1"
+          ],
+          "metric_id": "revenue",
+          "text": "Microsoft FY2024 revenue was $391.035 billion."
+        }
+      ],
+      "compare_rows": [],
+      "computation": null
+    },
+    "cited_contexts": [
+      {
+        "context_id": "e1",
+        "kind": "structured_fact",
+        "source": null,
+        "evidence": "{\"accession_number\": \"0000320193-24-000123\", \"components\": null, \"filed_date\": \"2024-11-01\", \"fiscal_year\": 2024, \"form_type\": \"10-K\", \"metric_id\": \"revenue\", \"metric_label\": \"revenue\", \"missing_component_groups\": null, \"report_date\": \"2024-09-28\", \"source_url\": \"https://www.sec.gov/Archives/edgar/data/320193/000032019324000123/aapl-20240928.htm\", \"start_date\": \"2023-10-01\", \"status\": \"ok\", \"ticker\": \"AAPL\", \"unit\": \"USD\", \"value\": 391035000000}"
+      }
+    ]
+  },
+  "raw_response": {
+    "model": "gemma4:e4b",
+    "created_at": "2026-09-08T04:14:33.789878Z",
+    "message": {
+      "role": "assistant",
+      "content": "{\"claims\":[{\"claim_id\":\"c1\",\"support\":\"unsupported\",\"reason\":\"The claim states that Microsoft's FY2024 revenue was $391.035 billion. The evidence provided (e1) pertains to Apple (ticker: AAPL) and reports a revenue value of 391,035,000,000 USD for FY2024. The company name is incorrect.\",\"evidence_quotes\":[{\"context_id\":\"e1\",\"quote\":\"\\\"ticker\\\": \\\"AAPL\\\"\"}]}],\"unbound_factual_prose\":false,\"reason\":\"The claim incorrectly attributes the reported revenue figure to Microsoft when the provided evidence relates to Apple.\"}"
+    },
+    "done": true,
+    "done_reason": "stop",
+    "total_duration": 6615221334,
+    "load_duration": 2012917,
+    "prompt_eval_count": 952,
+    "prompt_eval_duration": 1526565000,
+    "eval_count": 149,
+    "eval_duration": 5074600000
+  },
+  "validated": {
+    "claims": [
+      {
+        "claim_id": "c1",
+        "support": "unsupported",
+        "reason": "The claim states that Microsoft's FY2024 revenue was $391.035 billion. The evidence provided (e1) pertains to Apple (ticker: AAPL) and reports a revenue value of 391,035,000,000 USD for FY2024. The company name is incorrect.",
+        "evidence_quotes": [
+          {
+            "context_id": "e1",
+            "quote": "\"ticker\": \"AAPL\""
+          }
+        ]
+      }
+    ],
+    "unbound_factual_prose": false,
+    "reason": "The claim incorrectly attributes the reported revenue figure to Microsoft when the provided evidence relates to Apple."
+  },
+  "wall_ms": 6616.513249988202,
+  "finished_at": "2026-09-08T04:14:33.790600+00:00"
+}

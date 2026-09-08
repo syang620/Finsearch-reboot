@@ -1,0 +1,184 @@
+{
+  "fixture_id": "SEM2_VALID_16",
+  "repeat": false,
+  "phase": "support",
+  "started_at": "2026-09-08T04:19:25.631910+00:00",
+  "packet": {
+    "question": "According to Apple's FY2025 10-K, how does it source some custom components, and what supply/pricing exposure does that create?",
+    "answer": {
+      "status": "ok",
+      "answer": "Some custom Apple components are obtained from a single or limited source.\nThis sourcing exposes Apple to significant supply risk.\nIt also exposes Apple to significant pricing risk.",
+      "claims": [
+        {
+          "claim_id": "c1",
+          "claim_type": "narrative",
+          "context_ids": [
+            "e1",
+            "e2",
+            "e3"
+          ],
+          "text": "Some custom Apple components are obtained from a single or limited source."
+        },
+        {
+          "claim_id": "c2",
+          "claim_type": "narrative",
+          "context_ids": [
+            "e1",
+            "e2",
+            "e3"
+          ],
+          "text": "This sourcing exposes Apple to significant supply risk."
+        },
+        {
+          "claim_id": "c3",
+          "claim_type": "narrative",
+          "context_ids": [
+            "e1",
+            "e2",
+            "e3"
+          ],
+          "text": "It also exposes Apple to significant pricing risk."
+        }
+      ],
+      "compare_rows": [],
+      "computation": null
+    },
+    "cited_contexts": [
+      {
+        "context_id": "e1",
+        "kind": "text",
+        "source": {
+          "chunk_index": 6,
+          "doc_id": "AAPL_10-K_2025::text::6",
+          "doc_type": "text_chunk",
+          "fiscal_year": 2025,
+          "form_type": "10-K",
+          "item_id": "1",
+          "section_path": "Item 1. Business > Supply of Components",
+          "source_html": "data/html_filings/AAPL/10-K/10-K_2025.html",
+          "source_sha256": "548ae59778cf08ee0f2ee088e7ece20d947076c3c01f74d2d65db4c2777e436a",
+          "split_index": 0,
+          "ticker": "AAPL"
+        },
+        "evidence": "Item 1. Business > Supply of Components\n\nAlthough most components essential to the Company\u2019s business are generally available from multiple sources, certain components are currently obtained from single or limited sources. The Company also competes for various components with other participants in the markets for smartphones, personal computers, tablets, wearables and accessories. Therefore, many components used by the Company, including those that are available from multiple sources, are at times subject to industry-wide shortage and significant commodity pricing fluctuations. Restrictions on international trade can increase the cost or limit the availability of the Company\u2019s products and the components and rare earths and other raw materials that go into them.The Company uses some custom components that are not commonly used by its competitors, and new products introduced by the Company often utilize custom components available from only one source. When a component or product uses new technologies, initial capacity constraints may exist until the suppliers\u2019 yields have matured or their manufacturing capacities have increased. The Company has entered into agreements for the supply of many components; however, the Company may not be able to extend or renew agreements for the supply of components on similar terms, or at all, and may not be successful in obtaining sufficient quantities from its suppliers or in a timely manner, or in identifying and obtaining sufficient quantities from an alternative source. In addition, component suppliers may fail, be subject to consolidation within a particular industry, or decide to concentrate on the production of common components instead of components customized to meet the Company\u2019s requirements, further limiting the Company\u2019s ability to obtain sufficient quantities of components on commercially reasonable terms, or at all."
+      },
+      {
+        "context_id": "e2",
+        "kind": "text",
+        "source": {
+          "chunk_index": 77,
+          "doc_id": "AAPL_10-K_2025::text::77",
+          "doc_type": "text_chunk",
+          "fiscal_year": 2025,
+          "form_type": "10-K",
+          "item_id": "6",
+          "section_path": "Item 6. [Reserved] > Concentrations in the Available Sources of Supply of Materials and Product",
+          "source_html": "data/html_filings/AAPL/10-K/10-K_2025.html",
+          "source_sha256": "548ae59778cf08ee0f2ee088e7ece20d947076c3c01f74d2d65db4c2777e436a",
+          "split_index": 0,
+          "ticker": "AAPL"
+        },
+        "evidence": "Item 6. [Reserved] > Concentrations in the Available Sources of Supply of Materials and Product\n\nAlthough most components essential to the Company\u2019s business are generally available from multiple sources, certain components are currently obtained from single or limited sources. The Company also competes for various components with other participants in the markets for smartphones, personal computers, tablets, wearables and accessories. Therefore, many components used by the Company, including those that are available from multiple sources, are at times subject to industry-wide shortage and significant commodity pricing fluctuations. Restrictions on international trade can increase the cost or limit the availability of the Company\u2019s products and the components and rare earths and other raw materials that go into them.The Company uses some custom components that are not commonly used by its competitors, and new products introduced by the Company often utilize custom components available from only one source. When a component or product uses new technologies, initial capacity constraints may exist until the suppliers\u2019 yields have matured or their manufacturing capacities have increased. The Company has entered into agreements for the supply of many components; however, the Company may not be able to extend or renew agreements for the supply of components on similar terms, or at all, and may not be successful in obtaining sufficient quantities from its suppliers or in a timely manner, or in identifying and obtaining sufficient quantities from an alternative source. In addition, component suppliers may fail, be subject to consolidation within a particular industry, or decide to concentrate on the production of common components instead of components customized to meet the Company\u2019s requirements, further limiting the Company\u2019s ability to obtain sufficient quantities of components on commercially reasonable terms, or at all.Substantially all of the Company\u2019s hardware products are manufactured by outsourcing partners that are located primarily in China mainland, India, Japan, South Korea, Taiwan and Vietnam."
+      },
+      {
+        "context_id": "e3",
+        "kind": "text",
+        "source": {
+          "chunk_index": 14,
+          "doc_id": "AAPL_10-K_2025::text::14::split::0",
+          "doc_type": "text_chunk",
+          "fiscal_year": 2025,
+          "form_type": "10-K",
+          "item_id": "1",
+          "section_path": "Item 1. Business > Business Risks",
+          "source_html": "data/html_filings/AAPL/10-K/10-K_2025.html",
+          "source_sha256": "548ae59778cf08ee0f2ee088e7ece20d947076c3c01f74d2d65db4c2777e436a",
+          "split_index": 0,
+          "ticker": "AAPL"
+        },
+        "evidence": "Item 1. Business > Business Risks\n\nTo remain competitive and stimulate customer demand, the Company must successfully manage frequent introductions and transitions of products and services.\n\nDue to the highly volatile and competitive nature of the markets and industries in which the Company competes, the Company must continually introduce new products, services and technologies, enhance existing products and services, effectively stimulate customer demand for new and upgraded products and services, navigate global regulatory requirements and barriers to market access, and successfully manage the transition to these new and upgraded products and services. The success of new product and service introductions depends on a number of factors, including the Company\u2019s ability to recruit and retain highly skilled personnel to execute on its strategic initiatives, and the timely and successful development and market acceptance of new products, services and technologies. Success also relies on the Company\u2019s ability to manage the risks associated with new technologies and production ramp-up issues, the effective integration of third-party services and technologies into the Company\u2019s products and services, the availability, delivery and performance of application software or other third-party support for the Company\u2019s products and services, the effective management of manufacturing and other purchase commitments and the management of inventory levels in line with anticipated product demand, and the availability of products in appropriate quantities and at expected costs to meet anticipated demand. Additionally, quality issues or other defects or deficiencies can adversely affect the success of new product and service introductions and market acceptance. New products, services and technologies may replace or supersede existing offerings and may produce lower revenues and lower profit margins. The Company may not be able to successfully manage future introductions and transitions of products and services, which can materially adversely affect the Company\u2019s business, reputation, results of operations, financial condition and stock price.\n\nThe Company depends on component and product manufacturing and logistical services provided by outsourcing partners, many of which are located outside of the U.S.\n\nA significant majority of the Company\u2019s manufacturing is performed in whole or in part by outsourcing partners located primarily in China mainland, India, Japan, South Korea, Taiwan and Vietnam, in addition to sourcing from partners and facilities located in the U.S. The Company relies on single-source partners in the U.S., Asia and Europe to supply and manufacture many components, and on partners primarily located in Asia, for final assembly of substantially all of the Company\u2019s hardware products. The Company has also outsourced much of its transportation and logistics management. While these arrangements can lower operating costs, they also reduce the Company\u2019s direct control over production and distribution. Such diminished control has from time to time had, and may in the future have, an adverse effect on the cost, quality or quantity of products manufactured or services provided, or adversely affect the Company\u2019s flexibility to respond to changing conditions. Although arrangements with these partners may contain provisions for product defect expense reimbursement, the Company generally remains responsible to the consumer for warranty and out-of-warranty service in the event of product defects and experiences unanticipated product defect liabilities from time to time. While the Company relies on its partners to adhere to its supplier code of conduct, violations of the supplier code of conduct occur from time to time and can materially adversely affect the Company\u2019s business, reputation, results of operations, financial condition and stock price.Changes or additions to the Company\u2019s supply chain require considerable time and resources and involve significant risks and uncertainties, including exposure to additional regulatory and operational risks.\n\nFuture operating results depend upon the Company\u2019s ability to obtain components in sufficient quantities on commercially reasonable terms.\n\nBecause the Company currently obtains certain components from single or limited sources, the Company is subject to significant supply and pricing risks. Many components, including those that are available from multiple sources, are at times subject to industry-wide shortages and significant commodity pricing fluctuations that can materially adversely affect the Company\u2019s business, results of operations, financial condition and stock price. For example, the global semiconductor industry has in the past experienced high demand and shortages of supply, which adversely affected the Company\u2019s ability to obtain sufficient quantities of components and products on commercially reasonable terms, or at all. Such disruptions could occur in the future.Additionally, the Company\u2019s new products often utilize custom components available from only one source. When a component or product uses new technologies, initial capacity constraints may exist until the suppliers\u2019 yields have matured or their manufacturing capacities have increased. The Company may not be able to extend or renew agreements for the supply of components on similar terms, or at all, and may not be successful in obtaining sufficient quantities from its suppliers in a timely manner, or in identifying and obtaining sufficient quantities from an alternative source. In addition, component suppliers may fail, be subject to consolidation within a particular industry, or decide to concentrate on the production of common components instead of components customized to meet the Company\u2019s requirements, further limiting the Company\u2019s ability to obtain sufficient quantities of components on commercially reasonable terms, or at all. Therefore, the Company remains subject to significant risks of supply shortages and price increases that can materially adversely affect its business, results of operations, financial condition and stock price.\n\nThe Company\u2019s products and services may be affected from time to time by design and manufacturing defects that could materially adversely affect the Company\u2019s business and result in harm to the Company\u2019s reputation."
+      }
+    ]
+  },
+  "raw_response": {
+    "model": "gemma4:e4b",
+    "created_at": "2026-09-08T04:19:54.479472Z",
+    "message": {
+      "role": "assistant",
+      "content": "{\"claims\": [{\"claim_id\": \"c1\", \"support\": \"fully_supported\", \"reason\": \"The evidence states that 'certain components are currently obtained from single or limited sources' and 'new products introduced by the Company often utilize custom components available from only one source.'\", \"evidence_quotes\": [{\"context_id\": \"e1\", \"quote\": \"certain components are currently obtained from single or limited sources.\"}, {\"context_id\": \"e2\", \"quote\": \"certain components are currently obtained from single or limited sources.\"}, {\"context_id\": \"e3\", \"quote\": \"Because the Company currently obtains certain components from single or limited sources, the Company is subject to significant supply and pricing risks.\"}]}, {\"claim_id\": \"c2\", \"support\": \"fully_supported\", \"reason\": \"The evidence explicitly states that the company is subject to 'significant supply and pricing risks' due to obtaining certain components from single or limited sources.\", \"evidence_quotes\": [{\"context_id\": \"e1\", \"quote\": \"Therefore, many components used by the Company, including those that are available from multiple sources, are at times subject to industry-wide shortage and significant commodity pricing fluctuations.\"}, {\"context_id\": \"e2\", \"quote\": \"Therefore, many components used by the Company, including those that are available from multiple sources, are at times subject to industry-wide shortage and significant commodity pricing fluctuations.\"}, {\"context_id\": \"e3\", \"quote\": \"Because the Company currently obtains certain components from single or limited sources, the Company is subject to significant supply and pricing risks.\"}]}, {\"claim_id\": \"c3\", \"support\": \"fully_supported\", \"reason\": \"The evidence states that the company is subject to 'significant supply and pricing risks' due to obtaining certain components from single or limited sources.\", \"evidence_quotes\": [{\"context_id\": \"e1\", \"quote\": \"Therefore, many components used by the Company, including those that are available from multiple sources, are at times subject to industry-wide shortage and significant commodity pricing fluctuations.\"}, {\"context_id\": \"e2\", \"quote\": \"Therefore, many components used by the Company, including those that are available from multiple sources, are at times subject to industry-wide shortage and significant commodity pricing fluctuations.\"}, {\"context_id\": \"e3\", \"quote\": \"Because the Company currently obtains certain components from single or limited sources, the Company is subject to significant supply and pricing risks.\"}]}], \"unbound_factual_prose\": false, \"reason\": \"All three claims are supported by multiple contexts, which consistently mention that components are obtained from single or limited sources, and that this creates significant supply and pricing risks.\"}"
+    },
+    "done": true,
+    "done_reason": "stop",
+    "total_duration": 28847200084,
+    "load_duration": 1435542,
+    "prompt_eval_count": 3424,
+    "prompt_eval_duration": 8964552000,
+    "eval_count": 567,
+    "eval_duration": 19860288000
+  },
+  "validated": {
+    "claims": [
+      {
+        "claim_id": "c1",
+        "support": "fully_supported",
+        "reason": "The evidence states that 'certain components are currently obtained from single or limited sources' and 'new products introduced by the Company often utilize custom components available from only one source.'",
+        "evidence_quotes": [
+          {
+            "context_id": "e1",
+            "quote": "certain components are currently obtained from single or limited sources."
+          },
+          {
+            "context_id": "e2",
+            "quote": "certain components are currently obtained from single or limited sources."
+          },
+          {
+            "context_id": "e3",
+            "quote": "Because the Company currently obtains certain components from single or limited sources, the Company is subject to significant supply and pricing risks."
+          }
+        ]
+      },
+      {
+        "claim_id": "c2",
+        "support": "fully_supported",
+        "reason": "The evidence explicitly states that the company is subject to 'significant supply and pricing risks' due to obtaining certain components from single or limited sources.",
+        "evidence_quotes": [
+          {
+            "context_id": "e1",
+            "quote": "Therefore, many components used by the Company, including those that are available from multiple sources, are at times subject to industry-wide shortage and significant commodity pricing fluctuations."
+          },
+          {
+            "context_id": "e2",
+            "quote": "Therefore, many components used by the Company, including those that are available from multiple sources, are at times subject to industry-wide shortage and significant commodity pricing fluctuations."
+          },
+          {
+            "context_id": "e3",
+            "quote": "Because the Company currently obtains certain components from single or limited sources, the Company is subject to significant supply and pricing risks."
+          }
+        ]
+      },
+      {
+        "claim_id": "c3",
+        "support": "fully_supported",
+        "reason": "The evidence states that the company is subject to 'significant supply and pricing risks' due to obtaining certain components from single or limited sources.",
+        "evidence_quotes": [
+          {
+            "context_id": "e1",
+            "quote": "Therefore, many components used by the Company, including those that are available from multiple sources, are at times subject to industry-wide shortage and significant commodity pricing fluctuations."
+          },
+          {
+            "context_id": "e2",
+            "quote": "Therefore, many components used by the Company, including those that are available from multiple sources, are at times subject to industry-wide shortage and significant commodity pricing fluctuations."
+          },
+          {
+            "context_id": "e3",
+            "quote": "Because the Company currently obtains certain components from single or limited sources, the Company is subject to significant supply and pricing risks."
+          }
+        ]
+      }
+    ],
+    "unbound_factual_prose": false,
+    "reason": "All three claims are supported by multiple contexts, which consistently mention that components are obtained from single or limited sources, and that this creates significant supply and pricing risks."
+  },
+  "wall_ms": 28848.24716701405,
+  "finished_at": "2026-09-08T04:19:54.480086+00:00"
+}

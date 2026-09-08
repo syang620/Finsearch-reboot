@@ -1,0 +1,40 @@
+{
+  "fixture_id": "SEM2_VALID_35",
+  "repeat": false,
+  "phase": "support",
+  "started_at": "2026-09-08T04:27:32.153858+00:00",
+  "packet": {
+    "question": "Under Amazon's FY2023 10-K revenue policy, when is unearned revenue recorded and when is it recognized as revenue?",
+    "answer": {
+      "status": "insufficient_data",
+      "answer": "I cannot answer this question from the filing.",
+      "claims": [],
+      "compare_rows": [],
+      "computation": null
+    },
+    "cited_contexts": []
+  },
+  "raw_response": {
+    "model": "gemma4:e4b",
+    "created_at": "2026-09-08T04:27:35.422477Z",
+    "message": {
+      "role": "assistant",
+      "content": "{\"claims\": [], \"unbound_factual_prose\":false, \"reason\": \"The provided input is a structured answer object indicating insufficient data, not a question requiring evidence assessment against supplied contexts. Therefore, no claims can be assessed against evidence.\"}"
+    },
+    "done": true,
+    "done_reason": "stop",
+    "total_duration": 3268290209,
+    "load_duration": 1210625,
+    "prompt_eval_count": 640,
+    "prompt_eval_duration": 1481706000,
+    "eval_count": 53,
+    "eval_duration": 1774980000
+  },
+  "validated": {
+    "claims": [],
+    "unbound_factual_prose": false,
+    "reason": "The provided input is a structured answer object indicating insufficient data, not a question requiring evidence assessment against supplied contexts. Therefore, no claims can be assessed against evidence."
+  },
+  "wall_ms": 3269.135416019708,
+  "finished_at": "2026-09-08T04:27:35.422993+00:00"
+}

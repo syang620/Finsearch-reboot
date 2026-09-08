@@ -1,0 +1,56 @@
+{
+  "fixture_id": "SEM2_VALID_12",
+  "repeat": false,
+  "phase": "support",
+  "started_at": "2026-09-08T04:18:18.645389+00:00",
+  "packet": {
+    "question": "Compare Apple's FY2024 and FY2023 total revenues side by side in USD millions, using the amounts reported in its FY2024 10-K. Identify the fiscal year of each amount.",
+    "answer": {
+      "status": "ok",
+      "answer": "Apple's FY2024 10-K reports FY2024 revenue of $391.035 billion.",
+      "claims": [
+        {
+          "claim_id": "c1",
+          "claim_type": "structured_numeric",
+          "context_ids": [
+            "e1"
+          ],
+          "metric_id": "revenue",
+          "text": "Apple's FY2024 10-K reports FY2024 revenue of $391.035 billion."
+        }
+      ],
+      "compare_rows": [],
+      "computation": null
+    },
+    "cited_contexts": [
+      {
+        "context_id": "e1",
+        "kind": "structured_fact",
+        "source": null,
+        "evidence": "{\"accession_number\": \"0000320193-25-000079\", \"components\": null, \"filed_date\": \"2025-10-31\", \"fiscal_year\": 2024, \"form_type\": \"10-K\", \"metric_id\": \"revenue\", \"metric_label\": \"revenue\", \"missing_component_groups\": null, \"report_date\": \"2025-09-27\", \"source_url\": \"https://www.sec.gov/Archives/edgar/data/320193/000032019325000079/aapl-20250927.htm\", \"start_date\": \"2023-10-01\", \"status\": \"ok\", \"ticker\": \"AAPL\", \"unit\": \"USD\", \"value\": 391035000000}"
+      }
+    ]
+  },
+  "raw_response": {
+    "model": "gemma4:e4b",
+    "created_at": "2026-09-08T04:18:29.734335Z",
+    "message": {
+      "role": "assistant",
+      "content": "{\"claims\":[{\"claim_id\":\"c1\",\"support\":\"fully_supported\",\"reason\":\"The evidence e1 explicitly states the revenue for fiscal year 2024 and the form type is 10-K, matching the claim's assertion.\",\"evidence_quotes\":[{\"context_id\":\"e1\",\"quote\":\"\\\"fiscal_year\\\": 2024, \\\"form_type\\\": \\\"10-K\\\", \\\"metric_id\\\": \\\"revenue\\\", \\\"metric_label\\\": \\\"revenue\\\", ... \\\"value\\\": 391035000000\"}]}], \"unbound_factual_prose\":false, \"reason\": \"The claim asks for a comparison of FY2024 and FY2023 revenues in USD millions using the FY2024 10-K. The provided evidence (e1) only contains the FY2024 revenue ($391,035,000,000) and does not provide the FY2023 revenue, making a side-by-side comparison impossible with the given data.\"}"
+    },
+    "done": true,
+    "done_reason": "stop",
+    "total_duration": 11088005583,
+    "load_duration": 852083,
+    "prompt_eval_count": 1000,
+    "prompt_eval_duration": 3063526000,
+    "eval_count": 235,
+    "eval_duration": 8012160000
+  },
+  "error": {
+    "type": "ValueError",
+    "message": "Invented/non-cited evidence quotation"
+  },
+  "wall_ms": 11089.694167021662,
+  "finished_at": "2026-09-08T04:18:29.735078+00:00"
+}

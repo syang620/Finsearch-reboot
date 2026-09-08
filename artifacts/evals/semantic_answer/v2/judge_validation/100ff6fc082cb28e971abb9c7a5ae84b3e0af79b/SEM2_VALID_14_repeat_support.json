@@ -1,0 +1,80 @@
+{
+  "fixture_id": "SEM2_VALID_14",
+  "repeat": true,
+  "phase": "support",
+  "started_at": "2026-09-08T04:29:57.584006+00:00",
+  "packet": {
+    "question": "Under Apple's FY2024 10-K accounting policy, which investments qualify as cash equivalents?",
+    "answer": {
+      "status": "ok",
+      "answer": "Some highly liquid investments qualify as Apple cash equivalents, and Apple guarantees these investments can never lose value.",
+      "claims": [
+        {
+          "claim_id": "c1",
+          "claim_type": "narrative",
+          "context_ids": [
+            "e1"
+          ],
+          "text": "Some highly liquid investments qualify as Apple cash equivalents, and Apple guarantees these investments can never lose value."
+        }
+      ],
+      "compare_rows": [],
+      "computation": null
+    },
+    "cited_contexts": [
+      {
+        "context_id": "e1",
+        "kind": "text",
+        "source": {
+          "chunk_index": 46,
+          "doc_id": "AAPL_10-K_2024::text::46",
+          "doc_type": "text_chunk",
+          "fiscal_year": 2024,
+          "form_type": "10-K",
+          "item_id": "6",
+          "section_path": "Item 6. [Reserved] > Cash Equivalents",
+          "source_html": "data/html_filings/AAPL/10-K/10-K_2024.html",
+          "source_sha256": "24a830a0f1256e371d36a1f7f72e5e85a38037d1de2f6f966eb8457db42ff6d6",
+          "split_index": 0,
+          "ticker": "AAPL"
+        },
+        "evidence": "Item 6. [Reserved] > Cash Equivalents\n\nAll highly liquid investments with maturities of three months or less at the date of purchase are treated as cash equivalents."
+      }
+    ]
+  },
+  "raw_response": {
+    "model": "gemma4:e4b",
+    "created_at": "2026-09-08T04:30:05.852346Z",
+    "message": {
+      "role": "assistant",
+      "content": "{\"claims\": [{\"claim_id\": \"c1\", \"support\": \"partially_supported\", \"reason\": \"The evidence supports that 'All highly liquid investments with maturities of three months or less at the date of purchase are treated as cash equivalents,' which supports the first part of the claim. However, the evidence does not support the assertion that 'Apple guarantees these investments can never lose value.'\", \"evidence_quotes\": [{\"context_id\": \"e1\", \"quote\": \"All highly liquid investments with maturities of three months or less at the date of purchase are treated as cash equivalents.\"}]}], \"unbound_factual_prose\": false, \"reason\": \"The claim asserts two things: (1) what qualifies as cash equivalents, and (2) that Apple guarantees they can never lose value. The provided evidence only addresses the first point, stating the criteria for classification, but it does not mention any guarantee regarding loss of value.\"}"
+    },
+    "done": true,
+    "done_reason": "stop",
+    "total_duration": 8268019250,
+    "load_duration": 931209,
+    "prompt_eval_count": 957,
+    "prompt_eval_duration": 1588273000,
+    "eval_count": 196,
+    "eval_duration": 6670131000
+  },
+  "validated": {
+    "claims": [
+      {
+        "claim_id": "c1",
+        "support": "partially_supported",
+        "reason": "The evidence supports that 'All highly liquid investments with maturities of three months or less at the date of purchase are treated as cash equivalents,' which supports the first part of the claim. However, the evidence does not support the assertion that 'Apple guarantees these investments can never lose value.'",
+        "evidence_quotes": [
+          {
+            "context_id": "e1",
+            "quote": "All highly liquid investments with maturities of three months or less at the date of purchase are treated as cash equivalents."
+          }
+        ]
+      }
+    ],
+    "unbound_factual_prose": false,
+    "reason": "The claim asserts two things: (1) what qualifies as cash equivalents, and (2) that Apple guarantees they can never lose value. The provided evidence only addresses the first point, stating the criteria for classification, but it does not mention any guarantee regarding loss of value."
+  },
+  "wall_ms": 8268.847417028155,
+  "finished_at": "2026-09-08T04:30:05.852839+00:00"
+}

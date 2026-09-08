@@ -1,0 +1,69 @@
+{
+  "fixture_id": "SEM2_VALID_04",
+  "repeat": false,
+  "phase": "support",
+  "started_at": "2026-09-08T04:14:57.156959+00:00",
+  "packet": {
+    "question": "What total revenue did Microsoft report for FY2025 in its 10-K? Give the value in USD millions.",
+    "answer": {
+      "status": "ok",
+      "answer": "Microsoft FY2025 revenue was $281724 billion.",
+      "claims": [
+        {
+          "claim_id": "c1",
+          "claim_type": "structured_numeric",
+          "context_ids": [
+            "e1"
+          ],
+          "metric_id": "revenue",
+          "text": "Microsoft FY2025 revenue was $281724 billion."
+        }
+      ],
+      "compare_rows": [],
+      "computation": null
+    },
+    "cited_contexts": [
+      {
+        "context_id": "e1",
+        "kind": "structured_fact",
+        "source": null,
+        "evidence": "{\"accession_number\": \"0000950170-25-100235\", \"components\": null, \"filed_date\": \"2025-07-30\", \"fiscal_year\": 2025, \"form_type\": \"10-K\", \"metric_id\": \"revenue\", \"metric_label\": \"revenue\", \"missing_component_groups\": null, \"report_date\": \"2025-06-30\", \"source_url\": \"https://www.sec.gov/Archives/edgar/data/789019/000095017025100235/msft-20250630.htm\", \"start_date\": \"2024-07-01\", \"status\": \"ok\", \"ticker\": \"MSFT\", \"unit\": \"USD\", \"value\": 281724000000}"
+      }
+    ]
+  },
+  "raw_response": {
+    "model": "gemma4:e4b",
+    "created_at": "2026-09-08T04:15:07.033411Z",
+    "message": {
+      "role": "assistant",
+      "content": "{\"claims\":[{\"claim_id\":\"c1\",\"support\":\"fully_supported\",\"reason\":\"The evidence states the revenue for the fiscal year 2025 was 281724000000 USD, which matches the claim's value of $281724 billion (281,724,000,000).\",\"evidence_quotes\":[{\"context_id\":\"e1\",\"quote\":\"\\\"value\\\": 281724000000\"}]}],\"unbound_factual_prose\":false,\"reason\":\"The claim asks for the value in USD millions, but the evidence provides the value as 281,724,000,000 USD. The claim states $281724 billion, which is equivalent to $281,724,000,000. The evidence supports the numeric value and the fiscal year, although the unit conversion requested (millions) is not explicitly confirmed by the evidence's structure, the direct value match is strong enough for full support based on the provided context.\"}"
+    },
+    "done": true,
+    "done_reason": "stop",
+    "total_duration": 9875326250,
+    "load_duration": 812417,
+    "prompt_eval_count": 951,
+    "prompt_eval_duration": 1529059000,
+    "eval_count": 244,
+    "eval_duration": 8338260000
+  },
+  "validated": {
+    "claims": [
+      {
+        "claim_id": "c1",
+        "support": "fully_supported",
+        "reason": "The evidence states the revenue for the fiscal year 2025 was 281724000000 USD, which matches the claim's value of $281724 billion (281,724,000,000).",
+        "evidence_quotes": [
+          {
+            "context_id": "e1",
+            "quote": "\"value\": 281724000000"
+          }
+        ]
+      }
+    ],
+    "unbound_factual_prose": false,
+    "reason": "The claim asks for the value in USD millions, but the evidence provides the value as 281,724,000,000 USD. The claim states $281724 billion, which is equivalent to $281,724,000,000. The evidence supports the numeric value and the fiscal year, although the unit conversion requested (millions) is not explicitly confirmed by the evidence's structure, the direct value match is strong enough for full support based on the provided context."
+  },
+  "wall_ms": 9876.714458980132,
+  "finished_at": "2026-09-08T04:15:07.033667+00:00"
+}
