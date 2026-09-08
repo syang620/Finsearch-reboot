@@ -27,6 +27,28 @@ All 60 benchmark questions and all numeric targets remain unchanged.
 
 ## Files and checks
 
+### Fourth review of `5c4d717`
+
+[P1 complete quotes behind fragment anchors](https://github.com/syang620/Finsearch-reboot/pull/31#discussion_r3954189608)
+identified missing source-adjudicated spans for the Productivity and Personal
+Computing facets in Microsoft's FY2024 and FY2025 hybrid questions. The builder
+now retains complete stored sentences behind fragment anchors, while rejecting
+mid-sentence tails and decimal-truncated quotes. Duplicate sentence extensions
+are deduplicated by exact offsets. Both revised source records contain all three
+segment statements, re-corroborated against original filing HTML and canonical
+SEC Item offsets. Reinspection of all original narrative anchor/quote pairs
+found only these two case records change under the corrected construction rule.
+
+Regressions require the specific supporting segment sentence for each facet and
+reject the historical decimal/bare-word fragments. The 14-test dataset suite
+passes, including byte-rebuild/source/history checks. No target, question,
+membership or calibration-fixture changes. Current dataset SHA-256:
+`f9148a29cb5b0f2da30b6ecf5017a9d6bc4dc9fd31523643557b93906646ad7c`.
+The calibration fixture hash remains `4e42a4c8491057f305ca5c398b744fe1c1dd96eff8fa26a37bd4a8e16049e9e3`.
+Full verification after this fix: **161 new tests pass** within the full suite;
+**1,139 tests and 47 subtests pass**, with the same two pre-existing failures
+and 25 warnings. Diff/privacy checks pass; no production/dependency changes.
+
 ### Third review of `43c9a1c`
 
 - [P1 cross-filing judge coverage](https://github.com/syang620/Finsearch-reboot/pull/31#discussion_r3954119215): the generic numeric positive now uses its accepted comparative fact from the other filing. One redundant wrong-metric fixture becomes an explicit named-filing attribution with only the other filing's evidence. It is unsupported despite matching financial digits; current-year completeness and missing prior-year completeness are labeled independently. Both scope classes have individual 100% acceptance gates before predictions. Existing wrong-issuer/currency/scale/sign/negation/metric/period examples remain. The 36-answer / 39-claim / 12-repeat counts and support-label distribution remain unchanged.

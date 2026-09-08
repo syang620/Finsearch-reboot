@@ -103,6 +103,28 @@ def test_generic_fact_alternative_does_not_relax_named_filing_comparison():
     assert evidence_support(context,named,catalog)=='unknown'
 
 
+@pytest.mark.parametrize('year,productivity,personal',[(2024,'Office 365 Commercial','Gaming'),
+    (2025,'Microsoft 365 Commercial cloud','Gaming and Search and news advertising')])
+def test_all_microsoft_segment_requirements_have_adjudicated_support(year,productivity,personal):
+    case=next(c for c in read(ROOT/'queries.jsonl') if c['id']==f'SEM2_MSFT_{year}_04')
+    expected={'growth_drivers_intelligent_cloud':'Intelligent Cloud revenue increased driven by Azure.',
+              'growth_drivers_productivity':f'Productivity and Business Processes revenue increased driven by {productivity}.',
+              'growth_drivers_personal_computing':f'More Personal Computing revenue increased driven by {personal}.'}
+    for gold in case['required_claims']:
+        if gold['claim_id'] in expected:
+            assert expected[gold['claim_id']] in [p['quote'] for s in gold['sources'] for p in s['adjudicated_spans']]
+
+
+def test_decimal_truncations_and_bare_word_tails_do_not_become_adjudicated_sentences():
+    cases=read(ROOT/'queries.jsonl')
+    for case in cases:
+        for gold in case['required_claims']:
+            for source in gold['sources']:
+                for span in source.get('adjudicated_spans',[]):
+                    assert span['quote'] not in {'Gaming revenue increased $6.','Research and development expenses increased $2.',
+                                                 'Research and development expenses increased $3.','App Store® and cloud services.','cloud services.'}
+
+
 def test_source_only_rebuild_is_byte_deterministic_after_v2_exists(tmp_path):
     out=tmp_path/'draft'
     subprocess.run([sys.executable,'scripts/evals/agents/build_semantic_dataset_v2.py','--out-dir',str(out)],

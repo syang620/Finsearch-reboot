@@ -31,11 +31,19 @@ def source_quotes(source, text):
     """Repair v1 sentence/offset defects, preserving the old source identity.
 
     Full first anchored sentence (decimal points are not sentence boundaries).
-    Additional anchors are retained only when full sentences, avoiding v1's
-    ambiguous bare 'mix'/'Gaming'/'App Store' matches in unrelated paragraphs.
+    A fragment anchor may identify a complete stored sentence. Preserve that
+    sentence, not just anchors ending in punctuation. Reject mid-sentence tails
+    and decimal-truncated quotes behind ambiguous bare-word anchors.
     """
     anchors = [s['anchor'] for s in source['spans']]
-    anchors = [anchors[0]] + [a for a in anchors[1:] if a.endswith('.') and len(a) > 60]
+    anchors = [anchors[0]]
+    for span in source['spans'][1:]:
+        quote=span['quote']; start=span['start']; end=span['end']
+        before=text[:start].rstrip()
+        if (text[start:end]==quote and quote and quote[0].isupper() and quote.endswith('.')
+            and (not before or before.endswith(('.', '!', '?')))
+            and (end==len(text) or not text[end].isdigit())):
+            anchors.append(quote)
     if source['ticker'] == 'MSFT' and 'Our Board' in anchors[0]:
         anchors += ['Cybersecurity reviews by the Board are scheduled to occur at least quarterly']
     if source['ticker'] == 'AMZN' and anchors[0].startswith('AWS sales increased'):
@@ -52,7 +60,8 @@ def source_quotes(source, text):
             match = re.search(r'\.(?=\s|$)', text[start + len(anchor):])
             if match is None: raise ValueError('Source sentence boundary absent')
             end = start + len(anchor) + match.end()
-        rows.append({'start': start, 'end': end, 'quote': text[start:end]})
+        if not any(r['start']==start and r['end']==end for r in rows):
+            rows.append({'start': start, 'end': end, 'quote': text[start:end]})
     return rows
 
 
