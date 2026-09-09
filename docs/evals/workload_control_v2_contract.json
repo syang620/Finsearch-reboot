@@ -7,8 +7,8 @@
     "pr31_head": "7667af52169fb12965adf5680bae58a74c7c977e",
     "pr32_head": "a6c264652096a0811693a82b901780b7bc8419ff",
     "preregistration_sha256": "0c6c4ac93cee1b23e33ea2ea93ded0a9b56092cd9898045b44a0bb7595463483",
-    "analysis_implementation_sha": "7f90a5e432e27d1113b7ec2c01b5b83d7376f90e",
-    "comparison_sha256": "291a58d0cc2758fcec25db050465ff779bc6ba5af897729f7b84e04488b610a5"
+    "analysis_implementation_sha": "baa2dd2e6a362cafa44a45b5f415aa643e009ffb",
+    "comparison_sha256": "39cfd03d7cc0717382ad5e89cee0f94cbf66e1f6bf8d77219031c55d1b7f01ff"
   },
   "hard_requirements": {
     "ac_power": true,
@@ -52,13 +52,16 @@
     "short_bursts": "0 invalidation episodes across six 1.5-second controlled bursts",
     "browser": "Detected by the independent hard rule in the first sampled browser interval",
     "terminal_only_scenario_gates_validation": true,
+    "awake_protection_gates_validation": "Active in every sample of all six scenarios and alive immediately before cleanup",
+    "required_service_identity_gates_validation": "All eight S3 frozen provenance checks passed",
     "evidence_retention": 1.0
   },
   "limitations": [
     "The clean calibration covers 33 minutes across three scenarios, not a full multi-hour 60-case run or an hour-scale statistical upper bound.",
-    "The supervised-idle maximum same-group streak was nine samples, one below the selected boundary.",
+    "The supervised-idle maximum same-group streak was four samples; terminal-only idle reached six samples.",
     "Calibration does not establish that CPU interference caused any historical analyst timeout.",
-    "Terminal-only control monitoring retained four launchd-owned crash handlers at 0.0 percent CPU throughout; no active UI, renderer, or service record appeared. Terminal-only semantic case execution was intentionally not run.",
+    "Terminal-only control monitoring retained four launchd-owned crash handlers at 0.0 percent CPU throughout; no active UI, renderer, service, or browser record appeared. Terminal-only semantic case execution was intentionally not run.",
+    "A contaminated supervised batch and two invalid terminal-only attempts are preserved and excluded from the official comparison.",
     "This contract does not modify or retroactively validate any historical artifact."
   ],
   "publication_privacy": {

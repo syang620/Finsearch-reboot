@@ -46,6 +46,15 @@ attempt is an adversarial regression: it is `not_demonstrated` and blocks an
 otherwise passing selection. The valid corrected S2 still passes, so B10 remains
 the preregistered selection.
 
+A final exact-head review found that awake protection and S3 frozen service
+identity were registered hard controls but did not gate candidate selection. The
+analyzer at `baa2dd2` now fail-closes on either control. Fresh raw evidence records
+the monitor-owned awake PID as active in every sample and alive immediately before
+cleanup. S3 records the full Qdrant identity; the analyzer requires exact frozen
+model digests, Qdrant identity, current and historical index snapshots, SEC health,
+clean tracked state, the complete step set, and no reported error. Every scenario
+was recaptured under this source SHA.
+
 ## Old and new rules
 
 The v1 reference invalidates on one sample containing a real-or-substring-matched
@@ -72,14 +81,14 @@ are reported separately in the comparison artifact.
 
 | Candidate | Supervised idle | Terminal idle | Service activity | Sustained load | Short bursts | Browser load | Accepted |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |
-| A instantaneous v1 | 156/199 | 4/4 | 14/20 | 12/145 | 20/21 | 7/35 | reference only |
-| B consecutive 3 | 2/10 | 0/0 | 0/0 | 3/126 | 0/0 | 1/27 | no |
-| B consecutive 5 | 2/6 | 0/0 | 0/0 | 3/120 | 0/0 | 1/25 | no |
+| A instantaneous v1 | 171/233 | 91/98 | 23/27 | 18/160 | 20/37 | 7/37 | reference only |
+| B consecutive 3 | 1/2 | 1/4 | 0/0 | 3/126 | 3/7 | 1/27 | no |
+| B consecutive 5 | 0/0 | 1/2 | 0/0 | 3/120 | 1/2 | 1/25 | no |
 | **B consecutive 10** | **0/0** | **0/0** | **0/0** | **3/105** | **0/0** | **1/20** | **yes** |
-| C occupancy 5/30 | 18/713 | 0/0 | 2/52 | 1/193 | 2/57 | 1/47 | no |
-| C occupancy 12/60 | 15/507 | 0/0 | 0/0 | 1/186 | 0/0 | 1/40 | no |
-| D burden 25/30 | 1/894 | 2/59 | 1/175 | 1/204 | 1/115 | 1/54 | no |
-| D burden 20/60 | 1/890 | 6/223 | 1/171 | 1/201 | 1/112 | 1/51 | no |
+| C occupancy 5/30 | 21/751 | 1/7 | 7/33 | 1/194 | 1/112 | 1/48 | no |
+| C occupancy 12/60 | 11/698 | 1/3 | 0/0 | 1/187 | 1/104 | 1/41 | no |
+| D burden 25/30 | 1/889 | 1/879 | 1/175 | 1/206 | 1/116 | 1/54 | no |
+| D burden 20/60 | 1/883 | 1/865 | 1/171 | 1/202 | 1/114 | 1/52 | no |
 
 B10 passed every registered clean scenario with zero CPU or hard-rule episodes.
 It detected all three 45-second one-core workloads at approximately 10 seconds,
@@ -92,11 +101,10 @@ B3 and B5 failed supervised idle. The occupancy and burden candidates frequently
 during clean or transient conditions and could not receive sustained-detection
 credit when already invalid before the controlled workload began.
 
-The selected rule has a narrow observed margin: supervised idle reached nine
-consecutive samples for one scored group. The registered rule is still selected
-because the clean requirement was zero invalidation episodes and B10 detected all
-sustained workloads within the fixed latency bound. This limitation must accompany
-any future claim.
+The selected rule's largest clean observed streak was six samples in terminal-only
+idle; supervised idle reached four. The registered rule is selected because every
+clean scenario had zero invalidation episodes and B10 detected all sustained
+workloads within the fixed latency bound.
 
 ## Process identity and terminal viability
 
@@ -111,12 +119,19 @@ valid AC/LPM state and zero actual-browser, ChatGPT/Codex UI, renderer, or activ
 service records. Four launchd-owned `browser_crashpad_handler` processes were
 explicitly retained in all 900 samples and stayed at 0.0% CPU. Earlier procedural
 and pre-review captures remain preserved but are not official terminal evidence.
+The final capture also proves awake protection in all 900 samples and immediately
+before controlled cleanup.
 
 This proves detached control monitoring and autonomous evidence writing. It does
 not prove terminal-only semantic execution because semantic cases were forbidden,
 and the read-only preflight was calibrated separately under supervision. Therefore
 the official run should prefer terminal-only execution, but integration still
 requires review.
+
+The required-service scenario separately passed all eight frozen-provenance gates:
+complete successful steps, no errors, clean tracked state, exact model digests,
+exact Qdrant identity, healthy SEC service, and exact current/historical index
+snapshots. Either failed hard-control gate blocks every candidate.
 
 ## Historical replay
 
