@@ -6,6 +6,7 @@ import sys
 import pytest
 
 from scripts.operations import run_authorized_semantic_v2_control_v2 as operation
+from scripts.operations import run_authorized_semantic_v2_control_v2_fresh as fresh_operation
 
 
 def setup_operation(tmp_path, monkeypatch):
@@ -49,6 +50,17 @@ def test_registration_is_committed_and_hash_bound(tmp_path, monkeypatch):
     approval_path.write_text(json.dumps(approval))
     with pytest.raises(ValueError, match="authorization changed"):
         operation.registration()
+
+
+def test_fresh_registration_is_distinct_and_source_review_bound():
+    approval = json.loads(fresh_operation.AUTH.read_text())
+    assert approval["authorization_id"] == fresh_operation.AUTHORIZATION_ID
+    assert approval["reviewed_commit"] == fresh_operation.REVIEWED_SOURCE_HEAD
+    assert approval["operation_wrapper"] == str(fresh_operation.WRAPPER)
+    assert approval["operation_wrapper_sha256"] == fresh_operation.sha(fresh_operation.WRAPPER)
+    assert approval["integration_launcher_sha256"] == fresh_operation.sha(fresh_operation.LAUNCHER)
+    for name in ("AUTH", "WRAPPER", "MARKER", "OUTCOME", "LOG", "STAGING"):
+        assert getattr(fresh_operation, name) != getattr(operation, name)
 
 
 def test_marker_is_exclusive_and_durable(tmp_path, monkeypatch):
