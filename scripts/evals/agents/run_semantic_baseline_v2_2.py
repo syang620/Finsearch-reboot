@@ -12,7 +12,6 @@ from contextlib import contextmanager
 import hashlib
 import json
 from pathlib import Path
-import re
 import shutil
 import subprocess
 import os
@@ -47,17 +46,17 @@ def file_sha(path):
 def verify_review(comment_id, head):
     comment = github_json(f"repos/syang620/Finsearch-reboot/issues/comments/{comment_id}")
     body = comment["body"]
-    reviewed = re.search(r"\*\*Reviewed commit:\*\*\s*`([0-9a-f]{10,40})`", body)
-    if not reviewed or not head.startswith(reviewed.group(1)):
-        raise ValueError("Require a clean exact-head Codex review of the v2 integration")
-    if "Didn't find any major issues" not in body:
-        raise ValueError("Integration review did not complete cleanly")
-    return {
-        "comment_id": comment_id,
-        "url": comment["html_url"],
+    record = {
+        "pull_request": 32,
+        "review_comment_id": comment_id,
+        "review_url": comment["html_url"],
         "reviewed_commit": head,
-        "body_sha256": hashlib.sha256(body.encode()).hexdigest(),
+        "review_body_sha256": hashlib.sha256(body.encode()).hexdigest(),
     }
+    # Reuse the frozen benchmark verifier for bot author/type, PR/URL, body,
+    # clean-result wording, exact full-SHA findings, and open-PR provenance.
+    frozen.verify_remote_review(record)
+    return record
 
 
 def verify_opt_in(args):
@@ -150,16 +149,22 @@ def frozen_launcher_adapter(start_monitor, monitor):
     }
     settled = original["settle_preflight"]
     control_calls = 0
+    monitor_active = False
 
     async def settle(stage):
+        nonlocal control_calls, monitor_active
         record = await settled(stage)
         if stage == "index_verification_and_planner_setup":
             start_monitor()
+            control_calls = 0
+            monitor_active = True
         return record
 
     def observed_controls():
         nonlocal control_calls
         state = original["controls"]()
+        if not monitor_active:
+            return state
         call_index = control_calls
         control_calls += 1
         # The frozen loop calls controls before and after each of 60 cases, then

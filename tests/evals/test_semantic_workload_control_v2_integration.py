@@ -118,10 +118,12 @@ def test_exact_head_clean_review_is_required(monkeypatch):
         "body": "Codex Review: Didn't find any major issues.\n\n**Reviewed commit:** `abc123def0`",
         "html_url": "https://example.test/review",
     })
-    record = launcher.verify_review(1, "abc123def0000000000000000000000000000000")
-    assert record["reviewed_commit"].startswith("abc123def0")
-    with pytest.raises(ValueError, match="exact-head"):
-        launcher.verify_review(1, "fff123def0000000000000000000000000000000")
+    verified = []
+    monkeypatch.setattr(launcher.frozen, "verify_remote_review", lambda record: verified.append(record))
+    head = "abc123def0000000000000000000000000000000"
+    record = launcher.verify_review(1, head)
+    assert record["reviewed_commit"] == head
+    assert record["pull_request"] == 32 and verified == [record]
 
 
 def test_adapter_restores_frozen_launcher_hooks(monkeypatch):
@@ -152,7 +154,11 @@ def test_adapter_stops_before_next_case_after_control_trigger(monkeypatch):
     monkeypatch.setattr(launcher.frozen, "controls", lambda: {"ac_power": True, "low_power_mode": 0})
     monitor = SimpleNamespace(trigger=None, error=None)
     with launcher.frozen_launcher_adapter(lambda: None, monitor):
-        launcher.frozen.controls()  # before case
+        asyncio.run(launcher.frozen.settle_preflight("index_verification_and_planner_setup"))
+        for _ in range(58):
+            launcher.frozen.controls()  # before case
+            launcher.frozen.controls()  # after case
+        launcher.frozen.controls()  # case 59 starts
         monitor.trigger = {"sample_index": 9}
         launcher.frozen.controls()  # after the in-flight case is retained
         with pytest.raises(RuntimeError, match="invalidated"):
