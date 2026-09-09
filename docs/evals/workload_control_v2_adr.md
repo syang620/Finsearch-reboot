@@ -48,7 +48,7 @@ the preregistered selection.
 
 A final exact-head review found that awake protection and S3 frozen service
 identity were registered hard controls but did not gate candidate selection. The
-analyzer at `beb525e` now fail-closes on every registered control. Fresh raw evidence records
+analyzer at `9e37b69` now fail-closes on every registered control. Fresh raw evidence records
 the monitor-owned awake PID as active in every sample and alive immediately before
 cleanup. S3 records the full Qdrant identity; the analyzer requires exact frozen
 model digests, Ollama version, Qdrant identity, current and historical index
@@ -60,9 +60,10 @@ sample count, and cadence. Every scenario was recaptured under `baa2dd2`; the fi
 analyzer reuses those complete raw inputs without another capture.
 
 The final review also required proof that all six S5 workloads actually executed.
-Selection now requires the six unique registered start/exit pairs, matching PIDs,
+Selection now requires six unique registered start/exit pairs with distinct PIDs,
 successful exits, registered start timing and duration, and at least one retained
-controlled sample at or above 50% CPU per burst. Comparison floats are recursively
+controlled sample bearing the burst-specific command marker at or above 50% CPU
+inside that burst's own event window. Comparison floats are recursively
 canonicalized to nine decimal places before JSON serialization so immaterial
 interpreter-level summation representation does not change the evidence hash.
 
