@@ -7,6 +7,7 @@ import pytest
 
 from scripts.operations import run_authorized_semantic_v2_control_v2 as operation
 from scripts.operations import run_authorized_semantic_v2_control_v2_fresh as fresh_operation
+from scripts.operations import run_authorized_semantic_v2_control_v2_fresh_v2 as sigterm_operation
 
 
 def setup_operation(tmp_path, monkeypatch):
@@ -18,6 +19,17 @@ def setup_operation(tmp_path, monkeypatch):
     for name in ("MARKER", "OUTCOME", "LOG", "STAGING", "QUALITY"):
         monkeypatch.setattr(operation, name, tmp_path / name.lower())
     monkeypatch.setattr(operation, "registration", lambda: ({}, "a" * 40))
+
+
+def setup_sigterm_operation(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    for name in ("AUTH", "WRAPPER", "LAUNCHER"):
+        path = tmp_path / name.lower()
+        path.write_text("{}")
+        monkeypatch.setattr(sigterm_operation, name, path)
+    for name in ("MARKER", "OUTCOME", "LOG", "STAGING", "QUALITY"):
+        monkeypatch.setattr(sigterm_operation, name, tmp_path / name.lower())
+    monkeypatch.setattr(sigterm_operation, "registration", lambda: ({}, "c" * 40))
 
 
 def test_registration_is_committed_and_hash_bound(tmp_path, monkeypatch):
@@ -61,6 +73,16 @@ def test_fresh_registration_is_distinct_and_source_review_bound():
     assert approval["integration_launcher_sha256"] == fresh_operation.sha(fresh_operation.LAUNCHER)
     for name in ("AUTH", "WRAPPER", "MARKER", "OUTCOME", "LOG", "STAGING"):
         assert getattr(fresh_operation, name) != getattr(operation, name)
+
+
+def test_sigterm_registration_paths_are_new_and_inactive():
+    for name in ("AUTH", "WRAPPER", "MARKER", "OUTCOME", "LOG", "STAGING"):
+        assert getattr(sigterm_operation, name) not in {
+            getattr(operation, name), getattr(fresh_operation, name),
+        }
+    assert sigterm_operation.AUTHORIZATION_ID not in {
+        operation.AUTHORIZATION_ID, fresh_operation.AUTHORIZATION_ID,
+    }
 
 
 def test_marker_is_exclusive_and_durable(tmp_path, monkeypatch):
@@ -141,3 +163,142 @@ def test_interrupt_is_forwarded_and_outcome_preserved(tmp_path, monkeypatch):
         operation.run(Path("index.json"))
     assert signals == [signal.SIGINT]
     assert json.loads(operation.OUTCOME.read_text())["child_returncode"] == 130
+
+
+def install_sigterm_handler(monkeypatch):
+    installed = []
+    previous = object()
+
+    def install(signum, handler):
+        installed.append((signum, handler))
+        return previous
+
+    monkeypatch.setattr(sigterm_operation.signal, "signal", install)
+    return installed, previous
+
+
+def test_sigterm_is_forwarded_once_and_outcome_separates_exit_codes(tmp_path, monkeypatch):
+    setup_sigterm_operation(tmp_path, monkeypatch)
+    installed, previous = install_sigterm_handler(monkeypatch)
+    forwarded = []
+    monkeypatch.setattr(sigterm_operation.os, "kill", lambda pid, signum: forwarded.append((pid, signum)))
+
+    class Child:
+        pid = 42
+
+        def wait(self):
+            handler = installed[0][1]
+            handler(signal.SIGTERM, None)
+            handler(signal.SIGTERM, None)
+            return -signal.SIGTERM
+
+    monkeypatch.setattr(sigterm_operation.subprocess, "Popen", lambda *args, **kwargs: Child())
+    assert sigterm_operation.run(Path("index.json")) == 143
+    outcome = json.loads(sigterm_operation.OUTCOME.read_text())
+    assert forwarded == [(42, signal.SIGTERM)]
+    assert outcome["child_returncode"] == -signal.SIGTERM
+    assert outcome["wrapper_exit_code"] == 143
+    assert outcome["error_type"] == "SIGTERM"
+    assert outcome["termination"]["received"]
+    assert outcome["termination"]["received_at"]
+    assert outcome["termination"]["forwarded_to_child"]
+    assert outcome["termination"]["forwarded_at"]
+    assert installed[-1] == (signal.SIGTERM, previous)
+
+
+def test_sigterm_during_popen_assignment_is_rechecked_and_forwarded(tmp_path, monkeypatch):
+    setup_sigterm_operation(tmp_path, monkeypatch)
+    installed, _ = install_sigterm_handler(monkeypatch)
+    forwarded = []
+    monkeypatch.setattr(sigterm_operation.os, "kill", lambda pid, signum: forwarded.append((pid, signum)))
+
+    class Child:
+        pid = 84
+
+        def wait(self):
+            return -signal.SIGTERM
+
+    def spawn(*args, **kwargs):
+        installed[0][1](signal.SIGTERM, None)
+        return Child()
+
+    monkeypatch.setattr(sigterm_operation.subprocess, "Popen", spawn)
+    assert sigterm_operation.run(Path("index.json")) == 143
+    outcome = json.loads(sigterm_operation.OUTCOME.read_text())
+    assert forwarded == [(84, signal.SIGTERM)]
+    assert outcome["termination"]["forwarded_to_child"]
+
+
+def test_sigterm_after_consumption_skips_child_and_persists_outcome(tmp_path, monkeypatch):
+    setup_sigterm_operation(tmp_path, monkeypatch)
+    installed, _ = install_sigterm_handler(monkeypatch)
+    original_write_once = sigterm_operation.write_once
+
+    def write_once(path, record):
+        original_write_once(path, record)
+        if Path(path) == sigterm_operation.MARKER:
+            installed[0][1](signal.SIGTERM, None)
+
+    monkeypatch.setattr(sigterm_operation, "write_once", write_once)
+    monkeypatch.setattr(
+        sigterm_operation.subprocess, "Popen",
+        lambda *args, **kwargs: pytest.fail("SIGTERM before launch must skip child creation"),
+    )
+    assert sigterm_operation.run(Path("index.json")) == 143
+    outcome = json.loads(sigterm_operation.OUTCOME.read_text())
+    assert sigterm_operation.MARKER.exists()
+    assert not outcome["child_started"]
+    assert outcome["child_returncode"] is None
+    assert outcome["wrapper_exit_code"] == 143
+    assert outcome["stage"] == "terminated_prelaunch"
+
+
+def test_sigterm_candidate_preserves_keyboard_interrupt_behavior(tmp_path, monkeypatch):
+    setup_sigterm_operation(tmp_path, monkeypatch)
+    install_sigterm_handler(monkeypatch)
+    forwarded = []
+
+    class Child:
+        pid = 126
+        calls = 0
+
+        def wait(self):
+            self.calls += 1
+            if self.calls == 1:
+                raise KeyboardInterrupt()
+            return 130
+
+        def send_signal(self, value):
+            forwarded.append(value)
+
+    monkeypatch.setattr(sigterm_operation.subprocess, "Popen", lambda *args, **kwargs: Child())
+    with pytest.raises(KeyboardInterrupt):
+        sigterm_operation.run(Path("index.json"))
+    outcome = json.loads(sigterm_operation.OUTCOME.read_text())
+    assert forwarded == [signal.SIGINT]
+    assert outcome["error_type"] == "KeyboardInterrupt"
+    assert outcome["child_returncode"] == 130
+    assert outcome["wrapper_exit_code"] is None
+
+
+def test_sigterm_handler_is_restored_if_outcome_persistence_fails(tmp_path, monkeypatch):
+    setup_sigterm_operation(tmp_path, monkeypatch)
+    installed, previous = install_sigterm_handler(monkeypatch)
+    original_write_once = sigterm_operation.write_once
+
+    def write_once(path, record):
+        if Path(path) == sigterm_operation.OUTCOME:
+            raise OSError("outcome write failed")
+        original_write_once(path, record)
+
+    class Child:
+        pid = 168
+
+        def wait(self):
+            return 0
+
+    monkeypatch.setattr(sigterm_operation, "write_once", write_once)
+    monkeypatch.setattr(sigterm_operation.subprocess, "Popen", lambda *args, **kwargs: Child())
+    with pytest.raises(OSError, match="outcome write failed"):
+        sigterm_operation.run(Path("index.json"))
+    assert installed[-1] == (signal.SIGTERM, previous)
