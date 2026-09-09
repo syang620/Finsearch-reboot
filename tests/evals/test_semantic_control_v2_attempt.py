@@ -229,6 +229,21 @@ def test_sigterm_during_popen_assignment_is_rechecked_and_forwarded(tmp_path, mo
     assert outcome["termination"]["forwarded_to_child"]
 
 
+def test_pending_sigterm_is_latched_before_popen(tmp_path, monkeypatch):
+    setup_sigterm_operation(tmp_path, monkeypatch)
+    install_sigterm_handler(monkeypatch)
+    monkeypatch.setattr(sigterm_operation.signal, "sigpending", lambda: {signal.SIGTERM})
+    monkeypatch.setattr(
+        sigterm_operation.subprocess, "Popen",
+        lambda *args, **kwargs: pytest.fail("Pending SIGTERM must be latched before Popen"),
+    )
+    assert sigterm_operation.run(Path("index.json")) == 143
+    outcome = json.loads(sigterm_operation.OUTCOME.read_text())
+    assert not outcome["child_started"]
+    assert outcome["stage"] == "terminated_prelaunch"
+    assert outcome["termination"]["received"]
+
+
 def test_sigterm_forward_failure_preserves_attempt_timestamp(tmp_path, monkeypatch):
     setup_sigterm_operation(tmp_path, monkeypatch)
     installed, _ = install_sigterm_handler(monkeypatch)
@@ -333,7 +348,8 @@ def test_sigterm_handler_is_restored_if_outcome_persistence_fails(tmp_path, monk
 def test_pending_sigterm_is_latched_at_finalization_cutoff(tmp_path, monkeypatch):
     setup_sigterm_operation(tmp_path, monkeypatch)
     install_sigterm_handler(monkeypatch)
-    monkeypatch.setattr(sigterm_operation.signal, "sigpending", lambda: {signal.SIGTERM})
+    pending = iter((set(), {signal.SIGTERM}))
+    monkeypatch.setattr(sigterm_operation.signal, "sigpending", lambda: next(pending))
 
     class Child:
         pid = 210

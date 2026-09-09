@@ -169,6 +169,8 @@ def run(index_manifest, env_file=None):
             with os.fdopen(log_descriptor, "w") as log:
                 previous_spawn_mask = signal.pthread_sigmask(signal.SIG_BLOCK, {signal.SIGTERM})
                 try:
+                    if signal.SIGTERM in signal.sigpending():
+                        handle_sigterm(signal.SIGTERM, None)
                     if not termination["received"]:
                         child = subprocess.Popen(command, stdout=log, stderr=subprocess.STDOUT)
                         active_child_pid = child.pid
