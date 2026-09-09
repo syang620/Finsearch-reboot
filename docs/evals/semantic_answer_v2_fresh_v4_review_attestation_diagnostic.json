@@ -1,0 +1,20 @@
+{
+  "status": "invalid_diagnostic",
+  "authorization_id": "SEMANTIC-V2-CONTROL-V2-FRESH-V4-20260909",
+  "implementation_sha": "75f47f1a930444711f5a25f114031978177568d9",
+  "cases_started": 0,
+  "failure": "Remote review attestation rejected before launcher preflight",
+  "failed_attestation": {
+    "review_comment_id": 5608756441,
+    "reviewed_commit": "4123bd2d1fe1f35250caa28351580bd07a7e85ec",
+    "recorded_body_sha256": "3e43c9f974fcd98f12b40960aaa62c5c133affd79f3d776f14c5357bda45ca9e",
+    "actual_body_sha256": "7d8fa0ef95050ecbfbdc7a1417aacf62a18a6244eaa6a7a8ebff915ab4808769"
+  },
+  "diagnosis": "The review body itself was a clean Codex result and the remote object was unchanged. The recorded hash was computed from a shell pipeline that appended a trailing newline to the body before hashing; the verifier hashes the API body bytes without that newline. This was an attestation-construction error, not a substantive review or code change.",
+  "preserved_v4_artifacts": {
+    "marker": ".cache/semantic_v2_control_v2_fresh_v4_20260909.consumed.json",
+    "outcome": ".cache/semantic_v2_control_v2_fresh_v4_20260909.launch_outcome.json",
+    "console_log": ".cache/semantic_v2_control_v2_fresh_v4_20260909.console.log"
+  },
+  "v5_policy": "Remote review attestations are checked before one-use marker consumption. A committed attestation retains the original body hash; execution preflight verifies remote identity, clean outcome, and reviewed commit while recording any later body-hash drift instead of silently treating a cosmetic edit as a missing review."
+}
