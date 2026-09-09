@@ -240,9 +240,14 @@ def short_burst_validation(raw, preregistration):
             for sample in raw["samples"]
             for process in sample.get("processes", [])
             if process.get("pid") == start.get("pid")
+            and start.get("elapsed_seconds", float("inf"))
+            <= sample.get("elapsed_seconds", float("-inf"))
+            <= exit_event.get("elapsed_seconds", float("-inf"))
             and process.get("controlled_external") is True
             and process.get("category") == "unrelated_external_workload"
             and float(process.get("cpu", 0)) >= 50
+            and f"{CONTROLLED_GROUP_MARKER}SHORT_{index}".lower()
+            in str(process.get("command_line") or "").lower()
         ]
         viable = (
             bool(start)
@@ -270,6 +275,7 @@ def short_burst_validation(raw, preregistration):
     return {
         "viable": len(start_events) == count
         and len(exit_events) == count
+        and len({event.get("pid") for event in start_events}) == count
         and set(starts) == expected_keys
         and set(exits) == expected_keys
         and all(row["viable"] for row in rows),

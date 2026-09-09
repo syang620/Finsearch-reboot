@@ -398,12 +398,27 @@ def test_short_burst_validation_requires_six_successful_observed_workloads():
             {"event": "workload_start", "key": key, "pid": pid, "elapsed_seconds": start},
             {"event": "workload_exit", "key": key, "pid": pid, "returncode": 0, "elapsed_seconds": start + 2},
         ])
-        samples.append({"processes": [{"pid": pid, "controlled_external": True, "category": "unrelated_external_workload", "cpu": 95.0}]})
+        samples.append({"elapsed_seconds": start + 1, "processes": [{"pid": pid, "controlled_external": True, "category": "unrelated_external_workload", "cpu": 95.0, "command_line": f"CONTROL_V2_BUSY_SHORT_{index}"}]})
     prereg = {"scenarios": {"S5_SHORT_CPU_BURSTS": {"burst_count": 6, "warmup_seconds": 15, "burst_start_interval_seconds": 15, "burst_seconds": 1.5}}}
     raw = {"events": events, "samples": samples}
     assert short_burst_validation(raw, prereg)["viable"]
     raw["events"][-1]["returncode"] = 1
     assert not short_burst_validation(raw, prereg)["viable"]
+
+
+def test_short_burst_validation_rejects_pid_reuse():
+    events = []
+    samples = []
+    for index in range(1, 7):
+        key = f"short_{index}"
+        start = 15 + (index - 1) * 15
+        events.extend([
+            {"event": "workload_start", "key": key, "pid": 100, "elapsed_seconds": start},
+            {"event": "workload_exit", "key": key, "pid": 100, "returncode": 0, "elapsed_seconds": start + 2},
+        ])
+        samples.append({"elapsed_seconds": start + 1, "processes": [{"pid": 100, "controlled_external": True, "category": "unrelated_external_workload", "cpu": 95.0, "command_line": f"CONTROL_V2_BUSY_SHORT_{index}"}]})
+    prereg = {"scenarios": {"S5_SHORT_CPU_BURSTS": {"burst_count": 6, "warmup_seconds": 15, "burst_start_interval_seconds": 15, "burst_seconds": 1.5}}}
+    assert not short_burst_validation({"events": events, "samples": samples}, prereg)["viable"]
 
 
 def test_comparison_float_canonicalization_is_recursive():
