@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 import re
 import subprocess
+from types import SimpleNamespace
 
 from scripts.evals.retrieval import run_benchmark_v3 as provenance
 from scripts.operations import run_authorized_semantic_v2_control_v2_fresh_v4 as helper
@@ -71,6 +72,10 @@ def _remote_attestation(approval, label):
     ):
         raise ValueError(f"{label} attested commit has inline Codex findings")
     actual_hash = hashlib.sha256(body.encode()).hexdigest()
+    if actual_hash != approval.get("review_body_sha256"):
+        raise ValueError(
+            f"{label} review body differs from its immutable committed attestation"
+        )
     return {
         "label": label,
         "pull_request": pr,
@@ -80,8 +85,8 @@ def _remote_attestation(approval, label):
         "reviewed_commit": reviewed,
         "attested_body_sha256": approval.get("review_body_sha256"),
         "remote_body_sha256": actual_hash,
-        "body_hash_matches_attestation": actual_hash == approval.get("review_body_sha256"),
-        "body_hash_policy": "semantic clean/head identity is authoritative; hash drift is preserved as diagnostic metadata",
+        "body_hash_matches_attestation": True,
+        "body_hash_policy": "byte-exact immutable attestation required; drift fails before marker consumption",
     }
 
 
@@ -97,6 +102,24 @@ def remote_review_preflight():
 def dependency_preflight():
     result = _BASE_DEPENDENCY_PREFLIGHT()
     result["remote_reviews"] = remote_review_preflight()
+    from scripts.evals.agents import run_semantic_baseline_v2_2 as launcher
+    args = SimpleNamespace(
+        workload_control_v2="B_CONSECUTIVE_10",
+        integration_approval=AUTH,
+        approval=QUALITY,
+    )
+    head, review = launcher.verify_opt_in(args)
+    launcher.verify_frozen_launcher(QUALITY)
+    result["frozen_runtime_preflight"] = {
+        "implementation_sha": head,
+        "integration_reviewed_commit": review["reviewed_commit"],
+        "launcher_sha256": sha(launcher.LAUNCHER),
+        "adapter_sha256": sha(launcher.ADAPTER),
+        "control_contract_sha256": sha(launcher.CONTROL_CONTRACT),
+        "control_implementation_sha256": sha(launcher.CONTROL_IMPLEMENTATION),
+        "control_collector_sha256": sha(launcher.CONTROL_COLLECTOR),
+        "control_observer_sha256": sha(launcher.CONTROL_OBSERVER),
+    }
     return result
 
 
@@ -114,11 +137,20 @@ def registration():
         or approval.get("max_new_attempts") != 1
         or approval.get("selected_policy") != "B_CONSECUTIVE_10"
         or approval.get("review_status") != "completed_clean"
+        or approval.get("review_comment_id") is None
+        or approval.get("review_url") is None
+        or approval.get("review_body_sha256") is None
         or approval.get("operation_wrapper") != str(WRAPPER)
         or approval.get("operation_wrapper_sha256") != sha(WRAPPER)
         or approval.get("wrapper_dependency") != str(DEPENDENCY)
         or approval.get("wrapper_dependency_sha256") != sha(DEPENDENCY)
         or approval.get("quality_approval_sha256") != sha(QUALITY)
+        or approval.get("integration_launcher_sha256") != sha(helper.LAUNCHER)
+        or approval.get("integration_adapter_sha256") != sha(helper.ADAPTER)
+        or approval.get("control_contract_sha256") != sha(helper.CONTROL_CONTRACT)
+        or approval.get("control_implementation_sha256") != sha(helper.CONTROL_IMPLEMENTATION)
+        or approval.get("control_collector_sha256") != sha(helper.CONTROL_COLLECTOR)
+        or approval.get("control_observer_sha256") != sha(helper.CONTROL_OBSERVER)
         or approval.get("interpreter_path") != str(helper.INTERPRETER)
         or approval.get("interpreter_sha256") != sha(helper.INTERPRETER)
         or approval.get("consumption_marker") != str(MARKER)

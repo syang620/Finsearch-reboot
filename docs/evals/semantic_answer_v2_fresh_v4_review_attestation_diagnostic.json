@@ -16,5 +16,5 @@
     "outcome": ".cache/semantic_v2_control_v2_fresh_v4_20260909.launch_outcome.json",
     "console_log": ".cache/semantic_v2_control_v2_fresh_v4_20260909.console.log"
   },
-  "v5_policy": "Remote review attestations are checked before one-use marker consumption. A committed attestation retains the original body hash; execution preflight verifies remote identity, clean outcome, and reviewed commit while recording any later body-hash drift instead of silently treating a cosmetic edit as a missing review."
+  "v5_policy": "Remote review attestations are checked before one-use marker consumption. A committed attestation retains the original body hash; execution preflight verifies remote identity, clean outcome, reviewed commit, and exact body bytes before allowing consumption. Any body-hash drift is preserved as a diagnostic failure rather than discovered after launch."
 }

@@ -44,15 +44,14 @@ def test_valid_remote_review_attestation_passes(monkeypatch):
     assert result["body_hash_matches_attestation"] is True
 
 
-def test_cosmetic_remote_body_drift_is_preserved_not_silently_accepted(monkeypatch):
+def test_remote_body_drift_fails_before_marker(monkeypatch):
     commit = "a" * 40
     attested = review_body(commit)
     current = attested + "\n<!-- harmless bot formatting -->\n"
     approval = fake_remote(monkeypatch, current, commit)
     approval["review_body_sha256"] = hashlib.sha256(attested.encode()).hexdigest()
-    result = operation._remote_attestation(approval, "integration")
-    assert result["body_hash_matches_attestation"] is False
-    assert result["remote_body_sha256"] == hashlib.sha256(current.encode()).hexdigest()
+    with pytest.raises(ValueError, match="immutable committed attestation"):
+        operation._remote_attestation(approval, "integration")
 
 
 def test_unreachable_remote_review_fails_before_marker(tmp_path, monkeypatch):
@@ -75,3 +74,21 @@ def test_remote_preflight_failure_is_non_consuming(monkeypatch):
     with pytest.raises(ValueError, match="stale review"):
         operation.dependency_preflight()
 
+
+def test_frozen_runtime_hash_preflight_runs_before_marker(monkeypatch):
+    calls = []
+    monkeypatch.setattr(operation, "_BASE_DEPENDENCY_PREFLIGHT", lambda: {"interpreter": "ok"})
+    monkeypatch.setattr(operation, "remote_review_preflight", lambda: {"integration_review": "ok"})
+
+    from scripts.evals.agents import run_semantic_baseline_v2_2 as launcher
+    monkeypatch.setattr(launcher, "verify_opt_in", lambda args: (
+        calls.append(("verify_opt_in", args.integration_approval, args.approval))
+        or ("b" * 40, {"reviewed_commit": "b" * 40})
+    ))
+    monkeypatch.setattr(launcher, "verify_frozen_launcher", lambda path: calls.append(("verify_frozen_launcher", path)))
+    result = operation.dependency_preflight()
+    assert calls == [
+        ("verify_opt_in", operation.AUTH, operation.QUALITY),
+        ("verify_frozen_launcher", operation.QUALITY),
+    ]
+    assert result["frozen_runtime_preflight"]["implementation_sha"] == "b" * 40
