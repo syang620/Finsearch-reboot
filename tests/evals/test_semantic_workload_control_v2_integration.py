@@ -259,7 +259,7 @@ def test_dataset_load_failure_leaves_frozen_completion_ineligible(tmp_path, monk
     out = finalization_output(tmp_path)
     monkeypatch.setattr(launcher, "load_dataset", lambda path: (_ for _ in ()).throw(OSError("dataset load")))
     with pytest.raises(OSError, match="dataset load"):
-        launcher.prepare_output(out, {})
+        launcher.finalize_artifacts(out, {"valid": True}, None)
     completion = json.loads((out / "completion.json").read_text())
     assert completion["official_baseline_eligible"] is False
     assert not (out / "workload_control_v2_completion.json").exists()
@@ -278,7 +278,7 @@ def test_summary_write_failure_leaves_no_eligible_completion(tmp_path, monkeypat
 
     monkeypatch.setattr(launcher.frozen, "save", fail_summary)
     with pytest.raises(OSError, match="summary write"):
-        launcher.prepare_output(out, {})
+        launcher.finalize_artifacts(out, {"valid": True}, None)
     assert not (out / "workload_control_v2_completion.json").exists()
 
 
@@ -295,7 +295,7 @@ def test_manifest_write_failure_leaves_no_eligible_completion(tmp_path, monkeypa
 
     monkeypatch.setattr(launcher.frozen, "save", fail_manifest)
     with pytest.raises(OSError, match="manifest write"):
-        launcher.prepare_output(out, {})
+        launcher.finalize_artifacts(out, {"valid": True}, None)
     assert not (out / "workload_control_v2_completion.json").exists()
 
 
@@ -307,6 +307,47 @@ def test_evidence_copy_failure_leaves_no_eligible_completion(tmp_path, monkeypat
     with pytest.raises(OSError, match="evidence copy"):
         launcher.copy_raw_evidence(raw, out)
     assert not (out / "workload_control_v2_completion.json").exists()
+
+
+def test_closed_raw_evidence_includes_footer_and_final_sample(tmp_path):
+    raw = tmp_path / "raw.jsonl"
+    out = tmp_path / "out"
+    out.mkdir()
+    raw.write_text('{"type":"header"}\n{"type":"sample","index":7}\n{"type":"footer","sample_count":8}\n')
+    launcher.copy_raw_evidence(raw, out)
+    assert (out / "workload_control_v2.jsonl").read_text().endswith(
+        '{"type":"footer","sample_count":8}\n'
+    )
+
+
+def test_invalid_final_monitor_verdict_skips_summary_and_manifest(tmp_path, monkeypatch):
+    out = finalization_output(tmp_path)
+    monkeypatch.setattr(launcher, "load_dataset", lambda path: pytest.fail("invalid monitor must skip summary"))
+    launcher.finalize_artifacts(
+        out,
+        {"valid": False, "sample_count": 12, "first_violation": {"sample_index": 11}},
+    )
+    assert not (out / "deterministic_summary.json").exists()
+    assert not (out / "workload_control_v2_files_sha256.json").exists()
+
+
+def test_authoritative_post_rename_durability_failure_removes_visible_record(tmp_path, monkeypatch):
+    path = tmp_path / "workload_control_v2_completion.json"
+    calls = {"count": 0}
+    original_fsync = launcher.os.fsync
+
+    def fail_directory_fsync(descriptor):
+        calls["count"] += 1
+        if calls["count"] == 2:
+            raise OSError("directory durability failed")
+        return original_fsync(descriptor)
+
+    monkeypatch.setattr(launcher.os, "fsync", fail_directory_fsync)
+    with pytest.raises(OSError, match="directory durability failed"):
+        launcher.publish_authoritative(path, {"official_baseline_eligible": True})
+    assert not path.exists()
+    assert not path.with_name(path.name + ".tmp").exists()
+    assert not path.with_name(path.name + ".ineligible.tmp").exists()
 
 
 def test_monitor_violation_during_finalization_is_ineligible(tmp_path, monkeypatch):
@@ -337,7 +378,7 @@ def test_monitor_shutdown_failure_is_ineligible_after_artifact_preparation(tmp_p
     assert completion["artifact_finalization_error"]["type"] == "RuntimeError"
 
 
-def test_run_keeps_monitor_active_through_artifact_preparation(tmp_path, monkeypatch):
+def test_run_orders_closed_monitor_before_artifact_publication(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     events = []
     head = "a" * 40
@@ -381,11 +422,11 @@ def test_run_keeps_monitor_active_through_artifact_preparation(tmp_path, monkeyp
 
     monkeypatch.setattr(launcher.frozen, "run_once", run_once)
     monkeypatch.setattr(launcher, "copy_raw_evidence", lambda raw, out: events.append("copy") or "digest")
-    monkeypatch.setattr(launcher, "prepare_output", lambda out, review: events.append("prepare"))
+    monkeypatch.setattr(launcher, "finalize_artifacts", lambda out, summary, error=None: events.append("artifacts"))
     monkeypatch.setattr(launcher, "finalize_output", lambda out, summary, review, error=None: events.append("finalize"))
 
     asyncio.run(launcher.run(SimpleNamespace(out_root=tmp_path / "out")))
-    assert events == ["start", "copy", "prepare", "stop", "awake_terminate", "awake_wait", "finalize"]
+    assert events == ["start", "stop", "awake_terminate", "awake_wait", "copy", "artifacts", "finalize"]
 
 
 def test_run_monitor_shutdown_failure_publishes_only_ineligible_completion(tmp_path, monkeypatch):
@@ -428,7 +469,7 @@ def test_run_monitor_shutdown_failure_publishes_only_ineligible_completion(tmp_p
         (out / "completion.json").write_text(json.dumps({"invalidity_reasons": []}))
 
     monkeypatch.setattr(launcher.frozen, "run_once", run_once)
-    monkeypatch.setattr(launcher, "prepare_output", lambda out, review: None)
+    monkeypatch.setattr(launcher, "finalize_artifacts", lambda out, summary, error=None: None)
     with pytest.raises(RuntimeError, match="monitor shutdown failed"):
         asyncio.run(launcher.run(SimpleNamespace(out_root=tmp_path / "out")))
     completion = json.loads((tmp_path / "out" / head / "workload_control_v2_completion.json").read_text())

@@ -257,17 +257,18 @@ def _final_reasons(completion, monitor_summary, finalization_error=None):
     return reasons
 
 
-def prepare_output(out, review):
-    """Create non-authoritative artifacts while monitoring remains active."""
+def finalize_artifacts(out, monitor_summary, finalization_error=None):
+    """Publish closed non-authoritative artifacts after monitoring stops."""
     completion = _completion_for_finalization(out)
     reasons = [
         reason for reason in completion.get("invalidity_reasons", [])
         if reason != "workload_control_v2_pending"
     ]
-    if not reasons:
-        cases, _ = load_dataset(frozen.DATA)
-        rows = [json.loads(line) for line in (out / "deterministic.jsonl").read_text().splitlines()]
-        frozen.save(out / "deterministic_summary.json", frozen.deterministic_breakdowns(cases, rows))
+    if reasons or not monitor_summary["valid"] or finalization_error is not None:
+        return
+    cases, _ = load_dataset(frozen.DATA)
+    rows = [json.loads(line) for line in (out / "deterministic.jsonl").read_text().splitlines()]
+    frozen.save(out / "deterministic_summary.json", frozen.deterministic_breakdowns(cases, rows))
     frozen.save(out / "workload_control_v2_files_sha256.json", {
         path.name: sha(path) for path in sorted(out.iterdir())
         if path.is_file() and path.name not in {
@@ -288,23 +289,66 @@ def copy_raw_evidence(raw, out):
 def publish_authoritative(path, record):
     """Exclusively and durably publish the final eligibility record."""
     path = Path(path)
+    if path.exists():
+        raise FileExistsError(path)
     temporary = path.with_name(path.name + ".tmp")
     descriptor = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    published = False
     try:
         with os.fdopen(descriptor, "w") as stream:
             json.dump(record, stream, ensure_ascii=False, indent=2, allow_nan=False)
             stream.write("\n")
             stream.flush()
             os.fsync(stream.fileno())
-        os.link(temporary, path)
+        os.replace(temporary, path)
+        published = True
+        directory = os.open(path.parent, os.O_RDONLY)
+        try:
+            os.fsync(directory)
+        finally:
+            os.close(directory)
+    except BaseException as original_error:
+        if published:
+            cleanup_error = None
+            try:
+                path.unlink()
+            except FileNotFoundError:
+                pass
+            except BaseException as exc:
+                cleanup_error = exc
+                fallback = path.with_name(path.name + ".ineligible.tmp")
+                try:
+                    fallback_record = dict(record)
+                    fallback_record["status"] = "invalid_diagnostic"
+                    fallback_record["official_baseline_eligible"] = False
+                    fallback_record["invalidity_reasons"] = [
+                        *fallback_record.get("invalidity_reasons", []),
+                        "authoritative_publication_failed",
+                    ]
+                    descriptor = os.open(fallback, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+                    with os.fdopen(descriptor, "w") as stream:
+                        json.dump(fallback_record, stream, ensure_ascii=False, indent=2, allow_nan=False)
+                        stream.write("\n")
+                        stream.flush()
+                        os.fsync(stream.fileno())
+                    os.replace(fallback, path)
+                except BaseException as replacement_error:
+                    cleanup_error = replacement_error
+            try:
+                directory = os.open(path.parent, os.O_RDONLY)
+                try:
+                    os.fsync(directory)
+                finally:
+                    os.close(directory)
+            except BaseException as exc:
+                cleanup_error = cleanup_error or exc
+            if cleanup_error is not None:
+                raise original_error from cleanup_error
+        raise original_error
     finally:
-        if temporary.exists():
-            temporary.unlink()
-    directory = os.open(path.parent, os.O_RDONLY)
-    try:
-        os.fsync(directory)
-    finally:
-        os.close(directory)
+        for temporary_path in (temporary, path.with_name(path.name + ".ineligible.tmp")):
+            if temporary_path.exists():
+                temporary_path.unlink()
 
 
 def finalize_output(out, monitor_summary, review, finalization_error=None):
@@ -370,19 +414,6 @@ async def run(args):
             await frozen.run_once(args)
     except BaseException as exc:
         failure = exc
-    if started and out.exists() and failure is None:
-        try:
-            raw_digest = copy_raw_evidence(raw, out)
-            prepare_output(out, review)
-        except BaseException as exc:
-            finalization_error = exc
-    elif started and out.exists() and failure is not None:
-        try:
-            if not (out / "workload_control_v2.jsonl").exists():
-                raw_digest = copy_raw_evidence(raw, out)
-        except BaseException as exc:
-            finalization_error = exc
-
     if started:
         try:
             summary = monitor.stop()
@@ -411,8 +442,13 @@ async def run(args):
         raise RuntimeError("Frozen semantic launcher produced no output")
     if summary.get("monitor_error"):
         finalization_error = finalization_error or RuntimeError(summary["monitor_error"])
-    if raw_digest is not None:
-        summary["raw_sha256"] = raw_digest
+    if out.exists() and summary.get("monitor_error") is None:
+        try:
+            raw_digest = copy_raw_evidence(raw, out)
+            summary["raw_sha256"] = raw_digest
+            finalize_artifacts(out, summary, finalization_error or failure)
+        except BaseException as exc:
+            finalization_error = finalization_error or exc
     if out.exists():
         try:
             finalize_output(out, summary, review, finalization_error or failure)
