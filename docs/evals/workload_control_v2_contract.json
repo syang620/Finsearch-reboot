@@ -7,8 +7,8 @@
     "pr31_head": "7667af52169fb12965adf5680bae58a74c7c977e",
     "pr32_head": "a6c264652096a0811693a82b901780b7bc8419ff",
     "preregistration_sha256": "0c6c4ac93cee1b23e33ea2ea93ded0a9b56092cd9898045b44a0bb7595463483",
-    "analysis_implementation_sha": "0d513b3688db0b77ff949757b41d4e3cc3fd2b23",
-    "comparison_sha256": "fadfbf4e2bceaf73afb53ac2095772864d65b4f40c2d3b496fd93d1a9efcc742"
+    "analysis_implementation_sha": "d66ba4757866243060c5a1dfe62b92694621cdf0",
+    "comparison_sha256": "30e12ac0dec23a212642cc56a892fde10db313f3a689f32a1839a68609acee63"
   },
   "hard_requirements": {
     "ac_power": true,
@@ -53,7 +53,9 @@
     "browser": "Detected by the independent hard rule in the first sampled browser interval",
     "terminal_only_scenario_gates_validation": true,
     "awake_protection_gates_validation": "Active in every sample of all six scenarios and alive immediately before cleanup",
-    "required_service_identity_gates_validation": "All nine S3 frozen provenance checks passed",
+    "required_service_identity_gates_validation": "All ten S3 frozen provenance and event-binding checks passed",
+    "global_ac_lpm_and_browser_controls_gate_validation": true,
+    "complete_registered_capture_identity_and_cadence_gate_validation": true,
     "evidence_retention": 1.0
   },
   "limitations": [

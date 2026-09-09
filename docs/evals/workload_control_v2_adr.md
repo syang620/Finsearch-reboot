@@ -48,13 +48,16 @@ the preregistered selection.
 
 A final exact-head review found that awake protection and S3 frozen service
 identity were registered hard controls but did not gate candidate selection. The
-analyzer at `0d513b3` now fail-closes on either control. Fresh raw evidence records
+analyzer at `d66ba47` now fail-closes on every registered control. Fresh raw evidence records
 the monitor-owned awake PID as active in every sample and alive immediately before
 cleanup. S3 records the full Qdrant identity; the analyzer requires exact frozen
 model digests, Ollama version, Qdrant identity, current and historical index
 snapshots, SEC health, clean tracked state, the complete step set, and no reported
-error. Every scenario was recaptured under `baa2dd2`; the final analyzer reuses
-those complete raw inputs without another capture.
+error, and binds that output to the successful S3 workload event and capture SHA.
+It also validates AC/LPM across all six scenarios, permits only the harness-owned
+browser interval in S6, and requires registered scenario identity, hash, duration,
+sample count, and cadence. Every scenario was recaptured under `baa2dd2`; the final
+analyzer reuses those complete raw inputs without another capture.
 
 ## Old and new rules
 
@@ -129,11 +132,12 @@ and the read-only preflight was calibrated separately under supervision. Therefo
 the official run should prefer terminal-only execution, but integration still
 requires review.
 
-The required-service scenario separately passed all nine frozen-provenance gates:
+The required-service scenario separately passed all ten frozen-provenance and event-binding gates:
 complete successful steps, no errors, clean tracked state, exact model digests,
 exact Ollama and Qdrant identities, healthy SEC service, and exact
 current/historical index snapshots. Either failed hard-control gate blocks every
-candidate.
+candidate. Global AC/LPM/browser and complete-capture gates also block every
+candidate when false.
 
 ## Historical replay
 
