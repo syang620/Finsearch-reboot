@@ -7,8 +7,8 @@
     "pr31_head": "7667af52169fb12965adf5680bae58a74c7c977e",
     "pr32_head": "a6c264652096a0811693a82b901780b7bc8419ff",
     "preregistration_sha256": "0c6c4ac93cee1b23e33ea2ea93ded0a9b56092cd9898045b44a0bb7595463483",
-    "analysis_implementation_sha": "d66ba4757866243060c5a1dfe62b92694621cdf0",
-    "comparison_sha256": "30e12ac0dec23a212642cc56a892fde10db313f3a689f32a1839a68609acee63"
+    "analysis_implementation_sha": "beb525e78f13966eec0ea8198c4c36651ded2a99",
+    "comparison_sha256": "543a46798c603af339e0da2a3d0eaf27e8f1b91fb2356507d5721844b139d447"
   },
   "hard_requirements": {
     "ac_power": true,
@@ -56,6 +56,8 @@
     "required_service_identity_gates_validation": "All ten S3 frozen provenance and event-binding checks passed",
     "global_ac_lpm_and_browser_controls_gate_validation": true,
     "complete_registered_capture_identity_and_cadence_gate_validation": true,
+    "all_six_short_burst_workloads_gate_validation": true,
+    "comparison_float_serialization": "recursive finite-float canonicalization to 9 decimal places",
     "evidence_retention": 1.0
   },
   "limitations": [
