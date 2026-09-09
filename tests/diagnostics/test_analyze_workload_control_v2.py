@@ -3,10 +3,12 @@ from pathlib import Path
 
 from scripts.diagnostics.analyze_workload_control_v2_calibration import (
     awake_protection_validation,
+    canonicalize,
     decide,
     global_hard_control_validation,
     read_raw,
     scenario_capture_validation,
+    short_burst_validation,
     s3_preflight_validation,
     terminal_only_viability,
 )
@@ -210,6 +212,15 @@ def test_incomplete_capture_blocks_otherwise_passing_candidate():
     assert not result["candidate_acceptance"]["B3"]["complete_scenario_captures"]
 
 
+def test_unexercised_short_workloads_block_otherwise_passing_candidate():
+    result = decide(
+        preregistration(), scenario_results(), sustained(), browser(), True,
+        True, True, True, True, False
+    )
+    assert result["decision"] == "CONTROL_V2_NOT_VALIDATED"
+    assert not result["candidate_acceptance"]["B3"]["short_workloads_exercised"]
+
+
 def test_awake_validation_requires_active_evidence_in_every_sample():
     raw = {
         "scenario": {
@@ -374,6 +385,30 @@ def test_incomplete_registered_capture_is_not_viable(tmp_path):
     result = scenario_capture_validation(raw, prereg, prereg_path)
     assert not result["viable"]
     assert not result["scenarios"]["S"]["checks"]["sample_count_matches"]
+
+
+def test_short_burst_validation_requires_six_successful_observed_workloads():
+    events = []
+    samples = []
+    for index in range(1, 7):
+        key = f"short_{index}"
+        start = 15 + (index - 1) * 15
+        pid = 100 + index
+        events.extend([
+            {"event": "workload_start", "key": key, "pid": pid, "elapsed_seconds": start},
+            {"event": "workload_exit", "key": key, "pid": pid, "returncode": 0, "elapsed_seconds": start + 2},
+        ])
+        samples.append({"processes": [{"pid": pid, "controlled_external": True, "category": "unrelated_external_workload", "cpu": 95.0}]})
+    prereg = {"scenarios": {"S5_SHORT_CPU_BURSTS": {"burst_count": 6, "warmup_seconds": 15, "burst_start_interval_seconds": 15, "burst_seconds": 1.5}}}
+    raw = {"events": events, "samples": samples}
+    assert short_burst_validation(raw, prereg)["viable"]
+    raw["events"][-1]["returncode"] = 1
+    assert not short_burst_validation(raw, prereg)["viable"]
+
+
+def test_comparison_float_canonicalization_is_recursive():
+    value = {"a": [154.12666666666667, -0.0], "b": 1}
+    assert canonicalize(value) == {"a": [154.126666667, 0.0], "b": 1}
 
 
 def test_preserved_reopened_terminal_attempt_is_not_viable():

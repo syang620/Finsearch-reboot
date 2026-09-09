@@ -6,6 +6,7 @@ from collections import Counter
 import gzip
 import hashlib
 import json
+import math
 from datetime import datetime
 from pathlib import Path
 
@@ -200,6 +201,94 @@ def global_hard_control_validation(raw_by_scenario):
         "viable": bool(scenarios) and all(row["viable"] for row in scenarios.values()),
         "scenarios": scenarios,
     }
+
+
+def short_burst_validation(raw, preregistration):
+    scenario = preregistration["scenarios"]["S5_SHORT_CPU_BURSTS"]
+    count = scenario["burst_count"]
+    expected_keys = {f"short_{index}" for index in range(1, count + 1)}
+    start_events = [
+        event
+        for event in raw["events"]
+        if event.get("event") == "workload_start"
+        and event.get("key") in expected_keys
+    ]
+    exit_events = [
+        event
+        for event in raw["events"]
+        if event.get("event") == "workload_exit"
+        and event.get("key") in expected_keys
+    ]
+    starts = {
+        event.get("key"): event
+        for event in start_events
+    }
+    exits = {
+        event.get("key"): event
+        for event in exit_events
+    }
+    rows = []
+    for index in range(1, count + 1):
+        key = f"short_{index}"
+        start = starts.get(key, {})
+        exit_event = exits.get(key, {})
+        expected_start = scenario["warmup_seconds"] + (
+            index - 1
+        ) * scenario["burst_start_interval_seconds"]
+        observed = [
+            process
+            for sample in raw["samples"]
+            for process in sample.get("processes", [])
+            if process.get("pid") == start.get("pid")
+            and process.get("controlled_external") is True
+            and process.get("category") == "unrelated_external_workload"
+            and float(process.get("cpu", 0)) >= 50
+        ]
+        viable = (
+            bool(start)
+            and bool(exit_event)
+            and start.get("pid") == exit_event.get("pid")
+            and exit_event.get("returncode") == 0
+            and abs(start.get("elapsed_seconds", -1000) - expected_start) <= 0.25
+            and scenario["burst_seconds"]
+            <= exit_event.get("elapsed_seconds", -1000)
+            - start.get("elapsed_seconds", 1000)
+            <= scenario["burst_seconds"] + 1.0
+            and bool(observed)
+        )
+        rows.append(
+            {
+                "key": key,
+                "viable": viable,
+                "pid": start.get("pid"),
+                "start_elapsed_seconds": start.get("elapsed_seconds"),
+                "exit_elapsed_seconds": exit_event.get("elapsed_seconds"),
+                "returncode": exit_event.get("returncode"),
+                "samples_at_or_above_50_percent": len(observed),
+            }
+        )
+    return {
+        "viable": len(start_events) == count
+        and len(exit_events) == count
+        and set(starts) == expected_keys
+        and set(exits) == expected_keys
+        and all(row["viable"] for row in rows),
+        "expected_bursts": count,
+        "bursts": rows,
+    }
+
+
+def canonicalize(value):
+    if isinstance(value, float):
+        if not math.isfinite(value):
+            raise ValueError("Non-finite float in comparison output")
+        rounded = round(value, 9)
+        return 0.0 if rounded == 0 else rounded
+    if isinstance(value, list):
+        return [canonicalize(item) for item in value]
+    if isinstance(value, dict):
+        return {key: canonicalize(item) for key, item in value.items()}
+    return value
 
 
 def sustained_detections(raw, metrics, candidate_id):
@@ -480,6 +569,7 @@ def decide(
     s3_preflight_viable=True,
     global_hard_controls_viable=True,
     scenario_captures_viable=True,
+    short_workloads_viable=True,
 ):
     criteria = preregistration["acceptance_criteria"]
     clean_ids = criteria["clean_environment"]["scenarios"]
@@ -530,6 +620,7 @@ def decide(
             and s3_preflight_viable
             and global_hard_controls_viable
             and scenario_captures_viable
+            and short_workloads_viable
             and sustained_pass
             and short_pass
             and browser_pass
@@ -543,6 +634,7 @@ def decide(
             "required_service_identity": s3_preflight_viable,
             "global_hard_controls": global_hard_controls_viable,
             "complete_scenario_captures": scenario_captures_viable,
+            "short_workloads_exercised": short_workloads_viable,
             "sustained_interference": sustained_pass,
             "short_bursts": short_pass,
             "browser_hard_rule": browser_pass,
@@ -639,6 +731,9 @@ def main():
     scenario_results = {scenario: scenario_metrics(value, preregistration) for scenario, value in raw.items()}
     capture_validation = scenario_capture_validation(raw, preregistration, args.preregistration)
     global_hard_controls = global_hard_control_validation(raw)
+    short_workloads = short_burst_validation(
+        raw["S5_SHORT_CPU_BURSTS"], preregistration
+    )
     sustained = {
         candidate["id"]: sustained_detections(
             raw["S4_SUSTAINED_CPU_INTERFERENCE"],
@@ -672,6 +767,7 @@ def main():
         s3_preflight["viable"],
         global_hard_controls["viable"],
         capture_validation["viable"],
+        short_workloads["viable"],
     )
     for result in scenario_results.values():
         del result["evaluated"]
@@ -697,6 +793,7 @@ def main():
         "awake_protection_validation": awake,
         "scenario_capture_validation": capture_validation,
         "global_hard_control_validation": global_hard_controls,
+        "short_burst_validation": short_workloads,
         "s3_preflight_validation": {
             **s3_preflight,
             "path": str(args.s3_preflight),
@@ -708,6 +805,8 @@ def main():
             preregistration, args.pr32_raw, args.prior_disposition
         ),
     }
+    output["canonical_float_decimals"] = 9
+    output = canonicalize(output)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(output, indent=2, sort_keys=True) + "\n")
     print(json.dumps({"decision": output["decision"], "selected_policy": output["selected_policy"]}))
