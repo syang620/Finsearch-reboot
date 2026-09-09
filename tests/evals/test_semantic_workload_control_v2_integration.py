@@ -1,4 +1,5 @@
 import asyncio
+from contextlib import nullcontext
 import json
 from pathlib import Path
 from types import SimpleNamespace
@@ -255,3 +256,27 @@ def test_provisional_validity_never_claims_eligibility_and_keeps_hard_failures()
     ending["control_violations"] = [{"reason": "AC power"}]
     assert not launcher.provisional_validity(ending, ["A"], ["A"])
     assert "hard_control_violations" in ending["invalidity_reasons"]
+
+
+def test_preactivation_failure_is_not_masked(monkeypatch, tmp_path):
+    args = SimpleNamespace(out_root=tmp_path)
+    monkeypatch.setattr(launcher, "verify_opt_in", lambda args: ("a" * 40, {}))
+    monkeypatch.setattr(launcher, "frozen_launcher_adapter", lambda *args: nullcontext())
+
+    async def fail(args):
+        raise ValueError("original preflight failure")
+
+    monkeypatch.setattr(launcher.frozen, "run_once", fail)
+
+    class Process:
+        pid = 42
+
+        def terminate(self):
+            pass
+
+        def wait(self, timeout):
+            return 0
+
+    monkeypatch.setattr(launcher.subprocess, "Popen", lambda *args, **kwargs: Process())
+    with pytest.raises(ValueError, match="original preflight failure"):
+        asyncio.run(launcher.run(args))

@@ -1,0 +1,10 @@
+{
+  "status": "consumed",
+  "authorization_id": "SEMANTIC-V2-CONTROL-V2-20260909",
+  "authorization_sha256": "9af10afe2f01c30e1da9e6c9cf10dd4a1555a33b8c2178159b8ced9632389975",
+  "operation_wrapper_sha256": "96a5e572fd8f1b46d552f8f12c40e6bcee5652bc22f5c75575455dbf5d762624",
+  "integration_launcher_sha256": "52879ecfdf6367713a2231ccc53e56af21754f102d3639b0dc2388131070810d",
+  "implementation_sha": "65920f79740574c60c41887f17b2c45bd0cbc229",
+  "consumed_at": "2026-09-09T12:19:38.690604+00:00",
+  "policy": "One invocation including all preflight failures; never delete, reset, or replace this marker."
+}

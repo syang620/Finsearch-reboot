@@ -307,6 +307,8 @@ async def run(args):
         awake.terminate()
         awake.wait(timeout=10)
     if summary is None:
+        if failure is not None:
+            raise failure
         raise RuntimeError("Workload-control-v2 did not reach the settled activation boundary")
     if not out.exists():
         raise RuntimeError("Frozen semantic launcher produced no output")

@@ -1,0 +1,12 @@
+{
+  "authorization_id": "SEMANTIC-V2-CONTROL-V2-20260909",
+  "authorization_sha256": "9af10afe2f01c30e1da9e6c9cf10dd4a1555a33b8c2178159b8ced9632389975",
+  "implementation_sha": "65920f79740574c60c41887f17b2c45bd0cbc229",
+  "started_at": "2026-09-09T12:19:38.691153+00:00",
+  "stage": "finished",
+  "child_started": true,
+  "child_returncode": 1,
+  "error_type": null,
+  "finished_at": "2026-09-09T12:20:23.751097+00:00",
+  "policy": "Permission remains consumed regardless of preflight, captured cases, control validity, interruption, or exit status."
+}
