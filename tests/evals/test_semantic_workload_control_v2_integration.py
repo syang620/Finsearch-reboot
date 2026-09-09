@@ -347,6 +347,24 @@ def test_manifest_fsync_failure_leaves_no_eligible_completion(tmp_path, monkeypa
     assert not (out / "workload_control_v2_completion.json").exists()
 
 
+@pytest.mark.parametrize("member_name", ["started.json", "completion.json", "files_sha256.json"])
+def test_manifest_member_fsync_failure_leaves_no_eligible_completion(tmp_path, monkeypatch, member_name):
+    out = finalization_output(tmp_path)
+    for name in ("started.json", "files_sha256.json"):
+        (out / name).write_text("{}")
+    monkeypatch.setattr(launcher, "load_dataset", lambda path: ([{"id": "A"}], {}))
+    monkeypatch.setattr(launcher.frozen, "deterministic_breakdowns", lambda cases, rows: {"cases": len(rows)})
+
+    def fail_member_sync(path):
+        if Path(path).name == member_name:
+            raise OSError(f"{member_name} fsync")
+
+    monkeypatch.setattr(launcher, "sync_file_and_parent", fail_member_sync)
+    with pytest.raises(OSError, match=f"{member_name} fsync"):
+        launcher.finalize_artifacts(out, {"valid": True}, None)
+    assert not (out / "workload_control_v2_completion.json").exists()
+
+
 def test_closed_raw_evidence_includes_footer_and_final_sample(tmp_path):
     raw = tmp_path / "raw.jsonl"
     out = tmp_path / "out"

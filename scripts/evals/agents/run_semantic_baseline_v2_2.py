@@ -272,13 +272,16 @@ def finalize_artifacts(out, monitor_summary, finalization_error=None):
     frozen.save(summary_path, frozen.deterministic_breakdowns(cases, rows))
     sync_file_and_parent(summary_path)
     manifest_path = out / "workload_control_v2_files_sha256.json"
-    frozen.save(manifest_path, {
+    manifest = {
         path.name: sha(path) for path in sorted(out.iterdir())
         if path.is_file() and path.name not in {
             "workload_control_v2_files_sha256.json",
             "workload_control_v2_completion.json",
         }
-    })
+    }
+    frozen.save(manifest_path, manifest)
+    for member_name in manifest:
+        sync_file_and_parent(out / member_name)
     sync_file_and_parent(manifest_path)
 
 
