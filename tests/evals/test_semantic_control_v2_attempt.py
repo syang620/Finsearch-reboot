@@ -229,6 +229,32 @@ def test_sigterm_during_popen_assignment_is_rechecked_and_forwarded(tmp_path, mo
     assert outcome["termination"]["forwarded_to_child"]
 
 
+def test_sigterm_forward_failure_preserves_attempt_timestamp(tmp_path, monkeypatch):
+    setup_sigterm_operation(tmp_path, monkeypatch)
+    installed, _ = install_sigterm_handler(monkeypatch)
+
+    def fail_forward(pid, signum):
+        raise ProcessLookupError(pid)
+
+    monkeypatch.setattr(sigterm_operation.os, "kill", fail_forward)
+
+    class Child:
+        pid = 85
+
+        def wait(self):
+            installed[0][1](signal.SIGTERM, None)
+            return 0
+
+    monkeypatch.setattr(sigterm_operation.subprocess, "Popen", lambda *args, **kwargs: Child())
+    assert sigterm_operation.run(Path("index.json")) == 143
+    termination = json.loads(sigterm_operation.OUTCOME.read_text())["termination"]
+    assert termination["forward_attempted"]
+    assert termination["forward_attempted_at"]
+    assert not termination["forwarded_to_child"]
+    assert termination["forwarded_at"] is None
+    assert termination["forward_error_type"] == "ProcessLookupError"
+
+
 def test_sigterm_after_consumption_skips_child_and_persists_outcome(tmp_path, monkeypatch):
     setup_sigterm_operation(tmp_path, monkeypatch)
     installed, _ = install_sigterm_handler(monkeypatch)
@@ -302,3 +328,23 @@ def test_sigterm_handler_is_restored_if_outcome_persistence_fails(tmp_path, monk
     with pytest.raises(OSError, match="outcome write failed"):
         sigterm_operation.run(Path("index.json"))
     assert installed[-1] == (signal.SIGTERM, previous)
+
+
+def test_pending_sigterm_is_latched_at_finalization_cutoff(tmp_path, monkeypatch):
+    setup_sigterm_operation(tmp_path, monkeypatch)
+    install_sigterm_handler(monkeypatch)
+    monkeypatch.setattr(sigterm_operation.signal, "sigpending", lambda: {signal.SIGTERM})
+
+    class Child:
+        pid = 210
+
+        def wait(self):
+            return 0
+
+    monkeypatch.setattr(sigterm_operation.subprocess, "Popen", lambda *args, **kwargs: Child())
+    assert sigterm_operation.run(Path("index.json")) == 143
+    outcome = json.loads(sigterm_operation.OUTCOME.read_text())
+    assert outcome["child_returncode"] == 0
+    assert outcome["wrapper_exit_code"] == 143
+    assert outcome["termination"]["received"]
+    assert outcome["termination"]["observation_closed_at"]

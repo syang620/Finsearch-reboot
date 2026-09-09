@@ -100,9 +100,15 @@ def run(index_manifest, env_file=None):
         "received": False,
         "received_at": None,
         "forward_attempted": False,
+        "forward_attempted_at": None,
         "forwarded_to_child": False,
         "forwarded_at": None,
         "forward_error_type": None,
+        "observation_closed_at": None,
+        "finalization_policy": (
+            "SIGTERM is blocked at the observation cutoff through exclusive outcome fsync; "
+            "pending SIGTERM is latched at the cutoff and later delivery is ignored."
+        ),
     }
     result = {
         "authorization_id": AUTHORIZATION_ID,
@@ -123,6 +129,7 @@ def run(index_manifest, env_file=None):
         if active_child_pid is None or termination["forward_attempted"]:
             return
         termination["forward_attempted"] = True
+        termination["forward_attempted_at"] = now()
         try:
             os.kill(active_child_pid, signal.SIGTERM)
         except OSError as exc:
@@ -160,14 +167,21 @@ def run(index_manifest, env_file=None):
             result["stage"] = "launcher"
             log_descriptor = os.open(LOG, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
             with os.fdopen(log_descriptor, "w") as log:
-                child = subprocess.Popen(command, stdout=log, stderr=subprocess.STDOUT)
-                active_child_pid = child.pid
-                result["child_started"] = True
-                forward_sigterm()
-                result["child_returncode"] = child.wait()
-                active_child_pid = None
-            result["stage"] = "finished"
-            result["wrapper_exit_code"] = result["child_returncode"]
+                previous_spawn_mask = signal.pthread_sigmask(signal.SIG_BLOCK, {signal.SIGTERM})
+                try:
+                    if not termination["received"]:
+                        child = subprocess.Popen(command, stdout=log, stderr=subprocess.STDOUT)
+                        active_child_pid = child.pid
+                        result["child_started"] = True
+                finally:
+                    signal.pthread_sigmask(signal.SIG_SETMASK, previous_spawn_mask)
+                if child is not None:
+                    forward_sigterm()
+                    result["child_returncode"] = child.wait()
+                    active_child_pid = None
+            if child is not None:
+                result["stage"] = "finished"
+                result["wrapper_exit_code"] = result["child_returncode"]
     except BaseException as exc:
         pending_error = exc
         pending_traceback = exc.__traceback__
@@ -180,7 +194,11 @@ def run(index_manifest, env_file=None):
             result["child_returncode"] = child.wait()
             active_child_pid = None
     finally:
+        previous_finalization_mask = signal.pthread_sigmask(signal.SIG_BLOCK, {signal.SIGTERM})
         try:
+            termination["observation_closed_at"] = now()
+            if signal.SIGTERM in signal.sigpending():
+                handle_sigterm(signal.SIGTERM, None)
             if consumed:
                 if termination["received"]:
                     result["stage"] = "terminated" if result["child_started"] else "terminated_prelaunch"
@@ -193,6 +211,8 @@ def run(index_manifest, env_file=None):
                 )
                 write_once(OUTCOME, result)
         finally:
+            signal.signal(signal.SIGTERM, signal.SIG_IGN)
+            signal.pthread_sigmask(signal.SIG_SETMASK, previous_finalization_mask)
             signal.signal(signal.SIGTERM, previous_sigterm_handler)
     if termination["received"]:
         return SIGTERM_EXIT_CODE
