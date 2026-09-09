@@ -1,0 +1,24 @@
+{
+  "status": "invalid_protocol_attempts",
+  "official_calibration_inputs": false,
+  "attempts": [
+    {
+      "attempt": 1,
+      "raw": "S2_attempt_1_supervision_present.jsonl.gz",
+      "raw_sha256": "4144143a792f67f5a131f071dec1278ccd45a98542bcc5824dd0267c0d4503b6",
+      "reason": "ChatGPT/Codex remained present throughout all 900 samples."
+    },
+    {
+      "attempt": 2,
+      "raw": null,
+      "reason": "The external wrapper waited on inert orphaned crash-report handlers and never entered sampling; the owned waiting wrapper was terminated."
+    },
+    {
+      "attempt": 3,
+      "raw": "S2_attempt_3_reopened_at_sample_891.jsonl.gz",
+      "raw_sha256": "2300a1eef51789adae558e084cfa2279cea6955c186645f00baa6cb2fca01ef6",
+      "reason": "The environment was terminal-only through sample 890; ChatGPT/Codex was reopened for samples 891-899."
+    }
+  ],
+  "selection_use": "None. Only the notification-gated 900-sample terminal capture is an official calibration input."
+}

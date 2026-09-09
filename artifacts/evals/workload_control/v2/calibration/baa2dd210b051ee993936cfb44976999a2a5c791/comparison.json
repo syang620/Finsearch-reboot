@@ -1,0 +1,1367 @@
+{
+  "analysis_implementation_sha": "baa2dd2e6a362cafa44a45b5f415aa643e009ffb",
+  "awake_protection_validation": {
+    "scenarios": {
+      "S1_PASSIVE_SUPERVISED_IDLE": {
+        "active_matching_samples": 900,
+        "awake_pid": 77630,
+        "footer_active_through_final_sample": true,
+        "returncode_before_cleanup": null,
+        "total_samples": 900,
+        "viable": true
+      },
+      "S2_TERMINAL_ONLY_IDLE": {
+        "active_matching_samples": 900,
+        "awake_pid": 36930,
+        "footer_active_through_final_sample": true,
+        "returncode_before_cleanup": null,
+        "total_samples": 900,
+        "viable": true
+      },
+      "S3_REQUIRED_SERVICE_ACTIVITY": {
+        "active_matching_samples": 180,
+        "awake_pid": 51229,
+        "footer_active_through_final_sample": true,
+        "returncode_before_cleanup": null,
+        "total_samples": 180,
+        "viable": true
+      },
+      "S4_SUSTAINED_CPU_INTERFERENCE": {
+        "active_matching_samples": 210,
+        "awake_pid": 66334,
+        "footer_active_through_final_sample": true,
+        "returncode_before_cleanup": null,
+        "total_samples": 210,
+        "viable": true
+      },
+      "S5_SHORT_CPU_BURSTS": {
+        "active_matching_samples": 120,
+        "awake_pid": 83402,
+        "footer_active_through_final_sample": true,
+        "returncode_before_cleanup": null,
+        "total_samples": 120,
+        "viable": true
+      },
+      "S6_BROWSER_WORKLOAD": {
+        "active_matching_samples": 60,
+        "awake_pid": 93759,
+        "footer_active_through_final_sample": true,
+        "returncode_before_cleanup": null,
+        "total_samples": 60,
+        "viable": true
+      }
+    },
+    "viable": true
+  },
+  "browser_detection": {
+    "A_INSTANTANEOUS_CURRENT": {
+      "detected": true,
+      "detection_delay_samples": 0,
+      "detection_latency_seconds": 0.0
+    },
+    "B_CONSECUTIVE_10": {
+      "detected": true,
+      "detection_delay_samples": 0,
+      "detection_latency_seconds": 0.0
+    },
+    "B_CONSECUTIVE_3": {
+      "detected": true,
+      "detection_delay_samples": 0,
+      "detection_latency_seconds": 0.0
+    },
+    "B_CONSECUTIVE_5": {
+      "detected": true,
+      "detection_delay_samples": 0,
+      "detection_latency_seconds": 0.0
+    },
+    "C_OCCUPANCY_12_OF_60": {
+      "detected": true,
+      "detection_delay_samples": 0,
+      "detection_latency_seconds": 0.0
+    },
+    "C_OCCUPANCY_5_OF_30": {
+      "detected": true,
+      "detection_delay_samples": 0,
+      "detection_latency_seconds": 0.0
+    },
+    "D_BURDEN_20_OVER_60": {
+      "detected": true,
+      "detection_delay_samples": 0,
+      "detection_latency_seconds": 0.0
+    },
+    "D_BURDEN_25_OVER_30": {
+      "detected": true,
+      "detection_delay_samples": 0,
+      "detection_latency_seconds": 0.0
+    }
+  },
+  "candidate_acceptance": {
+    "A_INSTANTANEOUS_CURRENT": {
+      "awake_protection": true,
+      "browser_hard_rule": true,
+      "clean_scenarios": {
+        "S1_PASSIVE_SUPERVISED_IDLE": false,
+        "S2_TERMINAL_ONLY_IDLE": false,
+        "S3_REQUIRED_SERVICE_ACTIVITY": false
+      },
+      "eligible": false,
+      "evidence_visibility": true,
+      "passes_all": false,
+      "required_service_identity": true,
+      "short_bursts": false,
+      "sustained_interference": false,
+      "terminal_only_scenario": true
+    },
+    "B_CONSECUTIVE_10": {
+      "awake_protection": true,
+      "browser_hard_rule": true,
+      "clean_scenarios": {
+        "S1_PASSIVE_SUPERVISED_IDLE": true,
+        "S2_TERMINAL_ONLY_IDLE": true,
+        "S3_REQUIRED_SERVICE_ACTIVITY": true
+      },
+      "eligible": true,
+      "evidence_visibility": true,
+      "passes_all": true,
+      "required_service_identity": true,
+      "short_bursts": true,
+      "sustained_interference": true,
+      "terminal_only_scenario": true
+    },
+    "B_CONSECUTIVE_3": {
+      "awake_protection": true,
+      "browser_hard_rule": true,
+      "clean_scenarios": {
+        "S1_PASSIVE_SUPERVISED_IDLE": false,
+        "S2_TERMINAL_ONLY_IDLE": false,
+        "S3_REQUIRED_SERVICE_ACTIVITY": true
+      },
+      "eligible": true,
+      "evidence_visibility": true,
+      "passes_all": false,
+      "required_service_identity": true,
+      "short_bursts": false,
+      "sustained_interference": true,
+      "terminal_only_scenario": true
+    },
+    "B_CONSECUTIVE_5": {
+      "awake_protection": true,
+      "browser_hard_rule": true,
+      "clean_scenarios": {
+        "S1_PASSIVE_SUPERVISED_IDLE": true,
+        "S2_TERMINAL_ONLY_IDLE": false,
+        "S3_REQUIRED_SERVICE_ACTIVITY": true
+      },
+      "eligible": true,
+      "evidence_visibility": true,
+      "passes_all": false,
+      "required_service_identity": true,
+      "short_bursts": false,
+      "sustained_interference": true,
+      "terminal_only_scenario": true
+    },
+    "C_OCCUPANCY_12_OF_60": {
+      "awake_protection": true,
+      "browser_hard_rule": true,
+      "clean_scenarios": {
+        "S1_PASSIVE_SUPERVISED_IDLE": false,
+        "S2_TERMINAL_ONLY_IDLE": false,
+        "S3_REQUIRED_SERVICE_ACTIVITY": true
+      },
+      "eligible": true,
+      "evidence_visibility": true,
+      "passes_all": false,
+      "required_service_identity": true,
+      "short_bursts": false,
+      "sustained_interference": false,
+      "terminal_only_scenario": true
+    },
+    "C_OCCUPANCY_5_OF_30": {
+      "awake_protection": true,
+      "browser_hard_rule": true,
+      "clean_scenarios": {
+        "S1_PASSIVE_SUPERVISED_IDLE": false,
+        "S2_TERMINAL_ONLY_IDLE": false,
+        "S3_REQUIRED_SERVICE_ACTIVITY": false
+      },
+      "eligible": true,
+      "evidence_visibility": true,
+      "passes_all": false,
+      "required_service_identity": true,
+      "short_bursts": false,
+      "sustained_interference": false,
+      "terminal_only_scenario": true
+    },
+    "D_BURDEN_20_OVER_60": {
+      "awake_protection": true,
+      "browser_hard_rule": true,
+      "clean_scenarios": {
+        "S1_PASSIVE_SUPERVISED_IDLE": false,
+        "S2_TERMINAL_ONLY_IDLE": false,
+        "S3_REQUIRED_SERVICE_ACTIVITY": false
+      },
+      "eligible": true,
+      "evidence_visibility": true,
+      "passes_all": false,
+      "required_service_identity": true,
+      "short_bursts": false,
+      "sustained_interference": false,
+      "terminal_only_scenario": true
+    },
+    "D_BURDEN_25_OVER_30": {
+      "awake_protection": true,
+      "browser_hard_rule": true,
+      "clean_scenarios": {
+        "S1_PASSIVE_SUPERVISED_IDLE": false,
+        "S2_TERMINAL_ONLY_IDLE": false,
+        "S3_REQUIRED_SERVICE_ACTIVITY": false
+      },
+      "eligible": true,
+      "evidence_visibility": true,
+      "passes_all": false,
+      "required_service_identity": true,
+      "short_bursts": false,
+      "sustained_interference": false,
+      "terminal_only_scenario": true
+    }
+  },
+  "decision": "WORKLOAD_CONTROL_V2_VALIDATED",
+  "historical_replay": {
+    "pr32_1200_sample_replay": {
+      "candidates": {
+        "A_INSTANTANEOUS_CURRENT": {
+          "cpu_violation_episodes": 188,
+          "cpu_violation_samples": 235,
+          "hard_violation_episodes": 0,
+          "hard_violation_samples": 0,
+          "interpretation": "lower bound only: the sequential PR32 detail snapshot omitted processes hidden by the broader v1 exemption filter and did not retain sub-threshold CPU",
+          "invalid_episodes": 188,
+          "invalid_samples": 235,
+          "samples": 1200
+        },
+        "B_CONSECUTIVE_10": {
+          "cpu_violation_episodes": 0,
+          "cpu_violation_samples": 0,
+          "hard_violation_episodes": 0,
+          "hard_violation_samples": 0,
+          "interpretation": "lower bound only: the sequential PR32 detail snapshot omitted processes hidden by the broader v1 exemption filter and did not retain sub-threshold CPU",
+          "invalid_episodes": 0,
+          "invalid_samples": 0,
+          "samples": 1200
+        },
+        "B_CONSECUTIVE_3": {
+          "cpu_violation_episodes": 1,
+          "cpu_violation_samples": 5,
+          "hard_violation_episodes": 0,
+          "hard_violation_samples": 0,
+          "interpretation": "lower bound only: the sequential PR32 detail snapshot omitted processes hidden by the broader v1 exemption filter and did not retain sub-threshold CPU",
+          "invalid_episodes": 1,
+          "invalid_samples": 5,
+          "samples": 1200
+        },
+        "B_CONSECUTIVE_5": {
+          "cpu_violation_episodes": 1,
+          "cpu_violation_samples": 3,
+          "hard_violation_episodes": 0,
+          "hard_violation_samples": 0,
+          "interpretation": "lower bound only: the sequential PR32 detail snapshot omitted processes hidden by the broader v1 exemption filter and did not retain sub-threshold CPU",
+          "invalid_episodes": 1,
+          "invalid_samples": 3,
+          "samples": 1200
+        },
+        "C_OCCUPANCY_12_OF_60": {
+          "cpu_violation_episodes": 21,
+          "cpu_violation_samples": 452,
+          "hard_violation_episodes": 0,
+          "hard_violation_samples": 0,
+          "interpretation": "lower bound only: the sequential PR32 detail snapshot omitted processes hidden by the broader v1 exemption filter and did not retain sub-threshold CPU",
+          "invalid_episodes": 21,
+          "invalid_samples": 452,
+          "samples": 1200
+        },
+        "C_OCCUPANCY_5_OF_30": {
+          "cpu_violation_episodes": 27,
+          "cpu_violation_samples": 788,
+          "hard_violation_episodes": 0,
+          "hard_violation_samples": 0,
+          "interpretation": "lower bound only: the sequential PR32 detail snapshot omitted processes hidden by the broader v1 exemption filter and did not retain sub-threshold CPU",
+          "invalid_episodes": 27,
+          "invalid_samples": 788,
+          "samples": 1200
+        },
+        "D_BURDEN_20_OVER_60": {
+          "cpu_violation_episodes": 1,
+          "cpu_violation_samples": 85,
+          "hard_violation_episodes": 0,
+          "hard_violation_samples": 0,
+          "interpretation": "lower bound only: the sequential PR32 detail snapshot omitted processes hidden by the broader v1 exemption filter and did not retain sub-threshold CPU",
+          "invalid_episodes": 1,
+          "invalid_samples": 85,
+          "samples": 1200
+        },
+        "D_BURDEN_25_OVER_30": {
+          "cpu_violation_episodes": 2,
+          "cpu_violation_samples": 55,
+          "hard_violation_episodes": 0,
+          "hard_violation_samples": 0,
+          "interpretation": "lower bound only: the sequential PR32 detail snapshot omitted processes hidden by the broader v1 exemption filter and did not retain sub-threshold CPU",
+          "invalid_episodes": 2,
+          "invalid_samples": 55,
+          "samples": 1200
+        }
+      },
+      "historical_status_unchanged": true,
+      "sample_count": 1200,
+      "source_sha256": "384003ae78c9b63e6b24a18e3067c19f2623a3554a8d67a14f39ce1b0f7c52a3"
+    },
+    "prior_sparse_invalid_diagnostics": [
+      {
+        "original_status_unchanged": true,
+        "path": "artifacts/evals/semantic_answer/v2/diagnostic_disposition/29bfec8a662efdd1dd78fe986eb753d655315646/disposition.json",
+        "reason": "The historical record lacks consecutive samples and executable/ancestry identity; persistence, real-browser identity, and rolling burden cannot be reconstructed.",
+        "retained_violation": null,
+        "status": "user_stopped_invalid_diagnostic",
+        "v2_classification": "indeterminate"
+      },
+      {
+        "original_status_unchanged": true,
+        "path": "artifacts/evals/semantic_answer/v2/attempt_authorizations/SEMANTIC-V2-FRESH-20260908/488e112a64b51fb2a5ad159194df993b2ff04f11/disposition.json",
+        "reason": "The historical record lacks consecutive samples and executable/ancestry identity; persistence, real-browser identity, and rolling burden cannot be reconstructed.",
+        "retained_violation": {
+          "at": "2026-09-08T14:28:18.463222+00:00",
+          "browser_process_count": 1,
+          "case_id": "SEM2_MSFT_2025_04",
+          "causal_interpretation": "Observed control violation only. The record does not establish who launched the process/browser, how long either ran, or whether either caused the analyst timeout.",
+          "frozen_heavy_process_threshold_percent": 50,
+          "heavy_non_model_processes": [
+            {
+              "cpu": 59.8,
+              "process": "git"
+            }
+          ],
+          "when": "after"
+        },
+        "status": "invalid_diagnostic",
+        "v2_classification": "indeterminate"
+      }
+    ]
+  },
+  "preregistration_sha256": "0c6c4ac93cee1b23e33ea2ea93ded0a9b56092cd9898045b44a0bb7595463483",
+  "raw_inputs": {
+    "S1_PASSIVE_SUPERVISED_IDLE": {
+      "capture_implementation_sha": "baa2dd2e6a362cafa44a45b5f415aa643e009ffb",
+      "path": "artifacts/evals/workload_control/v2/calibration/baa2dd210b051ee993936cfb44976999a2a5c791/raw/S1_PASSIVE_SUPERVISED_IDLE.jsonl.gz",
+      "sha256": "6d6b9099e60a6174750c97eaf2fb046bf1e563507e4816caf5d784080dc85880"
+    },
+    "S2_TERMINAL_ONLY_IDLE": {
+      "capture_implementation_sha": "baa2dd2e6a362cafa44a45b5f415aa643e009ffb",
+      "path": "artifacts/evals/workload_control/v2/calibration/baa2dd210b051ee993936cfb44976999a2a5c791/raw/S2_TERMINAL_ONLY_IDLE.jsonl.gz",
+      "sha256": "653138057f2811f0d4fb1c04bcef39f8432e974096ac509e5a1b75b515fae642"
+    },
+    "S3_REQUIRED_SERVICE_ACTIVITY": {
+      "capture_implementation_sha": "baa2dd2e6a362cafa44a45b5f415aa643e009ffb",
+      "path": "artifacts/evals/workload_control/v2/calibration/baa2dd210b051ee993936cfb44976999a2a5c791/raw/S3_REQUIRED_SERVICE_ACTIVITY.jsonl.gz",
+      "sha256": "fc7e0fd93337efa3523fdfbd91c98c137c96fe0fa66408cebcf1c475c78fa270"
+    },
+    "S4_SUSTAINED_CPU_INTERFERENCE": {
+      "capture_implementation_sha": "baa2dd2e6a362cafa44a45b5f415aa643e009ffb",
+      "path": "artifacts/evals/workload_control/v2/calibration/baa2dd210b051ee993936cfb44976999a2a5c791/raw/S4_SUSTAINED_CPU_INTERFERENCE.jsonl.gz",
+      "sha256": "5cac29464c1d4961f65ce09b7017b4578b549cef059237100bbb899f2ca3f0fc"
+    },
+    "S5_SHORT_CPU_BURSTS": {
+      "capture_implementation_sha": "baa2dd2e6a362cafa44a45b5f415aa643e009ffb",
+      "path": "artifacts/evals/workload_control/v2/calibration/baa2dd210b051ee993936cfb44976999a2a5c791/raw/S5_SHORT_CPU_BURSTS.jsonl.gz",
+      "sha256": "87fd8a93587bb6d7477b38d359a4ce3976e39ebc5f13211629f37187c86cdfbb"
+    },
+    "S6_BROWSER_WORKLOAD": {
+      "capture_implementation_sha": "baa2dd2e6a362cafa44a45b5f415aa643e009ffb",
+      "path": "artifacts/evals/workload_control/v2/calibration/baa2dd210b051ee993936cfb44976999a2a5c791/raw/S6_BROWSER_WORKLOAD.jsonl.gz",
+      "sha256": "b085cc019d75ec315bc41b6d01a1ecba93a959d12bf6d11b9d64ef486e3cb163"
+    }
+  },
+  "s3_preflight_validation": {
+    "checks": {
+      "complete_required_steps": true,
+      "current_index_matches": true,
+      "historical_index_matches": true,
+      "model_digests_match": true,
+      "no_reported_errors": true,
+      "qdrant_identity_matches": true,
+      "repository_clean": true,
+      "sec_service_healthy": true
+    },
+    "frozen_provenance_path": "artifacts/evals/semantic_answer/v2/controlled_baselines/488e112a64b51fb2a5ad159194df993b2ff04f11/started.json",
+    "frozen_provenance_sha256": "0ae5a69d1935ad7980b158adc98b5547f505b97602354661cdb47ac2286ab730",
+    "path": "artifacts/evals/workload_control/v2/calibration/baa2dd210b051ee993936cfb44976999a2a5c791/raw/S3_preflight.json",
+    "sha256": "9cee12bde376e94be217f27ee4c1726f7eb824c3fe1c60873d490993ae26c060",
+    "viable": true
+  },
+  "scenario_results": {
+    "S1_PASSIVE_SUPERVISED_IDLE": {
+      "candidates": {
+        "A_INSTANTANEOUS_CURRENT": {
+          "cpu_violation_episodes": 171,
+          "cpu_violation_samples": 233,
+          "hard_violation_episodes": 0,
+          "hard_violation_samples": 0,
+          "invalid_episodes": 171,
+          "invalid_samples": 233,
+          "longest_cpu_violation_streak": 6,
+          "maximum_policy_statistic": null,
+          "responsible_process_categories": {
+            "os_background_service": 8,
+            "run_supervision_ui_tooling": 86,
+            "unknown": 80,
+            "unrelated_external_workload": 33
+          },
+          "samples": 900
+        },
+        "B_CONSECUTIVE_10": {
+          "cpu_violation_episodes": 0,
+          "cpu_violation_samples": 0,
+          "hard_violation_episodes": 0,
+          "hard_violation_samples": 0,
+          "invalid_episodes": 0,
+          "invalid_samples": 0,
+          "longest_cpu_violation_streak": 0,
+          "maximum_policy_statistic": 4,
+          "responsible_process_categories": {},
+          "samples": 900
+        },
+        "B_CONSECUTIVE_3": {
+          "cpu_violation_episodes": 1,
+          "cpu_violation_samples": 2,
+          "hard_violation_episodes": 0,
+          "hard_violation_samples": 0,
+          "invalid_episodes": 1,
+          "invalid_samples": 2,
+          "longest_cpu_violation_streak": 2,
+          "maximum_policy_statistic": 4,
+          "responsible_process_categories": {
+            "os_background_service": 2
+          },
+          "samples": 900
+        },
+        "B_CONSECUTIVE_5": {
+          "cpu_violation_episodes": 0,
+          "cpu_violation_samples": 0,
+          "hard_violation_episodes": 0,
+          "hard_violation_samples": 0,
+          "invalid_episodes": 0,
+          "invalid_samples": 0,
+          "longest_cpu_violation_streak": 0,
+          "maximum_policy_statistic": 4,
+          "responsible_process_categories": {},
+          "samples": 900
+        },
+        "C_OCCUPANCY_12_OF_60": {
+          "cpu_violation_episodes": 11,
+          "cpu_violation_samples": 698,
+          "hard_violation_episodes": 0,
+          "hard_violation_samples": 0,
+          "invalid_episodes": 11,
+          "invalid_samples": 698,
+          "longest_cpu_violation_streak": 163,
+          "maximum_policy_statistic": 21,
+          "responsible_process_categories": {
+            "os_background_service": 6,
+            "run_supervision_ui_tooling": 72,
+            "unknown": 72,
+            "unrelated_external_workload": 28
+          },
+          "samples": 900
+        },
+        "C_OCCUPANCY_5_OF_30": {
+          "cpu_violation_episodes": 21,
+          "cpu_violation_samples": 751,
+          "hard_violation_episodes": 0,
+          "hard_violation_samples": 0,
+          "invalid_episodes": 21,
+          "invalid_samples": 751,
+          "longest_cpu_violation_streak": 126,
+          "maximum_policy_statistic": 16,
+          "responsible_process_categories": {
+            "os_background_service": 7,
+            "run_supervision_ui_tooling": 83,
+            "unknown": 79,
+            "unrelated_external_workload": 30
+          },
+          "samples": 900
+        },
+        "D_BURDEN_20_OVER_60": {
+          "cpu_violation_episodes": 1,
+          "cpu_violation_samples": 883,
+          "hard_violation_episodes": 0,
+          "hard_violation_samples": 0,
+          "invalid_episodes": 1,
+          "invalid_samples": 883,
+          "longest_cpu_violation_streak": 883,
+          "maximum_policy_statistic": 154.12666666666664,
+          "responsible_process_categories": {
+            "os_background_service": 883,
+            "run_supervision_ui_tooling": 883,
+            "unknown": 883,
+            "unrelated_external_workload": 433
+          },
+          "samples": 900
+        },
+        "D_BURDEN_25_OVER_30": {
+          "cpu_violation_episodes": 1,
+          "cpu_violation_samples": 889,
+          "hard_violation_episodes": 0,
+          "hard_violation_samples": 0,
+          "invalid_episodes": 1,
+          "invalid_samples": 889,
+          "longest_cpu_violation_streak": 889,
+          "maximum_policy_statistic": 176.7133333333333,
+          "responsible_process_categories": {
+            "os_background_service": 889,
+            "run_supervision_ui_tooling": 889,
+            "unknown": 889,
+            "unrelated_external_workload": 437
+          },
+          "samples": 900
+        }
+      },
+      "classified_or_unknown_retention_rate": 1.0,
+      "retained_process_records": 41926,
+      "sample_count": 900,
+      "unknown_process_contribution": {
+        "peak_aggregate_cpu_percent": 112.1,
+        "samples_at_or_above_50_percent": 270
+      }
+    },
+    "S2_TERMINAL_ONLY_IDLE": {
+      "candidates": {
+        "A_INSTANTANEOUS_CURRENT": {
+          "cpu_violation_episodes": 91,
+          "cpu_violation_samples": 98,
+          "hard_violation_episodes": 0,
+          "hard_violation_samples": 0,
+          "invalid_episodes": 91,
+          "invalid_samples": 98,
+          "longest_cpu_violation_streak": 7,
+          "maximum_policy_statistic": null,
+          "responsible_process_categories": {
+            "os_background_service": 9,
+            "unrelated_external_workload": 88
+          },
+          "samples": 900
+        },
+        "B_CONSECUTIVE_10": {
+          "cpu_violation_episodes": 0,
+          "cpu_violation_samples": 0,
+          "hard_violation_episodes": 0,
+          "hard_violation_samples": 0,
+          "invalid_episodes": 0,
+          "invalid_samples": 0,
+          "longest_cpu_violation_streak": 0,
+          "maximum_policy_statistic": 6,
+          "responsible_process_categories": {},
+          "samples": 900
+        },
+        "B_CONSECUTIVE_3": {
+          "cpu_violation_episodes": 1,
+          "cpu_violation_samples": 4,
+          "hard_violation_episodes": 0,
+          "hard_violation_samples": 0,
+          "invalid_episodes": 1,
+          "invalid_samples": 4,
+          "longest_cpu_violation_streak": 4,
+          "maximum_policy_statistic": 6,
+          "responsible_process_categories": {
+            "os_background_service": 4
+          },
+          "samples": 900
+        },
+        "B_CONSECUTIVE_5": {
+          "cpu_violation_episodes": 1,
+          "cpu_violation_samples": 2,
+          "hard_violation_episodes": 0,
+          "hard_violation_samples": 0,
+          "invalid_episodes": 1,
+          "invalid_samples": 2,
+          "longest_cpu_violation_streak": 2,
+          "maximum_policy_statistic": 6,
+          "responsible_process_categories": {
+            "os_background_service": 2
+          },
+          "samples": 900
+        },
+        "C_OCCUPANCY_12_OF_60": {
+          "cpu_violation_episodes": 1,
+          "cpu_violation_samples": 3,
+          "hard_violation_episodes": 0,
+          "hard_violation_samples": 0,
+          "invalid_episodes": 1,
+          "invalid_samples": 3,
+          "longest_cpu_violation_streak": 3,
+          "maximum_policy_statistic": 14,
+          "responsible_process_categories": {
+            "os_background_service": 3
+          },
+          "samples": 900
+        },
+        "C_OCCUPANCY_5_OF_30": {
+          "cpu_violation_episodes": 1,
+          "cpu_violation_samples": 7,
+          "hard_violation_episodes": 0,
+          "hard_violation_samples": 0,
+          "invalid_episodes": 1,
+          "invalid_samples": 7,
+          "longest_cpu_violation_streak": 7,
+          "maximum_policy_statistic": 11,
+          "responsible_process_categories": {
+            "os_background_service": 7
+          },
+          "samples": 900
+        },
+        "D_BURDEN_20_OVER_60": {
+          "cpu_violation_episodes": 1,
+          "cpu_violation_samples": 865,
+          "hard_violation_episodes": 0,
+          "hard_violation_samples": 0,
+          "invalid_episodes": 1,
+          "invalid_samples": 865,
+          "longest_cpu_violation_streak": 865,
+          "maximum_policy_statistic": 69.77500000000002,
+          "responsible_process_categories": {
+            "os_background_service": 865,
+            "unknown": 865,
+            "unrelated_external_workload": 479
+          },
+          "samples": 900
+        },
+        "D_BURDEN_25_OVER_30": {
+          "cpu_violation_episodes": 1,
+          "cpu_violation_samples": 879,
+          "hard_violation_episodes": 0,
+          "hard_violation_samples": 0,
+          "invalid_episodes": 1,
+          "invalid_samples": 879,
+          "longest_cpu_violation_streak": 879,
+          "maximum_policy_statistic": 101.34,
+          "responsible_process_categories": {
+            "os_background_service": 879,
+            "unknown": 879,
+            "unrelated_external_workload": 486
+          },
+          "samples": 900
+        }
+      },
+      "classified_or_unknown_retention_rate": 1.0,
+      "retained_process_records": 25948,
+      "sample_count": 900,
+      "unknown_process_contribution": {
+        "peak_aggregate_cpu_percent": 42.7,
+        "samples_at_or_above_50_percent": 0
+      }
+    },
+    "S3_REQUIRED_SERVICE_ACTIVITY": {
+      "candidates": {
+        "A_INSTANTANEOUS_CURRENT": {
+          "cpu_violation_episodes": 23,
+          "cpu_violation_samples": 27,
+          "hard_violation_episodes": 0,
+          "hard_violation_samples": 0,
+          "invalid_episodes": 23,
+          "invalid_samples": 27,
+          "longest_cpu_violation_streak": 4,
+          "maximum_policy_statistic": null,
+          "responsible_process_categories": {
+            "os_background_service": 2,
+            "run_supervision_ui_tooling": 15,
+            "unknown": 1
+          },
+          "samples": 180
+        },
+        "B_CONSECUTIVE_10": {
+          "cpu_violation_episodes": 0,
+          "cpu_violation_samples": 0,
+          "hard_violation_episodes": 0,
+          "hard_violation_samples": 0,
+          "invalid_episodes": 0,
+          "invalid_samples": 0,
+          "longest_cpu_violation_streak": 0,
+          "maximum_policy_statistic": 1,
+          "responsible_process_categories": {},
+          "samples": 180
+        },
+        "B_CONSECUTIVE_3": {
+          "cpu_violation_episodes": 0,
+          "cpu_violation_samples": 0,
+          "hard_violation_episodes": 0,
+          "hard_violation_samples": 0,
+          "invalid_episodes": 0,
+          "invalid_samples": 0,
+          "longest_cpu_violation_streak": 0,
+          "maximum_policy_statistic": 1,
+          "responsible_process_categories": {},
+          "samples": 180
+        },
+        "B_CONSECUTIVE_5": {
+          "cpu_violation_episodes": 0,
+          "cpu_violation_samples": 0,
+          "hard_violation_episodes": 0,
+          "hard_violation_samples": 0,
+          "invalid_episodes": 0,
+          "invalid_samples": 0,
+          "longest_cpu_violation_streak": 0,
+          "maximum_policy_statistic": 1,
+          "responsible_process_categories": {},
+          "samples": 180
+        },
+        "C_OCCUPANCY_12_OF_60": {
+          "cpu_violation_episodes": 0,
+          "cpu_violation_samples": 0,
+          "hard_violation_episodes": 0,
+          "hard_violation_samples": 0,
+          "invalid_episodes": 0,
+          "invalid_samples": 0,
+          "longest_cpu_violation_streak": 0,
+          "maximum_policy_statistic": 11,
+          "responsible_process_categories": {},
+          "samples": 180
+        },
+        "C_OCCUPANCY_5_OF_30": {
+          "cpu_violation_episodes": 7,
+          "cpu_violation_samples": 33,
+          "hard_violation_episodes": 0,
+          "hard_violation_samples": 0,
+          "invalid_episodes": 7,
+          "invalid_samples": 33,
+          "longest_cpu_violation_streak": 18,
+          "maximum_policy_statistic": 6,
+          "responsible_process_categories": {
+            "run_supervision_ui_tooling": 9
+          },
+          "samples": 180
+        },
+        "D_BURDEN_20_OVER_60": {
+          "cpu_violation_episodes": 1,
+          "cpu_violation_samples": 171,
+          "hard_violation_episodes": 0,
+          "hard_violation_samples": 0,
+          "invalid_episodes": 1,
+          "invalid_samples": 171,
+          "longest_cpu_violation_streak": 171,
+          "maximum_policy_statistic": 143.98166666666663,
+          "responsible_process_categories": {
+            "os_background_service": 171,
+            "run_supervision_ui_tooling": 171,
+            "unknown": 171,
+            "unrelated_external_workload": 86
+          },
+          "samples": 180
+        },
+        "D_BURDEN_25_OVER_30": {
+          "cpu_violation_episodes": 1,
+          "cpu_violation_samples": 175,
+          "hard_violation_episodes": 0,
+          "hard_violation_samples": 0,
+          "invalid_episodes": 1,
+          "invalid_samples": 175,
+          "longest_cpu_violation_streak": 175,
+          "maximum_policy_statistic": 150.0666666666666,
+          "responsible_process_categories": {
+            "os_background_service": 175,
+            "run_supervision_ui_tooling": 175,
+            "unknown": 175,
+            "unrelated_external_workload": 87
+          },
+          "samples": 180
+        }
+      },
+      "classified_or_unknown_retention_rate": 1.0,
+      "retained_process_records": 8453,
+      "sample_count": 180,
+      "unknown_process_contribution": {
+        "peak_aggregate_cpu_percent": 51.4,
+        "samples_at_or_above_50_percent": 15
+      }
+    },
+    "S4_SUSTAINED_CPU_INTERFERENCE": {
+      "candidates": {
+        "A_INSTANTANEOUS_CURRENT": {
+          "cpu_violation_episodes": 18,
+          "cpu_violation_samples": 160,
+          "hard_violation_episodes": 0,
+          "hard_violation_samples": 0,
+          "invalid_episodes": 18,
+          "invalid_samples": 160,
+          "longest_cpu_violation_streak": 47,
+          "maximum_policy_statistic": null,
+          "responsible_process_categories": {
+            "run_supervision_ui_tooling": 23,
+            "unknown": 7,
+            "unrelated_external_workload": 138
+          },
+          "samples": 210
+        },
+        "B_CONSECUTIVE_10": {
+          "cpu_violation_episodes": 3,
+          "cpu_violation_samples": 105,
+          "hard_violation_episodes": 0,
+          "hard_violation_samples": 0,
+          "invalid_episodes": 3,
+          "invalid_samples": 105,
+          "longest_cpu_violation_streak": 35,
+          "maximum_policy_statistic": 44,
+          "responsible_process_categories": {
+            "unrelated_external_workload": 105
+          },
+          "samples": 210
+        },
+        "B_CONSECUTIVE_3": {
+          "cpu_violation_episodes": 3,
+          "cpu_violation_samples": 126,
+          "hard_violation_episodes": 0,
+          "hard_violation_samples": 0,
+          "invalid_episodes": 3,
+          "invalid_samples": 126,
+          "longest_cpu_violation_streak": 42,
+          "maximum_policy_statistic": 44,
+          "responsible_process_categories": {
+            "unrelated_external_workload": 126
+          },
+          "samples": 210
+        },
+        "B_CONSECUTIVE_5": {
+          "cpu_violation_episodes": 3,
+          "cpu_violation_samples": 120,
+          "hard_violation_episodes": 0,
+          "hard_violation_samples": 0,
+          "invalid_episodes": 3,
+          "invalid_samples": 120,
+          "longest_cpu_violation_streak": 40,
+          "maximum_policy_statistic": 44,
+          "responsible_process_categories": {
+            "unrelated_external_workload": 120
+          },
+          "samples": 210
+        },
+        "C_OCCUPANCY_12_OF_60": {
+          "cpu_violation_episodes": 1,
+          "cpu_violation_samples": 187,
+          "hard_violation_episodes": 0,
+          "hard_violation_samples": 0,
+          "invalid_episodes": 1,
+          "invalid_samples": 187,
+          "longest_cpu_violation_streak": 187,
+          "maximum_policy_statistic": 51,
+          "responsible_process_categories": {
+            "run_supervision_ui_tooling": 22,
+            "unknown": 5,
+            "unrelated_external_workload": 130
+          },
+          "samples": 210
+        },
+        "C_OCCUPANCY_5_OF_30": {
+          "cpu_violation_episodes": 1,
+          "cpu_violation_samples": 194,
+          "hard_violation_episodes": 0,
+          "hard_violation_samples": 0,
+          "invalid_episodes": 1,
+          "invalid_samples": 194,
+          "longest_cpu_violation_streak": 194,
+          "maximum_policy_statistic": 30,
+          "responsible_process_categories": {
+            "run_supervision_ui_tooling": 23,
+            "unknown": 5,
+            "unrelated_external_workload": 137
+          },
+          "samples": 210
+        },
+        "D_BURDEN_20_OVER_60": {
+          "cpu_violation_episodes": 1,
+          "cpu_violation_samples": 202,
+          "hard_violation_episodes": 0,
+          "hard_violation_samples": 0,
+          "invalid_episodes": 1,
+          "invalid_samples": 202,
+          "longest_cpu_violation_streak": 202,
+          "maximum_policy_statistic": 203.69500000000002,
+          "responsible_process_categories": {
+            "os_background_service": 202,
+            "run_supervision_ui_tooling": 202,
+            "unknown": 202,
+            "unrelated_external_workload": 172
+          },
+          "samples": 210
+        },
+        "D_BURDEN_25_OVER_30": {
+          "cpu_violation_episodes": 1,
+          "cpu_violation_samples": 206,
+          "hard_violation_episodes": 0,
+          "hard_violation_samples": 0,
+          "invalid_episodes": 1,
+          "invalid_samples": 206,
+          "longest_cpu_violation_streak": 206,
+          "maximum_policy_statistic": 222.91666666666669,
+          "responsible_process_categories": {
+            "os_background_service": 206,
+            "run_supervision_ui_tooling": 206,
+            "unknown": 206,
+            "unrelated_external_workload": 172
+          },
+          "samples": 210
+        }
+      },
+      "classified_or_unknown_retention_rate": 1.0,
+      "retained_process_records": 9374,
+      "sample_count": 210,
+      "unknown_process_contribution": {
+        "peak_aggregate_cpu_percent": 67.60000000000001,
+        "samples_at_or_above_50_percent": 36
+      }
+    },
+    "S5_SHORT_CPU_BURSTS": {
+      "candidates": {
+        "A_INSTANTANEOUS_CURRENT": {
+          "cpu_violation_episodes": 20,
+          "cpu_violation_samples": 37,
+          "hard_violation_episodes": 0,
+          "hard_violation_samples": 0,
+          "invalid_episodes": 20,
+          "invalid_samples": 37,
+          "longest_cpu_violation_streak": 6,
+          "maximum_policy_statistic": null,
+          "responsible_process_categories": {
+            "os_background_service": 7,
+            "run_supervision_ui_tooling": 29,
+            "unrelated_external_workload": 6
+          },
+          "samples": 120
+        },
+        "B_CONSECUTIVE_10": {
+          "cpu_violation_episodes": 0,
+          "cpu_violation_samples": 0,
+          "hard_violation_episodes": 0,
+          "hard_violation_samples": 0,
+          "invalid_episodes": 0,
+          "invalid_samples": 0,
+          "longest_cpu_violation_streak": 0,
+          "maximum_policy_statistic": 6,
+          "responsible_process_categories": {},
+          "samples": 120
+        },
+        "B_CONSECUTIVE_3": {
+          "cpu_violation_episodes": 3,
+          "cpu_violation_samples": 7,
+          "hard_violation_episodes": 0,
+          "hard_violation_samples": 0,
+          "invalid_episodes": 3,
+          "invalid_samples": 7,
+          "longest_cpu_violation_streak": 4,
+          "maximum_policy_statistic": 6,
+          "responsible_process_categories": {
+            "os_background_service": 4,
+            "run_supervision_ui_tooling": 4
+          },
+          "samples": 120
+        },
+        "B_CONSECUTIVE_5": {
+          "cpu_violation_episodes": 1,
+          "cpu_violation_samples": 2,
+          "hard_violation_episodes": 0,
+          "hard_violation_samples": 0,
+          "invalid_episodes": 1,
+          "invalid_samples": 2,
+          "longest_cpu_violation_streak": 2,
+          "maximum_policy_statistic": 6,
+          "responsible_process_categories": {
+            "os_background_service": 2
+          },
+          "samples": 120
+        },
+        "C_OCCUPANCY_12_OF_60": {
+          "cpu_violation_episodes": 1,
+          "cpu_violation_samples": 104,
+          "hard_violation_episodes": 0,
+          "hard_violation_samples": 0,
+          "invalid_episodes": 1,
+          "invalid_samples": 104,
+          "longest_cpu_violation_streak": 104,
+          "maximum_policy_statistic": 25,
+          "responsible_process_categories": {
+            "os_background_service": 2,
+            "run_supervision_ui_tooling": 21,
+            "unrelated_external_workload": 6
+          },
+          "samples": 120
+        },
+        "C_OCCUPANCY_5_OF_30": {
+          "cpu_violation_episodes": 1,
+          "cpu_violation_samples": 112,
+          "hard_violation_episodes": 0,
+          "hard_violation_samples": 0,
+          "invalid_episodes": 1,
+          "invalid_samples": 112,
+          "longest_cpu_violation_streak": 112,
+          "maximum_policy_statistic": 17,
+          "responsible_process_categories": {
+            "os_background_service": 6,
+            "run_supervision_ui_tooling": 27,
+            "unrelated_external_workload": 6
+          },
+          "samples": 120
+        },
+        "D_BURDEN_20_OVER_60": {
+          "cpu_violation_episodes": 1,
+          "cpu_violation_samples": 114,
+          "hard_violation_episodes": 0,
+          "hard_violation_samples": 0,
+          "invalid_episodes": 1,
+          "invalid_samples": 114,
+          "longest_cpu_violation_streak": 114,
+          "maximum_policy_statistic": 180.02666666666664,
+          "responsible_process_categories": {
+            "os_background_service": 114,
+            "run_supervision_ui_tooling": 114,
+            "unknown": 114,
+            "unrelated_external_workload": 55
+          },
+          "samples": 120
+        },
+        "D_BURDEN_25_OVER_30": {
+          "cpu_violation_episodes": 1,
+          "cpu_violation_samples": 116,
+          "hard_violation_episodes": 0,
+          "hard_violation_samples": 0,
+          "invalid_episodes": 1,
+          "invalid_samples": 116,
+          "longest_cpu_violation_streak": 116,
+          "maximum_policy_statistic": 197.6966666666667,
+          "responsible_process_categories": {
+            "os_background_service": 116,
+            "run_supervision_ui_tooling": 116,
+            "unknown": 116,
+            "unrelated_external_workload": 55
+          },
+          "samples": 120
+        }
+      },
+      "classified_or_unknown_retention_rate": 1.0,
+      "retained_process_records": 6069,
+      "sample_count": 120,
+      "unknown_process_contribution": {
+        "peak_aggregate_cpu_percent": 63.1,
+        "samples_at_or_above_50_percent": 6
+      }
+    },
+    "S6_BROWSER_WORKLOAD": {
+      "candidates": {
+        "A_INSTANTANEOUS_CURRENT": {
+          "cpu_violation_episodes": 7,
+          "cpu_violation_samples": 37,
+          "hard_violation_episodes": 1,
+          "hard_violation_samples": 45,
+          "invalid_episodes": 3,
+          "invalid_samples": 50,
+          "longest_cpu_violation_streak": 29,
+          "maximum_policy_statistic": null,
+          "responsible_process_categories": {
+            "run_supervision_ui_tooling": 30,
+            "unknown": 3,
+            "unrelated_external_workload": 3
+          },
+          "samples": 60
+        },
+        "B_CONSECUTIVE_10": {
+          "cpu_violation_episodes": 1,
+          "cpu_violation_samples": 20,
+          "hard_violation_episodes": 1,
+          "hard_violation_samples": 30,
+          "invalid_episodes": 1,
+          "invalid_samples": 30,
+          "longest_cpu_violation_streak": 20,
+          "maximum_policy_statistic": 29,
+          "responsible_process_categories": {
+            "run_supervision_ui_tooling": 20
+          },
+          "samples": 60
+        },
+        "B_CONSECUTIVE_3": {
+          "cpu_violation_episodes": 1,
+          "cpu_violation_samples": 27,
+          "hard_violation_episodes": 1,
+          "hard_violation_samples": 30,
+          "invalid_episodes": 1,
+          "invalid_samples": 30,
+          "longest_cpu_violation_streak": 27,
+          "maximum_policy_statistic": 29,
+          "responsible_process_categories": {
+            "run_supervision_ui_tooling": 27
+          },
+          "samples": 60
+        },
+        "B_CONSECUTIVE_5": {
+          "cpu_violation_episodes": 1,
+          "cpu_violation_samples": 25,
+          "hard_violation_episodes": 1,
+          "hard_violation_samples": 30,
+          "invalid_episodes": 1,
+          "invalid_samples": 30,
+          "longest_cpu_violation_streak": 25,
+          "maximum_policy_statistic": 29,
+          "responsible_process_categories": {
+            "run_supervision_ui_tooling": 25
+          },
+          "samples": 60
+        },
+        "C_OCCUPANCY_12_OF_60": {
+          "cpu_violation_episodes": 1,
+          "cpu_violation_samples": 41,
+          "hard_violation_episodes": 1,
+          "hard_violation_samples": 30,
+          "invalid_episodes": 1,
+          "invalid_samples": 50,
+          "longest_cpu_violation_streak": 41,
+          "maximum_policy_statistic": 37,
+          "responsible_process_categories": {
+            "run_supervision_ui_tooling": 21,
+            "unknown": 3,
+            "unrelated_external_workload": 2
+          },
+          "samples": 60
+        },
+        "C_OCCUPANCY_5_OF_30": {
+          "cpu_violation_episodes": 1,
+          "cpu_violation_samples": 48,
+          "hard_violation_episodes": 1,
+          "hard_violation_samples": 30,
+          "invalid_episodes": 1,
+          "invalid_samples": 50,
+          "longest_cpu_violation_streak": 48,
+          "maximum_policy_statistic": 29,
+          "responsible_process_categories": {
+            "run_supervision_ui_tooling": 28,
+            "unknown": 3,
+            "unrelated_external_workload": 2
+          },
+          "samples": 60
+        },
+        "D_BURDEN_20_OVER_60": {
+          "cpu_violation_episodes": 1,
+          "cpu_violation_samples": 52,
+          "hard_violation_episodes": 1,
+          "hard_violation_samples": 30,
+          "invalid_episodes": 1,
+          "invalid_samples": 52,
+          "longest_cpu_violation_streak": 52,
+          "maximum_policy_statistic": 185.37333333333333,
+          "responsible_process_categories": {
+            "os_background_service": 52,
+            "run_supervision_ui_tooling": 52,
+            "unknown": 52,
+            "unrelated_external_workload": 27,
+            "user_browser_workload": 10
+          },
+          "samples": 60
+        },
+        "D_BURDEN_25_OVER_30": {
+          "cpu_violation_episodes": 1,
+          "cpu_violation_samples": 54,
+          "hard_violation_episodes": 1,
+          "hard_violation_samples": 30,
+          "invalid_episodes": 1,
+          "invalid_samples": 54,
+          "longest_cpu_violation_streak": 54,
+          "maximum_policy_statistic": 226.57333333333335,
+          "responsible_process_categories": {
+            "os_background_service": 54,
+            "run_supervision_ui_tooling": 54,
+            "unknown": 54,
+            "unrelated_external_workload": 28,
+            "user_browser_workload": 10
+          },
+          "samples": 60
+        }
+      },
+      "classified_or_unknown_retention_rate": 1.0,
+      "retained_process_records": 3193,
+      "sample_count": 60,
+      "unknown_process_contribution": {
+        "peak_aggregate_cpu_percent": 61.1,
+        "samples_at_or_above_50_percent": 20
+      }
+    }
+  },
+  "selected_policy": "B_CONSECUTIVE_10",
+  "status": "complete_preregistered_comparison",
+  "sustained_detection": {
+    "A_INSTANTANEOUS_CURRENT": [
+      {
+        "detected": false,
+        "detection_latency_seconds": null,
+        "preexisting_violation_at_workload_start": false,
+        "repetition": "sustained_1"
+      },
+      {
+        "detected": true,
+        "detection_latency_seconds": 0.9999727500253357,
+        "preexisting_violation_at_workload_start": false,
+        "repetition": "sustained_2"
+      },
+      {
+        "detected": true,
+        "detection_latency_seconds": 1.0049069580272771,
+        "preexisting_violation_at_workload_start": true,
+        "repetition": "sustained_3"
+      }
+    ],
+    "B_CONSECUTIVE_10": [
+      {
+        "detected": true,
+        "detection_latency_seconds": 9.999918750021607,
+        "preexisting_violation_at_workload_start": false,
+        "repetition": "sustained_1"
+      },
+      {
+        "detected": true,
+        "detection_latency_seconds": 9.999962458037771,
+        "preexisting_violation_at_workload_start": false,
+        "repetition": "sustained_2"
+      },
+      {
+        "detected": true,
+        "detection_latency_seconds": 10.004894167010207,
+        "preexisting_violation_at_workload_start": false,
+        "repetition": "sustained_3"
+      }
+    ],
+    "B_CONSECUTIVE_3": [
+      {
+        "detected": true,
+        "detection_latency_seconds": 2.99992737499997,
+        "preexisting_violation_at_workload_start": false,
+        "repetition": "sustained_1"
+      },
+      {
+        "detected": true,
+        "detection_latency_seconds": 2.9999587910133414,
+        "preexisting_violation_at_workload_start": false,
+        "repetition": "sustained_2"
+      },
+      {
+        "detected": true,
+        "detection_latency_seconds": 3.0048981250147335,
+        "preexisting_violation_at_workload_start": false,
+        "repetition": "sustained_3"
+      }
+    ],
+    "B_CONSECUTIVE_5": [
+      {
+        "detected": true,
+        "detection_latency_seconds": 4.999924417003058,
+        "preexisting_violation_at_workload_start": false,
+        "repetition": "sustained_1"
+      },
+      {
+        "detected": true,
+        "detection_latency_seconds": 4.999961541034281,
+        "preexisting_violation_at_workload_start": false,
+        "repetition": "sustained_2"
+      },
+      {
+        "detected": true,
+        "detection_latency_seconds": 5.004902417014819,
+        "preexisting_violation_at_workload_start": false,
+        "repetition": "sustained_3"
+      }
+    ],
+    "C_OCCUPANCY_12_OF_60": [
+      {
+        "detected": true,
+        "detection_latency_seconds": 7.999917957989965,
+        "preexisting_violation_at_workload_start": false,
+        "repetition": "sustained_1"
+      },
+      {
+        "detected": false,
+        "detection_latency_seconds": null,
+        "preexisting_violation_at_workload_start": true,
+        "repetition": "sustained_2"
+      },
+      {
+        "detected": false,
+        "detection_latency_seconds": null,
+        "preexisting_violation_at_workload_start": true,
+        "repetition": "sustained_3"
+      }
+    ],
+    "C_OCCUPANCY_5_OF_30": [
+      {
+        "detected": true,
+        "detection_latency_seconds": 0.9999274170259014,
+        "preexisting_violation_at_workload_start": false,
+        "repetition": "sustained_1"
+      },
+      {
+        "detected": false,
+        "detection_latency_seconds": null,
+        "preexisting_violation_at_workload_start": true,
+        "repetition": "sustained_2"
+      },
+      {
+        "detected": false,
+        "detection_latency_seconds": null,
+        "preexisting_violation_at_workload_start": true,
+        "repetition": "sustained_3"
+      }
+    ],
+    "D_BURDEN_20_OVER_60": [
+      {
+        "detected": false,
+        "detection_latency_seconds": null,
+        "preexisting_violation_at_workload_start": true,
+        "repetition": "sustained_1"
+      },
+      {
+        "detected": false,
+        "detection_latency_seconds": null,
+        "preexisting_violation_at_workload_start": true,
+        "repetition": "sustained_2"
+      },
+      {
+        "detected": false,
+        "detection_latency_seconds": null,
+        "preexisting_violation_at_workload_start": true,
+        "repetition": "sustained_3"
+      }
+    ],
+    "D_BURDEN_25_OVER_30": [
+      {
+        "detected": false,
+        "detection_latency_seconds": null,
+        "preexisting_violation_at_workload_start": true,
+        "repetition": "sustained_1"
+      },
+      {
+        "detected": false,
+        "detection_latency_seconds": null,
+        "preexisting_violation_at_workload_start": true,
+        "repetition": "sustained_2"
+      },
+      {
+        "detected": false,
+        "detection_latency_seconds": null,
+        "preexisting_violation_at_workload_start": true,
+        "repetition": "sustained_3"
+      }
+    ]
+  },
+  "terminal_only_viability": {
+    "active_supervision_process_records": 0,
+    "all_retained_crash_handlers_launchd_owned": true,
+    "classification": "viable_with_inert_crash_handler_limitation",
+    "evidence": "Observed 0 active supervision records and 3600 records from 4 unique crash handlers across 900/900 samples; crash-handler peak CPU was 0.0 percent and launchd_owned_all=true.",
+    "inert_crash_handler_peak_cpu_percent": 0.0,
+    "limitations": "Terminal-only preflight was not separately exercised, and semantic case autonomy was intentionally not tested.",
+    "retained_inert_crash_handler_records": 3600,
+    "samples_with_inert_crash_handlers": 900,
+    "total_samples": 900,
+    "unique_inert_crash_handlers": 4,
+    "viable": true
+  }
+}

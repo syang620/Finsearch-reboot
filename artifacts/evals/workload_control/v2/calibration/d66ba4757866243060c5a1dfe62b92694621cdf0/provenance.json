@@ -1,0 +1,66 @@
+{
+  "evaluation": "semantic_workload_control_v2_final_complete_gate_calibration",
+  "status": "complete_preregistered_control_only_calibration_pending_final_independent_review",
+  "decision": "WORKLOAD_CONTROL_V2_VALIDATED",
+  "selected_policy": "B_CONSECUTIVE_10",
+  "analysis_implementation_sha": "d66ba4757866243060c5a1dfe62b92694621cdf0",
+  "raw_capture_implementation_sha": "baa2dd2e6a362cafa44a45b5f415aa643e009ffb",
+  "superseded_derived_comparisons": [
+    "39cfd03d7cc0717382ad5e89cee0f94cbf66e1f6bf8d77219031c55d1b7f01ff",
+    "fadfbf4e2bceaf73afb53ac2095772864d65b4f40c2d3b496fd93d1a9efcc742"
+  ],
+  "source_state": {
+    "pr31_head": "7667af52169fb12965adf5680bae58a74c7c977e",
+    "pr31_state": "draft_open_release_blocked_unmerged",
+    "pr32_head": "a6c264652096a0811693a82b901780b7bc8419ff",
+    "pr32_state": "draft_open_unmerged_reviewed",
+    "preregistration_commit": "974c381e9147a444eaf4c574f01079d240cb67d6"
+  },
+  "scope": {
+    "semantic_cases": 0,
+    "retrieval_calls": 0,
+    "reranker_calls": 0,
+    "model_inference_calls": 0,
+    "production_behavior_changes": false,
+    "semantic_dataset_or_scorer_changes": false,
+    "historical_artifact_changes": false
+  },
+  "hard_control_validation": {
+    "complete_registered_captures": {"viable": true, "scenarios": 6, "samples": 2370},
+    "global_ac_lpm_browser": {"viable": true, "scenarios": 6, "intentional_s6_browser_records": 30},
+    "awake_protection": {"viable": true, "active_samples": 2370, "total_samples": 2370, "all_alive_before_cleanup": true},
+    "s3_frozen_identity_and_event_binding": {"viable": true, "checks_passed": 10, "checks_total": 10, "frozen_provenance_sha256": "0ae5a69d1935ad7980b158adc98b5547f505b97602354661cdb47ac2286ab730"},
+    "terminal_only": {"viable": true, "sample_count": 900, "active_supervision_process_records": 0, "actual_browser_records": 0, "retained_inert_crash_handler_records": 3600, "unique_inert_crash_handlers": 4, "all_retained_crash_handlers_launchd_owned": true, "inert_crash_handler_peak_cpu_percent": 0.0}
+  },
+  "control_implementation_sha256": {
+    "scripts/diagnostics/observe_semantic_workload.py": "96bc78eb20e6200105d128190b66147bc18d5be6c7431359f7b45ecf62d8ed00",
+    "scripts/diagnostics/workload_control_v2.py": "3cf81da3c8cd4abeb4c8304f0f501af2b2262555def8e250b785cc8f50f78e63",
+    "scripts/diagnostics/run_workload_control_v2_calibration.py": "eb950de1a530666de29361850665c2d473c18f9d2b7b6d8a112c9cfafb75f60a",
+    "scripts/diagnostics/analyze_workload_control_v2_calibration.py": "a9cbec91ff2c146a99cbdaf6cb4f5b3e17b9cbee7308edd51d82c9db7199825c",
+    "scripts/diagnostics/simulate_semantic_preflight_readonly.py": "024d21fbfe5d52f3c3da2252ad7ebc57e422bf0e3f1c37f8175793dd4f621cf1"
+  },
+  "evidence_sha256": {
+    "preregistration": "0c6c4ac93cee1b23e33ea2ea93ded0a9b56092cd9898045b44a0bb7595463483",
+    "comparison": "30e12ac0dec23a212642cc56a892fde10db313f3a689f32a1839a68609acee63",
+    "report": "fbae67b17012c2877a39ca21c9764ad66fc64efdfca642e8c6138bad7d82a580",
+    "commands": "35c278820f031da9b7ec1b305c16e74e2943319a78934cc521eca5bfc70f9c30",
+    "contract": "4480075aa9506e7250835a9be92cd33c0b998d0f659aa20ea94fb8d1c1d66112",
+    "adr": "79ff91ca545401a5db4ffdebe8d6426b95253808314ab5027fa0be7f31bc1df7"
+  },
+  "historical_replay": {
+    "pr32_raw_sha256": "384003ae78c9b63e6b24a18e3067c19f2623a3554a8d67a14f39ce1b0f7c52a3",
+    "pr32_samples": 1200,
+    "interpretation": "lower_bound_only",
+    "historical_statuses_unchanged": true,
+    "sparse_prior_diagnostics": "indeterminate"
+  },
+  "verification": {
+    "focused_diagnostics": "39 passed",
+    "full_suite": "1217 passed, 47 subtests passed, 2 known pre-existing failures, 25 warnings",
+    "known_failures": [
+      "tests/agents/planner/test_planner_routes.py::test_planner_routes_match_expected_routes",
+      "tests/agents/retrieval/test_retrieval_workflow_no_tool_call.py::test_retrieval_no_tool_call_increments_attempts_and_stops_on_budget"
+    ]
+  },
+  "release_authorization": "none; final independent review is required and this calibration does not launch the semantic baseline"
+}

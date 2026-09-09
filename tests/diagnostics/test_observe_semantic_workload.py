@@ -56,8 +56,16 @@ def test_summary_classifies_single_short_sustained_and_recurring():
 
 
 def test_sanitize_redacts_user_home_recursively():
-    value = {"command": [f"{observer.PRIVATE_PREFIX}/bin/git", "safe"]}
-    assert observer.sanitize(value) == {"command": ["$USER_HOME/bin/git", "safe"]}
+    value = {
+        "command": [
+            f"{observer.PRIVATE_PREFIX}/bin/git",
+            "person@example.com",
+            "safe",
+        ]
+    }
+    assert observer.sanitize(value) == {
+        "command": ["$USER_HOME/bin/git", "$EMAIL", "safe"]
+    }
 
 
 def test_published_summary_reproduces_from_raw_observation():

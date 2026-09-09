@@ -1,0 +1,87 @@
+{
+  "evaluation": "semantic_workload_control_v2_calibration",
+  "status": "complete_preregistered_control_only_calibration_pending_independent_review",
+  "decision": "WORKLOAD_CONTROL_V2_VALIDATED",
+  "selected_policy": "B_CONSECUTIVE_10",
+  "source_state": {
+    "pr31_head": "7667af52169fb12965adf5680bae58a74c7c977e",
+    "pr31_state": "draft_open_release_blocked_unmerged",
+    "pr32_head": "a6c264652096a0811693a82b901780b7bc8419ff",
+    "pr32_state": "draft_open_unmerged_reviewed",
+    "preregistration_commit": "974c381e9147a444eaf4c574f01079d240cb67d6",
+    "capture_implementation_sha": "36b27b41422ee866ce453d17c3af8543d857a7b2",
+    "analysis_and_publication_implementation_sha": "7d68a8c96edf2d5f2f2a4996b88e384946973670"
+  },
+  "scope": {
+    "semantic_cases": 0,
+    "retrieval_calls": 0,
+    "model_inference_calls": 0,
+    "production_behavior_changes": false,
+    "semantic_dataset_or_scorer_changes": false,
+    "historical_artifact_changes": false
+  },
+  "frozen_semantic_inputs": {
+    "dataset_sha256": "f9148a29cb5b0f2da30b6ecf5017a9d6bc4dc9fd31523643557b93906646ad7c",
+    "optimization_manifest_sha256": "653a65e778a5633c4d1adc2d90ea7a56a578b81695e69d679f9d69915e54bec0",
+    "scorer_sha256": {
+      "src/evals/semantic_answer_v2.py": "9e75cd2cb339e56e34307bda01a33648d0ac40488b4eac4ab82f90348689b91b",
+      "src/evals/semantic_numeric_v2.py": "53d39fac5be8a9a2382f6fd2fa455dfd50141f1cf78552238ceb94a19cb1d433",
+      "src/evals/semantic_outcomes_v2.py": "cb16d0dbdfcbf3fc1a0e24aa2c308638c8d84f118c6da979159444437f2de140",
+      "src/evals/semantic_metrics_v2.py": "7f70745897b9cbb7119457e2fa840bd6b7ea7ce56dfbcdb9f299628e7d2f403e"
+    },
+    "v1_launcher_contract_sha256": "ce1646e554cdb3f8fb583db0ea93eeb278daa13a937c641320335c33c24845ad",
+    "v1_launcher_sha256": "87e98d0d9286ff18eddcc9e5bb5ab6c937bd3720269be3581b8fe27b08487ba0",
+    "original_launcher_sha256": "36727b2e53113dcf1cc84f052246fc206f72abf61e34280c01479334d6f4d211"
+  },
+  "control_implementation_sha256": {
+    "scripts/diagnostics/observe_semantic_workload.py": "83ea9e9e2f732902a9ad32f19f7802e9c662c2453e77f2357fc69945a6a8e68a",
+    "scripts/diagnostics/workload_control_v2.py": "608ad242eccc0e39667bc9421c6df020b52f9fb16ba9a13b80d591315cce8bf8",
+    "scripts/diagnostics/run_workload_control_v2_calibration.py": "0a034f71f0509ffe7f114f8421e17c38fa2e21d338527a97991f6e55aa41c875",
+    "scripts/diagnostics/analyze_workload_control_v2_calibration.py": "ea4b76fe9331c2ce8fccb0783a5476be7966d5af6d8c49f9bf4f3b72d580ddbd"
+  },
+  "evidence_sha256": {
+    "preregistration": "0c6c4ac93cee1b23e33ea2ea93ded0a9b56092cd9898045b44a0bb7595463483",
+    "raw_manifest": "9403a5f4e9ac3a5545c1aee82615ca18ccf379ff60ae25b1b7bf0d6dc846d5ed",
+    "comparison": "8d89e6ba6bb5373c0b0846a10968fed6d79adb70252d34e347168d102db67100",
+    "report": "f0cca2bbaa73c7a3fa656139bfbf7059bac859873dd4bab6dcc472917e68bf47",
+    "commands": "bc7e198a923fce598e9a2ac00d703aa559230f342bf5137666af99e5637f528d",
+    "contract": "2620af00b880590f4e24984f1497e1fcfd46d039936af142cb608be8768f1689",
+    "adr": "fd31781312cbd2d298d9d0271e7e11387e976d908347ab29717a33763bee932e"
+  },
+  "scenario_sample_counts": {
+    "S1_PASSIVE_SUPERVISED_IDLE": 900,
+    "S2_TERMINAL_ONLY_IDLE": 900,
+    "S3_REQUIRED_SERVICE_ACTIVITY": 180,
+    "S4_SUSTAINED_CPU_INTERFERENCE": 210,
+    "S5_SHORT_CPU_BURSTS": 120,
+    "S6_BROWSER_WORKLOAD": 60
+  },
+  "hard_control_observation": {
+    "ac_power_valid_all_samples": true,
+    "low_power_mode_zero_all_samples": true,
+    "awake_protection_required": true,
+    "actual_browser_detection": "independent hard rule",
+    "classification_retention_rate": 1.0
+  },
+  "historical_replay": {
+    "pr32_raw_sha256": "384003ae78c9b63e6b24a18e3067c19f2623a3554a8d67a14f39ce1b0f7c52a3",
+    "pr32_samples": 1200,
+    "historical_statuses_unchanged": true,
+    "sparse_prior_diagnostics": "indeterminate"
+  },
+  "publication_privacy": {
+    "user_home_replacement": "$USER_HOME",
+    "email_replacement": "$EMAIL",
+    "pre_sanitization_comparison_preserved_as_invalid_diagnostic": true
+  },
+  "verification": {
+    "focused_diagnostics": "22 passed",
+    "full_suite": "1200 passed, 47 subtests passed, 2 known pre-existing failures, 25 warnings",
+    "known_failures": [
+      "tests/agents/planner/test_planner_routes.py::test_planner_routes_match_expected_routes",
+      "tests/agents/retrieval/test_retrieval_workflow_no_tool_call.py::test_retrieval_no_tool_call_increments_attempts_and_stops_on_budget"
+    ],
+    "collection_note": "Default import mode reproduced the existing installed-tests namespace collision; the full result uses --import-mode=importlib."
+  },
+  "release_authorization": "none; independent review is required and this calibration does not launch the semantic baseline"
+}

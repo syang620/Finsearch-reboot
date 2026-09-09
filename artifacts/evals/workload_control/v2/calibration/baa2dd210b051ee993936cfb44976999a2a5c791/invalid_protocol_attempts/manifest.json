@@ -1,0 +1,18 @@
+{
+  "status": "excluded_invalid_protocol_attempts",
+  "official_comparison_input": false,
+  "attempts": [
+    {
+      "path": "browser_reopened_during_s1",
+      "reason": "User Chrome reopened during S1 and remained present in later supervised scenarios; the whole batch is excluded."
+    },
+    {
+      "path": "S2_chatgpt_and_browser_present",
+      "reason": "Active ChatGPT/Codex supervision and a real browser were present during the terminal-only scenario."
+    },
+    {
+      "path": "S2_quit_after_sampling_started",
+      "reason": "ChatGPT/Codex remained active for samples 0 through 19 before fully quitting."
+    }
+  ]
+}

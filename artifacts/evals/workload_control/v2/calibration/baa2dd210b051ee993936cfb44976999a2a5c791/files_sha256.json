@@ -1,0 +1,22 @@
+{
+  "COMMANDS.md": "a7c12ca57a950f24cc27f88bd3c29f81b8fd6414132266bc2d908220d9993e8e",
+  "REPORT.md": "02c131ff4e5ba1815d9c52ff633caa106fb91ab304e366d25a9721bd82dff3d7",
+  "comparison.json": "39cfd03d7cc0717382ad5e89cee0f94cbf66e1f6bf8d77219031c55d1b7f01ff",
+  "invalid_protocol_attempts/S2_chatgpt_and_browser_present/S2_TERMINAL_ONLY_IDLE.jsonl.gz": "fff3c5155865e69b14c8e1e9e49e78eb81befbf3114e250e1126aca82a819cde",
+  "invalid_protocol_attempts/S2_quit_after_sampling_started/S2_TERMINAL_ONLY_IDLE.jsonl.gz": "fca783362ce3c830a362580ba6f278977b4e987ff61f6a794a8d931f8cae75c6",
+  "invalid_protocol_attempts/browser_reopened_during_s1/S1_PASSIVE_SUPERVISED_IDLE.jsonl.gz": "6e8d9b81656d30ebb63de13cb09cdd87b36bfc59bbedbc43d0b3968be398864e",
+  "invalid_protocol_attempts/browser_reopened_during_s1/S3_REQUIRED_SERVICE_ACTIVITY.jsonl.gz": "dcfd301670898ebd192a99b9782765fcf2d1476084c22d8d9643341f14c104e4",
+  "invalid_protocol_attempts/browser_reopened_during_s1/S3_preflight.json": "788a74adecce62a377faa624923e21408bfc7fbeeb18cbb9bdaf93c5f5c2c3a6",
+  "invalid_protocol_attempts/browser_reopened_during_s1/S4_SUSTAINED_CPU_INTERFERENCE.jsonl.gz": "83af84c7fb4e914fd404d947d9f9144588740590f2efa830d4209bec6dada4a9",
+  "invalid_protocol_attempts/browser_reopened_during_s1/S5_SHORT_CPU_BURSTS.jsonl.gz": "f7a5beed79e1493cae43cb1838bf087cf67abb22ba4c92b87132051ed9815fef",
+  "invalid_protocol_attempts/browser_reopened_during_s1/S6_BROWSER_WORKLOAD.jsonl.gz": "c9956a6b7cd4d084be5d1550e0e7bc7fe9fa8e7c01b73774ad36fd82248483ce",
+  "invalid_protocol_attempts/manifest.json": "2d36fa504ffdb58ca44c0afe74641e783c650fcd3f4a90f55eb07f000d3c0ad6",
+  "provenance.json": "584b0097db764d66958452e8961fce0884f7afd993767e54d8b1396fef15c2ce",
+  "raw/S1_PASSIVE_SUPERVISED_IDLE.jsonl.gz": "6d6b9099e60a6174750c97eaf2fb046bf1e563507e4816caf5d784080dc85880",
+  "raw/S2_TERMINAL_ONLY_IDLE.jsonl.gz": "653138057f2811f0d4fb1c04bcef39f8432e974096ac509e5a1b75b515fae642",
+  "raw/S3_REQUIRED_SERVICE_ACTIVITY.jsonl.gz": "fc7e0fd93337efa3523fdfbd91c98c137c96fe0fa66408cebcf1c475c78fa270",
+  "raw/S3_preflight.json": "9cee12bde376e94be217f27ee4c1726f7eb824c3fe1c60873d490993ae26c060",
+  "raw/S4_SUSTAINED_CPU_INTERFERENCE.jsonl.gz": "5cac29464c1d4961f65ce09b7017b4578b549cef059237100bbb899f2ca3f0fc",
+  "raw/S5_SHORT_CPU_BURSTS.jsonl.gz": "87fd8a93587bb6d7477b38d359a4ce3976e39ebc5f13211629f37187c86cdfbb",
+  "raw/S6_BROWSER_WORKLOAD.jsonl.gz": "b085cc019d75ec315bc41b6d01a1ecba93a959d12bf6d11b9d64ef486e3cb163"
+}

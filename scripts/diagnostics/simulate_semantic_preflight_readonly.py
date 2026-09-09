@@ -75,7 +75,7 @@ def run(index_manifest, output):
         "ollama_version": get_json("http://127.0.0.1:11434/api/version"),
         "model_digests": {m["name"]: m.get("digest") for m in get_json("http://127.0.0.1:11434/api/tags")["models"]
                           if m["name"] in {config["analyst_model"].removeprefix("ollama/"), config["embedding_model"]}},
-        "qdrant": get_json("http://127.0.0.1:6333/").get("title"),
+        "qdrant": get_json("http://127.0.0.1:6333/"),
     }))
     records["steps"].append(timed("sec_service_health", sec_health))
 
