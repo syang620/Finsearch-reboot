@@ -10,10 +10,17 @@ launcher, v2.1 launcher, and all prior diagnostics unchanged.
 The new launcher requires both of the following explicit inputs:
 
 - `--workload-control-v2 B_CONSECUTIVE_10`
-- the GitHub comment ID of a clean Codex review of the exact integration head
+- a separately committed approval record created only after a clean Codex review
+  of the integration source
 
-It refuses any other policy and verifies the frozen PR33 preregistration,
-contract, classifier, and reviewed ancestry by SHA-256. The original PR31 quality
+The approval must name the reviewed source commit as exactly 40 lowercase
+hexadecimal characters, retain authenticated Codex/PR/comment provenance, and
+bind the launcher, adapter, contract, and classifier hashes. Runtime ancestry and
+diff checks reject any integration behavior change after that reviewed commit.
+The approval file does not exist in this candidate, so execution remains blocked
+until the separate post-review authorization step. The launcher refuses any other
+policy and verifies the frozen PR33 preregistration, contract, classifier, and
+reviewed ancestry by SHA-256. The original PR31 quality
 approval and v2.1 launcher approval remain required independently.
 
 After the second fixed preflight-settling boundary, the adapter samples continuously

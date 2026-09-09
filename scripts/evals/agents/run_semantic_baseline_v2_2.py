@@ -12,6 +12,7 @@ from contextlib import contextmanager
 import hashlib
 import json
 from pathlib import Path
+import re
 import shutil
 import subprocess
 import os
@@ -19,7 +20,6 @@ import os
 from evals.semantic_dataset_v2 import load_dataset, sha
 from scripts.evals.agents import run_semantic_baseline_v2_1 as frozen
 from scripts.evals.agents.semantic_workload_control_v2 import POLICY, WorkloadControlV2Monitor
-from scripts.evals.retrieval.run_benchmark_v3 import github_json
 
 
 PR33_REVIEWED_HEAD = "6101e3fc32a49460eef0b0a81ddb3c7c418d93f5"
@@ -33,6 +33,7 @@ EXPECTED_CONTROL_IMPLEMENTATION_SHA256 = "3cf81da3c8cd4abeb4c8304f0f501af2b22625
 EXPECTED_FROZEN_PROVENANCE_SHA256 = "0ae5a69d1935ad7980b158adc98b5547f505b97602354661cdb47ac2286ab730"
 LAUNCHER = Path("scripts/evals/agents/run_semantic_baseline_v2_2.py")
 ADAPTER = Path("scripts/evals/agents/semantic_workload_control_v2.py")
+INTEGRATION_APPROVAL = Path("docs/evals/semantic_answer_v2_control_v2_approval.json")
 
 
 def git(*args):
@@ -41,22 +42,6 @@ def git(*args):
 
 def file_sha(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
-
-
-def verify_review(comment_id, head):
-    comment = github_json(f"repos/syang620/Finsearch-reboot/issues/comments/{comment_id}")
-    body = comment["body"]
-    record = {
-        "pull_request": 32,
-        "review_comment_id": comment_id,
-        "review_url": comment["html_url"],
-        "reviewed_commit": head,
-        "review_body_sha256": hashlib.sha256(body.encode()).hexdigest(),
-    }
-    # Reuse the frozen benchmark verifier for bot author/type, PR/URL, body,
-    # clean-result wording, exact full-SHA findings, and open-PR provenance.
-    frozen.verify_remote_review(record)
-    return record
 
 
 def verify_opt_in(args):
@@ -77,7 +62,22 @@ def verify_opt_in(args):
     contract = json.loads(CONTROL_CONTRACT.read_text())
     if contract.get("selected_policy") != POLICY or contract.get("status") != "validated_frozen_candidate":
         raise ValueError("Validated workload-control-v2 contract changed")
-    return head, verify_review(args.integration_review_comment, head)
+    approval = frozen.committed_approval(args.integration_approval)
+    reviewed = approval.get("reviewed_commit")
+    if (approval.get("status") != "approved_for_one_semantic_v2_control_v2_attempt"
+        or not isinstance(reviewed, str)
+        or not re.fullmatch(r"[0-9a-f]{40}", reviewed)
+        or approval.get("selected_policy") != POLICY
+        or approval.get("integration_launcher_sha256") != file_sha(LAUNCHER)
+        or approval.get("integration_adapter_sha256") != file_sha(ADAPTER)
+        or approval.get("control_contract_sha256") != file_sha(CONTROL_CONTRACT)
+        or approval.get("control_implementation_sha256") != file_sha(CONTROL_IMPLEMENTATION)):
+        raise ValueError("Committed workload-control-v2 integration approval mismatch")
+    git("merge-base", "--is-ancestor", reviewed, "HEAD")
+    if git("diff", reviewed, "--", str(LAUNCHER), str(ADAPTER)):
+        raise ValueError("Integration behavior changed after its full-SHA review")
+    frozen.verify_remote_review(approval)
+    return head, approval
 
 
 def hard_control_only(state):
@@ -314,7 +314,7 @@ def main(argv=None):
     parser.add_argument("--env-file", type=Path)
     parser.add_argument("--out-root", type=Path, default=Path("artifacts/evals/semantic_answer/v2/baselines"))
     parser.add_argument("--workload-control-v2", required=True)
-    parser.add_argument("--integration-review-comment", type=int, required=True)
+    parser.add_argument("--integration-approval", type=Path, default=INTEGRATION_APPROVAL)
     args = parser.parse_args(argv)
     if args.env_file:
         from dotenv import load_dotenv

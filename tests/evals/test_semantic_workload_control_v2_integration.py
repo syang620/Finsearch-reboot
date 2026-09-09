@@ -95,7 +95,7 @@ def test_terminal_only_rejects_active_supervision_but_allows_inert_handler():
 
 
 def test_opt_in_is_explicit_and_hash_bound(monkeypatch):
-    args = SimpleNamespace(workload_control_v2=control.POLICY, integration_review_comment=123)
+    args = SimpleNamespace(workload_control_v2=control.POLICY, integration_approval=Path("approval"))
     monkeypatch.setattr(launcher.frozen, "clean_checkout", lambda: None)
     monkeypatch.setattr(launcher, "git", lambda *args: "a" * 40 if args[0] == "rev-parse" else "")
     expected = {
@@ -103,27 +103,50 @@ def test_opt_in_is_explicit_and_hash_bound(monkeypatch):
         launcher.CONTROL_CONTRACT: launcher.EXPECTED_CONTRACT_SHA256,
         launcher.CONTROL_IMPLEMENTATION: launcher.EXPECTED_CONTROL_IMPLEMENTATION_SHA256,
         launcher.FROZEN_PROVENANCE: launcher.EXPECTED_FROZEN_PROVENANCE_SHA256,
+        launcher.LAUNCHER: "launcher",
+        launcher.ADAPTER: "adapter",
     }
     monkeypatch.setattr(launcher, "file_sha", lambda path: expected[path])
-    monkeypatch.setattr(launcher, "verify_review", lambda comment, head: {"reviewed_commit": head})
+    approval = {
+        "status": "approved_for_one_semantic_v2_control_v2_attempt",
+        "reviewed_commit": "b" * 40,
+        "selected_policy": control.POLICY,
+        "integration_launcher_sha256": "launcher",
+        "integration_adapter_sha256": "adapter",
+        "control_contract_sha256": launcher.EXPECTED_CONTRACT_SHA256,
+        "control_implementation_sha256": launcher.EXPECTED_CONTROL_IMPLEMENTATION_SHA256,
+    }
+    monkeypatch.setattr(launcher.frozen, "committed_approval", lambda path: approval)
+    verified = []
+    monkeypatch.setattr(launcher.frozen, "verify_remote_review", lambda record: verified.append(record))
     head, review = launcher.verify_opt_in(args)
-    assert head == "a" * 40 and review["reviewed_commit"] == head
+    assert head == "a" * 40 and review == approval and verified == [approval]
     args.workload_control_v2 = "A_INSTANTANEOUS_CURRENT"
     with pytest.raises(ValueError, match="Explicit"):
         launcher.verify_opt_in(args)
 
 
-def test_exact_head_clean_review_is_required(monkeypatch):
-    monkeypatch.setattr(launcher, "github_json", lambda path: {
-        "body": "Codex Review: Didn't find any major issues.\n\n**Reviewed commit:** `abc123def0`",
-        "html_url": "https://example.test/review",
+@pytest.mark.parametrize("reviewed", ["short", "A" * 40, "g" * 40, None, 123])
+def test_integration_approval_requires_full_lowercase_sha(monkeypatch, reviewed):
+    args = SimpleNamespace(workload_control_v2=control.POLICY, integration_approval=Path("approval"))
+    monkeypatch.setattr(launcher.frozen, "clean_checkout", lambda: None)
+    monkeypatch.setattr(launcher, "git", lambda *args: "a" * 40 if args[0] == "rev-parse" else "")
+    monkeypatch.setattr(launcher, "file_sha", lambda path: {
+        launcher.PREREGISTRATION: launcher.EXPECTED_PREREGISTRATION_SHA256,
+        launcher.CONTROL_CONTRACT: launcher.EXPECTED_CONTRACT_SHA256,
+        launcher.CONTROL_IMPLEMENTATION: launcher.EXPECTED_CONTROL_IMPLEMENTATION_SHA256,
+        launcher.FROZEN_PROVENANCE: launcher.EXPECTED_FROZEN_PROVENANCE_SHA256,
+        launcher.LAUNCHER: "launcher", launcher.ADAPTER: "adapter",
+    }[path])
+    monkeypatch.setattr(launcher.frozen, "committed_approval", lambda path: {
+        "status": "approved_for_one_semantic_v2_control_v2_attempt",
+        "reviewed_commit": reviewed, "selected_policy": control.POLICY,
+        "integration_launcher_sha256": "launcher", "integration_adapter_sha256": "adapter",
+        "control_contract_sha256": launcher.EXPECTED_CONTRACT_SHA256,
+        "control_implementation_sha256": launcher.EXPECTED_CONTROL_IMPLEMENTATION_SHA256,
     })
-    verified = []
-    monkeypatch.setattr(launcher.frozen, "verify_remote_review", lambda record: verified.append(record))
-    head = "abc123def0000000000000000000000000000000"
-    record = launcher.verify_review(1, head)
-    assert record["reviewed_commit"] == head
-    assert record["pull_request"] == 32 and verified == [record]
+    with pytest.raises(ValueError, match="approval mismatch"):
+        launcher.verify_opt_in(args)
 
 
 def test_adapter_restores_frozen_launcher_hooks(monkeypatch):
