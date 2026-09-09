@@ -15,8 +15,9 @@ The new launcher requires both of the following explicit inputs:
 
 The approval must name the reviewed source commit as exactly 40 lowercase
 hexadecimal characters, retain authenticated Codex/PR/comment provenance, and
-bind the launcher, adapter, contract, and classifier hashes. Runtime ancestry and
-diff checks reject any integration behavior change after that reviewed commit.
+bind the launcher, adapter, contract, classifier, process collector, and observation
+helper hashes. Runtime ancestry and diff checks reject any integration or transitive
+monitor-dependency change after that reviewed commit.
 The approval file does not exist in this candidate, so execution remains blocked
 until the separate post-review authorization step. The launcher refuses any other
 policy and verifies the frozen PR33 preregistration, contract, classifier, and

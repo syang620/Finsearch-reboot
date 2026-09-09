@@ -26,10 +26,14 @@ PR33_REVIEWED_HEAD = "6101e3fc32a49460eef0b0a81ddb3c7c418d93f5"
 PREREGISTRATION = Path("docs/evals/workload_control_v2_preregistration.json")
 CONTROL_CONTRACT = Path("docs/evals/workload_control_v2_contract.json")
 CONTROL_IMPLEMENTATION = Path("scripts/diagnostics/workload_control_v2.py")
+CONTROL_COLLECTOR = Path("scripts/diagnostics/run_workload_control_v2_calibration.py")
+CONTROL_OBSERVER = Path("scripts/diagnostics/observe_semantic_workload.py")
 FROZEN_PROVENANCE = Path("artifacts/evals/semantic_answer/v2/controlled_baselines/488e112a64b51fb2a5ad159194df993b2ff04f11/started.json")
 EXPECTED_PREREGISTRATION_SHA256 = "0c6c4ac93cee1b23e33ea2ea93ded0a9b56092cd9898045b44a0bb7595463483"
 EXPECTED_CONTRACT_SHA256 = "903057b038684a34655dfd6884a471ade4472d6b36047cee94669ec9cdb57e76"
 EXPECTED_CONTROL_IMPLEMENTATION_SHA256 = "3cf81da3c8cd4abeb4c8304f0f501af2b2262555def8e250b785cc8f50f78e63"
+EXPECTED_CONTROL_COLLECTOR_SHA256 = "eb950de1a530666de29361850665c2d473c18f9d2b7b6d8a112c9cfafb75f60a"
+EXPECTED_CONTROL_OBSERVER_SHA256 = "96bc78eb20e6200105d128190b66147bc18d5be6c7431359f7b45ecf62d8ed00"
 EXPECTED_FROZEN_PROVENANCE_SHA256 = "0ae5a69d1935ad7980b158adc98b5547f505b97602354661cdb47ac2286ab730"
 LAUNCHER = Path("scripts/evals/agents/run_semantic_baseline_v2_2.py")
 ADAPTER = Path("scripts/evals/agents/semantic_workload_control_v2.py")
@@ -54,6 +58,8 @@ def verify_opt_in(args):
         PREREGISTRATION: EXPECTED_PREREGISTRATION_SHA256,
         CONTROL_CONTRACT: EXPECTED_CONTRACT_SHA256,
         CONTROL_IMPLEMENTATION: EXPECTED_CONTROL_IMPLEMENTATION_SHA256,
+        CONTROL_COLLECTOR: EXPECTED_CONTROL_COLLECTOR_SHA256,
+        CONTROL_OBSERVER: EXPECTED_CONTROL_OBSERVER_SHA256,
         FROZEN_PROVENANCE: EXPECTED_FROZEN_PROVENANCE_SHA256,
     }
     for path, digest in expected.items():
@@ -71,10 +77,13 @@ def verify_opt_in(args):
         or approval.get("integration_launcher_sha256") != file_sha(LAUNCHER)
         or approval.get("integration_adapter_sha256") != file_sha(ADAPTER)
         or approval.get("control_contract_sha256") != file_sha(CONTROL_CONTRACT)
-        or approval.get("control_implementation_sha256") != file_sha(CONTROL_IMPLEMENTATION)):
+        or approval.get("control_implementation_sha256") != file_sha(CONTROL_IMPLEMENTATION)
+        or approval.get("control_collector_sha256") != file_sha(CONTROL_COLLECTOR)
+        or approval.get("control_observer_sha256") != file_sha(CONTROL_OBSERVER)):
         raise ValueError("Committed workload-control-v2 integration approval mismatch")
     git("merge-base", "--is-ancestor", reviewed, "HEAD")
-    if git("diff", reviewed, "--", str(LAUNCHER), str(ADAPTER)):
+    if git("diff", reviewed, "--", str(LAUNCHER), str(ADAPTER),
+           str(CONTROL_IMPLEMENTATION), str(CONTROL_COLLECTOR), str(CONTROL_OBSERVER)):
         raise ValueError("Integration behavior changed after its full-SHA review")
     frozen.verify_remote_review(approval)
     return head, approval
@@ -240,6 +249,8 @@ def finalize_output(out, monitor_summary, review):
             **monitor_summary,
             "contract_sha256": file_sha(CONTROL_CONTRACT),
             "control_implementation_sha256": file_sha(CONTROL_IMPLEMENTATION),
+            "control_collector_sha256": file_sha(CONTROL_COLLECTOR),
+            "control_observer_sha256": file_sha(CONTROL_OBSERVER),
             "integration_launcher_sha256": file_sha(LAUNCHER),
             "integration_adapter_sha256": file_sha(ADAPTER),
             "integration_review": review,
@@ -271,6 +282,8 @@ async def run(args):
         provenance={
             "implementation_sha": head,
             "control_implementation_sha256": file_sha(CONTROL_IMPLEMENTATION),
+            "control_collector_sha256": file_sha(CONTROL_COLLECTOR),
+            "control_observer_sha256": file_sha(CONTROL_OBSERVER),
             "integration_launcher_sha256": file_sha(LAUNCHER),
             "integration_adapter_sha256": file_sha(ADAPTER),
             "integration_review": review,

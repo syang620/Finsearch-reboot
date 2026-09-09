@@ -97,11 +97,19 @@ def test_terminal_only_rejects_active_supervision_but_allows_inert_handler():
 def test_opt_in_is_explicit_and_hash_bound(monkeypatch):
     args = SimpleNamespace(workload_control_v2=control.POLICY, integration_approval=Path("approval"))
     monkeypatch.setattr(launcher.frozen, "clean_checkout", lambda: None)
-    monkeypatch.setattr(launcher, "git", lambda *args: "a" * 40 if args[0] == "rev-parse" else "")
+    git_calls = []
+
+    def git(*arguments):
+        git_calls.append(arguments)
+        return "a" * 40 if arguments[0] == "rev-parse" else ""
+
+    monkeypatch.setattr(launcher, "git", git)
     expected = {
         launcher.PREREGISTRATION: launcher.EXPECTED_PREREGISTRATION_SHA256,
         launcher.CONTROL_CONTRACT: launcher.EXPECTED_CONTRACT_SHA256,
         launcher.CONTROL_IMPLEMENTATION: launcher.EXPECTED_CONTROL_IMPLEMENTATION_SHA256,
+        launcher.CONTROL_COLLECTOR: launcher.EXPECTED_CONTROL_COLLECTOR_SHA256,
+        launcher.CONTROL_OBSERVER: launcher.EXPECTED_CONTROL_OBSERVER_SHA256,
         launcher.FROZEN_PROVENANCE: launcher.EXPECTED_FROZEN_PROVENANCE_SHA256,
         launcher.LAUNCHER: "launcher",
         launcher.ADAPTER: "adapter",
@@ -115,12 +123,17 @@ def test_opt_in_is_explicit_and_hash_bound(monkeypatch):
         "integration_adapter_sha256": "adapter",
         "control_contract_sha256": launcher.EXPECTED_CONTRACT_SHA256,
         "control_implementation_sha256": launcher.EXPECTED_CONTROL_IMPLEMENTATION_SHA256,
+        "control_collector_sha256": launcher.EXPECTED_CONTROL_COLLECTOR_SHA256,
+        "control_observer_sha256": launcher.EXPECTED_CONTROL_OBSERVER_SHA256,
     }
     monkeypatch.setattr(launcher.frozen, "committed_approval", lambda path: approval)
     verified = []
     monkeypatch.setattr(launcher.frozen, "verify_remote_review", lambda record: verified.append(record))
     head, review = launcher.verify_opt_in(args)
     assert head == "a" * 40 and review == approval and verified == [approval]
+    diff_call = next(call for call in git_calls if call[0] == "diff")
+    assert str(launcher.CONTROL_COLLECTOR) in diff_call
+    assert str(launcher.CONTROL_OBSERVER) in diff_call
     args.workload_control_v2 = "A_INSTANTANEOUS_CURRENT"
     with pytest.raises(ValueError, match="Explicit"):
         launcher.verify_opt_in(args)
@@ -135,6 +148,8 @@ def test_integration_approval_requires_full_lowercase_sha(monkeypatch, reviewed)
         launcher.PREREGISTRATION: launcher.EXPECTED_PREREGISTRATION_SHA256,
         launcher.CONTROL_CONTRACT: launcher.EXPECTED_CONTRACT_SHA256,
         launcher.CONTROL_IMPLEMENTATION: launcher.EXPECTED_CONTROL_IMPLEMENTATION_SHA256,
+        launcher.CONTROL_COLLECTOR: launcher.EXPECTED_CONTROL_COLLECTOR_SHA256,
+        launcher.CONTROL_OBSERVER: launcher.EXPECTED_CONTROL_OBSERVER_SHA256,
         launcher.FROZEN_PROVENANCE: launcher.EXPECTED_FROZEN_PROVENANCE_SHA256,
         launcher.LAUNCHER: "launcher", launcher.ADAPTER: "adapter",
     }[path])
@@ -144,6 +159,8 @@ def test_integration_approval_requires_full_lowercase_sha(monkeypatch, reviewed)
         "integration_launcher_sha256": "launcher", "integration_adapter_sha256": "adapter",
         "control_contract_sha256": launcher.EXPECTED_CONTRACT_SHA256,
         "control_implementation_sha256": launcher.EXPECTED_CONTROL_IMPLEMENTATION_SHA256,
+        "control_collector_sha256": launcher.EXPECTED_CONTROL_COLLECTOR_SHA256,
+        "control_observer_sha256": launcher.EXPECTED_CONTROL_OBSERVER_SHA256,
     })
     with pytest.raises(ValueError, match="approval mismatch"):
         launcher.verify_opt_in(args)
