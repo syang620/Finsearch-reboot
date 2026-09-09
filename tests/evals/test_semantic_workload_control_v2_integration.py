@@ -309,6 +309,44 @@ def test_evidence_copy_failure_leaves_no_eligible_completion(tmp_path, monkeypat
     assert not (out / "workload_control_v2_completion.json").exists()
 
 
+def test_raw_evidence_fsync_failure_leaves_no_eligible_completion(tmp_path, monkeypatch):
+    out = finalization_output(tmp_path)
+    raw = tmp_path / "raw.jsonl"
+    raw.write_text('{"type":"footer"}\n')
+    monkeypatch.setattr(launcher, "sync_file_and_parent", lambda path: (_ for _ in ()).throw(OSError("raw fsync")))
+    with pytest.raises(OSError, match="raw fsync"):
+        launcher.copy_raw_evidence(raw, out)
+    assert not (out / "workload_control_v2_completion.json").exists()
+
+
+def test_summary_fsync_failure_leaves_no_eligible_completion(tmp_path, monkeypatch):
+    out = finalization_output(tmp_path)
+    monkeypatch.setattr(launcher, "load_dataset", lambda path: ([{"id": "A"}], {}))
+    monkeypatch.setattr(launcher.frozen, "deterministic_breakdowns", lambda cases, rows: {"cases": len(rows)})
+    monkeypatch.setattr(
+        launcher,
+        "sync_file_and_parent",
+        lambda path: (_ for _ in ()).throw(OSError("summary fsync"))
+        if Path(path).name == "deterministic_summary.json" else None,
+    )
+    with pytest.raises(OSError, match="summary fsync"):
+        launcher.finalize_artifacts(out, {"valid": True}, None)
+    assert not (out / "workload_control_v2_completion.json").exists()
+
+
+def test_manifest_fsync_failure_leaves_no_eligible_completion(tmp_path, monkeypatch):
+    out = finalization_output(tmp_path)
+    monkeypatch.setattr(launcher, "load_dataset", lambda path: ([{"id": "A"}], {}))
+    monkeypatch.setattr(launcher.frozen, "deterministic_breakdowns", lambda cases, rows: {"cases": len(rows)})
+    def fail_manifest_sync(path):
+        if Path(path).name == "workload_control_v2_files_sha256.json":
+            raise OSError("manifest fsync")
+    monkeypatch.setattr(launcher, "sync_file_and_parent", fail_manifest_sync)
+    with pytest.raises(OSError, match="manifest fsync"):
+        launcher.finalize_artifacts(out, {"valid": True}, None)
+    assert not (out / "workload_control_v2_completion.json").exists()
+
+
 def test_closed_raw_evidence_includes_footer_and_final_sample(tmp_path):
     raw = tmp_path / "raw.jsonl"
     out = tmp_path / "out"
@@ -427,6 +465,56 @@ def test_run_orders_closed_monitor_before_artifact_publication(tmp_path, monkeyp
 
     asyncio.run(launcher.run(SimpleNamespace(out_root=tmp_path / "out")))
     assert events == ["start", "stop", "awake_terminate", "awake_wait", "copy", "artifacts", "finalize"]
+
+
+def test_run_preserves_closed_raw_evidence_on_monitor_error(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    head = "c" * 40
+    copied = []
+
+    class FakeMonitor:
+        def __init__(self, *args, **kwargs):
+            self.raw_path = Path(args[0])
+
+        def start(self):
+            self.raw_path.parent.mkdir(parents=True, exist_ok=True)
+            self.raw_path.write_text('{"type":"footer","sample_count":1}\n')
+
+        def stop(self):
+            return {"valid": False, "sample_count": 1, "first_violation": None, "monitor_error": "collector failed"}
+
+    class Awake:
+        def terminate(self):
+            pass
+
+        def wait(self, timeout):
+            pass
+
+    monkeypatch.setattr(launcher, "WorkloadControlV2Monitor", FakeMonitor)
+    monkeypatch.setattr(launcher.subprocess, "Popen", lambda *args, **kwargs: Awake())
+    monkeypatch.setattr(launcher, "verify_opt_in", lambda args: (head, {}))
+    monkeypatch.setattr(launcher, "file_sha", lambda path: "digest")
+
+    @contextmanager
+    def adapter(start_monitor, monitor):
+        start_monitor()
+        yield
+
+    monkeypatch.setattr(launcher, "frozen_launcher_adapter", adapter)
+
+    async def run_once(args):
+        out = args.out_root / head
+        out.mkdir(parents=True)
+        (out / "completion.json").write_text(json.dumps({"invalidity_reasons": []}))
+
+    monkeypatch.setattr(launcher.frozen, "run_once", run_once)
+    monkeypatch.setattr(launcher, "copy_raw_evidence", lambda raw, out: copied.append(out / "workload_control_v2.jsonl") or "digest")
+    monkeypatch.setattr(launcher, "finalize_output", lambda *args, **kwargs: None)
+    monkeypatch.setattr(launcher, "finalize_artifacts", lambda *args, **kwargs: pytest.fail("invalid monitor must skip official artifacts"))
+
+    with pytest.raises(RuntimeError, match="collector failed"):
+        asyncio.run(launcher.run(SimpleNamespace(out_root=tmp_path / "out")))
+    assert copied == [tmp_path / "out" / head / "workload_control_v2.jsonl"]
 
 
 def test_run_monitor_shutdown_failure_publishes_only_ineligible_completion(tmp_path, monkeypatch):

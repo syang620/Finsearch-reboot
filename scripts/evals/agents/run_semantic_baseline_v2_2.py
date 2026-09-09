@@ -268,14 +268,18 @@ def finalize_artifacts(out, monitor_summary, finalization_error=None):
         return
     cases, _ = load_dataset(frozen.DATA)
     rows = [json.loads(line) for line in (out / "deterministic.jsonl").read_text().splitlines()]
-    frozen.save(out / "deterministic_summary.json", frozen.deterministic_breakdowns(cases, rows))
-    frozen.save(out / "workload_control_v2_files_sha256.json", {
+    summary_path = out / "deterministic_summary.json"
+    frozen.save(summary_path, frozen.deterministic_breakdowns(cases, rows))
+    sync_file_and_parent(summary_path)
+    manifest_path = out / "workload_control_v2_files_sha256.json"
+    frozen.save(manifest_path, {
         path.name: sha(path) for path in sorted(out.iterdir())
         if path.is_file() and path.name not in {
             "workload_control_v2_files_sha256.json",
             "workload_control_v2_completion.json",
         }
     })
+    sync_file_and_parent(manifest_path)
 
 
 def copy_raw_evidence(raw, out):
@@ -283,7 +287,22 @@ def copy_raw_evidence(raw, out):
     if destination.exists():
         raise FileExistsError(destination)
     shutil.copyfile(raw, destination)
+    sync_file_and_parent(destination)
     return file_sha(destination)
+
+
+def sync_file_and_parent(path):
+    path = Path(path)
+    descriptor = os.open(path, os.O_RDONLY)
+    try:
+        os.fsync(descriptor)
+    finally:
+        os.close(descriptor)
+    directory = os.open(path.parent, os.O_RDONLY)
+    try:
+        os.fsync(directory)
+    finally:
+        os.close(directory)
 
 
 def publish_authoritative(path, record):
@@ -442,11 +461,12 @@ async def run(args):
         raise RuntimeError("Frozen semantic launcher produced no output")
     if summary.get("monitor_error"):
         finalization_error = finalization_error or RuntimeError(summary["monitor_error"])
-    if out.exists() and summary.get("monitor_error") is None:
+    if out.exists():
         try:
             raw_digest = copy_raw_evidence(raw, out)
             summary["raw_sha256"] = raw_digest
-            finalize_artifacts(out, summary, finalization_error or failure)
+            if summary.get("monitor_error") is None:
+                finalize_artifacts(out, summary, finalization_error or failure)
         except BaseException as exc:
             finalization_error = finalization_error or exc
     if out.exists():
