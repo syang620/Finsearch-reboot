@@ -64,15 +64,38 @@ def test_registration_is_committed_and_hash_bound(tmp_path, monkeypatch):
         operation.registration()
 
 
-def test_fresh_registration_is_distinct_and_source_review_bound():
+def test_historical_fresh_registration_is_distinct_and_now_stale():
     approval = json.loads(fresh_operation.AUTH.read_text())
     assert approval["authorization_id"] == fresh_operation.AUTHORIZATION_ID
     assert approval["reviewed_commit"] == fresh_operation.REVIEWED_SOURCE_HEAD
     assert approval["operation_wrapper"] == str(fresh_operation.WRAPPER)
     assert approval["operation_wrapper_sha256"] == fresh_operation.sha(fresh_operation.WRAPPER)
-    assert approval["integration_launcher_sha256"] == fresh_operation.sha(fresh_operation.LAUNCHER)
+    assert approval["integration_launcher_sha256"] != fresh_operation.sha(fresh_operation.LAUNCHER)
     for name in ("AUTH", "WRAPPER", "MARKER", "OUTCOME", "LOG", "STAGING"):
         assert getattr(fresh_operation, name) != getattr(operation, name)
+
+
+def test_existing_fresh_v2_approval_rejects_launcher_hash_before_consumption(monkeypatch):
+    approval_path = sigterm_operation.AUTH
+
+    def git(*args):
+        if args == ("status", "--porcelain"):
+            return ""
+        if args == ("rev-parse", "HEAD"):
+            return "c" * 40
+        return ""
+
+    monkeypatch.setattr(sigterm_operation, "git", git)
+    monkeypatch.setattr(
+        sigterm_operation.subprocess,
+        "check_output",
+        lambda command: approval_path.read_bytes(),
+    )
+    with pytest.raises(ValueError, match="Registered fresh-v2 control-v2 authorization changed"):
+        sigterm_operation.registration()
+    for path in (sigterm_operation.MARKER, sigterm_operation.OUTCOME, sigterm_operation.LOG):
+        assert not path.exists()
+    assert not sigterm_operation.STAGING.exists()
 
 
 def test_sigterm_registration_paths_are_new_and_inactive():

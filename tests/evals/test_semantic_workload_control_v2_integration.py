@@ -1,5 +1,5 @@
 import asyncio
-from contextlib import nullcontext
+from contextlib import contextmanager, nullcontext
 import json
 from pathlib import Path
 from types import SimpleNamespace
@@ -242,6 +242,198 @@ def test_finalizer_cannot_turn_failed_control_into_baseline(tmp_path, monkeypatc
     assert completion["status"] == "invalid_diagnostic"
     assert not completion["official_baseline_eligible"]
     assert completion["invalidity_reasons"] == ["workload_control_v2_failed"]
+
+
+def finalization_output(tmp_path):
+    out = tmp_path / "out"
+    out.mkdir()
+    (out / "completion.json").write_text(json.dumps({
+        "invalidity_reasons": ["workload_control_v2_pending"],
+        "official_baseline_eligible": False,
+    }))
+    (out / "deterministic.jsonl").write_text('{"case_id":"A"}\n')
+    return out
+
+
+def test_dataset_load_failure_leaves_frozen_completion_ineligible(tmp_path, monkeypatch):
+    out = finalization_output(tmp_path)
+    monkeypatch.setattr(launcher, "load_dataset", lambda path: (_ for _ in ()).throw(OSError("dataset load")))
+    with pytest.raises(OSError, match="dataset load"):
+        launcher.prepare_output(out, {})
+    completion = json.loads((out / "completion.json").read_text())
+    assert completion["official_baseline_eligible"] is False
+    assert not (out / "workload_control_v2_completion.json").exists()
+
+
+def test_summary_write_failure_leaves_no_eligible_completion(tmp_path, monkeypatch):
+    out = finalization_output(tmp_path)
+    monkeypatch.setattr(launcher, "load_dataset", lambda path: ([{"id": "A"}], {}))
+    monkeypatch.setattr(launcher.frozen, "deterministic_breakdowns", lambda cases, rows: {"cases": len(rows)})
+    original_save = launcher.frozen.save
+
+    def fail_summary(path, value):
+        if Path(path).name == "deterministic_summary.json":
+            raise OSError("summary write")
+        return original_save(path, value)
+
+    monkeypatch.setattr(launcher.frozen, "save", fail_summary)
+    with pytest.raises(OSError, match="summary write"):
+        launcher.prepare_output(out, {})
+    assert not (out / "workload_control_v2_completion.json").exists()
+
+
+def test_manifest_write_failure_leaves_no_eligible_completion(tmp_path, monkeypatch):
+    out = finalization_output(tmp_path)
+    monkeypatch.setattr(launcher, "load_dataset", lambda path: ([{"id": "A"}], {}))
+    monkeypatch.setattr(launcher.frozen, "deterministic_breakdowns", lambda cases, rows: {"cases": len(rows)})
+    original_save = launcher.frozen.save
+
+    def fail_manifest(path, value):
+        if Path(path).name == "workload_control_v2_files_sha256.json":
+            raise OSError("manifest write")
+        return original_save(path, value)
+
+    monkeypatch.setattr(launcher.frozen, "save", fail_manifest)
+    with pytest.raises(OSError, match="manifest write"):
+        launcher.prepare_output(out, {})
+    assert not (out / "workload_control_v2_completion.json").exists()
+
+
+def test_evidence_copy_failure_leaves_no_eligible_completion(tmp_path, monkeypatch):
+    out = finalization_output(tmp_path)
+    raw = tmp_path / "raw.jsonl"
+    raw.write_text('{"type":"header"}\n')
+    monkeypatch.setattr(launcher.shutil, "copyfile", lambda source, destination: (_ for _ in ()).throw(OSError("evidence copy")))
+    with pytest.raises(OSError, match="evidence copy"):
+        launcher.copy_raw_evidence(raw, out)
+    assert not (out / "workload_control_v2_completion.json").exists()
+
+
+def test_monitor_violation_during_finalization_is_ineligible(tmp_path, monkeypatch):
+    out = finalization_output(tmp_path)
+    monkeypatch.setattr(launcher, "file_sha", lambda path: "digest")
+    launcher.finalize_output(
+        out,
+        {"valid": False, "sample_count": 11, "first_violation": {"sample_index": 10}},
+        {"reviewed_commit": "a" * 40},
+    )
+    completion = json.loads((out / "workload_control_v2_completion.json").read_text())
+    assert completion["status"] == "invalid_diagnostic"
+    assert completion["official_baseline_eligible"] is False
+
+
+def test_monitor_shutdown_failure_is_ineligible_after_artifact_preparation(tmp_path, monkeypatch):
+    out = finalization_output(tmp_path)
+    monkeypatch.setattr(launcher, "file_sha", lambda path: "digest")
+    launcher.finalize_output(
+        out,
+        {"valid": False, "sample_count": 12, "first_violation": None},
+        {"reviewed_commit": "a" * 40},
+        RuntimeError("monitor shutdown failed"),
+    )
+    completion = json.loads((out / "workload_control_v2_completion.json").read_text())
+    assert completion["status"] == "invalid_diagnostic"
+    assert completion["official_baseline_eligible"] is False
+    assert completion["artifact_finalization_error"]["type"] == "RuntimeError"
+
+
+def test_run_keeps_monitor_active_through_artifact_preparation(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    events = []
+    head = "a" * 40
+
+    class FakeMonitor:
+        def __init__(self, *args, **kwargs):
+            self.raw_path = Path(args[0])
+
+        def start(self):
+            events.append("start")
+            self.raw_path.parent.mkdir(parents=True, exist_ok=True)
+            self.raw_path.write_text("raw")
+
+        def stop(self):
+            events.append("stop")
+            return {"valid": True, "sample_count": 1, "first_violation": None}
+
+    class Awake:
+        def terminate(self):
+            events.append("awake_terminate")
+
+        def wait(self, timeout):
+            events.append("awake_wait")
+
+    monkeypatch.setattr(launcher, "WorkloadControlV2Monitor", FakeMonitor)
+    monkeypatch.setattr(launcher.subprocess, "Popen", lambda *args, **kwargs: Awake())
+    monkeypatch.setattr(launcher, "verify_opt_in", lambda args: (head, {}))
+    monkeypatch.setattr(launcher, "file_sha", lambda path: "digest")
+
+    @contextmanager
+    def adapter(start_monitor, monitor):
+        start_monitor()
+        yield
+
+    monkeypatch.setattr(launcher, "frozen_launcher_adapter", adapter)
+
+    async def run_once(args):
+        out = args.out_root / head
+        out.mkdir(parents=True)
+        (out / "completion.json").write_text(json.dumps({"invalidity_reasons": []}))
+
+    monkeypatch.setattr(launcher.frozen, "run_once", run_once)
+    monkeypatch.setattr(launcher, "copy_raw_evidence", lambda raw, out: events.append("copy") or "digest")
+    monkeypatch.setattr(launcher, "prepare_output", lambda out, review: events.append("prepare"))
+    monkeypatch.setattr(launcher, "finalize_output", lambda out, summary, review, error=None: events.append("finalize"))
+
+    asyncio.run(launcher.run(SimpleNamespace(out_root=tmp_path / "out")))
+    assert events == ["start", "copy", "prepare", "stop", "awake_terminate", "awake_wait", "finalize"]
+
+
+def test_run_monitor_shutdown_failure_publishes_only_ineligible_completion(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    head = "b" * 40
+
+    class FakeMonitor:
+        def __init__(self, *args, **kwargs):
+            self.raw_path = Path(args[0])
+
+        def start(self):
+            self.raw_path.parent.mkdir(parents=True, exist_ok=True)
+            self.raw_path.write_text("raw")
+
+        def stop(self):
+            raise RuntimeError("monitor shutdown failed")
+
+    class Awake:
+        def terminate(self):
+            pass
+
+        def wait(self, timeout):
+            pass
+
+    monkeypatch.setattr(launcher, "WorkloadControlV2Monitor", FakeMonitor)
+    monkeypatch.setattr(launcher.subprocess, "Popen", lambda *args, **kwargs: Awake())
+    monkeypatch.setattr(launcher, "verify_opt_in", lambda args: (head, {}))
+    monkeypatch.setattr(launcher, "file_sha", lambda path: "digest")
+
+    @contextmanager
+    def adapter(start_monitor, monitor):
+        start_monitor()
+        yield
+
+    monkeypatch.setattr(launcher, "frozen_launcher_adapter", adapter)
+
+    async def run_once(args):
+        out = args.out_root / head
+        out.mkdir(parents=True)
+        (out / "completion.json").write_text(json.dumps({"invalidity_reasons": []}))
+
+    monkeypatch.setattr(launcher.frozen, "run_once", run_once)
+    monkeypatch.setattr(launcher, "prepare_output", lambda out, review: None)
+    with pytest.raises(RuntimeError, match="monitor shutdown failed"):
+        asyncio.run(launcher.run(SimpleNamespace(out_root=tmp_path / "out")))
+    completion = json.loads((tmp_path / "out" / head / "workload_control_v2_completion.json").read_text())
+    assert completion["official_baseline_eligible"] is False
+    assert completion["status"] == "invalid_diagnostic"
 
 
 def test_provisional_validity_never_claims_eligibility_and_keeps_hard_failures():

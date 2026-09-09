@@ -234,15 +234,83 @@ def verify_frozen_launcher(approval_path):
     return manifest, approval, launcher
 
 
-def finalize_output(out, monitor_summary, review):
+def _completion_for_finalization(out):
     completion_path = out / "completion.json"
-    completion = json.loads(completion_path.read_text())
+    if completion_path.exists():
+        return json.loads(completion_path.read_text())
+    return {
+        "status": "invalid_diagnostic",
+        "official_baseline_eligible": False,
+        "invalidity_reasons": ["missing_frozen_completion"],
+    }
+
+
+def _final_reasons(completion, monitor_summary, finalization_error=None):
     reasons = [
         reason for reason in completion.get("invalidity_reasons", [])
         if reason != "workload_control_v2_pending"
     ]
     if not monitor_summary["valid"]:
         reasons.append("workload_control_v2_failed")
+    if finalization_error is not None:
+        reasons.append("artifact_finalization_failed")
+    return reasons
+
+
+def prepare_output(out, review):
+    """Create non-authoritative artifacts while monitoring remains active."""
+    completion = _completion_for_finalization(out)
+    reasons = [
+        reason for reason in completion.get("invalidity_reasons", [])
+        if reason != "workload_control_v2_pending"
+    ]
+    if not reasons:
+        cases, _ = load_dataset(frozen.DATA)
+        rows = [json.loads(line) for line in (out / "deterministic.jsonl").read_text().splitlines()]
+        frozen.save(out / "deterministic_summary.json", frozen.deterministic_breakdowns(cases, rows))
+    frozen.save(out / "workload_control_v2_files_sha256.json", {
+        path.name: sha(path) for path in sorted(out.iterdir())
+        if path.is_file() and path.name not in {
+            "workload_control_v2_files_sha256.json",
+            "workload_control_v2_completion.json",
+        }
+    })
+
+
+def copy_raw_evidence(raw, out):
+    destination = out / "workload_control_v2.jsonl"
+    if destination.exists():
+        raise FileExistsError(destination)
+    shutil.copyfile(raw, destination)
+    return file_sha(destination)
+
+
+def publish_authoritative(path, record):
+    """Exclusively and durably publish the final eligibility record."""
+    path = Path(path)
+    temporary = path.with_name(path.name + ".tmp")
+    descriptor = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    try:
+        with os.fdopen(descriptor, "w") as stream:
+            json.dump(record, stream, ensure_ascii=False, indent=2, allow_nan=False)
+            stream.write("\n")
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.link(temporary, path)
+    finally:
+        if temporary.exists():
+            temporary.unlink()
+    directory = os.open(path.parent, os.O_RDONLY)
+    try:
+        os.fsync(directory)
+    finally:
+        os.close(directory)
+
+
+def finalize_output(out, monitor_summary, review, finalization_error=None):
+    """Publish the authoritative eligibility record as the final artifact."""
+    completion = _completion_for_finalization(out)
+    reasons = _final_reasons(completion, monitor_summary, finalization_error)
     final = {
         **completion,
         "workload_control_v2": {
@@ -260,15 +328,12 @@ def finalize_output(out, monitor_summary, review):
         "official_baseline_eligible": not reasons,
         "supersedes_operational_eligibility_in": "completion.json",
     }
-    frozen.save(out / "workload_control_v2_completion.json", final)
-    if not reasons:
-        cases, _ = load_dataset(frozen.DATA)
-        rows = [json.loads(line) for line in (out / "deterministic.jsonl").read_text().splitlines()]
-        frozen.save(out / "deterministic_summary.json", frozen.deterministic_breakdowns(cases, rows))
-    frozen.save(out / "workload_control_v2_files_sha256.json", {
-        path.name: sha(path) for path in sorted(out.iterdir())
-        if path.is_file() and path.name != "workload_control_v2_files_sha256.json"
-    })
+    if finalization_error is not None:
+        final["artifact_finalization_error"] = {
+            "type": type(finalization_error).__name__,
+            "message": str(finalization_error),
+        }
+    publish_authoritative(out / "workload_control_v2_completion.json", final)
 
 
 async def run(args):
@@ -297,29 +362,66 @@ async def run(args):
         started = True
 
     failure = None
+    finalization_error = None
+    summary = None
+    raw_digest = None
     try:
         with frozen_launcher_adapter(start_monitor, monitor):
             await frozen.run_once(args)
     except BaseException as exc:
         failure = exc
-    finally:
-        summary = monitor.stop() if started else None
+    if started and out.exists() and failure is None:
+        try:
+            raw_digest = copy_raw_evidence(raw, out)
+            prepare_output(out, review)
+        except BaseException as exc:
+            finalization_error = exc
+    elif started and out.exists() and failure is not None:
+        try:
+            if not (out / "workload_control_v2.jsonl").exists():
+                raw_digest = copy_raw_evidence(raw, out)
+        except BaseException as exc:
+            finalization_error = exc
+
+    if started:
+        try:
+            summary = monitor.stop()
+        except BaseException as exc:
+            finalization_error = finalization_error or exc
+            summary = {
+                "selected_policy": POLICY,
+                "sample_count": 0,
+                "first_violation": None,
+                "valid": False,
+                "monitor_error": f"{type(exc).__name__}: {exc}",
+            }
+    try:
         awake.terminate()
         awake.wait(timeout=10)
+    except BaseException as exc:
+        finalization_error = finalization_error or exc
+
     if summary is None:
         if failure is not None:
             raise failure
         raise RuntimeError("Workload-control-v2 did not reach the settled activation boundary")
     if not out.exists():
+        if failure is not None:
+            raise failure
         raise RuntimeError("Frozen semantic launcher produced no output")
-    destination = out / "workload_control_v2.jsonl"
-    if destination.exists():
-        raise FileExistsError(destination)
-    shutil.copyfile(raw, destination)
-    summary["raw_sha256"] = file_sha(destination)
-    finalize_output(out, summary, review)
+    if summary.get("monitor_error"):
+        finalization_error = finalization_error or RuntimeError(summary["monitor_error"])
+    if raw_digest is not None:
+        summary["raw_sha256"] = raw_digest
+    if out.exists():
+        try:
+            finalize_output(out, summary, review, finalization_error or failure)
+        except BaseException as exc:
+            finalization_error = finalization_error or exc
     if failure is not None:
         raise failure
+    if finalization_error is not None:
+        raise finalization_error
 
 
 def main(argv=None):
