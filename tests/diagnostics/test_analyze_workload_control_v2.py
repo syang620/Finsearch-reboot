@@ -218,6 +218,7 @@ def test_s3_preflight_requires_exact_frozen_identity():
             "embedding_digest": "embedding-sha",
         },
         "service_preflight": {
+            "ollama_version": {"version": "1"},
             "qdrant_service": {"title": "qdrant", "version": "1", "commit": "abc"},
             "sec_health": {"status_code": 200},
         },
@@ -227,6 +228,7 @@ def test_s3_preflight_requires_exact_frozen_identity():
     results = {
         "repository_and_freeze_checks": {"tracked_status": ""},
         "local_service_identity": {
+            "ollama_version": {"version": "1"},
             "model_digests": {"model": "model-sha", "embedding": "embedding-sha"},
             "qdrant": {"title": "qdrant", "version": "1", "commit": "abc"},
         },
@@ -247,6 +249,46 @@ def test_s3_preflight_requires_exact_frozen_identity():
     result = s3_preflight_validation(preflight, frozen)
     assert not result["viable"]
     assert not result["checks"]["model_digests_match"]
+
+
+def test_s3_preflight_rejects_changed_ollama_service():
+    frozen = {
+        "runtime_config": {
+            "analyst_model": "ollama/model",
+            "model_digest": "model-sha",
+            "embedding_model": "embedding",
+            "embedding_digest": "embedding-sha",
+        },
+        "service_preflight": {
+            "ollama_version": {"version": "1"},
+            "qdrant_service": {"title": "qdrant", "version": "1", "commit": "abc"},
+            "sec_health": {"status_code": 200},
+        },
+        "index_before": {"points": 1},
+        "historical_index_before": {"points": 2},
+    }
+    results = {
+        "repository_and_freeze_checks": {"tracked_status": ""},
+        "local_service_identity": {
+            "ollama_version": {"version": "2"},
+            "model_digests": {"model": "model-sha", "embedding": "embedding-sha"},
+            "qdrant": {"title": "qdrant", "version": "1", "commit": "abc"},
+        },
+        "sec_service_health": {"status_code": 200},
+        "index_identity": {"current": {"points": 1}, "historical": {"points": 2}},
+        "planner_import_and_construction": {},
+        "unchanged_30_second_settle": None,
+    }
+    preflight = {
+        "steps": [
+            {"name": name, "status": "ok", "result": result}
+            for name, result in results.items()
+        ],
+        "errors": [],
+    }
+    result = s3_preflight_validation(preflight, frozen)
+    assert not result["viable"]
+    assert not result["checks"]["ollama_identity_matches"]
 
 
 def test_preserved_reopened_terminal_attempt_is_not_viable():

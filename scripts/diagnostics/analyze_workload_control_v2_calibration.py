@@ -333,6 +333,8 @@ def s3_preflight_validation(preflight, frozen_provenance):
         .get("tracked_status")
         == "",
         "model_digests_match": service.get("model_digests") == expected_models,
+        "ollama_identity_matches": service.get("ollama_version")
+        == expected_service["ollama_version"],
         "qdrant_identity_matches": qdrant_matches,
         "sec_service_healthy": steps.get("sec_service_health", {})
         .get("result", {})
