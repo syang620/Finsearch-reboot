@@ -45,6 +45,10 @@ REQUIRED_MODULES = (
     "scripts.diagnostics.observe_semantic_workload",
     "agents.planner.interactive_target_resolution",
     "agents.orchestrator.agent_orchestrator",
+    # These are imported lazily when the first retrieval case starts and when
+    # the child launches the stdio MCP server.
+    "agents.retrieval.mcp_client",
+    "mcp_server.server",
 )
 REQUIRED_PACKAGES = (
     "requests",
