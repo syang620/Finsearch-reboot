@@ -7,8 +7,8 @@
     "pr31_head": "7667af52169fb12965adf5680bae58a74c7c977e",
     "pr32_head": "a6c264652096a0811693a82b901780b7bc8419ff",
     "preregistration_sha256": "0c6c4ac93cee1b23e33ea2ea93ded0a9b56092cd9898045b44a0bb7595463483",
-    "analysis_implementation_sha": "baa2dd2e6a362cafa44a45b5f415aa643e009ffb",
-    "comparison_sha256": "39cfd03d7cc0717382ad5e89cee0f94cbf66e1f6bf8d77219031c55d1b7f01ff"
+    "analysis_implementation_sha": "0d513b3688db0b77ff949757b41d4e3cc3fd2b23",
+    "comparison_sha256": "fadfbf4e2bceaf73afb53ac2095772864d65b4f40c2d3b496fd93d1a9efcc742"
   },
   "hard_requirements": {
     "ac_power": true,
@@ -48,12 +48,12 @@
       "terminal_only_idle_900_samples": 0,
       "required_service_activity_180_samples": 0
     },
-    "sustained_interference": "3/3 detected; latencies 9.9996, 9.9999, and 9.9999 seconds",
+    "sustained_interference": "3/3 detected; latencies 9.9999, 10.0000, and 10.0049 seconds",
     "short_bursts": "0 invalidation episodes across six 1.5-second controlled bursts",
     "browser": "Detected by the independent hard rule in the first sampled browser interval",
     "terminal_only_scenario_gates_validation": true,
     "awake_protection_gates_validation": "Active in every sample of all six scenarios and alive immediately before cleanup",
-    "required_service_identity_gates_validation": "All eight S3 frozen provenance checks passed",
+    "required_service_identity_gates_validation": "All nine S3 frozen provenance checks passed",
     "evidence_retention": 1.0
   },
   "limitations": [
