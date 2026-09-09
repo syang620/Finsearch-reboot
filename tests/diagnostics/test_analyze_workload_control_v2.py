@@ -4,7 +4,9 @@ from pathlib import Path
 from scripts.diagnostics.analyze_workload_control_v2_calibration import (
     awake_protection_validation,
     decide,
+    global_hard_control_validation,
     read_raw,
+    scenario_capture_validation,
     s3_preflight_validation,
     terminal_only_viability,
 )
@@ -190,6 +192,24 @@ def test_service_identity_failure_blocks_otherwise_passing_candidate():
     assert not result["candidate_acceptance"]["B3"]["required_service_identity"]
 
 
+def test_global_hard_control_failure_blocks_otherwise_passing_candidate():
+    result = decide(
+        preregistration(), scenario_results(), sustained(), browser(), True,
+        True, True, False, True
+    )
+    assert result["decision"] == "CONTROL_V2_NOT_VALIDATED"
+    assert not result["candidate_acceptance"]["B3"]["global_hard_controls"]
+
+
+def test_incomplete_capture_blocks_otherwise_passing_candidate():
+    result = decide(
+        preregistration(), scenario_results(), sustained(), browser(), True,
+        True, True, True, False
+    )
+    assert result["decision"] == "CONTROL_V2_NOT_VALIDATED"
+    assert not result["candidate_acceptance"]["B3"]["complete_scenario_captures"]
+
+
 def test_awake_validation_requires_active_evidence_in_every_sample():
     raw = {
         "scenario": {
@@ -238,15 +258,25 @@ def test_s3_preflight_requires_exact_frozen_identity():
         "unchanged_30_second_settle": None,
     }
     preflight = {
+        "implementation_sha": "capture-sha",
+        "started_at": "2026-01-01T00:00:01+00:00",
+        "finished_at": "2026-01-01T00:00:02+00:00",
         "steps": [
             {"name": name, "status": "ok", "result": result}
             for name, result in results.items()
         ],
         "errors": [],
     }
-    assert s3_preflight_validation(preflight, frozen)["viable"]
+    raw = {
+        "header": {"implementation_sha": "capture-sha"},
+        "events": [
+            {"event": "workload_start", "key": "preflight", "pid": 42, "at": "2026-01-01T00:00:00+00:00"},
+            {"event": "workload_exit", "key": "preflight", "pid": 42, "returncode": 0, "at": "2026-01-01T00:00:03+00:00"},
+        ],
+    }
+    assert s3_preflight_validation(preflight, frozen, raw)["viable"]
     preflight["steps"][1]["result"]["model_digests"]["model"] = "wrong"
-    result = s3_preflight_validation(preflight, frozen)
+    result = s3_preflight_validation(preflight, frozen, raw)
     assert not result["viable"]
     assert not result["checks"]["model_digests_match"]
 
@@ -280,15 +310,70 @@ def test_s3_preflight_rejects_changed_ollama_service():
         "unchanged_30_second_settle": None,
     }
     preflight = {
+        "implementation_sha": "capture-sha",
+        "started_at": "2026-01-01T00:00:01+00:00",
+        "finished_at": "2026-01-01T00:00:02+00:00",
         "steps": [
             {"name": name, "status": "ok", "result": result}
             for name, result in results.items()
         ],
         "errors": [],
     }
-    result = s3_preflight_validation(preflight, frozen)
+    raw = {
+        "header": {"implementation_sha": "capture-sha"},
+        "events": [
+            {"event": "workload_start", "key": "preflight", "pid": 42, "at": "2026-01-01T00:00:00+00:00"},
+            {"event": "workload_exit", "key": "preflight", "pid": 42, "returncode": 0, "at": "2026-01-01T00:00:03+00:00"},
+        ],
+    }
+    result = s3_preflight_validation(preflight, frozen, raw)
     assert not result["viable"]
     assert not result["checks"]["ollama_identity_matches"]
+
+
+def test_failed_s3_event_binding_rejects_preflight():
+    frozen = {
+        "runtime_config": {"analyst_model": "ollama/model", "model_digest": "m", "embedding_model": "embed", "embedding_digest": "e"},
+        "service_preflight": {"ollama_version": {"version": "1"}, "qdrant_service": {"title": "q", "version": "1", "commit": "c"}, "sec_health": {"status_code": 200}},
+        "index_before": {}, "historical_index_before": {},
+    }
+    results = {
+        "repository_and_freeze_checks": {"tracked_status": ""},
+        "local_service_identity": {"ollama_version": {"version": "1"}, "model_digests": {"model": "m", "embed": "e"}, "qdrant": {"title": "q", "version": "1", "commit": "c"}},
+        "sec_service_health": {"status_code": 200}, "index_identity": {"current": {}, "historical": {}},
+        "planner_import_and_construction": {}, "unchanged_30_second_settle": None,
+    }
+    preflight = {"implementation_sha": "capture", "started_at": "2026-01-01T00:00:01+00:00", "finished_at": "2026-01-01T00:00:02+00:00", "steps": [{"name": k, "status": "ok", "result": v} for k,v in results.items()], "errors": []}
+    raw = {"header": {"implementation_sha": "capture"}, "events": [
+        {"event": "workload_start", "key": "preflight", "pid": 1, "at": "2026-01-01T00:00:00+00:00"},
+        {"event": "workload_exit", "key": "preflight", "pid": 1, "returncode": 1, "at": "2026-01-01T00:00:03+00:00"},
+    ]}
+    result = s3_preflight_validation(preflight, frozen, raw)
+    assert not result["viable"]
+    assert not result["checks"]["bound_to_successful_s3_event"]
+
+
+def test_global_hard_controls_cover_every_scenario_and_only_owned_s6_browser():
+    base = {"samples": [{"ac_power": True, "low_power_mode": 0, "elapsed_seconds": 1, "processes": []}], "events": []}
+    raw = {"S4_SUSTAINED_CPU_INTERFERENCE": deepcopy(base), "S6_BROWSER_WORKLOAD": deepcopy(base)}
+    raw["S6_BROWSER_WORKLOAD"]["samples"][0]["processes"] = [{"category": "user_browser_workload", "pid": 8, "controlled_external": True}]
+    raw["S6_BROWSER_WORKLOAD"]["events"] = [
+        {"event": "workload_start", "key": "browser", "pid": 8, "elapsed_seconds": 0},
+        {"event": "workload_stop", "key": "browser", "pid": 8, "returncode": 0, "elapsed_seconds": 2},
+    ]
+    assert global_hard_control_validation(raw)["viable"]
+    raw["S4_SUSTAINED_CPU_INTERFERENCE"]["samples"][0]["ac_power"] = False
+    assert not global_hard_control_validation(raw)["viable"]
+
+
+def test_incomplete_registered_capture_is_not_viable(tmp_path):
+    prereg = {"scope": {"sample_interval_seconds": 1}, "scenarios": {"S": {"duration_seconds": 2}}}
+    prereg_path = tmp_path / "prereg.json"
+    prereg_path.write_text("{}")
+    raw = {"S": {"header": {"scenario": "S", "preregistration_sha256": __import__('hashlib').sha256(b'{}').hexdigest(), "duration_seconds": 2, "sample_interval_seconds": 1}, "samples": [{"scenario": "S", "elapsed_seconds": 0}]}}
+    result = scenario_capture_validation(raw, prereg, prereg_path)
+    assert not result["viable"]
+    assert not result["scenarios"]["S"]["checks"]["sample_count_matches"]
 
 
 def test_preserved_reopened_terminal_attempt_is_not_viable():

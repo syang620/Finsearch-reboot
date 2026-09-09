@@ -6,6 +6,7 @@ from collections import Counter
 import gzip
 import hashlib
 import json
+from datetime import datetime
 from pathlib import Path
 
 from scripts.diagnostics.workload_control_v2 import (
@@ -104,6 +105,100 @@ def scenario_metrics(raw, preregistration):
         "retained_process_records": retained_records,
         "classified_or_unknown_retention_rate": 1.0,
         "evaluated": evaluated,
+    }
+
+
+def scenario_capture_validation(raw_by_scenario, preregistration, preregistration_path):
+    expected_preregistration_sha = sha256(preregistration_path)
+    interval = preregistration["scope"]["sample_interval_seconds"]
+    scenarios = {}
+    for scenario, raw in raw_by_scenario.items():
+        duration = preregistration["scenarios"][scenario]["duration_seconds"]
+        expected_samples = round(duration / interval)
+        samples = raw["samples"]
+        cadence_matches = len(samples) == expected_samples and all(
+            abs(float(sample["elapsed_seconds"]) - index * interval)
+            <= interval * 0.25
+            for index, sample in enumerate(samples)
+        )
+        checks = {
+            "header_scenario_matches": raw["header"].get("scenario") == scenario,
+            "sample_scenarios_match": all(
+                sample.get("scenario") == scenario for sample in samples
+            ),
+            "preregistration_hash_matches": raw["header"].get(
+                "preregistration_sha256"
+            )
+            == expected_preregistration_sha,
+            "duration_matches": raw["header"].get("duration_seconds") == duration,
+            "interval_matches": raw["header"].get("sample_interval_seconds")
+            == interval,
+            "sample_count_matches": len(samples) == expected_samples,
+            "cadence_matches": cadence_matches,
+        }
+        scenarios[scenario] = {
+            "viable": all(checks.values()),
+            "expected_samples": expected_samples,
+            "observed_samples": len(samples),
+            "checks": checks,
+        }
+    return {
+        "viable": bool(scenarios) and all(row["viable"] for row in scenarios.values()),
+        "scenarios": scenarios,
+    }
+
+
+def global_hard_control_validation(raw_by_scenario):
+    scenarios = {}
+    for scenario, raw in raw_by_scenario.items():
+        samples = raw["samples"]
+        ac_lpm_valid = all(
+            sample.get("ac_power") is True and sample.get("low_power_mode") == 0
+            for sample in samples
+        )
+        browser_rows = [
+            (sample, process)
+            for sample in samples
+            for process in sample.get("processes", [])
+            if process.get("category") == "user_browser_workload"
+        ]
+        if scenario == "S6_BROWSER_WORKLOAD":
+            starts = [
+                event
+                for event in raw["events"]
+                if event.get("event") == "workload_start" and event.get("key") == "browser"
+            ]
+            stops = [
+                event
+                for event in raw["events"]
+                if event.get("event") == "workload_stop" and event.get("key") == "browser"
+            ]
+            browser_valid = (
+                len(starts) == 1
+                and len(stops) == 1
+                and starts[0].get("pid") == stops[0].get("pid")
+                and stops[0].get("returncode") == 0
+                and bool(browser_rows)
+                and all(
+                    process.get("pid") == starts[0]["pid"]
+                    and process.get("controlled_external") is True
+                    and starts[0]["elapsed_seconds"]
+                    <= sample["elapsed_seconds"]
+                    <= stops[0]["elapsed_seconds"]
+                    for sample, process in browser_rows
+                )
+            )
+        else:
+            browser_valid = not browser_rows
+        scenarios[scenario] = {
+            "viable": ac_lpm_valid and browser_valid,
+            "ac_and_low_power_mode_valid": ac_lpm_valid,
+            "browser_identity_valid": browser_valid,
+            "actual_browser_process_records": len(browser_rows),
+        }
+    return {
+        "viable": bool(scenarios) and all(row["viable"] for row in scenarios.values()),
+        "scenarios": scenarios,
     }
 
 
@@ -297,7 +392,11 @@ def awake_protection_validation(raw_by_scenario):
     }
 
 
-def s3_preflight_validation(preflight, frozen_provenance):
+def parse_time(value):
+    return datetime.fromisoformat(value.replace("Z", "+00:00"))
+
+
+def s3_preflight_validation(preflight, frozen_provenance, s3_raw):
     steps = {step.get("name"): step for step in preflight.get("steps", [])}
     required_steps = {
         "repository_and_freeze_checks",
@@ -323,6 +422,28 @@ def s3_preflight_validation(preflight, frozen_provenance):
         observed_qdrant.get(key) == expected_qdrant.get(key)
         for key in ("title", "version", "commit")
     )
+    starts = [
+        event
+        for event in s3_raw.get("events", [])
+        if event.get("event") == "workload_start" and event.get("key") == "preflight"
+    ]
+    exits = [
+        event
+        for event in s3_raw.get("events", [])
+        if event.get("event") == "workload_exit" and event.get("key") == "preflight"
+    ]
+    event_binding = (
+        len(starts) == 1
+        and len(exits) == 1
+        and starts[0].get("pid") == exits[0].get("pid")
+        and exits[0].get("returncode") == 0
+        and preflight.get("implementation_sha")
+        == s3_raw.get("header", {}).get("implementation_sha")
+        and parse_time(starts[0]["at"])
+        <= parse_time(preflight["started_at"])
+        <= parse_time(preflight["finished_at"])
+        <= parse_time(exits[0]["at"])
+    )
     checks = {
         "complete_required_steps": len(preflight.get("steps", [])) == len(required_steps)
         and set(steps) == required_steps
@@ -344,6 +465,7 @@ def s3_preflight_validation(preflight, frozen_provenance):
         == frozen_provenance["index_before"],
         "historical_index_matches": index.get("historical")
         == frozen_provenance["historical_index_before"],
+        "bound_to_successful_s3_event": event_binding,
     }
     return {"viable": all(checks.values()), "checks": checks}
 
@@ -356,6 +478,8 @@ def decide(
     terminal_viable,
     awake_viable=True,
     s3_preflight_viable=True,
+    global_hard_controls_viable=True,
+    scenario_captures_viable=True,
 ):
     criteria = preregistration["acceptance_criteria"]
     clean_ids = criteria["clean_environment"]["scenarios"]
@@ -404,6 +528,8 @@ def decide(
             and terminal_viable
             and awake_viable
             and s3_preflight_viable
+            and global_hard_controls_viable
+            and scenario_captures_viable
             and sustained_pass
             and short_pass
             and browser_pass
@@ -415,6 +541,8 @@ def decide(
             "terminal_only_scenario": terminal_viable,
             "awake_protection": awake_viable,
             "required_service_identity": s3_preflight_viable,
+            "global_hard_controls": global_hard_controls_viable,
+            "complete_scenario_captures": scenario_captures_viable,
             "sustained_interference": sustained_pass,
             "short_bursts": short_pass,
             "browser_hard_rule": browser_pass,
@@ -509,6 +637,8 @@ def main():
     if set(raw) != set(preregistration["calibration_order"]):
         raise ValueError("Exactly the preregistered scenarios are required")
     scenario_results = {scenario: scenario_metrics(value, preregistration) for scenario, value in raw.items()}
+    capture_validation = scenario_capture_validation(raw, preregistration, args.preregistration)
+    global_hard_controls = global_hard_control_validation(raw)
     sustained = {
         candidate["id"]: sustained_detections(
             raw["S4_SUSTAINED_CPU_INTERFERENCE"],
@@ -530,6 +660,7 @@ def main():
     s3_preflight = s3_preflight_validation(
         json.loads(args.s3_preflight.read_text()),
         json.loads(args.frozen_provenance.read_text()),
+        raw["S3_REQUIRED_SERVICE_ACTIVITY"],
     )
     decision = decide(
         preregistration,
@@ -539,6 +670,8 @@ def main():
         terminal["viable"],
         awake["viable"],
         s3_preflight["viable"],
+        global_hard_controls["viable"],
+        capture_validation["viable"],
     )
     for result in scenario_results.values():
         del result["evaluated"]
@@ -562,6 +695,8 @@ def main():
         **decision,
         "terminal_only_viability": terminal,
         "awake_protection_validation": awake,
+        "scenario_capture_validation": capture_validation,
+        "global_hard_control_validation": global_hard_controls,
         "s3_preflight_validation": {
             **s3_preflight,
             "path": str(args.s3_preflight),
