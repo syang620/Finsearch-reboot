@@ -1,0 +1,94 @@
+{
+  "candidate_metrics": {
+    "A_INSTANTANEOUS_CURRENT": {
+      "cpu_violation_episodes": 4,
+      "cpu_violation_samples": 4,
+      "hard_violation_episodes": 0,
+      "hard_violation_samples": 0,
+      "invalid_episodes": 4,
+      "invalid_samples": 4,
+      "samples": 900
+    },
+    "B_CONSECUTIVE_10": {
+      "cpu_violation_episodes": 0,
+      "cpu_violation_samples": 0,
+      "hard_violation_episodes": 0,
+      "hard_violation_samples": 0,
+      "invalid_episodes": 0,
+      "invalid_samples": 0,
+      "samples": 900
+    },
+    "B_CONSECUTIVE_3": {
+      "cpu_violation_episodes": 0,
+      "cpu_violation_samples": 0,
+      "hard_violation_episodes": 0,
+      "hard_violation_samples": 0,
+      "invalid_episodes": 0,
+      "invalid_samples": 0,
+      "samples": 900
+    },
+    "B_CONSECUTIVE_5": {
+      "cpu_violation_episodes": 0,
+      "cpu_violation_samples": 0,
+      "hard_violation_episodes": 0,
+      "hard_violation_samples": 0,
+      "invalid_episodes": 0,
+      "invalid_samples": 0,
+      "samples": 900
+    },
+    "C_OCCUPANCY_12_OF_60": {
+      "cpu_violation_episodes": 0,
+      "cpu_violation_samples": 0,
+      "hard_violation_episodes": 0,
+      "hard_violation_samples": 0,
+      "invalid_episodes": 0,
+      "invalid_samples": 0,
+      "samples": 900
+    },
+    "C_OCCUPANCY_5_OF_30": {
+      "cpu_violation_episodes": 0,
+      "cpu_violation_samples": 0,
+      "hard_violation_episodes": 0,
+      "hard_violation_samples": 0,
+      "invalid_episodes": 0,
+      "invalid_samples": 0,
+      "samples": 900
+    },
+    "D_BURDEN_20_OVER_60": {
+      "cpu_violation_episodes": 6,
+      "cpu_violation_samples": 223,
+      "hard_violation_episodes": 0,
+      "hard_violation_samples": 0,
+      "invalid_episodes": 6,
+      "invalid_samples": 223,
+      "samples": 900
+    },
+    "D_BURDEN_25_OVER_30": {
+      "cpu_violation_episodes": 2,
+      "cpu_violation_samples": 59,
+      "hard_violation_episodes": 0,
+      "hard_violation_samples": 0,
+      "invalid_episodes": 2,
+      "invalid_samples": 59,
+      "samples": 900
+    }
+  },
+  "events": [],
+  "implementation_sha": "afd3d0dfb86126346edf87fc44ebe1e09773dbb1",
+  "preregistration_sha256": "0c6c4ac93cee1b23e33ea2ea93ded0a9b56092cd9898045b44a0bb7595463483",
+  "process_category_occurrences": {
+    "calibration_harness": 911,
+    "os_background_service": 14402,
+    "required_service_host": 522,
+    "run_supervision_ui_tooling": 3600,
+    "unknown": 4662,
+    "unrelated_external_workload": 1077
+  },
+  "raw_sha256": "b7efaceb1b6f8b6b71d0a2677f774a720a2033e12ad9e574c5a6c39f8bb22a85",
+  "retained_process_records": 25174,
+  "sample_count": 900,
+  "scenario": "S2_TERMINAL_ONLY_IDLE",
+  "semantic_cases": 0,
+  "status": "complete_control_only_calibration",
+  "unknown_process_samples": 900
+}

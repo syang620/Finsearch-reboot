@@ -1,0 +1,51 @@
+{
+  "investigation": "semantic_v2_workload_controls",
+  "status": "complete_diagnostic_control_contract_needs_review",
+  "source_pr": 31,
+  "source_pr_head": "7667af52169fb12965adf5680bae58a74c7c977e",
+  "source_pr_state": "draft_open_release_blocked",
+  "diagnostic_implementation_sha": "a252feeb204ae417e2e024788cfbbff941b319ce",
+  "dataset_sha256": "f9148a29cb5b0f2da30b6ecf5017a9d6bc4dc9fd31523643557b93906646ad7c",
+  "optimization_manifest_sha256": "653a65e778a5633c4d1adc2d90ea7a56a578b81695e69d679f9d69915e54bec0",
+  "scorer_sha256": {
+    "src/evals/semantic_answer_v2.py": "9e75cd2cb339e56e34307bda01a33648d0ac40488b4eac4ab82f90348689b91b",
+    "src/evals/semantic_numeric_v2.py": "53d39fac5be8a9a2382f6fd2fa455dfd50141f1cf78552238ceb94a19cb1d433",
+    "src/evals/semantic_outcomes_v2.py": "cb16d0dbdfcbf3fc1a0e24aa2c308638c8d84f118c6da979159444437f2de140",
+    "src/evals/semantic_metrics_v2.py": "7f70745897b9cbb7119457e2fa840bd6b7ea7ce56dfbcdb9f299628e7d2f403e"
+  },
+  "launcher_contract_sha256": "ce1646e554cdb3f8fb583db0ea93eeb278daa13a937c641320335c33c24845ad",
+  "launcher_sha256": "87e98d0d9286ff18eddcc9e5bb5ab6c937bd3720269be3581b8fe27b08487ba0",
+  "original_launcher_sha256": "36727b2e53113dcf1cc84f052246fc206f72abf61e34280c01479334d6f4d211",
+  "control_source_sha256": "ec526121b7e9ecf1eb10c7c540e276f72ce709f71ebac35ea680c51106de4017",
+  "workload_control": {
+    "heavy_cpu_threshold_percent": 50,
+    "browser_substrings": ["Google Chrome", "/Safari.app/"],
+    "heavy_process_exempt_substrings": ["ollama", "qdrant", "com.docker", "virtualization"],
+    "power_requirement": "AC power true and Low Power Mode 0",
+    "launcher_sampling": "before and after each case plus final control check; preflight checks follow fixed settling"
+  },
+  "invalid_diagnostics": {
+    "29bfec8a662efdd1dd78fe986eb753d655315646_runner_manifest_sha256": "dea0d285930472c36f64e3f90163db6f2ec766d9e2eb50b425b581d09d42ab26",
+    "488e112a64b51fb2a5ad159194df993b2ff04f11_runner_manifest_sha256": "f5b579cf2457a5a9a574fc9a88ad1e77fec9a493f210b6df74eea638dc256fa0",
+    "488e112a64b51fb2a5ad159194df993b2ff04f11_authorization_manifest_sha256": "7abad55ecc886e6aee291ec3265cfe7859d05840d15d409d357fb05bb28bd59e"
+  },
+  "formal_observation": {
+    "duration_seconds": 1200,
+    "diagnostic_interval_seconds": 1.0,
+    "authoritative_function": "scripts.evals.retrieval.run_benchmark_v3.controls",
+    "benchmark_cases": 0,
+    "model_inference": 0,
+    "benchmark_or_semantic_search_retrieval_calls": 0,
+    "qdrant_collection_snapshot_reads": 2,
+    "pre_existing_or_competing_process_termination": false,
+    "observer_owned_caffeinate_terminated_after_sampling": true,
+    "started_at": "2026-09-08T15:52:57.496925+00:00",
+    "finished_at": "2026-09-08T16:12:57.488396+00:00",
+    "sample_count": 1200,
+    "raw_sha256": "384003ae78c9b63e6b24a18e3067c19f2623a3554a8d67a14f39ce1b0f7c52a3",
+    "preflight_simulation_sha256": "92cd7e643c40746ed7c12f6af89fd6f386b57ac82fffe4a20affe5bd1c2f8583"
+  },
+  "privacy": "Publishable process records replace the user-home prefix with $USER_HOME. Historical frozen evidence is not rewritten.",
+  "artifact_manifest_sha256": "0d9e2841c5c30c2e38e0690c9274c89e70ae90cca8f3a87c77c1b069e91fa03d",
+  "decision": "CONTROL_CONTRACT_NEEDS_REVIEW"
+}

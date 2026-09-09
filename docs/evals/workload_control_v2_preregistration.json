@@ -1,0 +1,225 @@
+{
+  "contract_version": "semantic-workload-control-v2-calibration-1",
+  "status": "pre_registered_before_calibration",
+  "registered_at": "2026-09-08T17:16:33Z",
+  "source_state": {
+    "pr31_head": "7667af52169fb12965adf5680bae58a74c7c977e",
+    "pr32_head": "a6c264652096a0811693a82b901780b7bc8419ff",
+    "pr31_state": "draft_open_release_blocked",
+    "pr32_decision": "CONTROL_CONTRACT_NEEDS_REVIEW"
+  },
+  "scope": {
+    "semantic_cases": 0,
+    "production_behavior_changes": false,
+    "frozen_semantic_data_or_scorer_changes": false,
+    "historical_evidence_changes": false,
+    "sample_interval_seconds": 1.0,
+    "cpu_threshold_percent": 50.0
+  },
+  "hard_controls": {
+    "ac_power": true,
+    "low_power_mode": 0,
+    "awake_protection": true,
+    "real_chrome_or_safari_processes": 0,
+    "required_model_index_service_identity": "must_match_frozen_provenance",
+    "browser_detection_delay_samples": 2
+  },
+  "process_identity": {
+    "inputs": [
+      "pid",
+      "ppid",
+      "process_group_id",
+      "executable_path",
+      "full_command_line",
+      "working_directory_when_available",
+      "start_time",
+      "ancestor_chain"
+    ],
+    "precedence": [
+      "calibration_harness",
+      "benchmark_model_process",
+      "required_service_host",
+      "user_browser_workload",
+      "run_supervision_ui_tooling",
+      "unrelated_external_workload",
+      "os_background_service",
+      "unknown"
+    ],
+    "categories": {
+      "calibration_harness": "The monitor and explicitly marked read-only preflight or controlled-workload coordinator. Excluded from CPU interference scoring, but retained in raw evidence.",
+      "benchmark_model_process": "The frozen launcher or model worker that would be part of the measured benchmark. Excluded from external CPU interference scoring, but retained.",
+      "required_service_host": "A process directly proven by command or ancestry to host a required service, such as Ollama, Qdrant, or the Docker backend hosting Qdrant. Excluded; UI/renderers are not inherited exemptions.",
+      "user_browser_workload": "A real Chrome or Safari executable. Always triggers the independent browser hard rule and remains visible to CPU scoring.",
+      "run_supervision_ui_tooling": "ChatGPT or Codex application UI, renderer, or service. Not exempt; persistence policies decide whether its CPU is meaningful.",
+      "unrelated_external_workload": "Identified user or calibration workload external to required services. Included in CPU scoring.",
+      "os_background_service": "Identified operating-system background process. Included in CPU scoring.",
+      "unknown": "Insufficient identity evidence. Included in CPU scoring and reported separately."
+    },
+    "cpu_scored_categories": [
+      "user_browser_workload",
+      "run_supervision_ui_tooling",
+      "unrelated_external_workload",
+      "os_background_service",
+      "unknown"
+    ],
+    "group_key": "category plus canonical executable path plus nearest identified application/service ancestor; PID is retained but is not the stable group identity"
+  },
+  "candidate_policies": [
+    {
+      "id": "A_INSTANTANEOUS_CURRENT",
+      "family": "current_instantaneous_reference",
+      "eligible_for_selection": false,
+      "definition": "Exact frozen v1 controls(): browser presence or any non-exempt process at or above 50 percent in one sample."
+    },
+    {
+      "id": "B_CONSECUTIVE_3",
+      "family": "same_process_group_consecutive_samples",
+      "eligible_for_selection": true,
+      "threshold_percent": 50.0,
+      "consecutive_samples": 3
+    },
+    {
+      "id": "B_CONSECUTIVE_5",
+      "family": "same_process_group_consecutive_samples",
+      "eligible_for_selection": true,
+      "threshold_percent": 50.0,
+      "consecutive_samples": 5
+    },
+    {
+      "id": "B_CONSECUTIVE_10",
+      "family": "same_process_group_consecutive_samples",
+      "eligible_for_selection": true,
+      "threshold_percent": 50.0,
+      "consecutive_samples": 10
+    },
+    {
+      "id": "C_OCCUPANCY_5_OF_30",
+      "family": "rolling_window_occupancy",
+      "eligible_for_selection": true,
+      "threshold_percent": 50.0,
+      "window_samples": 30,
+      "required_occupied_samples": 5
+    },
+    {
+      "id": "C_OCCUPANCY_12_OF_60",
+      "family": "rolling_window_occupancy",
+      "eligible_for_selection": true,
+      "threshold_percent": 50.0,
+      "window_samples": 60,
+      "required_occupied_samples": 12
+    },
+    {
+      "id": "D_BURDEN_25_OVER_30",
+      "family": "rolling_cpu_burden",
+      "eligible_for_selection": true,
+      "window_samples": 30,
+      "per_process_sample_cap_percent": 100.0,
+      "mean_single_core_burden_percent": 25.0
+    },
+    {
+      "id": "D_BURDEN_20_OVER_60",
+      "family": "rolling_cpu_burden",
+      "eligible_for_selection": true,
+      "window_samples": 60,
+      "per_process_sample_cap_percent": 100.0,
+      "mean_single_core_burden_percent": 20.0
+    }
+  ],
+  "calibration_order": [
+    "S1_PASSIVE_SUPERVISED_IDLE",
+    "S3_REQUIRED_SERVICE_ACTIVITY",
+    "S4_SUSTAINED_CPU_INTERFERENCE",
+    "S5_SHORT_CPU_BURSTS",
+    "S6_BROWSER_WORKLOAD",
+    "S2_TERMINAL_ONLY_IDLE"
+  ],
+  "scenarios": {
+    "S1_PASSIVE_SUPERVISED_IDLE": {
+      "duration_seconds": 900,
+      "intentional_workload": "none",
+      "chatgpt_codex": "open for supervision",
+      "required_services": "running"
+    },
+    "S2_TERMINAL_ONLY_IDLE": {
+      "duration_seconds": 900,
+      "pre_start_delay_seconds": 60,
+      "intentional_workload": "none",
+      "chatgpt_codex": "closed after deterministic Terminal launch and before sampling",
+      "required_services": "running"
+    },
+    "S3_REQUIRED_SERVICE_ACTIVITY": {
+      "duration_seconds": 180,
+      "activity_start_second": 15,
+      "activity": "existing read-only repository/freeze, service identity, SEC health, two Qdrant index snapshots, planner import/construction, and 30-second settle; no semantic retrieval or inference"
+    },
+    "S4_SUSTAINED_CPU_INTERFERENCE": {
+      "duration_seconds": 210,
+      "warmup_seconds": 15,
+      "repetitions": 3,
+      "workload_seconds_per_repetition": 45,
+      "cooldown_seconds": 15,
+      "workload": "owned deterministic Python busy loop targeting one fully occupied CPU core; expected observed process CPU 80-120 percent"
+    },
+    "S5_SHORT_CPU_BURSTS": {
+      "duration_seconds": 120,
+      "warmup_seconds": 15,
+      "burst_count": 6,
+      "burst_seconds": 1.5,
+      "burst_start_interval_seconds": 15,
+      "workload": "owned deterministic Python busy loop targeting one fully occupied CPU core"
+    },
+    "S6_BROWSER_WORKLOAD": {
+      "duration_seconds": 60,
+      "warmup_seconds": 10,
+      "workload_seconds": 30,
+      "workload": "owned real Google Chrome headless process with an isolated temporary profile and local CPU-active data page; no network dependency"
+    }
+  },
+  "acceptance_criteria": {
+    "clean_environment": {
+      "scenarios": [
+        "S1_PASSIVE_SUPERVISED_IDLE",
+        "S2_TERMINAL_ONLY_IDLE",
+        "S3_REQUIRED_SERVICE_ACTIVITY"
+      ],
+      "maximum_cpu_invalidation_episodes_per_complete_scenario": 0,
+      "required_complete_scenarios": 3,
+      "interpretation_limit": "Passing establishes calibration-window practicality, not an hour-scale statistical upper bound."
+    },
+    "sustained_interference": {
+      "scenario": "S4_SUSTAINED_CPU_INTERFERENCE",
+      "required_detection_repetitions": 3,
+      "total_repetitions": 3,
+      "maximum_detection_delay_seconds": 15
+    },
+    "short_bursts": {
+      "scenario": "S5_SHORT_CPU_BURSTS",
+      "maximum_cpu_invalidation_episodes": 0
+    },
+    "browser": {
+      "scenario": "S6_BROWSER_WORKLOAD",
+      "required_hard_rule_detection": true,
+      "maximum_detection_delay_samples": 2
+    },
+    "evidence_visibility": {
+      "classified_or_unknown_process_retention_rate": 1.0
+    }
+  },
+  "selection_rule": {
+    "eligible_candidate_preference_order": [
+      "B_CONSECUTIVE_3",
+      "B_CONSECUTIVE_5",
+      "B_CONSECUTIVE_10",
+      "C_OCCUPANCY_5_OF_30",
+      "C_OCCUPANCY_12_OF_60",
+      "D_BURDEN_25_OVER_30",
+      "D_BURDEN_20_OVER_60"
+    ],
+    "rule": "A candidate must pass every pre-registered criterion. If multiple pass, choose the first in the preference order, which favors the simplest and most sensitive same-process persistence rule. If none pass, return CONTROL_V2_NOT_VALIDATED. No post-result compromise or new candidate is allowed in calibration version 1."
+  },
+  "historical_replay": {
+    "timing": "only after selection",
+    "inputs": "PR32 observation plus all prior invalid-diagnostic process observations",
+    "status_rule": "historical invalid_diagnostic labels never change"
+  }
+}

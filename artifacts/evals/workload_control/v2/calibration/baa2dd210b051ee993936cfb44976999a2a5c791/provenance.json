@@ -1,0 +1,99 @@
+{
+  "evaluation": "semantic_workload_control_v2_hard_control_gated_calibration",
+  "status": "complete_preregistered_control_only_calibration_pending_final_independent_review",
+  "decision": "WORKLOAD_CONTROL_V2_VALIDATED",
+  "selected_policy": "B_CONSECUTIVE_10",
+  "source_state": {
+    "pr31_head": "7667af52169fb12965adf5680bae58a74c7c977e",
+    "pr31_state": "draft_open_release_blocked_unmerged",
+    "pr32_head": "a6c264652096a0811693a82b901780b7bc8419ff",
+    "pr32_state": "draft_open_unmerged_reviewed",
+    "preregistration_commit": "974c381e9147a444eaf4c574f01079d240cb67d6",
+    "capture_and_analysis_implementation_sha": "baa2dd2e6a362cafa44a45b5f415aa643e009ffb"
+  },
+  "scope": {
+    "semantic_cases": 0,
+    "retrieval_calls": 0,
+    "reranker_calls": 0,
+    "model_inference_calls": 0,
+    "production_behavior_changes": false,
+    "semantic_dataset_or_scorer_changes": false,
+    "historical_artifact_changes": false
+  },
+  "final_review_correction": {
+    "finding": "Registered awake-protection and S3 service-identity controls did not gate selection.",
+    "awake_gate": "Every scenario requires the header awake PID active in every sample and alive immediately before controlled cleanup.",
+    "s3_gate": "Selection requires the complete successful preflight step set, no errors, clean tracked state, exact model digests, exact Qdrant identity, healthy SEC service, and exact current/historical index snapshots.",
+    "adversarial_tests": "Either hard-control failure blocks an otherwise passing candidate."
+  },
+  "capture_implementations_by_scenario": {
+    "S1_PASSIVE_SUPERVISED_IDLE": "baa2dd2e6a362cafa44a45b5f415aa643e009ffb",
+    "S2_TERMINAL_ONLY_IDLE": "baa2dd2e6a362cafa44a45b5f415aa643e009ffb",
+    "S3_REQUIRED_SERVICE_ACTIVITY": "baa2dd2e6a362cafa44a45b5f415aa643e009ffb",
+    "S4_SUSTAINED_CPU_INTERFERENCE": "baa2dd2e6a362cafa44a45b5f415aa643e009ffb",
+    "S5_SHORT_CPU_BURSTS": "baa2dd2e6a362cafa44a45b5f415aa643e009ffb",
+    "S6_BROWSER_WORKLOAD": "baa2dd2e6a362cafa44a45b5f415aa643e009ffb"
+  },
+  "hard_control_validation": {
+    "awake_protection": {
+      "viable": true,
+      "active_samples": 2370,
+      "total_samples": 2370,
+      "all_alive_before_cleanup": true
+    },
+    "s3_frozen_identity": {
+      "viable": true,
+      "checks_passed": 8,
+      "checks_total": 8,
+      "frozen_provenance_sha256": "0ae5a69d1935ad7980b158adc98b5547f505b97602354661cdb47ac2286ab730"
+    },
+    "terminal_only": {
+      "viable": true,
+      "sample_count": 900,
+      "active_supervision_process_records": 0,
+      "actual_browser_records": 0,
+      "retained_inert_crash_handler_records": 3600,
+      "unique_inert_crash_handlers": 4,
+      "all_retained_crash_handlers_launchd_owned": true,
+      "inert_crash_handler_peak_cpu_percent": 0.0
+    }
+  },
+  "invalid_protocol_attempts": {
+    "preserved": true,
+    "used_in_official_comparison": false,
+    "supervised_batches": 1,
+    "terminal_only_attempts": 2
+  },
+  "control_implementation_sha256": {
+    "scripts/diagnostics/observe_semantic_workload.py": "96bc78eb20e6200105d128190b66147bc18d5be6c7431359f7b45ecf62d8ed00",
+    "scripts/diagnostics/workload_control_v2.py": "3cf81da3c8cd4abeb4c8304f0f501af2b2262555def8e250b785cc8f50f78e63",
+    "scripts/diagnostics/run_workload_control_v2_calibration.py": "eb950de1a530666de29361850665c2d473c18f9d2b7b6d8a112c9cfafb75f60a",
+    "scripts/diagnostics/analyze_workload_control_v2_calibration.py": "54b0b8b3c7c2a6c511ef80e14a0f353cea736b7e7c1318a7b9f45652fd5d9d80",
+    "scripts/diagnostics/simulate_semantic_preflight_readonly.py": "024d21fbfe5d52f3c3da2252ad7ebc57e422bf0e3f1c37f8175793dd4f621cf1"
+  },
+  "evidence_sha256": {
+    "preregistration": "0c6c4ac93cee1b23e33ea2ea93ded0a9b56092cd9898045b44a0bb7595463483",
+    "comparison": "39cfd03d7cc0717382ad5e89cee0f94cbf66e1f6bf8d77219031c55d1b7f01ff",
+    "report": "02c131ff4e5ba1815d9c52ff633caa106fb91ab304e366d25a9721bd82dff3d7",
+    "commands": "a7c12ca57a950f24cc27f88bd3c29f81b8fd6414132266bc2d908220d9993e8e",
+    "contract": "4f1fef5aa566e456950ca165afb9000534220c9aede881bf78186b9ec82d79ec",
+    "adr": "45c639acd3c4d99504dc7f8783c7f0147e136f9731c17529b106ff4bf72b0c2e",
+    "invalid_attempt_manifest": "2d36fa504ffdb58ca44c0afe74641e783c650fcd3f4a90f55eb07f000d3c0ad6"
+  },
+  "historical_replay": {
+    "pr32_raw_sha256": "384003ae78c9b63e6b24a18e3067c19f2623a3554a8d67a14f39ce1b0f7c52a3",
+    "pr32_samples": 1200,
+    "interpretation": "lower_bound_only",
+    "historical_statuses_unchanged": true,
+    "sparse_prior_diagnostics": "indeterminate"
+  },
+  "verification": {
+    "focused_diagnostics": "33 passed",
+    "full_suite": "1211 passed, 47 subtests passed, 2 known pre-existing failures, 25 warnings",
+    "known_failures": [
+      "tests/agents/planner/test_planner_routes.py::test_planner_routes_match_expected_routes",
+      "tests/agents/retrieval/test_retrieval_workflow_no_tool_call.py::test_retrieval_no_tool_call_increments_attempts_and_stops_on_budget"
+    ]
+  },
+  "release_authorization": "none; final independent review is required and this calibration does not launch the semantic baseline"
+}

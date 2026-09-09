@@ -1,0 +1,102 @@
+{
+  "status": "complete_diagnostic",
+  "source_pr": 31,
+  "source_pr_head": "7667af52169fb12965adf5680bae58a74c7c977e",
+  "diagnostic_implementation_sha": "a252feeb204ae417e2e024788cfbbff941b319ce",
+  "observation": {
+    "started_at": "2026-09-08T15:52:57.496925+00:00",
+    "finished_at": "2026-09-08T16:12:57.488396+00:00",
+    "duration_seconds": 1200,
+    "interval_seconds": 1.0,
+    "sample_count": 1200,
+    "frozen_control_violation_samples": 235,
+    "frozen_control_violation_rate": 0.19583333333333333,
+    "ac_power_failure_samples": 0,
+    "low_power_mode_failure_samples": 0,
+    "browser_process_samples": 0,
+    "git_threshold_samples": 0
+  },
+  "phase_counts": {
+    "passive": {"samples": 675, "violation_samples": 134},
+    "read_only_preflight_simulation": {"samples": 41, "violation_samples": 11},
+    "post_simulation": {"samples": 484, "violation_samples": 90}
+  },
+  "authoritative_frozen_control_process_occurrences": [
+    {"process": "ChatGPT", "samples": 125, "peak_cpu": 99.7, "max_consecutive_samples": 2, "burst_count": 123, "median_burst_interval_seconds": 6},
+    {"process": "Docker Desktop Helper (Renderer)", "samples": 85, "peak_cpu": 96.2, "max_consecutive_samples": 1, "burst_count": 85, "median_burst_interval_seconds": 10},
+    {"process": "Codex (Renderer)", "samples": 16, "peak_cpu": 160.3, "max_consecutive_samples": 1, "burst_count": 16, "median_burst_interval_seconds": 60},
+    {"process": "python", "samples": 7, "peak_cpu": 449.4, "max_consecutive_samples": 4, "burst_count": 4, "median_burst_interval_seconds": 6},
+    {"process": "duetexpertd", "samples": 7, "peak_cpu": 99.7, "max_consecutive_samples": 7, "burst_count": 1},
+    {"process": "coreaudiod", "samples": 3, "peak_cpu": 67.0, "max_consecutive_samples": 1, "burst_count": 3, "median_burst_interval_seconds": 359},
+    {"process": "Phone", "samples": 2, "peak_cpu": 118.1, "max_consecutive_samples": 2, "burst_count": 1},
+    {"process": "siriinferenced", "samples": 2, "peak_cpu": 99.8, "max_consecutive_samples": 2, "burst_count": 1},
+    {"process": "facetimemessagestored", "samples": 1, "peak_cpu": 75.9, "max_consecutive_samples": 1, "burst_count": 1},
+    {"process": "mobileassetd", "samples": 1, "peak_cpu": 67.4, "max_consecutive_samples": 1, "burst_count": 1},
+    {"process": "mediaanalysisd", "samples": 1, "peak_cpu": 72.1, "max_consecutive_samples": 1, "burst_count": 1},
+    {"process": "Codex (Service)", "samples": 1, "peak_cpu": 50.0, "max_consecutive_samples": 1, "burst_count": 1},
+    {"process": "com.apple.weather.menu", "samples": 1, "peak_cpu": 79.8, "max_consecutive_samples": 1, "burst_count": 1},
+    {"process": "com.apple.Safari.SafeBrowsing.Service", "samples": 1, "peak_cpu": 71.3, "max_consecutive_samples": 1, "burst_count": 1},
+    {"process": "ecosystemd", "samples": 1, "peak_cpu": 68.6, "max_consecutive_samples": 1, "burst_count": 1},
+    {"process": "WeatherWidget", "samples": 1, "peak_cpu": 52.3, "max_consecutive_samples": 1, "burst_count": 1}
+  ],
+  "identified_processes": {
+    "chatgpt_codex": {
+      "identity_confidence": "high",
+      "activity_cause_confidence": "medium",
+      "evidence": "Executable paths, commands and ancestry identify ChatGPT, two Codex renderers and a Codex GPU service. Renderer bursts approximately correlate with active task updates, but the diagnostic does not prove an individual UI event caused each sample.",
+      "required_classification": "required_tooling_activity for this agent-driven workflow; potentially avoidable only through a separately validated non-Codex launch workflow"
+    },
+    "docker_desktop_renderer": {
+      "identity_confidence": "high",
+      "origin_confidence": "high",
+      "activity_cause_confidence": "low",
+      "evidence": "Full command and ancestry lead from Docker Desktop Helper Renderer through Docker Desktop to com.docker.backend. A separately timestamped post-observation snapshot shows that backend owning port 6333 and a qdrant/qdrant:v1.16.2 container serving it. It does not show that Qdrant caused the renderer bursts.",
+      "required_classification": "unknown: Docker backend is required by the current service setup, but renderer necessity and avoidability are not established"
+    },
+    "historical_git": {
+      "identity_confidence": "low",
+      "activity_cause_confidence": "low",
+      "evidence": "The 488e112 artifact retained only basename git and CPU 59.8, without PID, PPID, command, cwd or start time. No git process crossed the threshold in 1200 formal samples, including repository/freeze checks.",
+      "required_classification": "unknown"
+    },
+    "historical_browser": {
+      "identity_confidence": "low",
+      "activity_cause_confidence": "low",
+      "evidence": "The 488e112 artifact retained browser count one, not a process identity. Formal observation recorded zero Chrome/Safari-rule samples.",
+      "required_classification": "unknown"
+    },
+    "operating_system_background": {
+      "identity_confidence": "high",
+      "activity_cause_confidence": "low",
+      "evidence": "Commands and launchd ancestry identify Phone, FaceTime store, Siri inference, media analysis, mobile assets, duet, audio, weather, ecosystem and Safari Safe Browsing processes. Exact triggering events were not available.",
+      "required_classification": "unknown external background activity"
+    }
+  },
+  "read_only_preflight_simulation": {
+    "status": "all_steps_ok",
+    "started_at": "2026-09-08T16:04:11.865005+00:00",
+    "finished_at": "2026-09-08T16:04:52.912980+00:00",
+    "cases_or_model_calls": 0,
+    "benchmark_or_semantic_search_retrieval_calls": 0,
+    "qdrant_collection_snapshot_reads": 2,
+    "setup_python_peak_cpu": 449.4,
+    "controls_after_setup": {"browser_process_count": 0, "heavy_non_model_processes": [{"process": "python", "cpu": 90.8}]},
+    "controls_after_30_second_settle": {"browser_process_count": 0, "heavy_non_model_processes": [{"process": "ChatGPT", "cpu": 64.1}]},
+    "interpretation": "The existing settle removed the simulation process's setup spike, but an unrelated required UI process still violated afterward. Git did not reproduce."
+  },
+  "system_correlation": {
+    "qdrant_host": "Post-observation snapshot at 2026-09-08T16:34:17Z: Docker container qdrant/qdrant:v1.16.2 and com.docker listener on 127.0.0.1:6333. This is not evidence of uninterrupted state throughout the window.",
+    "backup_status_after_observation": "not running",
+    "spotlight_status_after_observation": "enabled; no Spotlight process crossed the threshold during observation",
+    "browser_rule_during_formal_observation": "no Chrome or Safari.app process",
+    "limitations": [
+      "The historical git and browser processes had already exited and their original snapshots contain no identities or command lines.",
+      "Frozen controls and rich process detail are sequential snapshots; counts can differ for sub-second processes.",
+      "The active diagnostic conversation itself creates ChatGPT/Codex UI work, so correlation does not isolate every UI trigger.",
+      "The service simulation omitted the reranker health probe to honor the no-inference requirement.",
+      "Backup and Spotlight status are post-observation snapshots, not continuous traces."
+    ]
+  },
+  "decision": "CONTROL_CONTRACT_NEEDS_REVIEW",
+  "decision_reason": "A clean power/browser precondition was insufficient: required ChatGPT/Codex supervision repeatedly crossed the unchanged rule, while a Docker renderer in the current Qdrant-hosting process tree also recurred but has unknown necessity. No verified external procedure removes those risks while preserving this agent-driven workflow and current service setup. Do not change the rule in this investigation and do not authorize another baseline yet."
+}
