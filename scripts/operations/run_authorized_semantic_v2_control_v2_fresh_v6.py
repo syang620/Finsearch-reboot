@@ -19,7 +19,8 @@ from scripts.operations import run_authorized_semantic_v2_control_v2_fresh_v4 as
 
 AUTH = Path("docs/evals/semantic_answer_v2_control_v2_fresh_v6_approval.json")
 WRAPPER = Path("scripts/operations/run_authorized_semantic_v2_control_v2_fresh_v6.py")
-DEPENDENCY = Path("scripts/operations/run_authorized_semantic_v2_control_v2_fresh_v5.py")
+DEPENDENCY = Path("scripts/operations/run_authorized_semantic_v2_control_v2_fresh_v4.py")
+BASE_DEPENDENCY = Path("scripts/operations/run_authorized_semantic_v2_control_v2_fresh_v2.py")
 INTERPRETER = helper.INTERPRETER
 MARKER = Path(".cache/semantic_v2_control_v2_fresh_v6_20260909.consumed.json")
 OUTCOME = Path(".cache/semantic_v2_control_v2_fresh_v6_20260909.launch_outcome.json")
@@ -32,6 +33,7 @@ REVIEW_AUTHOR = "chatgpt-codex-connector[bot]"
 REVIEW_REPOSITORY = "syang620/Finsearch-reboot"
 _BASE_DEPENDENCY_PREFLIGHT = helper.dependency_preflight
 _ENV_FILE = None
+_CHILD_ENV = None
 _PREFLIGHT_RESULT = None
 
 
@@ -72,16 +74,12 @@ print(json.dumps({{
 """
 
 
-def runtime_environment_preflight(env_file=None):
+def runtime_environment_preflight(env_file=None, child_env=None):
     """Validate the effective child environment without recording secrets."""
     repo_root = Path(__file__).resolve().parents[2]
-    env = os.environ.copy()
-    project_path = os.pathsep.join((str(repo_root), str(repo_root / "src")))
-    if env.get("PYTHONPATH"):
-        project_path += os.pathsep + env["PYTHONPATH"]
-    env["PYTHONPATH"] = project_path
+    env = dict(child_env) if child_env is not None else _effective_child_environment(env_file)
     completed = subprocess.run(
-        [str(INTERPRETER), "-c", _environment_script(env_file)],
+        [str(INTERPRETER), "-c", _environment_script(None)],
         cwd=repo_root,
         env=env,
         text=True,
@@ -102,8 +100,26 @@ def runtime_environment_preflight(env_file=None):
     expected = Path(INTERPRETER).resolve()
     if actual != expected:
         raise RuntimeError(f"Runtime environment preflight used {actual}, expected {expected}")
+    result["env_file_supplied"] = env_file is not None
     result["interpreter"] = str(actual)
     return result
+
+
+def _effective_child_environment(env_file):
+    """Materialize dotenv once, then return the exact environment for the child."""
+    if env_file is None:
+        return os.environ.copy()
+    path = Path(env_file)
+    if not path.is_file() or not os.access(path, os.R_OK):
+        raise RuntimeError("runtime env file is missing or unreadable")
+    from dotenv import load_dotenv
+    original = os.environ.copy()
+    try:
+        load_dotenv(path, override=False)
+        return os.environ.copy()
+    finally:
+        os.environ.clear()
+        os.environ.update(original)
 
 
 def _remote_review_preflight():
@@ -166,8 +182,10 @@ def _remote_attestation(approval, label):
 
 def dependency_preflight():
     global _PREFLIGHT_RESULT
-    result = runtime_environment_preflight(_ENV_FILE)
-    result["dependency_and_review_preflight"] = _BASE_DEPENDENCY_PREFLIGHT()
+    result = runtime_environment_preflight(child_env=_CHILD_ENV)
+    result["dependency_and_review_preflight"] = _BASE_DEPENDENCY_PREFLIGHT(
+        preflight_env=_CHILD_ENV
+    )
     result["remote_reviews"] = _remote_review_preflight()
     from scripts.evals.agents import run_semantic_baseline_v2_2 as launcher
     args = SimpleNamespace(
@@ -217,6 +235,8 @@ def registration():
         or approval.get("operation_wrapper_sha256") != sha(WRAPPER)
         or approval.get("wrapper_dependency") != str(DEPENDENCY)
         or approval.get("wrapper_dependency_sha256") != sha(DEPENDENCY)
+        or approval.get("base_dependency") != str(BASE_DEPENDENCY)
+        or approval.get("base_dependency_sha256") != sha(BASE_DEPENDENCY)
         or approval.get("quality_approval_sha256") != sha(QUALITY)
         or approval.get("integration_launcher_sha256") != sha(helper.LAUNCHER)
         or approval.get("integration_adapter_sha256") != sha(helper.ADAPTER)
@@ -234,7 +254,9 @@ def registration():
         raise ValueError("Registered fresh-v6 control-v2 authorization changed")
     helper.base.git("merge-base", "--is-ancestor", reviewed, "HEAD")
     if helper.base.git("diff", reviewed, "--", str(DEPENDENCY)):
-        raise ValueError("Fresh-v5 dependency changed after fresh-v6 review")
+        raise ValueError("Fresh-v4 dependency changed after fresh-v6 review")
+    if helper.base.git("diff", reviewed, "--", str(BASE_DEPENDENCY)):
+        raise ValueError("Fresh-v2 base dependency changed after fresh-v6 review")
     return approval, helper.base.git("rev-parse", "HEAD")
 
 
@@ -258,13 +280,14 @@ def _configure_helper():
 
 
 def run(index_manifest, env_file=None):
-    global _ENV_FILE
-    _ENV_FILE = env_file
+    global _ENV_FILE, _CHILD_ENV
+    _CHILD_ENV = _effective_child_environment(env_file)
+    _ENV_FILE = None
     _configure_helper()
     # This explicit pass is non-consuming.  The inherited marker hook repeats
     # it immediately before the exclusive marker write as a defense in depth.
     dependency_preflight()
-    return helper.base.run(index_manifest, env_file)
+    return helper.base.run(index_manifest, None, _CHILD_ENV)
 
 
 if __name__ == "__main__":

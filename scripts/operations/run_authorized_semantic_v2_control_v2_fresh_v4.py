@@ -112,14 +112,15 @@ print(json.dumps({{
 """
 
 
-def dependency_preflight():
+def dependency_preflight(preflight_env=None):
     identity = interpreter_identity()
     repo_root = Path(__file__).resolve().parents[2]
-    env = os.environ.copy()
-    project_path = os.pathsep.join((str(repo_root), str(repo_root / "src")))
-    if env.get("PYTHONPATH"):
-        project_path += os.pathsep + env["PYTHONPATH"]
-    env["PYTHONPATH"] = project_path
+    env = dict(preflight_env) if preflight_env is not None else os.environ.copy()
+    if preflight_env is None:
+        project_path = os.pathsep.join((str(repo_root), str(repo_root / "src")))
+        if env.get("PYTHONPATH"):
+            project_path += os.pathsep + env["PYTHONPATH"]
+        env["PYTHONPATH"] = project_path
     completed = subprocess.run(
         [str(INTERPRETER), "-c", _preflight_script()],
         cwd=repo_root,
@@ -214,9 +215,9 @@ def _configure_base():
     base.write_once = _write_once
 
 
-def run(index_manifest, env_file=None):
+def run(index_manifest, env_file=None, child_env=None):
     _configure_base()
-    return base.run(index_manifest, env_file)
+    return base.run(index_manifest, env_file, child_env)
 
 
 if __name__ == "__main__":

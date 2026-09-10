@@ -1,3 +1,6 @@
+import json
+from types import SimpleNamespace
+
 import pytest
 
 from scripts.operations import run_authorized_semantic_v2_control_v2_fresh_v4 as helper
@@ -82,3 +85,61 @@ def test_missing_env_file_fails_non_consumingly(monkeypatch, tmp_path):
     with pytest.raises(RuntimeError, match="missing or unreadable"):
         operation.runtime_environment_preflight(missing)
     assert not missing.exists()
+
+
+def test_preflight_preserves_inherited_pythonpath(monkeypatch):
+    _valid_environment(monkeypatch)
+    monkeypatch.setenv("PYTHONPATH", "/shadow/site-packages")
+    calls = []
+
+    def run(command, **kwargs):
+        calls.append((command, kwargs))
+        return SimpleNamespace(
+            returncode=0,
+            stdout=json.dumps({"executable": str(operation.INTERPRETER)}) + "\n",
+            stderr="",
+        )
+
+    monkeypatch.setattr(operation.subprocess, "run", run)
+    operation.runtime_environment_preflight()
+
+    assert calls[0][1]["env"]["PYTHONPATH"] == "/shadow/site-packages"
+
+
+def test_run_passes_frozen_environment_and_does_not_repass_env_file(monkeypatch, tmp_path):
+    env_file = tmp_path / "local.env"
+    env_file.write_text(
+        "SEC_USER_AGENT=FinSearch tests (tests@example.org)\n"
+        "DASHSCOPE_API_KEY=test-reranker-credential\n"
+    )
+    monkeypatch.delenv("SEC_USER_AGENT", raising=False)
+    monkeypatch.delenv("DASHSCOPE_API_KEY", raising=False)
+    monkeypatch.delenv("QWEN3_RERANK_API_KEY", raising=False)
+    monkeypatch.delenv("SEC_METRIC_FIXTURE_ROOT", raising=False)
+    captured = {}
+    monkeypatch.setattr(operation, "_configure_helper", lambda: None)
+    monkeypatch.setattr(operation, "dependency_preflight", lambda: {"ok": True})
+
+    def base_run(index_manifest, env_file, child_env):
+        captured.update(index_manifest=index_manifest, env_file=env_file, child_env=child_env)
+        return 0
+
+    monkeypatch.setattr(operation.helper.base, "run", base_run)
+    assert operation.run("index.json", env_file) == 0
+    assert captured["env_file"] is None
+    assert captured["child_env"]["SEC_USER_AGENT"] == "FinSearch tests (tests@example.org)"
+    assert captured["child_env"]["DASHSCOPE_API_KEY"] == "test-reranker-credential"
+
+
+def test_effective_environment_is_unchanged_after_env_file_mutation(monkeypatch, tmp_path):
+    monkeypatch.delenv("SEC_USER_AGENT", raising=False)
+    monkeypatch.delenv("DASHSCOPE_API_KEY", raising=False)
+    monkeypatch.delenv("QWEN3_RERANK_API_KEY", raising=False)
+    env_file = tmp_path / "local.env"
+    env_file.write_text("SEC_USER_AGENT=original@example.org\n")
+
+    effective = operation._effective_child_environment(env_file)
+    env_file.write_text("SEC_USER_AGENT=changed@example.org\nSEC_METRIC_FIXTURE_ROOT=/tmp\n")
+
+    assert effective["SEC_USER_AGENT"] == "original@example.org"
+    assert "SEC_METRIC_FIXTURE_ROOT" not in effective

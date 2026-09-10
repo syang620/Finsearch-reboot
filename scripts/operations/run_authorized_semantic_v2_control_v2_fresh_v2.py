@@ -82,7 +82,7 @@ def registration():
     return approval, git("rev-parse", "HEAD")
 
 
-def run(index_manifest, env_file=None):
+def run(index_manifest, env_file=None, child_env=None):
     approval, head = registration()
     marker = {
         "status": "consumed",
@@ -172,7 +172,10 @@ def run(index_manifest, env_file=None):
                     if signal.SIGTERM in signal.sigpending():
                         handle_sigterm(signal.SIGTERM, None)
                     if not termination["received"]:
-                        child = subprocess.Popen(command, stdout=log, stderr=subprocess.STDOUT)
+                        popen_options = {"stdout": log, "stderr": subprocess.STDOUT}
+                        if child_env is not None:
+                            popen_options["env"] = child_env
+                        child = subprocess.Popen(command, **popen_options)
                         active_child_pid = child.pid
                         result["child_started"] = True
                 finally:
