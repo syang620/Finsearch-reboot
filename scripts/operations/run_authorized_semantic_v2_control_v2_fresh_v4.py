@@ -58,6 +58,7 @@ REQUIRED_PACKAGES = (
     "langgraph",
     "langgraph-checkpoint-sqlite",
 )
+PREFLIGHT_TIMEOUT_SECONDS = 30
 _PREFLIGHT_RESULT = None
 _BASE_WRITE_ONCE = base.write_once
 
@@ -86,6 +87,7 @@ def interpreter_identity():
 def _preflight_script():
     modules = repr(REQUIRED_MODULES)
     packages = repr(REQUIRED_PACKAGES)
+    launcher_directory = repr(str(LAUNCHER.resolve().parent))
     return f"""
 import importlib
 import importlib.metadata
@@ -93,6 +95,7 @@ import json
 import os
 import sys
 
+sys.path[0] = {launcher_directory}
 modules = {modules}
 for name in modules:
     importlib.import_module(name)
@@ -115,25 +118,30 @@ print(json.dumps({{
 def dependency_preflight(preflight_env=None):
     identity = interpreter_identity()
     repo_root = Path(__file__).resolve().parents[2]
-    env = dict(preflight_env) if preflight_env is not None else os.environ.copy()
+    env = preflight_env if preflight_env is not None else os.environ.copy()
     if preflight_env is None:
         project_path = os.pathsep.join((str(repo_root), str(repo_root / "src")))
         if env.get("PYTHONPATH"):
             project_path += os.pathsep + env["PYTHONPATH"]
         env["PYTHONPATH"] = project_path
-    completed = subprocess.run(
-        [str(INTERPRETER), "-c", _preflight_script()],
-        cwd=repo_root,
-        env=env,
-        text=True,
-        capture_output=True,
-        check=False,
-    )
+    try:
+        completed = subprocess.run(
+            [str(INTERPRETER), "-c", _preflight_script()],
+            cwd=repo_root,
+            env=env,
+            text=True,
+            capture_output=True,
+            check=False,
+            timeout=PREFLIGHT_TIMEOUT_SECONDS,
+        )
+    except subprocess.TimeoutExpired as exc:
+        raise RuntimeError("Exact-interpreter dependency preflight timed out") from exc
+    except OSError as exc:
+        raise RuntimeError("Exact-interpreter dependency preflight could not start") from exc
     if completed.returncode:
-        detail = completed.stderr.strip() or completed.stdout.strip()
         raise RuntimeError(
             f"Exact-interpreter dependency preflight failed with exit "
-            f"{completed.returncode}: {detail}"
+            f"{completed.returncode}"
         )
     try:
         result = json.loads(completed.stdout.strip().splitlines()[-1])

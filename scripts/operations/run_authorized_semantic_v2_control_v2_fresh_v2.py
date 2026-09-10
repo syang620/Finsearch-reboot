@@ -82,6 +82,30 @@ def registration():
     return approval, git("rev-parse", "HEAD")
 
 
+def build_child_argv(
+    index_manifest,
+    env_file,
+    *,
+    interpreter,
+    launcher,
+    quality_approval,
+    integration_approval,
+    staging_root,
+):
+    """Build the launcher command solely from its explicit execution contract."""
+    command = [
+        str(interpreter), "-u", str(launcher),
+        "--approval", str(quality_approval),
+        "--integration-approval", str(integration_approval),
+        "--workload-control-v2", "B_CONSECUTIVE_10",
+        "--out-root", str(staging_root),
+        "--index-manifest", str(index_manifest),
+    ]
+    if env_file is not None:
+        command += ["--env-file", str(env_file)]
+    return command
+
+
 def run(index_manifest, env_file=None, child_env=None):
     approval, head = registration()
     marker = {
@@ -154,16 +178,15 @@ def run(index_manifest, env_file=None, child_env=None):
         consumed = True
         result["stage"] = "post_consumption_prelaunch"
         if not termination["received"]:
-            command = [
-                sys.executable, "-u", str(LAUNCHER),
-                "--approval", str(QUALITY),
-                "--integration-approval", str(AUTH),
-                "--workload-control-v2", "B_CONSECUTIVE_10",
-                "--out-root", str(STAGING),
-                "--index-manifest", str(index_manifest),
-            ]
-            if env_file is not None:
-                command += ["--env-file", str(env_file)]
+            command = build_child_argv(
+                index_manifest,
+                env_file,
+                interpreter=sys.executable,
+                launcher=LAUNCHER,
+                quality_approval=QUALITY,
+                integration_approval=AUTH,
+                staging_root=STAGING,
+            )
             result["stage"] = "launcher"
             log_descriptor = os.open(LOG, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
             with os.fdopen(log_descriptor, "w") as log:
@@ -172,7 +195,11 @@ def run(index_manifest, env_file=None, child_env=None):
                     if signal.SIGTERM in signal.sigpending():
                         handle_sigterm(signal.SIGTERM, None)
                     if not termination["received"]:
-                        popen_options = {"stdout": log, "stderr": subprocess.STDOUT}
+                        popen_options = {
+                            "stdout": log,
+                            "stderr": subprocess.STDOUT,
+                            "cwd": Path(__file__).resolve().parents[2],
+                        }
                         if child_env is not None:
                             popen_options["env"] = child_env
                         child = subprocess.Popen(command, **popen_options)

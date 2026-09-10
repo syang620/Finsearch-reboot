@@ -10,8 +10,10 @@ import json
 import os
 from pathlib import Path
 import re
+import stat
 import subprocess
 from types import SimpleNamespace
+from types import MappingProxyType
 
 from scripts.evals.retrieval import run_benchmark_v3 as provenance
 from scripts.operations import run_authorized_semantic_v2_control_v2_fresh_v4 as helper
@@ -31,26 +33,31 @@ AUTHORIZATION_ID = "SEMANTIC-V2-CONTROL-V2-FRESH-V6-20260909"
 QUALITY = Path("docs/evals/semantic_answer_v2_quality_approval.json")
 REVIEW_AUTHOR = "chatgpt-codex-connector[bot]"
 REVIEW_REPOSITORY = "syang620/Finsearch-reboot"
+EFFECTIVE_ENVIRONMENT_CONTRACT_VERSION = "1"
+PREFLIGHT_TIMEOUT_SECONDS = 30
+REQUIRED_ENVIRONMENT_KEYS = (
+    "SEC_USER_AGENT",
+    "DASHSCOPE_API_KEY",
+    "QWEN3_RERANK_API_KEY",
+    "SEC_METRIC_FIXTURE_ROOT",
+)
+_SECRET_ENVIRONMENT_KEY = re.compile(
+    r"(?:API[_-]?KEY|TOKEN|SECRET|PASSWORD|CREDENTIAL|PRIVATE|USER[_-]?AGENT)", re.IGNORECASE
+)
 _BASE_DEPENDENCY_PREFLIGHT = helper.dependency_preflight
 _ENV_FILE = None
 _CHILD_ENV = None
+_ENVIRONMENT_CONTRACT = None
+_ENV_FILE_SUPPLIED = False
+_INDEX_MANIFEST = None
 _PREFLIGHT_RESULT = None
 
 
-def _environment_script(env_file):
-    return f"""
+def _environment_script():
+    return """
 import json
 import os
-from pathlib import Path
 import sys
-
-env_file = {repr(str(env_file) if env_file is not None else None)}
-if env_file is not None:
-    path = Path(env_file)
-    if not path.is_file() or not os.access(path, os.R_OK):
-        raise RuntimeError("runtime env file is missing or unreadable")
-    from dotenv import load_dotenv
-    load_dotenv(path, override=False)
 
 if os.getenv("SEC_METRIC_FIXTURE_ROOT"):
     raise RuntimeError("SEC_METRIC_FIXTURE_ROOT is forbidden for the live baseline")
@@ -64,33 +71,126 @@ credential_sources = [
 if not credential_sources:
     raise RuntimeError("an existing reranker credential is required")
 
-print(json.dumps({{
+print(json.dumps({
     "executable": sys.executable,
-    "env_file_supplied": env_file is not None,
     "sec_user_agent_present": True,
     "reranker_credential_sources": credential_sources,
     "fixture_root_forbidden": True,
-}}))
+}))
 """
 
 
-def runtime_environment_preflight(env_file=None, child_env=None):
+def _is_secret_environment_key(name):
+    return bool(_SECRET_ENVIRONMENT_KEY.search(name))
+
+
+def _environment_contract(effective, inherited, env_file_supplied):
+    """Return a redacted digest of the exact environment passed to the child."""
+    required_sources = {}
+    entries = []
+    for name in sorted(set(effective) | set(REQUIRED_ENVIRONMENT_KEYS)):
+        if name not in effective:
+            source = "absent"
+        elif name in inherited:
+            source = "inherited"
+        else:
+            source = "env_file"
+        entry = {"name": name, "source": source}
+        if source != "absent" and not _is_secret_environment_key(name):
+            entry["value_sha256"] = hashlib.sha256(
+                effective[name].encode("utf-8")
+            ).hexdigest()
+        entries.append(entry)
+        if name in REQUIRED_ENVIRONMENT_KEYS:
+            required_sources[name] = source
+    fingerprint_input = {
+        "version": EFFECTIVE_ENVIRONMENT_CONTRACT_VERSION,
+        "env_file_supplied": env_file_supplied,
+        "entries": entries,
+        "required_key_sources": required_sources,
+    }
+    fingerprint = hashlib.sha256(
+        json.dumps(fingerprint_input, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    ).hexdigest()
+    return {
+        "effective_environment_contract_version": EFFECTIVE_ENVIRONMENT_CONTRACT_VERSION,
+        "env_file_supplied": env_file_supplied,
+        "fingerprint_sha256": fingerprint,
+        "required_key_sources": required_sources,
+    }
+
+
+def _freeze_effective_child_environment(env_file):
+    """Load dotenv once while preserving inherited-value precedence and process state."""
+    inherited = os.environ.copy()
+    if env_file is None:
+        effective = inherited.copy()
+    else:
+        path = Path(env_file)
+        if not path.is_file() or not os.access(path, os.R_OK):
+            raise RuntimeError("runtime env file is missing or unreadable")
+        from dotenv import load_dotenv
+
+        try:
+            load_dotenv(path, override=False)
+            effective = os.environ.copy()
+        finally:
+            os.environ.clear()
+            os.environ.update(inherited)
+    return MappingProxyType(effective), _environment_contract(
+        effective, inherited, env_file is not None
+    )
+
+
+def _effective_child_environment(env_file):
+    """Compatibility helper for callers that only need the immutable mapping."""
+    return _freeze_effective_child_environment(env_file)[0]
+
+
+def _safe_runtime_failure_detail(detail):
+    for message in (
+        "SEC_METRIC_FIXTURE_ROOT is forbidden for the live baseline",
+        "SEC_USER_AGENT is required",
+        "an existing reranker credential is required",
+    ):
+        if message in detail:
+            return message
+    return "runtime environment contract rejected"
+
+
+def runtime_environment_preflight(env_file=None, child_env=None, environment_contract=None,
+                                 env_file_supplied=None):
     """Validate the effective child environment without recording secrets."""
     repo_root = Path(__file__).resolve().parents[2]
-    env = dict(child_env) if child_env is not None else _effective_child_environment(env_file)
-    completed = subprocess.run(
-        [str(INTERPRETER), "-c", _environment_script(None)],
-        cwd=repo_root,
-        env=env,
-        text=True,
-        capture_output=True,
-        check=False,
-    )
+    if child_env is None:
+        env, generated_contract = _freeze_effective_child_environment(env_file)
+        environment_contract = environment_contract or generated_contract
+    else:
+        env = child_env
+        environment_contract = environment_contract or _environment_contract(
+            env, env, bool(env_file_supplied)
+        )
+    if env_file_supplied is None:
+        env_file_supplied = env_file is not None
+    try:
+        completed = subprocess.run(
+            [str(INTERPRETER), "-c", _environment_script()],
+            cwd=repo_root,
+            env=env,
+            text=True,
+            capture_output=True,
+            check=False,
+            timeout=PREFLIGHT_TIMEOUT_SECONDS,
+        )
+    except subprocess.TimeoutExpired as exc:
+        raise RuntimeError("Runtime environment preflight timed out") from exc
+    except OSError as exc:
+        raise RuntimeError("Runtime environment preflight could not start") from exc
     if completed.returncode:
         detail = completed.stderr.strip() or completed.stdout.strip()
         raise RuntimeError(
             f"Exact-interpreter runtime environment preflight failed with exit "
-            f"{completed.returncode}: {detail}"
+            f"{completed.returncode}: {_safe_runtime_failure_detail(detail)}"
         )
     try:
         result = json.loads(completed.stdout.strip().splitlines()[-1])
@@ -100,26 +200,10 @@ def runtime_environment_preflight(env_file=None, child_env=None):
     expected = Path(INTERPRETER).resolve()
     if actual != expected:
         raise RuntimeError(f"Runtime environment preflight used {actual}, expected {expected}")
-    result["env_file_supplied"] = env_file is not None
+    result["env_file_supplied"] = env_file_supplied
     result["interpreter"] = str(actual)
+    result["effective_environment"] = environment_contract
     return result
-
-
-def _effective_child_environment(env_file):
-    """Materialize dotenv once, then return the exact environment for the child."""
-    if env_file is None:
-        return os.environ.copy()
-    path = Path(env_file)
-    if not path.is_file() or not os.access(path, os.R_OK):
-        raise RuntimeError("runtime env file is missing or unreadable")
-    from dotenv import load_dotenv
-    original = os.environ.copy()
-    try:
-        load_dotenv(path, override=False)
-        return os.environ.copy()
-    finally:
-        os.environ.clear()
-        os.environ.update(original)
 
 
 def _remote_review_preflight():
@@ -182,7 +266,11 @@ def _remote_attestation(approval, label):
 
 def dependency_preflight():
     global _PREFLIGHT_RESULT
-    result = runtime_environment_preflight(child_env=_CHILD_ENV)
+    result = runtime_environment_preflight(
+        child_env=_CHILD_ENV,
+        environment_contract=_ENVIRONMENT_CONTRACT,
+        env_file_supplied=_ENV_FILE_SUPPLIED,
+    )
     result["dependency_and_review_preflight"] = _BASE_DEPENDENCY_PREFLIGHT(
         preflight_env=_CHILD_ENV
     )
@@ -205,12 +293,61 @@ def dependency_preflight():
         "control_collector_sha256": sha(launcher.CONTROL_COLLECTOR),
         "control_observer_sha256": sha(launcher.CONTROL_OBSERVER),
     }
+    if _INDEX_MANIFEST is not None:
+        result["child_argv"] = _safe_child_argv_metadata(
+            build_child_argv(_INDEX_MANIFEST)
+        )
     _PREFLIGHT_RESULT = result
     return result
 
 
 def sha(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+
+
+def build_child_argv(index_manifest):
+    """Return the exact argv used by the frozen child, without an env-file path."""
+    return helper.base.build_child_argv(
+        index_manifest,
+        None,
+        interpreter=helper.base.sys.executable,
+        launcher=helper.base.LAUNCHER,
+        quality_approval=helper.base.QUALITY,
+        integration_approval=helper.base.AUTH,
+        staging_root=helper.base.STAGING,
+    )
+
+
+def _safe_child_argv_metadata(argv):
+    return {
+        "argv_sha256": hashlib.sha256(
+            b"\0".join(os.fsencode(part) for part in argv)
+        ).hexdigest(),
+        "argument_count": len(argv),
+        "contains_env_file_argument": "--env-file" in argv,
+        "interpreter": argv[0],
+        "cwd": str(Path(__file__).resolve().parents[2]),
+    }
+
+
+def _verify_reviewed_regular_tracked_blob(reviewed, path, label):
+    """Bind a reviewed path to both the index and the reviewed Git blob."""
+    path = Path(path)
+    try:
+        mode = path.lstat().st_mode
+    except FileNotFoundError as exc:
+        raise ValueError(f"{label} is missing") from exc
+    if path.is_symlink() or not stat.S_ISREG(mode):
+        raise ValueError(f"{label} must be a regular file, not a symlink")
+    try:
+        subprocess.check_output(
+            ["git", "ls-files", "--error-unmatch", "--", str(path)], stderr=subprocess.DEVNULL
+        )
+        reviewed_bytes = subprocess.check_output(["git", "show", f"{reviewed}:{path}"])
+    except subprocess.CalledProcessError as exc:
+        raise ValueError(f"{label} is not a tracked reviewed path") from exc
+    if path.read_bytes() != reviewed_bytes:
+        raise ValueError(f"{label} differs from its reviewed Git blob")
 
 
 def registration():
@@ -231,6 +368,7 @@ def registration():
         or approval.get("review_url") is None
         or approval.get("review_body_sha256") is None
         or not isinstance(reviewed, str)
+        or not re.fullmatch(r"[0-9a-f]{40}", reviewed)
         or approval.get("operation_wrapper") != str(WRAPPER)
         or approval.get("operation_wrapper_sha256") != sha(WRAPPER)
         or approval.get("wrapper_dependency") != str(DEPENDENCY)
@@ -250,13 +388,18 @@ def registration():
         or approval.get("launch_outcome") != str(OUTCOME)
         or approval.get("local_console_log") != str(LOG)
         or approval.get("staging_output_root") != str(STAGING)
+        or approval.get("effective_environment_contract_version")
+        != EFFECTIVE_ENVIRONMENT_CONTRACT_VERSION
+        or approval.get("preflight_implementation_sha256") != sha(WRAPPER)
     ):
         raise ValueError("Registered fresh-v6 control-v2 authorization changed")
     helper.base.git("merge-base", "--is-ancestor", reviewed, "HEAD")
-    if helper.base.git("diff", reviewed, "--", str(DEPENDENCY)):
-        raise ValueError("Fresh-v4 dependency changed after fresh-v6 review")
-    if helper.base.git("diff", reviewed, "--", str(BASE_DEPENDENCY)):
-        raise ValueError("Fresh-v2 base dependency changed after fresh-v6 review")
+    for path, label in (
+        (WRAPPER, "Fresh-v6 wrapper"),
+        (DEPENDENCY, "Fresh-v4 dependency"),
+        (BASE_DEPENDENCY, "Fresh-v2 base dependency"),
+    ):
+        _verify_reviewed_regular_tracked_blob(reviewed, path, label)
     return approval, helper.base.git("rev-parse", "HEAD")
 
 
@@ -280,8 +423,10 @@ def _configure_helper():
 
 
 def run(index_manifest, env_file=None):
-    global _ENV_FILE, _CHILD_ENV
-    _CHILD_ENV = _effective_child_environment(env_file)
+    global _ENV_FILE, _CHILD_ENV, _ENVIRONMENT_CONTRACT, _ENV_FILE_SUPPLIED, _INDEX_MANIFEST
+    _CHILD_ENV, _ENVIRONMENT_CONTRACT = _freeze_effective_child_environment(env_file)
+    _ENV_FILE_SUPPLIED = env_file is not None
+    _INDEX_MANIFEST = index_manifest
     _ENV_FILE = None
     _configure_helper()
     # This explicit pass is non-consuming.  The inherited marker hook repeats
