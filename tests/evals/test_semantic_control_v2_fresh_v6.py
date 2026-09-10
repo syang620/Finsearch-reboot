@@ -187,6 +187,7 @@ def test_effective_environment_is_unchanged_after_env_file_mutation(monkeypatch,
 def test_environment_contract_preserves_inherited_values_and_redacts_secrets(monkeypatch, tmp_path):
     monkeypatch.setattr(operation.os, "environ", {
         "INHERITED": "stable",
+        "PYTHONPATH": "/safe/site-packages",
         "SEC_USER_AGENT": "inherited-agent@example.org",
     })
     env_file = tmp_path / "local.env"
@@ -208,11 +209,12 @@ def test_environment_contract_preserves_inherited_values_and_redacts_secrets(mon
     }
     entries = [
         {"name": "DASHSCOPE_API_KEY", "source": "env_file"},
-        {"name": "INHERITED", "source": "inherited", "value_sha256": hashlib.sha256(b"stable").hexdigest()},
+        {"name": "INHERITED", "source": "inherited"},
+        {"name": "PYTHONPATH", "source": "inherited", "value_sha256": hashlib.sha256(b"/safe/site-packages").hexdigest()},
         {"name": "QWEN3_RERANK_API_KEY", "source": "absent"},
         {"name": "SEC_METRIC_FIXTURE_ROOT", "source": "absent"},
         {"name": "SEC_USER_AGENT", "source": "inherited"},
-        {"name": "VISIBLE", "source": "env_file", "value_sha256": hashlib.sha256(b"from-file").hexdigest()},
+        {"name": "VISIBLE", "source": "env_file"},
     ]
     fingerprint_input = {
         "version": operation.EFFECTIVE_ENVIRONMENT_CONTRACT_VERSION,
@@ -226,6 +228,33 @@ def test_environment_contract_preserves_inherited_values_and_redacts_secrets(mon
     rendered = json.dumps(contract)
     assert "file-secret" not in rendered
     assert "inherited-agent@example.org" not in rendered
+    assert contract["effective_environment_contract_version"] == "2"
+
+
+@pytest.mark.parametrize(
+    "name",
+    ("DATABASE_URL", "GITHUB_PAT", "AWS_ACCESS_KEY_ID", "REDIS_URL", "COOKIE"),
+)
+def test_unallowlisted_environment_values_never_change_the_fingerprint(name):
+    first = {"PYTHONPATH": "/safe/site-packages", name: "first-secret"}
+    second = {"PYTHONPATH": "/safe/site-packages", name: "second-secret"}
+
+    first_contract = operation._environment_contract(first, first, False)
+    second_contract = operation._environment_contract(second, second, False)
+
+    assert first_contract["fingerprint_sha256"] == second_contract["fingerprint_sha256"]
+    assert "first-secret" not in json.dumps(first_contract)
+    assert "second-secret" not in json.dumps(second_contract)
+
+
+def test_allowlisted_environment_value_changes_the_fingerprint():
+    first = {"PYTHONPATH": "/safe/site-packages"}
+    second = {"PYTHONPATH": "/different/site-packages"}
+
+    first_contract = operation._environment_contract(first, first, False)
+    second_contract = operation._environment_contract(second, second, False)
+
+    assert first_contract["fingerprint_sha256"] != second_contract["fingerprint_sha256"]
 
 
 def test_runtime_preflight_uses_the_same_frozen_mapping_and_explicit_source_flag(monkeypatch):

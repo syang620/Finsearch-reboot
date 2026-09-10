@@ -33,7 +33,7 @@ AUTHORIZATION_ID = "SEMANTIC-V2-CONTROL-V2-FRESH-V6-20260909"
 QUALITY = Path("docs/evals/semantic_answer_v2_quality_approval.json")
 REVIEW_AUTHOR = "chatgpt-codex-connector[bot]"
 REVIEW_REPOSITORY = "syang620/Finsearch-reboot"
-EFFECTIVE_ENVIRONMENT_CONTRACT_VERSION = "1"
+EFFECTIVE_ENVIRONMENT_CONTRACT_VERSION = "2"
 PREFLIGHT_TIMEOUT_SECONDS = 30
 REQUIRED_ENVIRONMENT_KEYS = (
     "SEC_USER_AGENT",
@@ -41,8 +41,18 @@ REQUIRED_ENVIRONMENT_KEYS = (
     "QWEN3_RERANK_API_KEY",
     "SEC_METRIC_FIXTURE_ROOT",
 )
-_SECRET_ENVIRONMENT_KEY = re.compile(
-    r"(?:API[_-]?KEY|TOKEN|SECRET|PASSWORD|CREDENTIAL|PRIVATE|USER[_-]?AGENT)", re.IGNORECASE
+HASHABLE_ENVIRONMENT_KEYS = frozenset(
+    (
+        "PYTHONPATH",
+        "QDRANT_HOST",
+        "QDRANT_PORT",
+        "QDRANT_COLLECTION_NAME",
+        "TABLES_DIR",
+        "LITELLM_GPT_MODEL",
+        "LITELLM_CLAUDE_MODEL",
+        "LITELLM_GEMINI_MODEL",
+        "LLM_FALLBACK_MODELS",
+    )
 )
 _BASE_DEPENDENCY_PREFLIGHT = helper.dependency_preflight
 _ENV_FILE = None
@@ -80,10 +90,6 @@ print(json.dumps({
 """
 
 
-def _is_secret_environment_key(name):
-    return bool(_SECRET_ENVIRONMENT_KEY.search(name))
-
-
 def _environment_contract(effective, inherited, env_file_supplied):
     """Return a redacted digest of the exact environment passed to the child."""
     required_sources = {}
@@ -96,7 +102,7 @@ def _environment_contract(effective, inherited, env_file_supplied):
         else:
             source = "env_file"
         entry = {"name": name, "source": source}
-        if source != "absent" and not _is_secret_environment_key(name):
+        if source != "absent" and name in HASHABLE_ENVIRONMENT_KEYS:
             entry["value_sha256"] = hashlib.sha256(
                 effective[name].encode("utf-8")
             ).hexdigest()
