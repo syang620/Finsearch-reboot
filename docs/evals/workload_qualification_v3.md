@@ -40,6 +40,8 @@ The rehearsal and launcher hash the verifier's frozen service-identity JSON and 
 runtime performance adapter alongside the frozen contract, preregistration,
 implementation, collector, and observer inputs. Any future approval must bind the
 service-provenance digest.
+The rehearsal refuses a dirty tracked checkout or relevant untracked code and records
+the current commit plus hashes of its own script and the v3 decision adapter.
 
 Before any future semantic attempt, separately investigate why a nominal 120-second
 analyst timeout produced a 440-second case duration and prove an explicit end-to-end

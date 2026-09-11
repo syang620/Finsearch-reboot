@@ -12,6 +12,7 @@ import time
 import uuid
 
 from evals.semantic_dataset_v2 import sha
+from scripts.evals.agents import run_semantic_baseline_v2_1 as frozen
 from scripts.evals.agents import run_semantic_baseline_v2_2 as legacy
 from scripts.evals.agents.semantic_workload_control_v2 import WorkloadControlV2Monitor
 from scripts.evals.agents import semantic_workload_qualification_v3 as qualification
@@ -21,6 +22,10 @@ DEFAULT_ROOT = (
     Path.home() / ".local/share/finsearch/semantic-qualification/rehearsals"
 )
 CONTRACT = Path("docs/evals/workload_qualification_v3_contract.json")
+QUALIFICATION_ADAPTER = Path(
+    "scripts/evals/agents/semantic_workload_qualification_v3.py"
+)
+REHEARSAL = Path("scripts/diagnostics/rehearse_semantic_workload_qualification_v3.py")
 
 
 def now():
@@ -74,12 +79,14 @@ def verify_frozen_inputs():
         or contract.get("performance_policy") != qualification.PERFORMANCE_POLICY
     ):
         raise ValueError("Workload-qualification-v3 contract mismatch")
+    frozen.clean_checkout()
 
 
 def run(args):
     if not 10 <= args.duration_seconds <= 3600:
         raise ValueError("duration must be between 10 and 3600 seconds")
     verify_frozen_inputs()
+    implementation_sha = legacy.git("rev-parse", "HEAD")
     target = private_directory(args.out_root)
     raw = target / qualification.RAW_NAME
     awake = subprocess.Popen(["caffeinate", "-i", "-w", str(os.getpid())])
@@ -94,6 +101,9 @@ def run(args):
             "contract_sha256": sha(CONTRACT),
             "performance_adapter_sha256": sha(legacy.ADAPTER),
             "service_provenance_sha256": sha(legacy.FROZEN_PROVENANCE),
+            "qualification_adapter_sha256": sha(QUALIFICATION_ADAPTER),
+            "rehearsal_sha256": sha(REHEARSAL),
+            "implementation_sha": implementation_sha,
         },
     )
     technical_error = None
@@ -186,6 +196,9 @@ def run(args):
         "contract_sha256": sha(CONTRACT),
         "performance_adapter_sha256": sha(legacy.ADAPTER),
         "service_provenance_sha256": sha(legacy.FROZEN_PROVENANCE),
+        "qualification_adapter_sha256": sha(QUALIFICATION_ADAPTER),
+        "rehearsal_sha256": sha(REHEARSAL),
+        "implementation_sha": implementation_sha,
         "execution_authority": False,
     }
     if technical_error is not None:

@@ -58,6 +58,7 @@ def arguments(tmp_path, require=False):
 
 def setup(monkeypatch):
     monkeypatch.setattr(rehearsal, "verify_frozen_inputs", lambda: None)
+    monkeypatch.setattr(rehearsal.legacy, "git", lambda *args: "a" * 40)
     monkeypatch.setattr(rehearsal.subprocess, "Popen", lambda *args, **kwargs: Awake())
     monkeypatch.setattr(rehearsal, "WorkloadControlV2Monitor", Monitor)
     values = iter([0, 10, 11])
@@ -80,6 +81,11 @@ def test_completed_unqualified_rehearsal_is_observational_success(tmp_path, monk
         "reasons": ["browser_present", "active_supervision_ui"],
     }
     assert summary["execution_authority"] is False
+    assert summary["qualification_adapter_sha256"] == rehearsal.sha(
+        rehearsal.QUALIFICATION_ADAPTER
+    )
+    assert summary["rehearsal_sha256"] == rehearsal.sha(rehearsal.REHEARSAL)
+    assert summary["implementation_sha"] == "a" * 40
     assert summary_path.stat().st_mode & 0o777 == 0o600
     assert (targets[0] / "workload_qualification_v3.jsonl").stat().st_mode & 0o777 == 0o600
     assert not list(tmp_path.rglob("consumed.json"))
@@ -159,6 +165,17 @@ def test_frozen_inputs_include_service_provenance(monkeypatch):
         assert "identity changed" in str(exc)
     else:
         raise AssertionError("changed service provenance should fail")
+
+
+def test_frozen_inputs_require_clean_checkout(monkeypatch):
+    calls = []
+    monkeypatch.setattr(
+        rehearsal.frozen,
+        "clean_checkout",
+        lambda: calls.append("clean"),
+    )
+    rehearsal.verify_frozen_inputs()
+    assert calls == ["clean"]
 
 
 def test_duration_is_bounded(tmp_path):
