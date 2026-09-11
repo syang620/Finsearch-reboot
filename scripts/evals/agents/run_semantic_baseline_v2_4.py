@@ -64,6 +64,16 @@ def approval_reviewed_paths(index_attestation):
     )
 
 
+def reviewed_diff(reviewed, paths):
+    return legacy.git(
+        "--literal-pathspecs",
+        "diff",
+        reviewed,
+        "--",
+        *(str(path) for path in paths),
+    )
+
+
 def verify_opt_in(args):
     if args.workload_qualification_v3 != qualification.POLICY:
         raise ValueError(
@@ -71,6 +81,7 @@ def verify_opt_in(args):
         )
     frozen.clean_checkout()
     verify_frozen_performance_dependencies()
+    frozen.committed_approval(args.index_attestation)
     head = legacy.git("rev-parse", "HEAD")
     approval = frozen.committed_approval(args.qualification_approval)
     reviewed = approval.get("reviewed_commit")
@@ -100,7 +111,7 @@ def verify_opt_in(args):
         raise ValueError("Committed workload-qualification-v3 approval mismatch")
     legacy.git("merge-base", "--is-ancestor", reviewed, "HEAD")
     reviewed_paths = approval_reviewed_paths(args.index_attestation)
-    if legacy.git("diff", reviewed, "--", *(str(path) for path in reviewed_paths)):
+    if reviewed_diff(reviewed, reviewed_paths):
         raise ValueError("Workload-qualification-v3 behavior changed after review")
     frozen.verify_remote_review(approval)
     return head, approval

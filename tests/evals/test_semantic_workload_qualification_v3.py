@@ -475,6 +475,25 @@ def test_review_guard_covers_every_executable_dependency():
     } == reviewed
 
 
+def test_review_guard_uses_literal_pathspecs(monkeypatch):
+    calls = []
+    monkeypatch.setattr(
+        launcher.legacy,
+        "git",
+        lambda *args: calls.append(args) or "",
+    )
+    launcher.reviewed_diff("a" * 40, [Path(":(exclude)**")])
+    assert calls == [
+        (
+            "--literal-pathspecs",
+            "diff",
+            "a" * 40,
+            "--",
+            ":(exclude)**",
+        )
+    ]
+
+
 class FakeAwake:
     pid = 321
 
