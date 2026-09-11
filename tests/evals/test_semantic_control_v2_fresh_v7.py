@@ -61,7 +61,11 @@ def test_fresh_v7_approval_preserves_separate_execution_gate():
     assert contract["status"] == "inactive_v7_candidate"
     assert contract["authority"] == "none"
     assert approval["status"] == "approved_for_one_semantic_v2_control_v2_fresh_v7_attempt"
-    assert "separately gives explicit fresh-v7 execution authorization" in approval["execution_gate"]
+    assert "separate explicit fresh-v7 user authorization" in approval["execution_gate"]
+    assert approval["execution_authorization_path"] == str(
+        operation.EXECUTION_AUTHORIZATION
+    )
+    assert not operation.EXECUTION_AUTHORIZATION.exists()
     assert "fresh_v6" not in operation.DEPENDENCY.name
     assert (
         "import run_authorized_semantic_v2_control_v2_fresh_v6"
@@ -132,6 +136,94 @@ def test_registration_fails_inactive_before_any_marker(monkeypatch, tmp_path):
     with pytest.raises(RuntimeError, match="candidate is inactive"):
         operation.registration()
     assert not marker.exists()
+
+
+def _execution_authorization(monkeypatch, tmp_path, *, mode=0o600, head="a" * 40):
+    approval = tmp_path / "approval.json"
+    approval.write_text('{"approved": true, "pull_request": 31}\n')
+    authorization = tmp_path / "execution.json"
+    record = {
+        "authorization_contract_version": "1",
+        "status": "authorized_for_one_fresh_v7_invocation",
+        "authorization_id": operation.AUTHORIZATION_ID,
+        "explicit_user_authorization": True,
+        "max_invocations": 1,
+        "approval_path": str(approval),
+        "approval_sha256": sha(approval),
+        "review_status": "completed_clean",
+        "pull_request": 31,
+        "review_comment_id": 123,
+        "review_url": "https://example.invalid/review",
+        "review_body_sha256": "b" * 64,
+        "reviewed_commit": head,
+    }
+    authorization.write_text(json.dumps(record) + "\n")
+    authorization.chmod(mode)
+    monkeypatch.setattr(operation, "AUTH", approval)
+    monkeypatch.setattr(operation, "EXECUTION_AUTHORIZATION", authorization)
+
+    def untracked(*args, **kwargs):
+        raise operation.subprocess.CalledProcessError(1, args[0])
+
+    monkeypatch.setattr(operation.subprocess, "check_output", untracked)
+    monkeypatch.setattr(
+        operation.environment,
+        "remote_attestation",
+        lambda value, label: {
+            "label": label,
+            "reviewed_commit": value["reviewed_commit"],
+            "review_body_sha256": value["review_body_sha256"],
+        },
+    )
+    return approval, authorization, record
+
+
+def test_execution_authorization_binds_approval_review_and_user_authority(
+    monkeypatch, tmp_path
+):
+    _, authorization, record = _execution_authorization(monkeypatch, tmp_path)
+
+    result = operation.verify_execution_authorization(
+        json.loads(operation.AUTH.read_text()), "a" * 40
+    )
+
+    assert result["explicit_user_authorization"] is True
+    assert result["reviewed_commit"] == "a" * 40
+    assert result["authorization_record_sha256"] == sha(authorization)
+
+
+def test_missing_execution_authorization_fails_before_preflight(monkeypatch, tmp_path):
+    monkeypatch.setattr(
+        operation, "EXECUTION_AUTHORIZATION", tmp_path / "missing-execution.json"
+    )
+
+    with pytest.raises(RuntimeError, match="execution authorization is absent"):
+        operation.verify_execution_authorization({}, "a" * 40)
+
+
+def test_execution_authorization_requires_mode_0600(monkeypatch, tmp_path):
+    _, _, record = _execution_authorization(monkeypatch, tmp_path, mode=0o644)
+
+    with pytest.raises(ValueError, match="mode 0600"):
+        operation.verify_execution_authorization(
+            json.loads(operation.AUTH.read_text()), "a" * 40
+        )
+
+
+def test_execution_authorization_requires_current_reviewed_head(monkeypatch, tmp_path):
+    _, _, record = _execution_authorization(monkeypatch, tmp_path, head="b" * 40)
+
+    with pytest.raises(ValueError, match="contract mismatch"):
+        operation.verify_execution_authorization(
+            json.loads(operation.AUTH.read_text()), "a" * 40
+        )
+
+
+def test_dependency_preflight_requires_verified_execution_authorization(monkeypatch):
+    monkeypatch.setattr(operation, "_EXECUTION_AUTHORIZATION_RECORD", None)
+
+    with pytest.raises(RuntimeError, match="was not verified"):
+        operation.dependency_preflight()
 
 
 def test_inactive_run_stops_before_qdrant_preflight(monkeypatch, tmp_path):

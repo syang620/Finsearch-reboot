@@ -10,6 +10,8 @@ import json
 import os
 from pathlib import Path
 import re
+import stat
+import subprocess
 
 from qdrant_client import QdrantClient
 
@@ -31,6 +33,10 @@ INDEX_ATTESTATION = canonical.CONTRACT
 RETIREMENT = launcher.RETIREMENT
 V6_WRAPPER = Path("scripts/operations/run_authorized_semantic_v2_control_v2_fresh_v6.py")
 V6_APPROVAL = Path("docs/evals/semantic_answer_v2_control_v2_fresh_v6_approval.json")
+EXECUTION_AUTHORIZATION = Path(
+    ".cache/semantic_v2_control_v2_fresh_v7_20260910.execution_authorization.json"
+)
+EXECUTION_AUTHORIZATION_CONTRACT_VERSION = "1"
 INTERPRETER = helper.INTERPRETER
 MARKER = Path(".cache/semantic_v2_control_v2_fresh_v7_20260910.consumed.json")
 OUTCOME = Path(".cache/semantic_v2_control_v2_fresh_v7_20260910.launch_outcome.json")
@@ -47,6 +53,7 @@ _CHILD_ENV = None
 _ENVIRONMENT_CONTRACT = None
 _ENV_FILE_SUPPLIED = False
 _PREFLIGHT_RESULT = None
+_EXECUTION_AUTHORIZATION_RECORD = None
 
 
 def sha(path):
@@ -66,6 +73,74 @@ def verify_retired_v6_artifacts():
     ):
         raise ValueError("Retired fresh-v6 artifacts differ from their retirement record")
     return retirement
+
+
+def verify_execution_authorization(approval, current_head):
+    """Require external evidence of both post-approval execution gates."""
+    try:
+        mode = EXECUTION_AUTHORIZATION.lstat().st_mode
+    except FileNotFoundError as exc:
+        raise RuntimeError(
+            "Fresh-v7 explicit execution authorization is absent"
+        ) from exc
+    if EXECUTION_AUTHORIZATION.is_symlink() or not stat.S_ISREG(mode):
+        raise ValueError("Fresh-v7 execution authorization must be a regular file")
+    if stat.S_IMODE(mode) != 0o600:
+        raise ValueError("Fresh-v7 execution authorization must have mode 0600")
+    try:
+        subprocess.check_output(
+            ["git", "ls-files", "--error-unmatch", "--", str(EXECUTION_AUTHORIZATION)],
+            stderr=subprocess.DEVNULL,
+        )
+    except subprocess.CalledProcessError:
+        pass
+    else:
+        raise ValueError("Fresh-v7 execution authorization must remain outside Git")
+    record = json.loads(EXECUTION_AUTHORIZATION.read_text())
+    expected_keys = {
+        "authorization_contract_version",
+        "status",
+        "authorization_id",
+        "explicit_user_authorization",
+        "max_invocations",
+        "approval_path",
+        "approval_sha256",
+        "review_status",
+        "pull_request",
+        "review_comment_id",
+        "review_url",
+        "review_body_sha256",
+        "reviewed_commit",
+    }
+    if (
+        set(record) != expected_keys
+        or record.get("authorization_contract_version")
+        != EXECUTION_AUTHORIZATION_CONTRACT_VERSION
+        or record.get("status") != "authorized_for_one_fresh_v7_invocation"
+        or record.get("authorization_id") != AUTHORIZATION_ID
+        or record.get("explicit_user_authorization") is not True
+        or record.get("max_invocations") != 1
+        or record.get("approval_path") != str(AUTH)
+        or record.get("approval_sha256") != sha(AUTH)
+        or record.get("review_status") != "completed_clean"
+        or record.get("pull_request") != approval.get("pull_request")
+        or record.get("reviewed_commit") != current_head
+    ):
+        raise ValueError("Fresh-v7 execution authorization contract mismatch")
+    review = environment.remote_attestation(record, "execution")
+    if review["reviewed_commit"] != current_head:
+        raise ValueError("Fresh-v7 execution review does not bind the current head")
+    return {
+        "authorization_contract_version": EXECUTION_AUTHORIZATION_CONTRACT_VERSION,
+        "authorization_record_sha256": sha(EXECUTION_AUTHORIZATION),
+        "authorization_id": AUTHORIZATION_ID,
+        "explicit_user_authorization": True,
+        "max_invocations": 1,
+        "approval_sha256": sha(AUTH),
+        "reviewed_commit": current_head,
+        "review_comment_id": record["review_comment_id"],
+        "review_body_sha256": record["review_body_sha256"],
+    }
 
 
 def _base_child_argv(
@@ -153,6 +228,8 @@ def _remote_review_preflight():
 
 def dependency_preflight():
     global _PREFLIGHT_RESULT
+    if _EXECUTION_AUTHORIZATION_RECORD is None:
+        raise RuntimeError("Fresh-v7 execution authorization was not verified")
     result = environment.runtime_environment_preflight(
         INTERPRETER,
         child_env=_CHILD_ENV,
@@ -163,6 +240,7 @@ def dependency_preflight():
         preflight_env=_CHILD_ENV
     )
     result["canonical_qdrant"] = canonical_qdrant_preflight()
+    result["execution_authorization"] = _EXECUTION_AUTHORIZATION_RECORD
     result["remote_reviews"] = _remote_review_preflight()
     args = argparse.Namespace(
         workload_control_v2="B_CONSECUTIVE_10",
@@ -186,6 +264,7 @@ def dependency_preflight():
 
 
 def registration():
+    global _EXECUTION_AUTHORIZATION_RECORD
     helper.interpreter_identity()
     if not AUTH.exists():
         raise RuntimeError("Fresh-v7 candidate is inactive; no approval exists")
@@ -229,11 +308,20 @@ def registration():
         or approval.get("effective_environment_contract_version")
         != EFFECTIVE_ENVIRONMENT_CONTRACT_VERSION
         or approval.get("preflight_implementation_sha256") != sha(WRAPPER)
+        or approval.get("execution_authorization_path")
+        != str(EXECUTION_AUTHORIZATION)
+        or approval.get("execution_authorization_contract_version")
+        != EXECUTION_AUTHORIZATION_CONTRACT_VERSION
     ):
         raise ValueError("Registered fresh-v7 control-v2 authorization changed")
     verify_retired_v6_artifacts()
     helper.base.git("merge-base", "--is-ancestor", reviewed, "HEAD")
+    current_head = helper.base.git("rev-parse", "HEAD")
+    _EXECUTION_AUTHORIZATION_RECORD = verify_execution_authorization(
+        approval, current_head
+    )
     for path, label in (
+        (AUTH, "Fresh-v7 approval"),
         (WRAPPER, "Fresh-v7 wrapper"),
         (ENVIRONMENT_HELPER, "Fresh-v7 environment helper"),
         (DEPENDENCY, "Fresh-v4 dependency"),
@@ -246,8 +334,8 @@ def registration():
         (V6_WRAPPER, "Retired fresh-v6 wrapper"),
         (V6_APPROVAL, "Retired fresh-v6 approval"),
     ):
-        environment.verify_reviewed_regular_tracked_blob(reviewed, path, label)
-    return approval, helper.base.git("rev-parse", "HEAD")
+        environment.verify_reviewed_regular_tracked_blob(current_head, path, label)
+    return approval, current_head
 
 
 def _configure_helper():
