@@ -19,6 +19,10 @@ The external attempt root is fixed:
 Preparation exclusively creates it with mode 0700 and never overwrites an
 existing preparation. A failed preparation is preserved for inspection; there
 is no automatic cleanup/retry or conversion into execution authority.
+The preparation receipt binds the attempt root and writable cache by device,
+inode, owner, mode, and an exact macOS deny-delete ACL. The ACL prevents ordinary
+same-user rename or removal through child launch while permitting cache-content
+writes; the controller revalidates the recorded identities at each execution gate.
 
 Preparation fetches a full commit and its ancestry into an independent Git
 repository with an empty hook template and no shared object storage. Every

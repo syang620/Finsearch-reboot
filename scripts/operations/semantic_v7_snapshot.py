@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 import argparse
+import ctypes
+import ctypes.util
 import hashlib
 import json
 import os
@@ -14,6 +16,13 @@ import sys
 
 ROOT = Path('/Users/shicheny/.local/share/finsearch/semantic-baseline/fresh-v7-r2')
 VERSION = '2'
+DIRECTORY_PROTECTION_ACL = 'group:everyone deny delete'
+DIRECTORY_PROTECTION_SPEC = 'everyone deny delete'
+DIRECTORY_PROTECTION_ACL_BYTES = (
+    b'!#acl 1\n'
+    b'group:ABCDEFAB-CDEF-ABCD-EFAB-CDEF0000000C:everyone:12:deny:delete\n'
+)
+ACL_TYPE_EXTENDED = 0x00000100
 
 
 def digest(data):
@@ -73,6 +82,72 @@ def command(argv, cwd=None, *, data=None, timeout=180):
                               check=True, env=env, timeout=timeout).stdout
     except (OSError, subprocess.SubprocessError):
         raise RuntimeError('Sealed-source command failed') from None
+
+
+def descriptor_acl(fd):
+    if sys.platform != 'darwin':
+        raise ValueError('Protected external directory identity differs')
+    library = ctypes.CDLL(ctypes.util.find_library('c'), use_errno=True)
+    library.acl_get_fd_np.argtypes = [ctypes.c_int, ctypes.c_int]
+    library.acl_get_fd_np.restype = ctypes.c_void_p
+    library.acl_to_text.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_ssize_t)]
+    library.acl_to_text.restype = ctypes.c_void_p
+    library.acl_free.argtypes = [ctypes.c_void_p]
+    library.acl_free.restype = ctypes.c_int
+    acl = library.acl_get_fd_np(fd, ACL_TYPE_EXTENDED)
+    if not acl:
+        raise OSError(ctypes.get_errno(), 'Could not read directory ACL')
+    try:
+        length = ctypes.c_ssize_t()
+        text = library.acl_to_text(acl, ctypes.byref(length))
+        if not text:
+            raise OSError(ctypes.get_errno(), 'Could not serialize directory ACL')
+        try:
+            return ctypes.string_at(text, length.value)
+        finally:
+            library.acl_free(text)
+    finally:
+        library.acl_free(acl)
+
+
+def protected_directory_identity(path):
+    path = Path(path).absolute()
+    try:
+        fd = os.open(path, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+        try:
+            info = os.fstat(fd)
+            acl = descriptor_acl(fd)
+            current = path.lstat()
+        finally:
+            os.close(fd)
+    except OSError:
+        raise ValueError('Protected external directory identity differs') from None
+    if (not stat.S_ISDIR(info.st_mode)
+            or info.st_uid != os.getuid() or stat.S_IMODE(info.st_mode) != 0o700
+            or (current.st_dev, current.st_ino) != (info.st_dev, info.st_ino)
+            or path.resolve() != path or acl != DIRECTORY_PROTECTION_ACL_BYTES):
+        raise ValueError('Protected external directory identity differs')
+    return {'path': str(path), 'device': info.st_dev, 'inode': info.st_ino,
+            'uid': info.st_uid, 'mode': '0700', 'acl': DIRECTORY_PROTECTION_ACL}
+
+
+def protect_directory(path):
+    command(['/bin/chmod', '-N', str(path)])
+    command(['/bin/chmod', '+a', DIRECTORY_PROTECTION_SPEC, str(path)])
+    return protected_directory_identity(path)
+
+
+def external_directory_identities(root):
+    root = Path(root).absolute()
+    return {'root': protected_directory_identity(root),
+            'cache': protected_directory_identity(root / 'cache')}
+
+
+def verify_external_directories(root, receipt):
+    actual = external_directory_identities(root)
+    if receipt.get('external_directories') != actual:
+        raise ValueError('Protected external directory identity differs')
+    return actual
 
 
 def git(root, *args, data=None):
@@ -147,6 +222,7 @@ def image_sha(path):
 def verify_mount(root, receipt):
     if receipt.get('version') != VERSION:
         raise ValueError('Prepared source contract version differs')
+    verify_external_directories(root, receipt)
     mount = root / 'source'
     if not os.statvfs(mount).f_flag & os.ST_RDONLY:
         raise ValueError('Source filesystem is not read-only')
@@ -171,9 +247,11 @@ def prepare(repository, head, root=ROOT):
         raise ValueError('Full commit required')
     root = Path(root).absolute()
     root.mkdir(mode=0o700, parents=True, exist_ok=False)
+    protect_directory(root)
     build = root / 'build'
     build.mkdir(mode=0o700)
     (root / 'cache').mkdir(mode=0o700)
+    protect_directory(root / 'cache')
     (root / 'source').mkdir(mode=0o700)
     template = root / 'empty-template'
     template.mkdir(mode=0o700)
@@ -190,7 +268,8 @@ def prepare(repository, head, root=ROOT):
              'UDRO', '-fs', 'Case-sensitive HFS+', '-nospotlight', str(root / 'source.dmg')])
     (root / 'source.dmg').chmod(0o400)
     os.chflags(root / 'source.dmg', stat.UF_IMMUTABLE)
-    receipt = dict(identity, version=VERSION, image_sha256=image_sha(root / 'source.dmg'))
+    receipt = dict(identity, version=VERSION, image_sha256=image_sha(root / 'source.dmg'),
+                   external_directories=external_directory_identities(root))
     command(['/usr/bin/hdiutil', 'attach', str(root / 'source.dmg'), '-readonly',
              '-nobrowse', '-noautoopen', '-mountpoint', str(root / 'source'), '-plist'])
     verify_mount(root, receipt)

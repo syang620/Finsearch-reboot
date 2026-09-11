@@ -16,19 +16,37 @@ from scripts.operations import semantic_v7_snapshot as snapshot
 from scripts.operations import semantic_v7_environment as environment
 
 
+def clear_acl(path):
+    if os.path.lexists(path) and not path.is_symlink():
+        subprocess.run(['/bin/chmod', '-N', str(path)], check=True)
+
+
+def prepared(contract):
+    return contract.record()['prepared']
+
+
 @pytest.fixture
 def contract(tmp_path):
     root = tmp_path / 'attempt'
     root.mkdir(mode=0o700)
+    snapshot.protect_directory(root)
     (root / 'cache').mkdir(mode=0o700)
+    snapshot.protect_directory(root / 'cache')
     (root / 'source').mkdir()
-    metadata = {'prepared': {'head': 'a' * 40, 'image_sha256': 'b' * 64},
+    receipt = {'version': '2', 'head': 'a' * 40, 'image_sha256': 'b' * 64,
+               'external_directories': snapshot.external_directory_identities(root)}
+    metadata = {'prepared': receipt,
                 'approval_sha256': 'c' * 64}
     env = MappingProxyType({'PATH': os.environ['PATH'], 'SEC_USER_AGENT': 'private-contact',
                             'DASHSCOPE_API_KEY': 'private-credential'})
-    return controller.Contract(root, root / 'source', sys.executable,
-                               (sys.executable, '-c', 'print("harmless")'), env,
-                               json.dumps(metadata).encode())
+    result = controller.Contract(root, root / 'source', sys.executable,
+                                 (sys.executable, '-c', 'print("harmless")'), env,
+                                 json.dumps(metadata).encode())
+    try:
+        yield result
+    finally:
+        clear_acl(root / 'cache')
+        clear_acl(root)
 
 
 def auth_record(contract):
@@ -114,54 +132,90 @@ def test_supervisor_real_child_and_captured_contract(contract, monkeypatch):
     assert outcome['child_returncode'] == 0
     assert (contract.root / 'consumed.json').exists()
     with pytest.raises(ValueError, match='no retry'):
-        controller.absent_artifacts(contract.root)
+        controller.absent_artifacts(contract.root, prepared(contract))
 
 
 @pytest.mark.parametrize('bad', ['symlink', 'mode'])
 def test_cache_must_be_owned_private_directory(contract, tmp_path, bad):
     cache = contract.root / 'cache'
     if bad == 'symlink':
+        clear_acl(cache)
         cache.rmdir()
         target = tmp_path / 'redirected-cache'
         target.mkdir(mode=0o700)
         cache.symlink_to(target, target_is_directory=True)
     else:
         cache.chmod(0o755)
-    with pytest.raises(ValueError, match='mode-0700 cache'):
-        controller.absent_artifacts(contract.root)
+    with pytest.raises(ValueError, match='Protected external directory identity differs'):
+        controller.absent_artifacts(contract.root, prepared(contract))
 
 
-def test_cache_replacement_after_preflight_does_not_consume(contract, tmp_path, monkeypatch):
+def test_cache_replacement_after_preflight_is_blocked(contract):
+    attempts = []
+
     def replace(stage):
         if stage == 'after_preflight':
             cache = contract.root / 'cache'
-            cache.rmdir()
-            target = tmp_path / 'redirected-cache'
-            target.mkdir(mode=0o700)
-            cache.symlink_to(target, target_is_directory=True)
+            with pytest.raises(PermissionError):
+                cache.rename(contract.root / 'redirected-cache')
+            attempts.append(stage)
 
-    monkeypatch.setattr(controller.subprocess, 'Popen',
-                        lambda *a, **k: pytest.fail('No child expected'))
-    assert controller.supervise(contract, {}, lambda c: {}, transition=replace) == 1
+    assert controller.supervise(contract, {}, lambda c: {}, transition=replace) == 0
+    assert attempts == ['after_preflight']
+    outcome, _ = snapshot.read_record(contract.root / 'outcome.json')
+    assert outcome['child_started'] is True
+
+
+def test_cache_replacement_before_spawn_is_blocked(contract):
+    attempts = []
+
+    def replace(stage):
+        if stage == 'before_spawn':
+            cache = contract.root / 'cache'
+            with pytest.raises(PermissionError):
+                cache.rename(contract.root / 'redirected-cache')
+            attempts.append(stage)
+
+    assert controller.supervise(contract, {}, lambda c: {}, transition=replace) == 0
+    assert attempts == ['before_spawn']
+    outcome, _ = snapshot.read_record(contract.root / 'outcome.json')
+    assert outcome['child_started'] is True
+
+
+def test_cache_protection_allows_content_writes_but_not_removal(contract):
+    cache = contract.root / 'cache'
+    entry = cache / 'entry'
+    entry.write_text('ok')
+    entry.unlink()
+    with pytest.raises(PermissionError):
+        cache.rmdir()
+    with pytest.raises(PermissionError):
+        contract.root.rename(contract.root.parent / 'redirected-attempt')
+
+
+def test_missing_cache_protection_fails_before_consumption(contract):
+    clear_acl(contract.root / 'cache')
+    assert controller.supervise(contract, {}, lambda c: {}) == 1
     assert not (contract.root / 'consumed.json').exists()
     assert not (contract.root / 'outcome.json').exists()
 
 
-def test_cache_replacement_before_spawn_consumes_without_child(contract, tmp_path, monkeypatch):
-    def replace(stage):
-        if stage == 'before_spawn':
-            cache = contract.root / 'cache'
-            cache.rmdir()
-            target = tmp_path / 'redirected-cache'
-            target.mkdir(mode=0o700)
-            cache.symlink_to(target, target_is_directory=True)
+def test_substituted_protected_cache_identity_is_rejected(contract):
+    cache = contract.root / 'cache'
+    clear_acl(cache)
+    cache.rename(contract.root / 'original-cache')
+    cache.mkdir(mode=0o700)
+    snapshot.protect_directory(cache)
+    with pytest.raises(ValueError, match='Protected external directory identity differs'):
+        controller.absent_artifacts(contract.root, prepared(contract))
 
-    monkeypatch.setattr(controller.subprocess, 'Popen',
-                        lambda *a, **k: pytest.fail('No child expected'))
-    assert controller.supervise(contract, {}, lambda c: {}, transition=replace) == 1
-    outcome, _ = snapshot.read_record(contract.root / 'outcome.json')
-    assert outcome['child_started'] is False
-    assert outcome['failure']['reason'] == 'Owned external mode-0700 cache directory required'
+
+@pytest.mark.parametrize('name', ['root', 'cache'])
+def test_mount_verification_rejects_changed_external_identity(contract, name):
+    receipt = json.loads(json.dumps(prepared(contract)))
+    receipt['external_directories'][name]['inode'] += 1
+    with pytest.raises(ValueError, match='Protected external directory identity differs'):
+        snapshot.verify_mount(contract.root, receipt)
 
 
 def test_real_launcher_trampoline_matches_argv_builder(contract):
@@ -365,7 +419,7 @@ def test_image_mount_must_be_readonly(contract, monkeypatch):
         f_flag = 0
     monkeypatch.setattr(snapshot.os, 'statvfs', lambda p: Writable())
     with pytest.raises(ValueError, match='not read-only'):
-        snapshot.verify_mount(contract.root, {'version': '2'})
+        snapshot.verify_mount(contract.root, prepared(contract))
 
 
 def test_external_pythonpath_rejected(contract):
@@ -384,7 +438,7 @@ def test_failed_outcome_write_keeps_consumed_marker(contract, monkeypatch):
         controller.supervise(contract, {}, lambda c: {})
     assert (contract.root / 'consumed.json').exists()
     with pytest.raises(ValueError):
-        controller.absent_artifacts(contract.root)
+        controller.absent_artifacts(contract.root, prepared(contract))
 
 
 def test_signal_after_outcome_cutoff_cannot_rewrite_outcome(contract, monkeypatch):
@@ -453,7 +507,9 @@ def test_native_readonly_image_executes_original_after_checkout_edit(tmp_path):
     repository = tmp_path / 'repository'
     repository.mkdir()
     snapshot.git(repository, 'init', '--quiet')
-    (repository / 'harmless.py').write_text('print("reviewed source")\n')
+    (repository / 'harmless.py').write_text(
+        'from pathlib import Path\nPath(".cache/child-entry").write_text("ok")\n'
+        'print("reviewed source")\n')
     snapshot.git(repository, 'add', 'harmless.py')
     snapshot.git(repository, '-c', 'user.name=Test', '-c', 'user.email=test@example.invalid',
                  'commit', '-qm', 'harmless fixture')
@@ -473,6 +529,7 @@ def test_native_readonly_image_executes_original_after_checkout_edit(tmp_path):
             assert controller.supervise(current, {}, lambda c:
                                         snapshot.verify_mount(root, receipt)) == 0
         assert (root / 'console.log').read_bytes() == b'reviewed source\n'
+        assert (root / 'cache/child-entry').read_text() == 'ok'
         outcome, _ = snapshot.read_record(root / 'outcome.json')
         assert outcome['child_started'] is True
         assert outcome['contract']['prepared'] == receipt
@@ -483,3 +540,5 @@ def test_native_readonly_image_executes_original_after_checkout_edit(tmp_path):
             snapshot.command(['/usr/bin/hdiutil', 'detach', str(root / 'source')])
         if (root / 'source.dmg').exists():
             os.chflags(root / 'source.dmg', 0)
+        clear_acl(root / 'cache')
+        clear_acl(root)

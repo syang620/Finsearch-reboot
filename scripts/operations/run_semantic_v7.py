@@ -66,7 +66,7 @@ SAFE_FAILURE_REASONS = frozenset({
     'Unsealed interpreter import path', 'Repository module escaped sealed source',
     'Attempt artifacts already exist; no retry permitted',
     'Attempt cache is not empty; no retry permitted', 'Retired v6 identity differs',
-    'Owned external mode-0700 cache directory required',
+    'Protected external directory identity differs',
 })
 
 
@@ -88,32 +88,23 @@ def exists(path):
     return os.path.lexists(path)
 
 
-def validate_cache(root):
+def validate_cache(root, receipt):
+    snapshot.verify_external_directories(root, receipt)
     cache = root / 'cache'
-    try:
-        info = cache.lstat()
-    except OSError:
-        raise ValueError('Owned external mode-0700 cache directory required') from None
-    if (not stat.S_ISDIR(info.st_mode) or info.st_uid != os.getuid()
-            or stat.S_IMODE(info.st_mode) != 0o700 or cache.resolve() != cache):
-        raise ValueError('Owned external mode-0700 cache directory required')
     if any(cache.iterdir()):
         raise ValueError('Attempt cache is not empty; no retry permitted')
 
 
-def absent_artifacts(root):
+def absent_artifacts(root, receipt):
     if any(exists(root / name) for name in
            ('consumed.json', 'outcome.json', 'console.log', 'staging')):
         raise ValueError('Attempt artifacts already exist; no retry permitted')
-    validate_cache(root)
+    validate_cache(root, receipt)
 
 
 @contextmanager
 def attempt_lock(root):
-    info = root.lstat()
-    if (not stat.S_ISDIR(info.st_mode) or info.st_uid != os.getuid()
-            or stat.S_IMODE(info.st_mode) != 0o700 or root.resolve() != root):
-        raise ValueError('Owned external mode-0700 attempt directory required')
+    snapshot.protected_directory_identity(root)
     fd = os.open(root / 'attempt.lock', os.O_RDWR | os.O_CREAT | os.O_NOFOLLOW, 0o600)
     try:
         info = os.fstat(fd)
@@ -337,6 +328,7 @@ def supervise(contract, auth, check, *, transition=lambda stage: None):
     consumed = False
     handlers = {}
     stop_deadline = None
+    receipt = contract.record()['prepared']
 
     def handle(number, frame):
         nonlocal stop_deadline
@@ -361,10 +353,10 @@ def supervise(contract, auth, check, *, transition=lambda stage: None):
     for number in (signal.SIGINT, signal.SIGTERM):
         handlers[number] = signal.signal(number, handle)
     try:
-        absent_artifacts(contract.root)
+        absent_artifacts(contract.root, receipt)
         result['preflight'] = check(contract)
         transition('after_preflight')
-        absent_artifacts(contract.root)
+        absent_artifacts(contract.root, receipt)
         mask = signal.pthread_sigmask(signal.SIG_BLOCK, set(handlers))
         try:
             latch_pending()
@@ -388,7 +380,7 @@ def supervise(contract, auth, check, *, transition=lambda stage: None):
             try:
                 latch_pending()
                 if not received:
-                    validate_cache(contract.root)
+                    validate_cache(contract.root, receipt)
                     child = subprocess.Popen(contract.argv, cwd=contract.cwd, env=contract.env,
                                              stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                                              start_new_session=True)
@@ -471,8 +463,8 @@ def main(argv=None):
             print(json.dumps(probe(ROOT)))
             return 0
         with attempt_lock(ROOT):
-            absent_artifacts(ROOT)
             receipt, _ = snapshot.read_record(ROOT / 'prepared.json')
+            absent_artifacts(ROOT, receipt)
             approval = registration(ROOT, receipt)
             contract = freeze(ROOT, receipt, args.env_file)
             if args.operation == 'preflight':
