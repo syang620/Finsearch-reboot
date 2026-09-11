@@ -1,0 +1,32 @@
+{
+  "contract_id": "SEMANTIC_WORKLOAD_QUALIFICATION_V3",
+  "version": "3.0.0",
+  "status": "inactive_candidate_pending_review",
+  "selected_policy": "SPLIT_QUALITY_LATENCY_V1",
+  "performance_policy": "B_CONSECUTIVE_10",
+  "answer_quality_requirements": [
+    "complete_unique_capture_and_evaluation",
+    "no_evaluation_or_artifact_finalization_errors",
+    "exact_model_index_and_service_identity",
+    "continuous_ac_power_and_low_power_mode_off",
+    "awake_protection_through_final_sample",
+    "complete_workload_observation_evidence"
+  ],
+  "controlled_latency_additional_requirements": [
+    "no_real_chrome_or_safari_process",
+    "no_active_chatgpt_or_codex_supervision_process",
+    "no_b_consecutive_10_sustained_external_cpu_trigger",
+    "sampling_cadence_within_frozen_v2_tolerance",
+    "no_monitor_error"
+  ],
+  "runtime_behavior": {
+    "ambient_workload_action": "Record the violation and continue every scheduled case.",
+    "captured_runtime_failures": "Analyst, model, and tool failures remain measured answer-quality outcomes.",
+    "generic_eligibility": "Forbidden. Consumers must select answer_quality or controlled_latency explicitly and must not equate requirements_met with publication eligibility.",
+    "activation": "The durable candidate record always keeps eligible false. Publication requires a separate reviewed activation artifact after the selected dimension reports requirements_met true.",
+    "service_identity_provenance": "The exact frozen service-identity JSON digest must be verified, recorded, and bound by any future approval.",
+    "latency_without_qualification": "Diagnostic only."
+  },
+  "historical_preservation": "Workload-control v2 code, calibration, contracts, approvals, and results remain unchanged and retain their original status.",
+  "execution_gate": "This contract grants no semantic execution, approval, namespace, marker, model-call, retrieval, or rerun authority."
+}
