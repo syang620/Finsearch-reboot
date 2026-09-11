@@ -35,6 +35,7 @@ def verify_frozen_performance_dependencies():
         legacy.CONTROL_IMPLEMENTATION: legacy.EXPECTED_CONTROL_IMPLEMENTATION_SHA256,
         legacy.CONTROL_COLLECTOR: legacy.EXPECTED_CONTROL_COLLECTOR_SHA256,
         legacy.CONTROL_OBSERVER: legacy.EXPECTED_CONTROL_OBSERVER_SHA256,
+        legacy.ADAPTER: qualification.PERFORMANCE_ADAPTER_SHA256,
     }
     for path, digest in expected.items():
         if file_sha(path) != digest:

@@ -22,7 +22,8 @@
   "runtime_behavior": {
     "ambient_workload_action": "Record the violation and continue every scheduled case.",
     "captured_runtime_failures": "Analyst, model, and tool failures remain measured answer-quality outcomes.",
-    "generic_eligibility": "Forbidden. Consumers must select answer_quality or controlled_latency explicitly.",
+    "generic_eligibility": "Forbidden. Consumers must select answer_quality or controlled_latency explicitly and must not equate requirements_met with publication eligibility.",
+    "activation": "The durable candidate record always keeps eligible false. Publication requires a separate reviewed activation artifact after the selected dimension reports requirements_met true.",
     "latency_without_qualification": "Diagnostic only."
   },
   "historical_preservation": "Workload-control v2 code, calibration, contracts, approvals, and results remain unchanged and retain their original status.",

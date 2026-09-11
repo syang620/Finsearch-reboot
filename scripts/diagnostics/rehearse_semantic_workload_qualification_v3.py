@@ -61,6 +61,7 @@ def verify_frozen_inputs():
         legacy.CONTROL_IMPLEMENTATION: legacy.EXPECTED_CONTROL_IMPLEMENTATION_SHA256,
         legacy.CONTROL_COLLECTOR: legacy.EXPECTED_CONTROL_COLLECTOR_SHA256,
         legacy.CONTROL_OBSERVER: legacy.EXPECTED_CONTROL_OBSERVER_SHA256,
+        legacy.ADAPTER: qualification.PERFORMANCE_ADAPTER_SHA256,
     }
     for path, digest in expected.items():
         if sha(path) != digest:
@@ -90,6 +91,7 @@ def run(args):
             "rehearsal": True,
             "split_policy": qualification.POLICY,
             "contract_sha256": sha(CONTRACT),
+            "performance_adapter_sha256": sha(legacy.ADAPTER),
         },
     )
     technical_error = None
@@ -152,8 +154,13 @@ def run(args):
         and observations.get("sample_count") == summary.get("sample_count")
         and summary.get("awake_protection_active_through_final_sample") is True
     )
+    answer_requirements_met = bool(
+        capture_complete
+        and not observations.get("ac_power_violation_samples")
+        and not observations.get("low_power_mode_violation_samples")
+    )
     performance_reasons = qualification.latency_reasons(
-        capture_complete, summary, observations
+        answer_requirements_met, summary, observations
     )
     record = {
         "schema_version": qualification.SCHEMA_VERSION,
@@ -164,7 +171,9 @@ def run(args):
         "requested_duration_seconds": args.duration_seconds,
         "capture_complete": capture_complete,
         "controlled_latency": {
-            "eligible": capture_complete and not performance_reasons,
+            "requirements_met": answer_requirements_met and not performance_reasons,
+            "eligible": False,
+            "activation_required": answer_requirements_met and not performance_reasons,
             "reasons": performance_reasons,
         },
         "workload_observation": {
@@ -173,6 +182,7 @@ def run(args):
             "raw_sha256": sha(raw) if raw.exists() else None,
         },
         "contract_sha256": sha(CONTRACT),
+        "performance_adapter_sha256": sha(legacy.ADAPTER),
         "execution_authority": False,
     }
     if technical_error is not None:

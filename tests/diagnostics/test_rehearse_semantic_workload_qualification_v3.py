@@ -74,7 +74,9 @@ def test_completed_unqualified_rehearsal_is_observational_success(tmp_path, monk
     summary = json.loads(summary_path.read_text())
     assert summary["capture_complete"]
     assert summary["controlled_latency"] == {
+        "requirements_met": False,
         "eligible": False,
+        "activation_required": False,
         "reasons": ["browser_present", "active_supervision_ui"],
     }
     assert summary["execution_authority"] is False
@@ -86,6 +88,56 @@ def test_completed_unqualified_rehearsal_is_observational_success(tmp_path, monk
 def test_required_controlled_latency_uses_distinct_exit_code(tmp_path, monkeypatch):
     setup(monkeypatch)
     assert rehearsal.run(arguments(tmp_path, require=True)) == 2
+
+
+def test_required_controlled_latency_rejects_power_violation(tmp_path, monkeypatch):
+    class PowerMonitor(Monitor):
+        def start(self):
+            self.thread = object()
+            self.raw.write_text(
+                json.dumps({"type": "header"})
+                + "\n"
+                + json.dumps(
+                    {
+                        "type": "sample",
+                        "index": 0,
+                        "selected_policy_result": {
+                            "hard_reasons": ["ac_power"],
+                            "cpu_violation": False,
+                        },
+                        "terminal_only_result": {"valid": True},
+                    }
+                )
+                + "\n"
+                + json.dumps({"type": "footer"})
+                + "\n"
+            )
+
+    setup(monkeypatch)
+    monkeypatch.setattr(rehearsal, "WorkloadControlV2Monitor", PowerMonitor)
+    assert rehearsal.run(arguments(tmp_path, require=True)) == 2
+    target = next(tmp_path.iterdir())
+    summary = json.loads((target / "rehearsal_summary.json").read_text())
+    assert "power_control_violation" in summary["controlled_latency"]["reasons"]
+
+
+def test_frozen_inputs_include_runtime_adapter(monkeypatch):
+    expected = rehearsal.qualification.PERFORMANCE_ADAPTER_SHA256
+    actual = rehearsal.sha(rehearsal.legacy.ADAPTER)
+    assert actual == expected
+
+    original = rehearsal.sha
+    monkeypatch.setattr(
+        rehearsal,
+        "sha",
+        lambda path: "changed" if path == rehearsal.legacy.ADAPTER else original(path),
+    )
+    try:
+        rehearsal.verify_frozen_inputs()
+    except ValueError as exc:
+        assert "identity changed" in str(exc)
+    else:
+        raise AssertionError("changed runtime adapter should fail")
 
 
 def test_duration_is_bounded(tmp_path):

@@ -27,6 +27,9 @@ SCHEMA_VERSION = "3.0.0"
 RAW_NAME = "workload_qualification_v3.jsonl"
 COMPLETION_NAME = "workload_qualification_v3_completion.json"
 MANIFEST_NAME = "workload_qualification_v3_files_sha256.json"
+PERFORMANCE_ADAPTER_SHA256 = (
+    "7fcef1b2c66fcb0226ee10f0036f6166203d0ee128be459d7fa4ffbd4dd62eb5"
+)
 
 
 def _append_unique(values, value):
@@ -143,9 +146,9 @@ def quality_reasons(completion, monitor_summary, observations, operation_error=N
     return reasons
 
 
-def latency_reasons(answer_quality_eligible, monitor_summary, observations):
+def latency_reasons(answer_requirements_met, monitor_summary, observations):
     reasons = []
-    if not answer_quality_eligible:
+    if not answer_requirements_met:
         reasons.append("answer_quality_ineligible")
     if observations.get("browser_samples"):
         reasons.append("browser_present")
@@ -153,6 +156,11 @@ def latency_reasons(answer_quality_eligible, monitor_summary, observations):
         reasons.append("active_supervision_ui")
     if observations.get("sustained_external_cpu_samples"):
         reasons.append("sustained_external_cpu")
+    if (
+        observations.get("ac_power_violation_samples")
+        or observations.get("low_power_mode_violation_samples")
+    ):
+        reasons.append("power_control_violation")
     if monitor_summary.get("cadence_within_frozen_tolerance") is not True:
         reasons.append("sampling_cadence_out_of_tolerance")
     if monitor_summary.get("monitor_error"):
@@ -170,10 +178,11 @@ def qualification_record(
     answer_reasons = quality_reasons(
         completion, monitor_summary, observations, operation_error
     )
-    answer_eligible = not answer_reasons
+    answer_requirements_met = not answer_reasons
     performance_reasons = latency_reasons(
-        answer_eligible, monitor_summary, observations
+        answer_requirements_met, monitor_summary, observations
     )
+    latency_requirements_met = answer_requirements_met and not performance_reasons
     capture_complete = completion.get("capture_complete") is True
     status = (
         "complete"
@@ -191,11 +200,15 @@ def qualification_record(
         "status": status,
         "eligibility": {
             "answer_quality": {
-                "eligible": answer_eligible,
+                "requirements_met": answer_requirements_met,
+                "eligible": False,
+                "activation_required": answer_requirements_met,
                 "reasons": answer_reasons,
             },
             "controlled_latency": {
-                "eligible": answer_eligible and not performance_reasons,
+                "requirements_met": latency_requirements_met,
+                "eligible": False,
+                "activation_required": latency_requirements_met,
                 "reasons": performance_reasons,
             },
         },
@@ -207,12 +220,13 @@ def qualification_record(
         },
         "claim_policy": {
             "answer_quality": (
-                "Publish only when eligibility.answer_quality.eligible is true. "
+                "Publication requires a separate reviewed activation artifact after "
+                "eligibility.answer_quality.requirements_met is true. "
                 "Captured analyst, model, and tool failures remain measured outcomes."
             ),
             "latency": (
-                "Treat timings as diagnostic unless "
-                "eligibility.controlled_latency.eligible is true."
+                "Timings remain diagnostic until controlled-latency requirements are "
+                "met and a separate reviewed activation artifact exists."
             ),
         },
         "supersedes_operational_eligibility_in": "completion.json",
@@ -268,6 +282,7 @@ def frozen_launcher_adapter(start_monitor, verify_launcher):
     original = {
         "verify_launcher": frozen.verify_launcher,
         "settle_preflight": frozen.settle_preflight,
+        "service_preflight": frozen.service_preflight,
         "check_controls": frozen.check_controls,
         "finalize_validity": frozen.finalize_validity,
     }
@@ -281,6 +296,9 @@ def frozen_launcher_adapter(start_monitor, verify_launcher):
 
     frozen.verify_launcher = verify_launcher
     frozen.settle_preflight = settle
+    frozen.service_preflight = lambda config: legacy.verified_service_preflight(
+        lambda: original["service_preflight"](config)
+    )
     frozen.check_controls = legacy.hard_control_only
     frozen.finalize_validity = provisional_validity
     try:
@@ -325,7 +343,7 @@ def publish_manifest(out):
 
 
 def publish_authoritative(path, record):
-    """Exclusively publish the split-eligibility record without a generic flag."""
+    """Exclusively publish the split-requirements record without a generic flag."""
     path = Path(path)
     if path.exists():
         raise FileExistsError(path)
@@ -359,7 +377,9 @@ def publish_authoritative(path, record):
                     failed = json.loads(json.dumps(record))
                     failed["status"] = "incomplete_diagnostic"
                     for dimension in failed.get("eligibility", {}).values():
+                        dimension["requirements_met"] = False
                         dimension["eligible"] = False
+                        dimension["activation_required"] = False
                         _append_unique(
                             dimension.setdefault("reasons", []),
                             "authoritative_publication_failed",
@@ -417,6 +437,7 @@ async def run(args, head, review, run_once, verify_launcher, contract_path):
             "implementation_sha": head,
             "split_policy": POLICY,
             "contract_sha256": sha(contract_path),
+            "performance_adapter_sha256": PERFORMANCE_ADAPTER_SHA256,
             "integration_review": review,
         },
     )
@@ -470,7 +491,7 @@ async def run(args, head, review, run_once, verify_launcher, contract_path):
         provisional = qualification_record(
             completion, summary, observations, review, operation_error
         )
-        if provisional["eligibility"]["answer_quality"]["eligible"]:
+        if provisional["eligibility"]["answer_quality"]["requirements_met"]:
             prepare_answer_artifacts(out)
         publish_manifest(out)
     except BaseException as exc:

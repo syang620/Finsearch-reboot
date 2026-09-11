@@ -55,17 +55,21 @@ def observations(**overrides):
     return value
 
 
-def test_quiet_complete_run_qualifies_both_dimensions():
+def test_quiet_complete_run_meets_both_dimensions_pending_activation():
     record = qualification.qualification_record(
         completion(), monitor(), observations(), {"reviewed_commit": "a" * 40}
     )
     assert record["status"] == "complete"
     assert record["eligibility"]["answer_quality"] == {
-        "eligible": True,
+        "requirements_met": True,
+        "eligible": False,
+        "activation_required": True,
         "reasons": [],
     }
     assert record["eligibility"]["controlled_latency"] == {
-        "eligible": True,
+        "requirements_met": True,
+        "eligible": False,
+        "activation_required": True,
         "reasons": [],
     }
     assert "official_baseline_eligible" not in record
@@ -90,9 +94,16 @@ def test_ambient_workload_only_disqualifies_controlled_latency():
         ),
         {},
     )
-    assert record["eligibility"]["answer_quality"]["eligible"]
-    assert record["eligibility"]["controlled_latency"] == {
+    assert record["eligibility"]["answer_quality"] == {
+        "requirements_met": True,
         "eligible": False,
+        "activation_required": True,
+        "reasons": [],
+    }
+    assert record["eligibility"]["controlled_latency"] == {
+        "requirements_met": False,
+        "eligible": False,
+        "activation_required": False,
         "reasons": [
             "browser_present",
             "active_supervision_ui",
@@ -118,11 +129,15 @@ def test_incomplete_answer_evidence_fails_both_dimensions():
     )
     assert record["status"] == "incomplete_diagnostic"
     assert record["eligibility"]["answer_quality"] == {
+        "requirements_met": False,
         "eligible": False,
+        "activation_required": False,
         "reasons": ["incomplete_or_duplicate_capture"],
     }
     assert record["eligibility"]["controlled_latency"] == {
+        "requirements_met": False,
         "eligible": False,
+        "activation_required": False,
         "reasons": ["answer_quality_ineligible"],
     }
 
@@ -156,7 +171,7 @@ def test_operation_error_fails_answer_quality_without_generic_flag():
     record = qualification.qualification_record(
         completion(), monitor(), observations(), {}, RuntimeError("failed")
     )
-    assert not record["eligibility"]["answer_quality"]["eligible"]
+    assert not record["eligibility"]["answer_quality"]["requirements_met"]
     assert "execution_or_finalization_failed" in record["eligibility"][
         "answer_quality"
     ]["reasons"]
@@ -200,6 +215,7 @@ def test_adapter_never_stops_cases_for_ambient_monitor_trigger(monkeypatch):
         for name in (
             "verify_launcher",
             "settle_preflight",
+            "service_preflight",
             "check_controls",
             "finalize_validity",
             "controls",
@@ -216,6 +232,29 @@ def test_adapter_never_stops_cases_for_ambient_monitor_trigger(monkeypatch):
     assert len(calls) == 120
     for name, value in original.items():
         assert getattr(frozen, name) is value
+
+
+def test_adapter_routes_service_preflight_through_exact_verifier(monkeypatch):
+    observed = {"service": "observed"}
+    calls = []
+
+    def service_preflight(config):
+        calls.append(("preflight", config))
+        return observed
+
+    def verified_service_preflight(operation):
+        calls.append(("verifier", None))
+        return operation()
+
+    monkeypatch.setattr(frozen, "service_preflight", service_preflight)
+    monkeypatch.setattr(
+        qualification.legacy,
+        "verified_service_preflight",
+        verified_service_preflight,
+    )
+    with qualification.frozen_launcher_adapter(lambda: None, lambda path: None):
+        assert frozen.service_preflight("config") is observed
+    assert calls == [("verifier", None), ("preflight", "config")]
 
 
 def test_raw_analysis_aggregates_all_performance_reasons(tmp_path):
@@ -268,6 +307,8 @@ def test_authoritative_record_has_no_generic_eligibility(tmp_path):
     loaded = json.loads(path.read_text())
     assert loaded == record
     assert "official_baseline_eligible" not in loaded
+    assert not loaded["eligibility"]["answer_quality"]["eligible"]
+    assert not loaded["eligibility"]["controlled_latency"]["eligible"]
 
 
 def test_directory_sync_failure_removes_visible_eligibility(tmp_path, monkeypatch):
@@ -294,6 +335,45 @@ def test_directory_sync_failure_removes_visible_eligibility(tmp_path, monkeypatc
     assert not path.exists()
 
 
+def test_cleanup_failure_replaces_candidate_with_fail_closed_record(
+    tmp_path, monkeypatch
+):
+    path = tmp_path / qualification.COMPLETION_NAME
+    record = qualification.qualification_record(
+        completion(), monitor(), observations(), {}
+    )
+    original_fsync = qualification.os.fsync
+    original_unlink = Path.unlink
+    calls = {"count": 0}
+
+    def fail_first_directory_sync(descriptor):
+        calls["count"] += 1
+        if calls["count"] == 2:
+            raise OSError("directory sync failed")
+        return original_fsync(descriptor)
+
+    def refuse_candidate_cleanup(self, *args, **kwargs):
+        if self == path:
+            raise PermissionError("candidate cleanup failed")
+        return original_unlink(self, *args, **kwargs)
+
+    monkeypatch.setattr(qualification.os, "fsync", fail_first_directory_sync)
+    monkeypatch.setattr(Path, "unlink", refuse_candidate_cleanup)
+    try:
+        qualification.publish_authoritative(path, record)
+    except OSError as exc:
+        assert str(exc) == "directory sync failed"
+    else:
+        raise AssertionError("publication should fail")
+    failed = json.loads(path.read_text())
+    assert failed["status"] == "incomplete_diagnostic"
+    for dimension in failed["eligibility"].values():
+        assert dimension["requirements_met"] is False
+        assert dimension["eligible"] is False
+        assert dimension["activation_required"] is False
+        assert "authoritative_publication_failed" in dimension["reasons"]
+
+
 def test_frozen_performance_dependency_change_is_rejected(monkeypatch):
     monkeypatch.setattr(
         launcher,
@@ -309,6 +389,8 @@ def test_frozen_performance_dependency_change_is_rejected(monkeypatch):
                 launcher.legacy.EXPECTED_CONTROL_COLLECTOR_SHA256,
             launcher.legacy.CONTROL_OBSERVER:
                 launcher.legacy.EXPECTED_CONTROL_OBSERVER_SHA256,
+            launcher.legacy.ADAPTER:
+                qualification.PERFORMANCE_ADAPTER_SHA256,
         }[path],
     )
     try:
@@ -410,9 +492,16 @@ def test_run_keeps_all_cases_after_workload_violation(tmp_path, monkeypatch):
             / qualification.COMPLETION_NAME
         ).read_text()
     )
-    assert final["eligibility"]["answer_quality"]["eligible"]
-    assert final["eligibility"]["controlled_latency"] == {
+    assert final["eligibility"]["answer_quality"] == {
+        "requirements_met": True,
         "eligible": False,
+        "activation_required": True,
+        "reasons": [],
+    }
+    assert final["eligibility"]["controlled_latency"] == {
+        "requirements_met": False,
+        "eligible": False,
+        "activation_required": False,
         "reasons": [
             "browser_present",
             "active_supervision_ui",
