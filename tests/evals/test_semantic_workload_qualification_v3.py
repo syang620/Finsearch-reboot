@@ -17,6 +17,7 @@ def completion(**overrides):
         "capture_complete": True,
         "evaluation_errors": [],
         "control_violations": [],
+        "controls_after": {"ac_power": True, "low_power_mode": 0},
         "model_identities_unchanged": True,
         "index_unchanged": True,
     }
@@ -167,6 +168,22 @@ def test_monitor_capture_and_power_fail_closed_for_answer_quality():
     assert record["status"] == "incomplete_diagnostic"
 
 
+def test_final_power_sample_fails_answer_requirements_closed():
+    record = qualification.qualification_record(
+        completion(controls_after={"ac_power": False, "low_power_mode": 0}),
+        monitor(),
+        observations(),
+        {},
+    )
+    assert record["eligibility"]["answer_quality"] == {
+        "requirements_met": False,
+        "eligible": False,
+        "activation_required": False,
+        "reasons": ["power_control_violation"],
+    }
+    assert record["eligibility"]["controlled_latency"]["requirements_met"] is False
+
+
 def test_operation_error_fails_answer_quality_without_generic_flag():
     record = qualification.qualification_record(
         completion(), monitor(), observations(), {}, RuntimeError("failed")
@@ -187,6 +204,7 @@ def test_provisional_completion_is_always_fail_closed():
         "captured_cases": ["A"],
         "evaluation_errors": [],
         "control_violations": [],
+        "controls_after": {"ac_power": True, "low_power_mode": 0},
         "model_identities_unchanged": True,
         "index_unchanged": True,
     }

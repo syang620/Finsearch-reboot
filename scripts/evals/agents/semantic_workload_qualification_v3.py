@@ -124,6 +124,10 @@ def quality_reasons(completion, monitor_summary, observations, operation_error=N
             _append_unique(reasons, field)
     if completion.get("control_violations"):
         _append_unique(reasons, "power_control_violation")
+    try:
+        legacy.hard_control_only(completion.get("controls_after", {}))
+    except ValueError:
+        _append_unique(reasons, "power_control_violation")
     if monitor_summary.get("monitor_error"):
         _append_unique(reasons, "monitor_capture_incomplete")
     if (
@@ -254,7 +258,11 @@ def provisional_validity(ending, expected_ids, evaluated_ids):
     if ending.get("evaluation_errors"):
         reasons.append("evaluation_errors")
     if ending.get("control_violations"):
-        reasons.append("power_control_violation")
+        _append_unique(reasons, "power_control_violation")
+    try:
+        legacy.hard_control_only(ending.get("controls_after", {}))
+    except ValueError:
+        _append_unique(reasons, "power_control_violation")
     for field in ("model_identities_unchanged", "index_unchanged"):
         if ending.get(field) is not True:
             reasons.append(field + "_not_verified")
