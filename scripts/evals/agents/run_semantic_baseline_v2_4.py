@@ -45,6 +45,8 @@ def verify_frozen_performance_dependencies():
 
 def approval_reviewed_paths(index_attestation):
     return (
+        frozen.LAUNCHER,
+        frozen.CONTRACT,
         legacy.PREREGISTRATION,
         legacy.CONTROL_CONTRACT,
         legacy.CONTROL_IMPLEMENTATION,
