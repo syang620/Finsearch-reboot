@@ -1,0 +1,23 @@
+{
+  "version": "1",
+  "authorization_id": "SEMANTIC-V2-LOCAL-ONCE-V1",
+  "status": "approved_candidate_not_execution",
+  "artifact_root": "/Users/shicheny/.local/share/finsearch/semantic-baseline/local-once-v1",
+  "effective_environment_contract_version": "2",
+  "review_status": "completed_clean",
+  "pull_request": 31,
+  "review_comment_id": 5637778750,
+  "review_url": "https://github.com/syang620/Finsearch-reboot/pull/31#issuecomment-5637778750",
+  "review_body_sha256": "02eebfb97a1d8c05bedf710600efa4bd1b9ee5a75e92b69c7af95979ec5116b1",
+  "reviewed_commit": "ac2c3cf489deca1b41ad464a00b59a3d183d02aa",
+  "interpreter_path": "/Users/shicheny/miniforge3/envs/finsearch-arm/bin/python",
+  "interpreter_sha256": "6416eedf9c2e9cb1de8b964acd8c573df5a068335dc79a3bc7fa4e3f8d21cc01",
+  "files_sha256": {
+    "scripts/operations/run_semantic_once.py": "f0582449bfcc9cd58b5f9f3362ab7bdc4112f46db7c76f67acfcd667f3e885f4",
+    "scripts/operations/semantic_v7_environment.py": "1bcacadb1742e90e04c75b27d92d5da78e8d44b6594f7c1a54624bfaaa5eb014",
+    "scripts/evals/agents/run_semantic_baseline_v2_3.py": "a6b05862670384a1a0341a225862271482c57dd4dc62eb3b6ce57954a949ec36",
+    "docs/evals/semantic_answer_v2_control_v2_fresh_v7_approval.json": "a97297965d5b584dbaecf82e65cea17fa9c732748eb793e9865331bac5349720",
+    "docs/evals/semantic_answer_v2_quality_approval.json": "42017d917124aa165f90c69c4d2e4d30fa81d550d32ad4d981567134b1bdedc6",
+    "docs/evals/semantic_answer_v2_fresh_v7_qdrant_candidate.json": "0e4427038de1edccd6233bedbef62b7cbaf2a2e0b1a4ac06b213bd2d2b918000"
+  }
+}
