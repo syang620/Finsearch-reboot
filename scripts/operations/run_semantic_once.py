@@ -74,6 +74,7 @@ SAFE_FAILURE_REASONS = frozenset({
     'Retrieval target differs from canonical attestation',
     'Attempt artifacts already exist; no retry permitted',
     'Attempt cache already exists; no retry permitted',
+    'Attempt cache namespace is invalid',
     'Prepared source identity differs', 'Retired v6 identity differs',
 })
 
@@ -277,13 +278,24 @@ def workload_control_cache_path(root, receipt):
             / receipt['head'])
 
 
+def validate_cache_path(path, source):
+    source = Path(source)
+    cache_root = source / '.cache'
+    for directory in (cache_root, Path(path).parent):
+        if exists(directory) and (directory.is_symlink() or not directory.is_dir()
+                                  or not directory.resolve().is_relative_to(source)):
+            raise ValueError('Attempt cache namespace is invalid')
+    if exists(path):
+        raise ValueError('Attempt cache already exists; no retry permitted')
+
+
 def absent_artifacts(root, receipt):
     for name in ('consumed.json', 'outcome.json', 'console.log', 'staging'):
         if exists(Path(root) / name):
             raise ValueError('Attempt artifacts already exist; no retry permitted')
+    source = Path(root) / 'source'
     for path in (cache_path(root, receipt), workload_control_cache_path(root, receipt)):
-        if exists(path):
-            raise ValueError('Attempt cache already exists; no retry permitted')
+        validate_cache_path(path, source)
 
 
 @contextmanager

@@ -209,6 +209,26 @@ def test_attempt_cache_blocks_launch(prepared_contract, cache_function):
         controller.absent_artifacts(prepared_contract.root, receipt)
 
 
+@pytest.mark.parametrize('cache_function', [controller.cache_path,
+                                            controller.workload_control_cache_path])
+@pytest.mark.parametrize('kind', ['file', 'dangling-symlink', 'external-symlink'])
+def test_attempt_cache_namespace_must_be_in_checkout_directory(
+        prepared_contract, cache_function, kind, tmp_path):
+    receipt = prepared_contract.record()['prepared']
+    namespace = cache_function(prepared_contract.root, receipt).parent
+    namespace.parent.mkdir(parents=True, exist_ok=True)
+    if kind == 'file':
+        namespace.write_text('invalid')
+    elif kind == 'dangling-symlink':
+        namespace.symlink_to(tmp_path / 'missing', target_is_directory=True)
+    else:
+        external = tmp_path / 'external'
+        external.mkdir()
+        namespace.symlink_to(external, target_is_directory=True)
+    with pytest.raises(ValueError, match='cache namespace is invalid'):
+        controller.absent_artifacts(prepared_contract.root, receipt)
+
+
 def test_attempt_lock_is_exclusive(prepared_contract):
     with controller.attempt_lock(prepared_contract.root):
         with pytest.raises(BlockingIOError):

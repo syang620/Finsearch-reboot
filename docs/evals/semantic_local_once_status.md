@@ -88,10 +88,12 @@ disposition after persistence rather than being discarded.
 
 Existing marker, outcome, console, staging, or SHA-keyed cache content forbids another
 launch. This covers both `.cache/semantic_answer_v2/<commit>` and the independent
-`.cache/semantic_answer_v2_control_v2/<commit>` monitoring namespace. A marker without
-an outcome is unresolved and never grants retry authority. All historical fresh-v7 and
-earlier approvals, wrappers, results, and consumption records remain authoritative
-audit evidence and are not repurposed.
+`.cache/semantic_answer_v2_control_v2/<commit>` monitoring namespace. Each namespace
+ancestor must be absent or a real directory resolving inside the prepared checkout;
+files and symlinks fail before consumption. A marker without an outcome is unresolved
+and never grants retry authority. All historical fresh-v7 and earlier approvals,
+wrappers, results, and consumption records remain authoritative audit evidence and are
+not repurposed.
 
 ## Rollout gates
 
