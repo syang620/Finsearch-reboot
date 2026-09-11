@@ -52,7 +52,8 @@ helper retains contract version 2 and freezes one effective environment without
 serializing credential values. That effective environment must explicitly select
 `QDRANT_HOST=127.0.0.1`, `QDRANT_PORT=6333`, and the collection named by the bound
 canonical-index attestation. Both the preflight identity check and benchmark child use
-that same target.
+that same target. `PYTHONPATH` must resolve, in order, to the prepared checkout's
+`src` directory and repository root; ignored or alternate import roots are rejected.
 
 Execution additionally requires an external, owned, mode-0600
 `execution_authorization.json`. Its closed schema binds the approval digest, prepared
@@ -72,8 +73,10 @@ run_semantic_once.py execute [--env-file PATH]
 ```
 
 `preflight` runs imports, approval and launcher checks, remote review verification, and
-read-only canonical Qdrant identity verification in the pinned interpreter. It does not
-execute benchmark cases or consume the attempt.
+read-only canonical Qdrant identity verification in the pinned interpreter. It also
+runs the unchanged launcher's runtime-environment validator against the frozen
+configuration and SHA-keyed cache path, so retrieval, reranker, and cache-policy
+overrides fail here. It does not execute benchmark cases or consume the attempt.
 
 `execute` requires the separate authorization, reruns preflight, revalidates the Git
 checkout and absent artifacts, then exclusively and durably writes `consumed.json`

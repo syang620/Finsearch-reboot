@@ -8,6 +8,7 @@ import stat
 import subprocess
 import sys
 from types import MappingProxyType
+from types import SimpleNamespace
 
 import pytest
 
@@ -349,6 +350,7 @@ def test_inactive_registration_stops_before_environment_freeze(tmp_path, monkeyp
     monkeypatch.setattr(controller, 'CONTROLLER', Path('controller.py'))
     monkeypatch.setattr(controller, '__file__', str(root / 'source/controller.py'))
     monkeypatch.setattr(controller, 'INTERPRETER', Path(sys.executable))
+    monkeypatch.setenv('PYTHONPATH', 'src:.')
     monkeypatch.chdir(root / 'source')
     with pytest.raises(ValueError, match='Candidate inactive'):
         controller.registration(root, receipt)
@@ -386,6 +388,7 @@ def test_registration_accepts_separate_approval_commit(tmp_path, monkeypatch):
     monkeypatch.setattr(controller, 'APPROVAL', approval_path)
     monkeypatch.setattr(controller, '__file__', str(root / 'source' / controller_path))
     monkeypatch.setattr(controller, 'INTERPRETER', Path(sys.executable))
+    monkeypatch.setenv('PYTHONPATH', 'src:.')
     monkeypatch.chdir(root / 'source')
     assert controller.registration(root, receipt) == approval
 
@@ -462,6 +465,46 @@ def test_runtime_overrides_and_external_pythonpath_are_rejected(prepared_contrac
         controller.validate_runtime_paths({'GIT_DIR': '/tmp/repo'}, prepared_contract.cwd)
     with pytest.raises(ValueError, match='PYTHONPATH'):
         controller.validate_runtime_paths({'PYTHONPATH': '/tmp'}, prepared_contract.cwd)
+    controller.validate_runtime_paths({'PYTHONPATH': 'src:.'}, prepared_contract.cwd)
+
+
+@pytest.mark.parametrize('pythonpath', ['.cache/shadow:src:.', 'src', '.:src',
+                                        'src:.:src'])
+def test_pythonpath_rejects_shadow_or_noncanonical_roots(prepared_contract, pythonpath):
+    with pytest.raises(ValueError, match='PYTHONPATH'):
+        controller.validate_runtime_paths({'PYTHONPATH': pythonpath}, prepared_contract.cwd)
+
+
+def test_launcher_runtime_environment_is_checked_without_creating_cache(tmp_path):
+    config = tmp_path / 'data/evals/semantic_answer/v1/evaluation_config.json'
+    config.parent.mkdir(parents=True)
+    config.write_text('{"collection":"canonical"}')
+    calls = []
+
+    def validate(actual, cache):
+        calls.append((actual, cache))
+        return {'validated': True}
+
+    launcher = SimpleNamespace(frozen=SimpleNamespace(runtime_environment=validate))
+    assert controller.validate_launcher_environment(launcher, tmp_path, 'a' * 40) == {
+        'validated': True,
+    }
+    assert calls == [({'collection': 'canonical'},
+                      Path('.cache/semantic_answer_v2') / ('a' * 40))]
+    assert not (tmp_path / '.cache').exists()
+
+
+def test_launcher_runtime_environment_failure_is_safe(tmp_path):
+    config = tmp_path / 'data/evals/semantic_answer/v1/evaluation_config.json'
+    config.parent.mkdir(parents=True)
+    config.write_text('{"collection":"canonical"}')
+
+    def reject(actual, cache):
+        raise ValueError('private runtime detail')
+
+    launcher = SimpleNamespace(frozen=SimpleNamespace(runtime_environment=reject))
+    with pytest.raises(ValueError, match='Frozen runtime environment differs'):
+        controller.validate_launcher_environment(launcher, tmp_path, 'a' * 40)
 
 
 @pytest.mark.parametrize('changed', [None, 'QDRANT_HOST', 'QDRANT_PORT',

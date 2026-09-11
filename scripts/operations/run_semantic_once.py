@@ -72,6 +72,7 @@ SAFE_FAILURE_REASONS = frozenset({
     'PYTHONPATH must resolve inside prepared source',
     'Repository module escaped prepared source',
     'Retrieval target differs from canonical attestation',
+    'Frozen runtime environment differs',
     'Attempt artifacts already exist; no retry permitted',
     'Attempt cache already exists; no retry permitted',
     'Attempt cache namespace is invalid',
@@ -339,11 +340,13 @@ def validate_runtime_paths(env, cwd):
             'PYTHONHOME', 'PYTHONUSERBASE', 'PYTHONSTARTUP', 'PYTHONPYCACHEPREFIX')
             or key.startswith('DYLD_') for key in env):
         raise ValueError('Runtime override environment is forbidden')
+    paths = []
     for item in env.get('PYTHONPATH', '').split(os.pathsep):
         path = Path(item or cwd)
         path = (cwd / path).resolve() if not path.is_absolute() else path.resolve()
-        if not path.is_relative_to(cwd):
-            raise ValueError('PYTHONPATH must resolve inside prepared source')
+        paths.append(path)
+    if tuple(paths) != ((cwd / 'src').resolve(), cwd.resolve()):
+        raise ValueError('PYTHONPATH must resolve inside prepared source')
 
 
 def validate_retrieval_target(env, cwd):
@@ -356,6 +359,15 @@ def validate_retrieval_target(env, cwd):
     if any(env.get(name) != value for name, value in expected.items()):
         raise ValueError('Retrieval target differs from canonical attestation')
     return expected
+
+
+def validate_launcher_environment(launcher, cwd, head):
+    config = strict_json((Path(cwd) / 'data/evals/semantic_answer/v1/evaluation_config.json').read_bytes())
+    cache = Path('.cache/semantic_answer_v2') / head
+    try:
+        return launcher.frozen.runtime_environment(config, cache)
+    except (KeyError, ValueError):
+        raise ValueError('Frozen runtime environment differs') from None
 
 
 def registration(root, receipt):
@@ -476,6 +488,8 @@ def probe(root):
                               index_attestation=INDEX)
     launcher.verify_opt_in(args)
     launcher.verify_frozen_launcher_v7(QUALITY)
+    runtime = validate_launcher_environment(
+        launcher, cwd, git(cwd, 'rev-parse', 'HEAD').decode().strip())
     retirement = strict_json(launcher.RETIREMENT.read_bytes())
     for label in ('wrapper', 'approval'):
         if sha(retirement[label + '_path']) != retirement[label + '_sha256']:
@@ -490,7 +504,8 @@ def probe(root):
         client.close()
     return {'ok': True, 'interpreter': sys.executable, 'cwd': str(Path.cwd()),
             'sys_path_0': sys.path[0], 'points': len(records),
-            'fingerprint': identity['payload_vectors_sha256']}
+            'fingerprint': identity['payload_vectors_sha256'],
+            'runtime_environment': runtime}
 
 
 def preflight(contract):
