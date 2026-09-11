@@ -49,7 +49,10 @@ Its closed schema binds:
 The reviewed candidate must be an ancestor of the prepared approval commit, and the
 approval JSON must be the only changed path between those commits. The environment
 helper retains contract version 2 and freezes one effective environment without
-serializing credential values.
+serializing credential values. That effective environment must explicitly select
+`QDRANT_HOST=127.0.0.1`, `QDRANT_PORT=6333`, and the collection named by the bound
+canonical-index attestation. Both the preflight identity check and benchmark child use
+that same target.
 
 Execution additionally requires an external, owned, mode-0600
 `execution_authorization.json`. Its closed schema binds the approval digest, prepared

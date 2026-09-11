@@ -442,6 +442,37 @@ def test_runtime_overrides_and_external_pythonpath_are_rejected(prepared_contrac
         controller.validate_runtime_paths({'PYTHONPATH': '/tmp'}, prepared_contract.cwd)
 
 
+@pytest.mark.parametrize('changed', [None, 'QDRANT_HOST', 'QDRANT_PORT',
+                                     'QDRANT_COLLECTION_NAME'])
+def test_retrieval_target_must_match_canonical_attestation(tmp_path, monkeypatch, changed):
+    index = tmp_path / 'index.json'
+    index.write_text(json.dumps({'collection': 'canonical-collection'}))
+    monkeypatch.setattr(controller, 'INDEX', Path('index.json'))
+    environment = {
+        'QDRANT_HOST': '127.0.0.1',
+        'QDRANT_PORT': '6333',
+        'QDRANT_COLLECTION_NAME': 'canonical-collection',
+    }
+    if changed is None:
+        environment.pop('QDRANT_HOST')
+    else:
+        environment[changed] = 'different'
+    with pytest.raises(ValueError, match='Retrieval target differs'):
+        controller.validate_retrieval_target(environment, tmp_path)
+
+
+def test_retrieval_target_accepts_exact_canonical_identity(tmp_path, monkeypatch):
+    index = tmp_path / 'index.json'
+    index.write_text(json.dumps({'collection': 'canonical-collection'}))
+    monkeypatch.setattr(controller, 'INDEX', Path('index.json'))
+    environment = {
+        'QDRANT_HOST': '127.0.0.1',
+        'QDRANT_PORT': '6333',
+        'QDRANT_COLLECTION_NAME': 'canonical-collection',
+    }
+    assert controller.validate_retrieval_target(environment, tmp_path) == environment
+
+
 def test_failure_reporting_never_echoes_unknown_exception_text():
     assert 'private-credential' not in json.dumps(
         controller.safe_failure(RuntimeError('private-credential')))

@@ -71,6 +71,7 @@ SAFE_FAILURE_REASONS = frozenset({
     'Controller cwd must be prepared source', 'Runtime override environment is forbidden',
     'PYTHONPATH must resolve inside prepared source',
     'Repository module escaped prepared source',
+    'Retrieval target differs from canonical attestation',
     'Attempt artifacts already exist; no retry permitted',
     'Attempt cache already exists; no retry permitted',
     'Prepared source identity differs', 'Retired v6 identity differs',
@@ -327,6 +328,18 @@ def validate_runtime_paths(env, cwd):
             raise ValueError('PYTHONPATH must resolve inside prepared source')
 
 
+def validate_retrieval_target(env, cwd):
+    index = strict_json((Path(cwd) / INDEX).read_bytes())
+    expected = {
+        'QDRANT_HOST': '127.0.0.1',
+        'QDRANT_PORT': '6333',
+        'QDRANT_COLLECTION_NAME': index.get('collection'),
+    }
+    if any(env.get(name) != value for name, value in expected.items()):
+        raise ValueError('Retrieval target differs from canonical attestation')
+    return expected
+
+
 def registration(root, receipt):
     cwd = Path(root) / 'source'
     verify_prepared(root, receipt)
@@ -374,6 +387,7 @@ def freeze(root, receipt, env_file):
     effective, provenance = environment.freeze_effective_child_environment(env_file)
     cwd = Path(root) / 'source'
     validate_runtime_paths(effective, cwd)
+    validate_retrieval_target(effective, cwd)
     argv = child_argv(root, cwd)
     metadata = {
         'version': VERSION, 'authorization_id': AUTHORIZATION_ID,
@@ -427,6 +441,7 @@ def probe(root):
             os.environ.get(key, '').strip()
             for key in ('DASHSCOPE_API_KEY', 'QWEN3_RERANK_API_KEY')):
         raise ValueError('Required credentials absent')
+    target = validate_retrieval_target(os.environ, cwd)
     for name in REQUIRED_MODULES:
         importlib.import_module(name)
     for name, module in tuple(sys.modules.items()):
@@ -449,7 +464,8 @@ def probe(root):
             raise ValueError('Retired v6 identity differs')
     from qdrant_client import QdrantClient
 
-    client = QdrantClient(host='127.0.0.1', port=6333, timeout=120)
+    client = QdrantClient(host=target['QDRANT_HOST'],
+                          port=int(target['QDRANT_PORT']), timeout=120)
     try:
         identity, records = launcher.canonical.verify_snapshot(client)
     finally:
@@ -625,13 +641,14 @@ def supervise(contract, auth, check, *, transition=lambda stage: None):
     finally:
         mask = signal.pthread_sigmask(signal.SIG_BLOCK, set(handlers))
         try:
+            if consumed:
+                result['finished_at'] = now()
+                result['signal_observation_closed_at'] = now()
             latch_pending()
             if received:
                 result.update(wrapper_exit_code=128 + received[0], error_type='Interrupted',
                               stage='terminated' if child else 'terminated_prelaunch')
             if consumed:
-                result['finished_at'] = now()
-                result['signal_observation_closed_at'] = now()
                 write_once(contract.root / 'outcome.json', result)
         finally:
             for number, previous in handlers.items():
