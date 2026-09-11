@@ -1,4 +1,5 @@
 import hashlib
+import json
 from pathlib import Path
 
 import pytest
@@ -21,6 +22,36 @@ def test_fresh_v6_wrapper_and_approval_match_retirement_record():
     assert sha(retirement["wrapper_path"]) == retirement["wrapper_sha256"]
     assert sha(retirement["approval_path"]) == retirement["approval_sha256"]
     assert "Never repurpose" in retirement["immutability_rule"]
+    assert operation.verify_retired_v6_artifacts() == retirement
+
+
+@pytest.mark.parametrize("artifact", ("wrapper", "approval"))
+def test_retired_v6_artifact_change_fails_closed(monkeypatch, tmp_path, artifact):
+    wrapper = tmp_path / "fresh_v6.py"
+    approval = tmp_path / "fresh_v6_approval.json"
+    retirement = tmp_path / "retirement.json"
+    wrapper.write_bytes(b"reviewed wrapper\n")
+    approval.write_bytes(b'{"reviewed": true}\n')
+    retirement.write_text(
+        json.dumps(
+            {
+                "status": "retired_currently_unexecutable",
+                "consumed": False,
+                "wrapper_path": str(wrapper),
+                "approval_path": str(approval),
+                "wrapper_sha256": sha(wrapper),
+                "approval_sha256": sha(approval),
+            }
+        )
+    )
+    monkeypatch.setattr(operation, "V6_WRAPPER", wrapper)
+    monkeypatch.setattr(operation, "V6_APPROVAL", approval)
+    monkeypatch.setattr(operation, "RETIREMENT", retirement)
+    changed = wrapper if artifact == "wrapper" else approval
+    changed.write_bytes(b"committed but changed\n")
+
+    with pytest.raises(ValueError, match="differ from their retirement record"):
+        operation.verify_retired_v6_artifacts()
 
 
 def test_fresh_v7_candidate_has_no_approval_or_execution_authority():

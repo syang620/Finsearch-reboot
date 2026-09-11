@@ -29,6 +29,8 @@ CONTROL_LAUNCHER = launcher.CONTROL_LAUNCHER
 CANONICAL_VERIFIER = Path("scripts/evals/retrieval/canonical_qdrant_v7.py")
 INDEX_ATTESTATION = canonical.CONTRACT
 RETIREMENT = launcher.RETIREMENT
+V6_WRAPPER = Path("scripts/operations/run_authorized_semantic_v2_control_v2_fresh_v6.py")
+V6_APPROVAL = Path("docs/evals/semantic_answer_v2_control_v2_fresh_v6_approval.json")
 INTERPRETER = helper.INTERPRETER
 MARKER = Path(".cache/semantic_v2_control_v2_fresh_v7_20260910.consumed.json")
 OUTCOME = Path(".cache/semantic_v2_control_v2_fresh_v7_20260910.launch_outcome.json")
@@ -49,6 +51,21 @@ _PREFLIGHT_RESULT = None
 
 def sha(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+
+
+def verify_retired_v6_artifacts():
+    """Bind both retired v6 files to the immutable retirement record."""
+    retirement = json.loads(RETIREMENT.read_text())
+    if (
+        retirement.get("status") != "retired_currently_unexecutable"
+        or retirement.get("consumed") is not False
+        or retirement.get("wrapper_path") != str(V6_WRAPPER)
+        or retirement.get("approval_path") != str(V6_APPROVAL)
+        or retirement.get("wrapper_sha256") != sha(V6_WRAPPER)
+        or retirement.get("approval_sha256") != sha(V6_APPROVAL)
+    ):
+        raise ValueError("Retired fresh-v6 artifacts differ from their retirement record")
+    return retirement
 
 
 def _base_child_argv(
@@ -214,6 +231,7 @@ def registration():
         or approval.get("preflight_implementation_sha256") != sha(WRAPPER)
     ):
         raise ValueError("Registered fresh-v7 control-v2 authorization changed")
+    verify_retired_v6_artifacts()
     helper.base.git("merge-base", "--is-ancestor", reviewed, "HEAD")
     for path, label in (
         (WRAPPER, "Fresh-v7 wrapper"),
@@ -225,6 +243,8 @@ def registration():
         (CANONICAL_VERIFIER, "Canonical Qdrant verifier"),
         (INDEX_ATTESTATION, "Fresh-v7 index attestation"),
         (RETIREMENT, "Fresh-v6 retirement record"),
+        (V6_WRAPPER, "Retired fresh-v6 wrapper"),
+        (V6_APPROVAL, "Retired fresh-v6 approval"),
     ):
         environment.verify_reviewed_regular_tracked_blob(reviewed, path, label)
     return approval, helper.base.git("rev-parse", "HEAD")
