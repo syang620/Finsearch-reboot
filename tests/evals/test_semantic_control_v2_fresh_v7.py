@@ -54,17 +54,36 @@ def test_retired_v6_artifact_change_fails_closed(monkeypatch, tmp_path, artifact
         operation.verify_retired_v6_artifacts()
 
 
-def test_fresh_v7_candidate_has_no_approval_or_execution_authority():
+def test_fresh_v7_approval_preserves_separate_execution_gate():
     contract = launcher.canonical.load_contract()
+    approval = json.loads(operation.AUTH.read_text())
 
     assert contract["status"] == "inactive_v7_candidate"
     assert contract["authority"] == "none"
-    assert not operation.AUTH.exists()
+    assert approval["status"] == "approved_for_one_semantic_v2_control_v2_fresh_v7_attempt"
+    assert "separately gives explicit fresh-v7 execution authorization" in approval["execution_gate"]
     assert "fresh_v6" not in operation.DEPENDENCY.name
     assert (
         "import run_authorized_semantic_v2_control_v2_fresh_v6"
         not in Path(operation.__file__).read_text()
     )
+
+
+def test_fresh_v7_approval_hashes_match_registered_files():
+    approval = json.loads(operation.AUTH.read_text())
+
+    assert approval["operation_wrapper_sha256"] == sha(operation.WRAPPER)
+    assert approval["wrapper_dependency_sha256"] == sha(operation.DEPENDENCY)
+    assert approval["environment_helper_sha256"] == sha(operation.ENVIRONMENT_HELPER)
+    assert approval["v2_dependency_sha256"] == sha(operation.V2_DEPENDENCY)
+    assert approval["integration_launcher_sha256"] == sha(operation.LAUNCHER)
+    assert approval["control_launcher_sha256"] == sha(operation.CONTROL_LAUNCHER)
+    assert approval["integration_adapter_sha256"] == sha(operation.helper.ADAPTER)
+    assert approval["canonical_qdrant_verifier_sha256"] == sha(
+        operation.CANONICAL_VERIFIER
+    )
+    assert approval["index_attestation_sha256"] == sha(operation.INDEX_ATTESTATION)
+    assert approval["fresh_v6_retirement_sha256"] == sha(operation.RETIREMENT)
 
 
 def test_v7_environment_preserves_inherited_precedence_and_redacts(monkeypatch, tmp_path):
