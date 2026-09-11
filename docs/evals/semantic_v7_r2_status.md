@@ -1,6 +1,13 @@
-# Fresh-v7 revision 2: inactive stabilization candidate
+# Fresh-v7 revision 2: superseded stabilization candidate
 
-The active implementation is `scripts/operations/run_semantic_v7.py`, backed by
+This design is retained as historical review evidence. It is superseded for future
+operational use by the [local-once protocol](semantic_local_once_status.md) and must
+not receive a new approval or execution authorization. The replacement adopts the
+trusted-local boundary that this document already stated explicitly and removes the
+disk-image, external-cache, ACL, and inode-binding machinery that could not provide
+hostile same-user isolation.
+
+The revision-2 implementation is `scripts/operations/run_semantic_v7.py`, backed by
 the standard-library-only `semantic_v7_snapshot.py` preparation utility. This
 revision does not delegate operation orchestration to the v4/v2 wrappers. The
 frozen benchmark launcher and its workload adapter still provide the benchmark
@@ -133,7 +140,7 @@ cases and after finalization. Any verification failure withholds the official
 summary. V7 evaluates the surviving historically fingerprinted collection; the
 deleted original serialized build cache is not independently byte-reproducible.
 
-## Required rollout
+## Historical rollout (superseded; do not execute)
 
 1. Pass controller, canonical-index, existing semantic-control, compilation,
    diff, and historical-content checks, including the native image integration.
