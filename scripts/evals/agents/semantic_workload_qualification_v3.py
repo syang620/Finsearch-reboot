@@ -446,6 +446,7 @@ async def run(args, head, review, run_once, verify_launcher, contract_path):
             "split_policy": POLICY,
             "contract_sha256": sha(contract_path),
             "performance_adapter_sha256": PERFORMANCE_ADAPTER_SHA256,
+            "service_provenance_sha256": legacy.EXPECTED_FROZEN_PROVENANCE_SHA256,
             "integration_review": review,
         },
     )

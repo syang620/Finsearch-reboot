@@ -24,6 +24,7 @@
     "captured_runtime_failures": "Analyst, model, and tool failures remain measured answer-quality outcomes.",
     "generic_eligibility": "Forbidden. Consumers must select answer_quality or controlled_latency explicitly and must not equate requirements_met with publication eligibility.",
     "activation": "The durable candidate record always keeps eligible false. Publication requires a separate reviewed activation artifact after the selected dimension reports requirements_met true.",
+    "service_identity_provenance": "The exact frozen service-identity JSON digest must be verified, recorded, and bound by any future approval.",
     "latency_without_qualification": "Diagnostic only."
   },
   "historical_preservation": "Workload-control v2 code, calibration, contracts, approvals, and results remain unchanged and retain their original status.",

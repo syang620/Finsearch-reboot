@@ -409,6 +409,8 @@ def test_frozen_performance_dependency_change_is_rejected(monkeypatch):
                 launcher.legacy.EXPECTED_CONTROL_OBSERVER_SHA256,
             launcher.legacy.ADAPTER:
                 qualification.PERFORMANCE_ADAPTER_SHA256,
+            launcher.legacy.FROZEN_PROVENANCE:
+                launcher.legacy.EXPECTED_FROZEN_PROVENANCE_SHA256,
         }[path],
     )
     try:
@@ -417,6 +419,37 @@ def test_frozen_performance_dependency_change_is_rejected(monkeypatch):
         assert "identity changed" in str(exc)
     else:
         raise AssertionError("changed performance dependency should fail")
+
+
+def test_frozen_service_provenance_change_is_rejected(monkeypatch):
+    expected = {
+        launcher.legacy.PREREGISTRATION:
+            launcher.legacy.EXPECTED_PREREGISTRATION_SHA256,
+        launcher.legacy.CONTROL_CONTRACT:
+            launcher.legacy.EXPECTED_CONTRACT_SHA256,
+        launcher.legacy.CONTROL_IMPLEMENTATION:
+            launcher.legacy.EXPECTED_CONTROL_IMPLEMENTATION_SHA256,
+        launcher.legacy.CONTROL_COLLECTOR:
+            launcher.legacy.EXPECTED_CONTROL_COLLECTOR_SHA256,
+        launcher.legacy.CONTROL_OBSERVER:
+            launcher.legacy.EXPECTED_CONTROL_OBSERVER_SHA256,
+        launcher.legacy.ADAPTER: qualification.PERFORMANCE_ADAPTER_SHA256,
+        launcher.legacy.FROZEN_PROVENANCE:
+            launcher.legacy.EXPECTED_FROZEN_PROVENANCE_SHA256,
+    }
+    monkeypatch.setattr(
+        launcher,
+        "file_sha",
+        lambda path: "changed"
+        if path == launcher.legacy.FROZEN_PROVENANCE
+        else expected[path],
+    )
+    try:
+        launcher.verify_frozen_performance_dependencies()
+    except ValueError as exc:
+        assert "identity changed" in str(exc)
+    else:
+        raise AssertionError("changed service provenance should fail")
 
 
 class FakeAwake:

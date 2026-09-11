@@ -140,6 +140,27 @@ def test_frozen_inputs_include_runtime_adapter(monkeypatch):
         raise AssertionError("changed runtime adapter should fail")
 
 
+def test_frozen_inputs_include_service_provenance(monkeypatch):
+    expected = rehearsal.legacy.EXPECTED_FROZEN_PROVENANCE_SHA256
+    actual = rehearsal.sha(rehearsal.legacy.FROZEN_PROVENANCE)
+    assert actual == expected
+
+    original = rehearsal.sha
+    monkeypatch.setattr(
+        rehearsal,
+        "sha",
+        lambda path: "changed"
+        if path == rehearsal.legacy.FROZEN_PROVENANCE
+        else original(path),
+    )
+    try:
+        rehearsal.verify_frozen_inputs()
+    except ValueError as exc:
+        assert "identity changed" in str(exc)
+    else:
+        raise AssertionError("changed service provenance should fail")
+
+
 def test_duration_is_bounded(tmp_path):
     args = arguments(tmp_path)
     args.duration_seconds = 9

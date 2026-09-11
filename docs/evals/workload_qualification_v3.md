@@ -36,8 +36,10 @@ controlled-latency violation and provides a future pre-consumption gate. Rehears
 outputs are private local artifacts and grant no execution authority.
 
 The v3 adapter also preserves the frozen launcher's exact service preflight verifier.
-The rehearsal and launcher hash the runtime performance adapter alongside the frozen
-contract, preregistration, implementation, collector, and observer inputs.
+The rehearsal and launcher hash the verifier's frozen service-identity JSON and the
+runtime performance adapter alongside the frozen contract, preregistration,
+implementation, collector, and observer inputs. Any future approval must bind the
+service-provenance digest.
 
 Before any future semantic attempt, separately investigate why a nominal 120-second
 analyst timeout produced a 440-second case duration and prove an explicit end-to-end

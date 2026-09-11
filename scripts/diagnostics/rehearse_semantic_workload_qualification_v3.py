@@ -62,6 +62,7 @@ def verify_frozen_inputs():
         legacy.CONTROL_COLLECTOR: legacy.EXPECTED_CONTROL_COLLECTOR_SHA256,
         legacy.CONTROL_OBSERVER: legacy.EXPECTED_CONTROL_OBSERVER_SHA256,
         legacy.ADAPTER: qualification.PERFORMANCE_ADAPTER_SHA256,
+        legacy.FROZEN_PROVENANCE: legacy.EXPECTED_FROZEN_PROVENANCE_SHA256,
     }
     for path, digest in expected.items():
         if sha(path) != digest:
@@ -92,6 +93,7 @@ def run(args):
             "split_policy": qualification.POLICY,
             "contract_sha256": sha(CONTRACT),
             "performance_adapter_sha256": sha(legacy.ADAPTER),
+            "service_provenance_sha256": sha(legacy.FROZEN_PROVENANCE),
         },
     )
     technical_error = None
@@ -183,6 +185,7 @@ def run(args):
         },
         "contract_sha256": sha(CONTRACT),
         "performance_adapter_sha256": sha(legacy.ADAPTER),
+        "service_provenance_sha256": sha(legacy.FROZEN_PROVENANCE),
         "execution_authority": False,
     }
     if technical_error is not None:

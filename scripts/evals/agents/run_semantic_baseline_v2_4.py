@@ -36,6 +36,7 @@ def verify_frozen_performance_dependencies():
         legacy.CONTROL_COLLECTOR: legacy.EXPECTED_CONTROL_COLLECTOR_SHA256,
         legacy.CONTROL_OBSERVER: legacy.EXPECTED_CONTROL_OBSERVER_SHA256,
         legacy.ADAPTER: qualification.PERFORMANCE_ADAPTER_SHA256,
+        legacy.FROZEN_PROVENANCE: legacy.EXPECTED_FROZEN_PROVENANCE_SHA256,
     }
     for path, digest in expected.items():
         if file_sha(path) != digest:
@@ -61,6 +62,7 @@ def verify_opt_in(args):
         "performance_implementation_sha256": file_sha(legacy.CONTROL_IMPLEMENTATION),
         "performance_collector_sha256": file_sha(legacy.CONTROL_COLLECTOR),
         "performance_adapter_sha256": file_sha(legacy.ADAPTER),
+        "service_provenance_sha256": file_sha(legacy.FROZEN_PROVENANCE),
         "legacy_control_launcher_sha256": file_sha(legacy.LAUNCHER),
         "integration_launcher_sha256": file_sha(LAUNCHER),
         "integration_adapter_sha256": file_sha(ADAPTER),
@@ -76,7 +78,13 @@ def verify_opt_in(args):
     ):
         raise ValueError("Committed workload-qualification-v3 approval mismatch")
     legacy.git("merge-base", "--is-ancestor", reviewed, "HEAD")
-    reviewed_paths = (LAUNCHER, ADAPTER, CONTRACT, canonical.LAUNCHER)
+    reviewed_paths = (
+        LAUNCHER,
+        ADAPTER,
+        CONTRACT,
+        canonical.LAUNCHER,
+        legacy.FROZEN_PROVENANCE,
+    )
     if legacy.git("diff", reviewed, "--", *(str(path) for path in reviewed_paths)):
         raise ValueError("Workload-qualification-v3 behavior changed after review")
     frozen.verify_remote_review(approval)
