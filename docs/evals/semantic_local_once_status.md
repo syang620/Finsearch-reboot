@@ -76,7 +76,9 @@ run_semantic_once.py execute [--env-file PATH]
 read-only canonical Qdrant identity verification in the pinned interpreter. It also
 runs the unchanged launcher's runtime-environment validator against the frozen
 configuration and SHA-keyed cache path, so retrieval, reranker, and cache-policy
-overrides fail here. It does not execute benchmark cases or consume the attempt.
+overrides fail here. Preflight records only that this validation succeeded; returned
+URLs and provider metadata are not serialized. It does not execute benchmark cases or
+consume the attempt.
 
 `execute` requires the separate authorization, reruns preflight, revalidates the Git
 checkout and absent artifacts, then exclusively and durably writes `consumed.json`

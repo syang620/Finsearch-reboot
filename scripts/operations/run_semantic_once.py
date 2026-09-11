@@ -365,9 +365,10 @@ def validate_launcher_environment(launcher, cwd, head):
     config = strict_json((Path(cwd) / 'data/evals/semantic_answer/v1/evaluation_config.json').read_bytes())
     cache = Path('.cache/semantic_answer_v2') / head
     try:
-        return launcher.frozen.runtime_environment(config, cache)
+        launcher.frozen.runtime_environment(config, cache)
     except (KeyError, ValueError):
         raise ValueError('Frozen runtime environment differs') from None
+    return {'validated': True}
 
 
 def registration(root, receipt):

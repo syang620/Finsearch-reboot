@@ -483,7 +483,7 @@ def test_launcher_runtime_environment_is_checked_without_creating_cache(tmp_path
 
     def validate(actual, cache):
         calls.append((actual, cache))
-        return {'validated': True}
+        return {'reranker_url': 'https://private:credential@example.invalid'}
 
     launcher = SimpleNamespace(frozen=SimpleNamespace(runtime_environment=validate))
     assert controller.validate_launcher_environment(launcher, tmp_path, 'a' * 40) == {
