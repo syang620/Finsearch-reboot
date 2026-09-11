@@ -11,6 +11,7 @@ import importlib
 import json
 import os
 from pathlib import Path
+import re
 import selectors
 import signal
 import stat
@@ -47,10 +48,13 @@ REQUIRED_MODULES = ('requests', 'qdrant_client', 'dotenv', 'evals.semantic_datas
                     'agents.retrieval.mcp_client', 'mcp_server.server')
 UNBLOCK_EXEC = (
     'import os,signal,sys; '
-    'signal.pthread_sigmask(signal.SIG_UNBLOCK,{signal.SIGINT,signal.SIGTERM}); '
+    'signal.pthread_sigmask(signal.SIG_SETMASK,set()); '
     'os.execv(sys.executable,[sys.executable,"-u",*sys.argv[1:]])'
 )
 STOP_GRACE_SECONDS = 30
+SENSITIVE_ENVIRONMENT_NAME = re.compile(
+    r'(?:^|_)(?:API_KEY|TOKEN|SECRET|PASSWORD|PASSWD|CREDENTIALS?)(?:_|$)'
+)
 SAFE_FAILURE_REASONS = frozenset({
     'Revision-2 candidate inactive: approval absent', 'Revision-2 approval mismatch',
     'Execution authorization mismatch', 'Required credentials absent', 'Fixture mode forbidden',
@@ -62,6 +66,7 @@ SAFE_FAILURE_REASONS = frozenset({
     'Unsealed interpreter import path', 'Repository module escaped sealed source',
     'Attempt artifacts already exist; no retry permitted',
     'Attempt cache is not empty; no retry permitted', 'Retired v6 identity differs',
+    'Owned external mode-0700 cache directory required',
 })
 
 
@@ -83,12 +88,24 @@ def exists(path):
     return os.path.lexists(path)
 
 
+def validate_cache(root):
+    cache = root / 'cache'
+    try:
+        info = cache.lstat()
+    except OSError:
+        raise ValueError('Owned external mode-0700 cache directory required') from None
+    if (not stat.S_ISDIR(info.st_mode) or info.st_uid != os.getuid()
+            or stat.S_IMODE(info.st_mode) != 0o700 or cache.resolve() != cache):
+        raise ValueError('Owned external mode-0700 cache directory required')
+    if any(cache.iterdir()):
+        raise ValueError('Attempt cache is not empty; no retry permitted')
+
+
 def absent_artifacts(root):
     if any(exists(root / name) for name in
            ('consumed.json', 'outcome.json', 'console.log', 'staging')):
         raise ValueError('Attempt artifacts already exist; no retry permitted')
-    if any((root / 'cache').iterdir()):
-        raise ValueError('Attempt cache is not empty; no retry permitted')
+    validate_cache(root)
 
 
 @contextmanager
@@ -122,7 +139,7 @@ class Contract:
 
 
 def child_argv(root, cwd, interpreter=INTERPRETER):
-    # Popen inherits the parent's spawn mask. Unblock in the new process before
+    # Popen inherits the parent's spawn mask. Clear it in the new process before
     # execing the file-path launcher, without thread-unsafe preexec_fn callbacks.
     return (str(interpreter), '-u', '-c', UNBLOCK_EXEC, str(cwd / LAUNCHER), '--approval', str(QUALITY),
             '--integration-approval', str(INTEGRATION), '--workload-control-v2',
@@ -305,6 +322,11 @@ class Redactor:
         return bytes(out)
 
 
+def sensitive_environment_values(env):
+    return [value for name, value in env.items()
+            if name == 'SEC_USER_AGENT' or SENSITIVE_ENVIRONMENT_NAME.search(name)]
+
+
 def supervise(contract, auth, check, *, transition=lambda stage: None):
     """Caller holds attempt lock. Tests inject transitions, never CLI options."""
     result = dict(contract=contract.record(), authorization=auth, child_started=False,
@@ -342,6 +364,7 @@ def supervise(contract, auth, check, *, transition=lambda stage: None):
         absent_artifacts(contract.root)
         result['preflight'] = check(contract)
         transition('after_preflight')
+        absent_artifacts(contract.root)
         mask = signal.pthread_sigmask(signal.SIG_BLOCK, set(handlers))
         try:
             latch_pending()
@@ -365,6 +388,7 @@ def supervise(contract, auth, check, *, transition=lambda stage: None):
             try:
                 latch_pending()
                 if not received:
+                    validate_cache(contract.root)
                     child = subprocess.Popen(contract.argv, cwd=contract.cwd, env=contract.env,
                                              stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                                              start_new_session=True)
@@ -377,9 +401,7 @@ def supervise(contract, auth, check, *, transition=lambda stage: None):
                 for number in set(received):
                     if child.poll() is None:
                         os.killpg(child.pid, number)
-                secrets = [v for k, v in contract.env.items()
-                           if k not in ('PATH', 'PYTHONPATH', 'HOME', 'LANG', 'SHELL')]
-                redactor = Redactor(secrets)
+                redactor = Redactor(sensitive_environment_values(contract.env))
                 with child.stdout, selectors.DefaultSelector() as selector:
                     selector.register(child.stdout, selectors.EVENT_READ)
                     while selector.get_map() or child.poll() is None:

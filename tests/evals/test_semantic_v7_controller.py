@@ -20,7 +20,7 @@ from scripts.operations import semantic_v7_environment as environment
 def contract(tmp_path):
     root = tmp_path / 'attempt'
     root.mkdir(mode=0o700)
-    (root / 'cache').mkdir()
+    (root / 'cache').mkdir(mode=0o700)
     (root / 'source').mkdir()
     metadata = {'prepared': {'head': 'a' * 40, 'image_sha256': 'b' * 64},
                 'approval_sha256': 'c' * 64}
@@ -117,6 +117,53 @@ def test_supervisor_real_child_and_captured_contract(contract, monkeypatch):
         controller.absent_artifacts(contract.root)
 
 
+@pytest.mark.parametrize('bad', ['symlink', 'mode'])
+def test_cache_must_be_owned_private_directory(contract, tmp_path, bad):
+    cache = contract.root / 'cache'
+    if bad == 'symlink':
+        cache.rmdir()
+        target = tmp_path / 'redirected-cache'
+        target.mkdir(mode=0o700)
+        cache.symlink_to(target, target_is_directory=True)
+    else:
+        cache.chmod(0o755)
+    with pytest.raises(ValueError, match='mode-0700 cache'):
+        controller.absent_artifacts(contract.root)
+
+
+def test_cache_replacement_after_preflight_does_not_consume(contract, tmp_path, monkeypatch):
+    def replace(stage):
+        if stage == 'after_preflight':
+            cache = contract.root / 'cache'
+            cache.rmdir()
+            target = tmp_path / 'redirected-cache'
+            target.mkdir(mode=0o700)
+            cache.symlink_to(target, target_is_directory=True)
+
+    monkeypatch.setattr(controller.subprocess, 'Popen',
+                        lambda *a, **k: pytest.fail('No child expected'))
+    assert controller.supervise(contract, {}, lambda c: {}, transition=replace) == 1
+    assert not (contract.root / 'consumed.json').exists()
+    assert not (contract.root / 'outcome.json').exists()
+
+
+def test_cache_replacement_before_spawn_consumes_without_child(contract, tmp_path, monkeypatch):
+    def replace(stage):
+        if stage == 'before_spawn':
+            cache = contract.root / 'cache'
+            cache.rmdir()
+            target = tmp_path / 'redirected-cache'
+            target.mkdir(mode=0o700)
+            cache.symlink_to(target, target_is_directory=True)
+
+    monkeypatch.setattr(controller.subprocess, 'Popen',
+                        lambda *a, **k: pytest.fail('No child expected'))
+    assert controller.supervise(contract, {}, lambda c: {}, transition=replace) == 1
+    outcome, _ = snapshot.read_record(contract.root / 'outcome.json')
+    assert outcome['child_started'] is False
+    assert outcome['failure']['reason'] == 'Owned external mode-0700 cache directory required'
+
+
 def test_real_launcher_trampoline_matches_argv_builder(contract):
     launcher = contract.cwd / controller.LAUNCHER
     launcher.parent.mkdir(parents=True)
@@ -129,6 +176,23 @@ def test_real_launcher_trampoline_matches_argv_builder(contract):
     observed = json.loads((contract.root / 'console.log').read_text())
     assert observed == {'cwd': str(contract.cwd), 'path0': str(launcher.parent),
                         'exe': sys.executable}
+
+
+def test_real_launcher_trampoline_clears_inherited_signal_mask(contract):
+    launcher = contract.cwd / controller.LAUNCHER
+    launcher.parent.mkdir(parents=True)
+    launcher.write_text('import signal\nprint(signal.SIGUSR1 in '
+                        'signal.pthread_sigmask(signal.SIG_BLOCK, set()))\n')
+    current = controller.Contract(
+        contract.root, contract.cwd, sys.executable,
+        controller.child_argv(contract.root, contract.cwd, sys.executable),
+        MappingProxyType({'PATH': os.environ['PATH']}), contract.metadata)
+    previous = signal.pthread_sigmask(signal.SIG_BLOCK, {signal.SIGUSR1})
+    try:
+        assert controller.supervise(current, {}, lambda c: {}) == 0
+    finally:
+        signal.pthread_sigmask(signal.SIG_SETMASK, previous)
+    assert (contract.root / 'console.log').read_bytes() == b'False\n'
 
 
 @pytest.mark.parametrize('stage,consumed', [('after_preflight', False),
@@ -205,6 +269,28 @@ def test_stream_redaction_across_chunks():
                       [b'hello sec', b'ret-cred', b'ential pri', b'vate-contact bye'])
     output += redactor.feed(b'', final=True)
     assert output == b'hello [REDACTED] [REDACTED] bye'
+
+
+def test_supervisor_redacts_sensitive_values_without_corrupting_numbers(contract):
+    env = MappingProxyType({
+        'PATH': os.environ['PATH'],
+        'SEC_USER_AGENT': 'private-contact',
+        'DASHSCOPE_API_KEY': 'private-credential',
+        'OTHER_TOKEN': 'another-secret',
+        'SHLVL': '1',
+        'NO_COLOR': '1',
+    })
+    script = ('print("case 101 latency 1.25"); '
+              'print("private-contact private-credential another-secret")')
+    current = controller.Contract(contract.root, contract.cwd, sys.executable,
+                                  (sys.executable, '-c', script), env, contract.metadata)
+    assert controller.supervise(current, {}, lambda c: {}) == 0
+    content = (contract.root / 'console.log').read_bytes()
+    assert b'case 101 latency 1.25' in content
+    assert content.count(b'[REDACTED]') == 3
+    assert b'private-contact' not in content
+    assert b'private-credential' not in content
+    assert b'another-secret' not in content
 
 
 def test_frozen_mapping_cannot_change(contract):
