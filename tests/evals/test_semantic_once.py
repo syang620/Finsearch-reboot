@@ -381,6 +381,60 @@ def test_signal_before_consumption_skips_launch(prepared_contract):
     assert not (prepared_contract.root / 'outcome.json').exists()
 
 
+def test_signal_arriving_during_spawn_is_forwarded_once(prepared_contract, monkeypatch):
+    original_popen = controller.subprocess.Popen
+    original_killpg = controller.os.killpg
+    forwarded = []
+
+    def launch(*args, **kwargs):
+        child = original_popen(*args, **kwargs)
+        if args[0] == contract.argv:
+            os.kill(os.getpid(), signal.SIGTERM)
+        return child
+
+    def forward(pid, number):
+        forwarded.append((pid, number))
+        return original_killpg(pid, number)
+
+    contract = controller.Contract(
+        prepared_contract.root, prepared_contract.cwd, sys.executable,
+        (sys.executable, '-c', 'import signal,time; '
+         'signal.pthread_sigmask(signal.SIG_SETMASK,set()); time.sleep(5)'),
+        prepared_contract.env,
+        prepared_contract.metadata,
+    )
+    monkeypatch.setattr(controller.subprocess, 'Popen', launch)
+    monkeypatch.setattr(controller.os, 'killpg', forward)
+    with controller.attempt_lock(contract.root):
+        assert controller.supervise(contract, {}, lambda item: {'ok': True}) == 143
+    outcome, _ = controller.read_record(contract.root / 'outcome.json')
+    assert [number for _, number in forwarded].count(signal.SIGTERM) == 1, outcome
+
+
+def test_signal_during_outcome_persistence_returns_to_caller(prepared_contract, monkeypatch):
+    original_write_once = controller.write_once
+    received = []
+    previous = signal.signal(signal.SIGTERM, lambda number, frame: received.append(number))
+
+    def interrupt_outcome(path, record):
+        if path.name == 'outcome.json':
+            os.kill(os.getpid(), signal.SIGTERM)
+        original_write_once(path, record)
+
+    monkeypatch.setattr(controller, 'write_once', interrupt_outcome)
+    try:
+        with controller.attempt_lock(prepared_contract.root):
+            assert controller.supervise(
+                prepared_contract, {}, lambda item: {'ok': True}
+            ) == 0
+    finally:
+        signal.signal(signal.SIGTERM, previous)
+    assert received == [signal.SIGTERM]
+    outcome, _ = controller.read_record(prepared_contract.root / 'outcome.json')
+    assert outcome['signals'] == []
+    assert outcome['signal_observation_closed_at']
+
+
 def test_runtime_overrides_and_external_pythonpath_are_rejected(prepared_contract):
     with pytest.raises(ValueError, match='override'):
         controller.validate_runtime_paths({'GIT_DIR': '/tmp/repo'}, prepared_contract.cwd)

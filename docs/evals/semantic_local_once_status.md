@@ -78,7 +78,10 @@ immediately before process creation. Any later error consumes the attempt. The c
 runs in a new process group with the frozen environment and argv. Console output is
 written to mode-0600 `console.log` with credential-like environment values redacted.
 SIGINT and SIGTERM are forwarded, and a durable `outcome.json` records the terminal
-state whenever storage remains available.
+state whenever storage remains available. Each observed signal is forwarded at most
+once. The outcome records an explicit signal-observation cutoff; signals that arrive
+while that outcome is being persisted are delivered using the caller's prior signal
+disposition after persistence rather than being discarded.
 
 Existing marker, outcome, console, staging, or SHA-keyed cache content forbids another
 launch. A marker without an outcome is unresolved and never grants retry authority.

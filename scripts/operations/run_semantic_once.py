@@ -520,25 +520,28 @@ def supervise(contract, auth, check, *, transition=lambda stage: None):
     stop_deadline = None
     receipt = contract.record()['prepared']
 
+    def forward(event):
+        if child is not None and child.poll() is None:
+            event['forward_attempted_at'] = now()
+            try:
+                os.killpg(child.pid, event['number'])
+                event['forwarded_at'] = now()
+            except OSError as exc:
+                event['error_type'] = type(exc).__name__
+
     def handle(number, frame):
         nonlocal stop_deadline
         received.append(number)
         if stop_deadline is None:
             stop_deadline = time.monotonic() + STOP_GRACE_SECONDS
         result['signals'].append({'number': number, 'received_at': now()})
-        if child is not None and child.poll() is None:
-            event = result['signals'][-1]
-            event['forward_attempted_at'] = now()
-            try:
-                os.killpg(child.pid, number)
-                event['forwarded_at'] = now()
-            except OSError as exc:
-                event['error_type'] = type(exc).__name__
+        forward(result['signals'][-1])
 
     def latch_pending():
-        for number in signal.sigpending() & {signal.SIGINT, signal.SIGTERM}:
-            if number not in received:
-                handle(number, None)
+        managed = {signal.SIGINT, signal.SIGTERM}
+        while pending := signal.sigpending() & managed:
+            number = signal.sigwait(pending)
+            handle(number, None)
 
     for number in (signal.SIGINT, signal.SIGTERM):
         handlers[number] = signal.signal(number, handle)
@@ -581,10 +584,9 @@ def supervise(contract, auth, check, *, transition=lambda stage: None):
             finally:
                 signal.pthread_sigmask(signal.SIG_SETMASK, mask)
             if child is not None:
-                latch_pending()
-                for number in set(received):
-                    if child.poll() is None:
-                        os.killpg(child.pid, number)
+                for event in result['signals']:
+                    if 'forward_attempted_at' not in event:
+                        forward(event)
                 redactor = Redactor(sensitive_environment_values(contract.env))
                 with child.stdout, selectors.DefaultSelector() as selector:
                     selector.register(child.stdout, selectors.EVENT_READ)
@@ -632,11 +634,11 @@ def supervise(contract, auth, check, *, transition=lambda stage: None):
                 result['signal_observation_closed_at'] = now()
                 write_once(contract.root / 'outcome.json', result)
         finally:
-            for number in handlers:
-                signal.signal(number, signal.SIG_IGN)
-            signal.pthread_sigmask(signal.SIG_SETMASK, mask)
             for number, previous in handlers.items():
                 signal.signal(number, previous)
+            # Signals after the recorded observation cutoff belong to the caller.
+            # Restore its dispositions before unmasking so none are discarded.
+            signal.pthread_sigmask(signal.SIG_SETMASK, mask)
     if not consumed and result['error_type']:
         print(json.dumps(result['failure']))
     return result['wrapper_exit_code'] if result['wrapper_exit_code'] is not None else 1
