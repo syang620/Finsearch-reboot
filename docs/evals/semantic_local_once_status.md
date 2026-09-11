@@ -1,16 +1,16 @@
-# Semantic-v2 local-once protocol: inactive reconstruction candidate
+# Semantic-v2 local-once protocol: consumed invalid diagnostic
 
-`scripts/operations/run_semantic_once.py` is the active reconstruction candidate for a
-future semantic-v2 baseline attempt. It replaces the fresh-v7 revision-2 operational
+`scripts/operations/run_semantic_once.py` replaced the fresh-v7 revision-2 operational
 design with a smaller protocol whose security boundary matches its intended use: a
-trusted local operator running reviewed code from a private checkout.
+trusted local operator running reviewed code from a private checkout. The reviewed
+protocol was prepared and invoked once on 2026-09-11. The durable marker consumed the
+attempt before child process creation, as designed.
 
-The candidate grants no execution authority. Its approval file,
-`docs/evals/semantic_answer_v2_local_once_v1_approval.json`, does not exist. The fixed
-attempt root, `/Users/shicheny/.local/share/finsearch/semantic-baseline/local-once-v1`,
-must also remain absent until an exact candidate review and a separate approval commit
-have both completed cleanly. Reconstruction and review require no model calls,
-retrieval cases, re-indexing, or changes to Qdrant.
+The child exited with status 1 after capturing one of 60 scheduled cases. The preserved
+result is an invalid diagnostic, not an official baseline. It supplies no resume metric
+or answer-quality evidence and grants no retry authority. The fixed attempt root,
+`/Users/shicheny/.local/share/finsearch/semantic-baseline/local-once-v1`, and all of its
+authorization, marker, outcome, log, cache, and staging content must remain intact.
 
 ## Trust boundary
 
@@ -36,8 +36,8 @@ reviewed namespace rather than deletion and reuse.
 
 ## Approval and execution contracts
 
-After a clean exact-head candidate review, a separate commit may add the approval file.
-Its closed schema binds:
+After a clean exact-head candidate review, the separate approval commit added
+`docs/evals/semantic_answer_v2_local_once_v1_approval.json`. Its closed schema binds:
 
 - contract version `1`, authorization ID `SEMANTIC-V2-LOCAL-ONCE-V1`, the fixed root,
   and status `approved_candidate_not_execution`;
@@ -55,12 +55,45 @@ canonical-index attestation. Both the preflight identity check and benchmark chi
 that same target. `PYTHONPATH` must resolve, in order, to the prepared checkout's
 `src` directory and repository root; ignored or alternate import roots are rejected.
 
-Execution additionally requires an external, owned, mode-0600
-`execution_authorization.json`. Its closed schema binds the approval digest, prepared
+Execution additionally required an external, owned, mode-0600
+`execution_authorization.json`. Its closed schema bound the approval digest, prepared
 commit, tree and tracked-file manifest, fixed artifact root, one invocation, explicit
 user authorization, and a clean review of the final approval commit. The controller
-opens, parses, and hashes the same descriptor bytes before checking remote review
+opened, parsed, and hashed the same descriptor bytes before checking remote review
 provenance.
+
+## Observed one-use outcome
+
+The authorization bound commit `e153761b4312e0c2f41ba64693ba126f9ed1c686`, tree
+`afa866a754fc974208313e50a32dafc807d92556`, and tracked-file manifest
+`80814e8ebe9f269ace37903b92150ca9e415ae259f5db34a4bda5a6be36ebfaa`.
+The controller wrote `consumed.json` at `2026-09-11T17:08:38.451025+00:00`, started the
+child, and wrote `outcome.json` at `2026-09-11T17:17:20.279476+00:00`. No signal was
+received. The child return code and wrapper exit code were both 1.
+
+The only captured case, `SEM2_MSFT_2024_05`, ended with `analyst_timeout` after
+440,070 ms and was ineligible. The final workload-control record classified the run as
+`invalid_diagnostic`. Its first sample already had a hard `browser` violation: the
+monitor observed the ChatGPT/Codex process tree used to launch and supervise the run.
+The same sample also recorded ChatGPT at 69.0% CPU. The monitor later reported a
+230.948-second maximum cadence error, above its frozen 0.25-second tolerance. These
+facts make the partial case unusable for official comparisons.
+
+The canonical Qdrant collection still contained 948 points with payload/vector
+fingerprint `641f5ee5c465daaa7106717eb4e4a8a4e145cdfd04e4e8afd202a892d2e53630`.
+The before/after index and model identity checks passed. The final raw workload-control
+artifact contains 213 samples and has SHA-256
+`5921d463f3dbf3157717e72dac05ad137a4a7c17d8e165f9c898e346a264fdcd`.
+The controller outcome SHA-256 is
+`8ddef8b5a942b3da9e4f60b9c48a0e6a0e29436f59c30ed9acb889215363d6c2`.
+
+The failure isolates the remaining design problem. A strict policy that treats the
+interactive ChatGPT/Codex supervisor as forbidden UI activity cannot qualify a run
+started through that supervisor. Any future attempt needs a newly reviewed namespace
+and authorization. Before that, the evaluation design should separate integrity gates
+from ambient-load observations and decide whether workload qualification runs in an
+independent noninteractive environment or records browser/UI activity as diagnostic
+metadata.
 
 ## Lifecycle and failure behavior
 
@@ -100,18 +133,10 @@ and never grants retry authority. All historical fresh-v7 and earlier approvals,
 wrappers, results, and consumption records remain authoritative audit evidence and are
 not repurposed.
 
-## Rollout gates
+## Disposition
 
-1. Review the uncommitted reconstruction diff and pass the focused and historical
-   controller tests without live evaluation calls.
-2. Commit and push the inactive candidate for an exact-head review.
-3. After a clean review, add its candidate approval in a separate commit and review
-   that exact head.
-4. Prepare the independent checkout and run non-consuming preflight.
-5. Present the prepared identities and preflight evidence for separate, explicit
-   one-use execution authorization.
-6. Execute once, preserve all evidence, and never repair or recycle the namespace.
-
-Review findings must be assessed against the trusted-local boundary above. A demand
-for hostile same-user isolation changes the architecture and should trigger a separate
-OS-identity or VM design instead of another pathname or ACL patch.
+The rollout gates through one-use execution are complete. The namespace is permanently
+consumed and the artifacts are preserved locally. Do not repair, delete, recycle, or
+rerun it. Review findings must be assessed against the trusted-local boundary above.
+A demand for hostile same-user isolation changes the architecture and should trigger a
+separate OS-identity or VM design instead of another pathname or ACL patch.
