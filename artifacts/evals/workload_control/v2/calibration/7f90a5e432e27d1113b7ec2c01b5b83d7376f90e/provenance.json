@@ -1,0 +1,94 @@
+{
+  "evaluation": "semantic_workload_control_v2_corrected_calibration",
+  "status": "complete_preregistered_control_only_calibration_pending_final_independent_review",
+  "decision": "WORKLOAD_CONTROL_V2_VALIDATED",
+  "selected_policy": "B_CONSECUTIVE_10",
+  "source_state": {
+    "pr31_head": "7667af52169fb12965adf5680bae58a74c7c977e",
+    "pr31_state": "draft_open_release_blocked_unmerged",
+    "pr32_head": "a6c264652096a0811693a82b901780b7bc8419ff",
+    "pr32_state": "draft_open_unmerged_reviewed",
+    "preregistration_commit": "974c381e9147a444eaf4c574f01079d240cb67d6",
+    "corrected_capture_implementation_sha": "afd3d0dfb86126346edf87fc44ebe1e09773dbb1",
+    "analysis_implementation_sha": "7f90a5e432e27d1113b7ec2c01b5b83d7376f90e"
+  },
+  "scope": {
+    "semantic_cases": 0,
+    "retrieval_calls": 0,
+    "model_inference_calls": 0,
+    "production_behavior_changes": false,
+    "semantic_dataset_or_scorer_changes": false,
+    "historical_artifact_changes": false
+  },
+  "review_corrections": {
+    "stable_group_key": "category plus canonical executable plus nearest identified application/service ancestor",
+    "service_exemption": "exact required-service executables only; arbitrary qdrant-named clients remain scored",
+    "terminal_evidence": "zero-CPU supervision executables retained; S2 recaptured",
+    "terminal_validation_gate": "a non-viable S2 prevents every candidate from passing",
+    "terminal_evidence_derivation": "counts, unique identities, sample coverage, CPU peak, and launchd ancestry are derived from the input",
+    "capture_provenance": "recorded per scenario in comparison.raw_inputs",
+    "historical_pr32_replay": "lower bound only"
+  },
+  "capture_implementations_by_scenario": {
+    "S1_PASSIVE_SUPERVISED_IDLE": "dc8a3703cdc03f9ee4d64d26b89a3b543b91b422",
+    "S2_TERMINAL_ONLY_IDLE": "afd3d0dfb86126346edf87fc44ebe1e09773dbb1",
+    "S3_REQUIRED_SERVICE_ACTIVITY": "dc8a3703cdc03f9ee4d64d26b89a3b543b91b422",
+    "S4_SUSTAINED_CPU_INTERFERENCE": "dc8a3703cdc03f9ee4d64d26b89a3b543b91b422",
+    "S5_SHORT_CPU_BURSTS": "dc8a3703cdc03f9ee4d64d26b89a3b543b91b422",
+    "S6_BROWSER_WORKLOAD": "dc8a3703cdc03f9ee4d64d26b89a3b543b91b422"
+  },
+  "frozen_semantic_inputs": {
+    "dataset_sha256": "f9148a29cb5b0f2da30b6ecf5017a9d6bc4dc9fd31523643557b93906646ad7c",
+    "optimization_manifest_sha256": "653a65e778a5633c4d1adc2d90ea7a56a578b81695e69d679f9d69915e54bec0",
+    "scorer_sha256": {
+      "src/evals/semantic_answer_v2.py": "9e75cd2cb339e56e34307bda01a33648d0ac40488b4eac4ab82f90348689b91b",
+      "src/evals/semantic_numeric_v2.py": "53d39fac5be8a9a2382f6fd2fa455dfd50141f1cf78552238ceb94a19cb1d433",
+      "src/evals/semantic_outcomes_v2.py": "cb16d0dbdfcbf3fc1a0e24aa2c308638c8d84f118c6da979159444437f2de140",
+      "src/evals/semantic_metrics_v2.py": "7f70745897b9cbb7119457e2fa840bd6b7ea7ce56dfbcdb9f299628e7d2f403e"
+    }
+  },
+  "control_implementation_sha256": {
+    "scripts/diagnostics/observe_semantic_workload.py": "96bc78eb20e6200105d128190b66147bc18d5be6c7431359f7b45ecf62d8ed00",
+    "scripts/diagnostics/workload_control_v2.py": "3cf81da3c8cd4abeb4c8304f0f501af2b2262555def8e250b785cc8f50f78e63",
+    "scripts/diagnostics/run_workload_control_v2_calibration.py": "798464f62dc9e95291ba8b5b6adfdab2627eabc82fcd5a20d1d690fe046bdca1",
+    "scripts/diagnostics/analyze_workload_control_v2_calibration.py": "fc4e164d72f1e8af5e6f5a999ad97cf11eddf132cd095564b476ba8915e98ed7"
+  },
+  "evidence_sha256": {
+    "preregistration": "0c6c4ac93cee1b23e33ea2ea93ded0a9b56092cd9898045b44a0bb7595463483",
+    "comparison": "291a58d0cc2758fcec25db050465ff779bc6ba5af897729f7b84e04488b610a5",
+    "report": "36773d0beb80addad3eefae2a0daa9fa46e8309c2eb66651f5c771b2dab09655",
+    "commands": "3ceee872fe21a8a5889a0ba588f4dbce3f65cc1ccadee9cadbabc2c830c1c953",
+    "contract": "8f209729527ea94918d3dfe494f1d1d12416ff61fadedb153a7a0b9eb135d54b",
+    "adr": "7b058922a4a5c039f751982705f6cfeb65d358bb3731d427af8fcf0b5c51bf87",
+    "corrected_s2_raw": "1a3dcd0d0fc72ad3a9b1e360046e3029eb451bc96f8984018087eeb335275776",
+    "corrected_s2_summary": "406fce1234130f10c879baa49d4009aa63cfe281cee790698da1026ece67ea53"
+  },
+  "terminal_only_validation": {
+    "sample_count": 900,
+    "active_supervision_process_records": 0,
+    "viability_gates_validation": true,
+    "retained_inert_crash_handler_records": 3600,
+    "unique_inert_crash_handlers": 4,
+    "samples_with_inert_crash_handlers": 900,
+    "all_retained_crash_handlers_launchd_owned": true,
+    "inert_crash_handler_peak_cpu_percent": 0.0,
+    "actual_browser_records": 0,
+    "ac_and_low_power_mode_valid_all_samples": true
+  },
+  "historical_replay": {
+    "pr32_raw_sha256": "384003ae78c9b63e6b24a18e3067c19f2623a3554a8d67a14f39ce1b0f7c52a3",
+    "pr32_samples": 1200,
+    "interpretation": "lower_bound_only",
+    "historical_statuses_unchanged": true,
+    "sparse_prior_diagnostics": "indeterminate"
+  },
+  "verification": {
+    "focused_diagnostics": "29 passed",
+    "full_suite": "1207 passed, 47 subtests passed, 2 known pre-existing failures, 25 warnings",
+    "known_failures": [
+      "tests/agents/planner/test_planner_routes.py::test_planner_routes_match_expected_routes",
+      "tests/agents/retrieval/test_retrieval_workflow_no_tool_call.py::test_retrieval_no_tool_call_increments_attempts_and_stops_on_budget"
+    ]
+  },
+  "release_authorization": "none; final independent review is required and this calibration does not launch the semantic baseline"
+}

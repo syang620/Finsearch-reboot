@@ -1,0 +1,97 @@
+{
+  "finished_at": "2026-09-08T04:31:46.589364+00:00",
+  "controls_after": {
+    "battery": "Now drawing from 'AC Power'\n -InternalBattery-0 (id=23461987)\t80%; AC attached; not charging present: true",
+    "power_settings": "Battery Power:\n Sleep On Power Button 1\n lowpowermode         0\n standby              1\n ttyskeepawake        1\n hibernatemode        3\n powernap             1\n hibernatefile        /var/vm/sleepimage\n displaysleep         2\n womp                 0\n networkoversleep     0\n sleep                1\n lessbright           1\n tcpkeepalive         1\n disksleep            10\nAC Power:\n Sleep On Power Button 1\n lowpowermode         0\n standby              1\n ttyskeepawake        1\n hibernatemode        3\n powernap             1\n hibernatefile        /var/vm/sleepimage\n displaysleep         0\n womp                 1\n networkoversleep     0\n sleep                1\n tcpkeepalive         1\n disksleep            10",
+    "highest_cpu": [
+      {
+        "cpu_percent": 95.8,
+        "process": "spotlightknowledged"
+      },
+      {
+        "cpu_percent": 41.1,
+        "process": "llama-server"
+      },
+      {
+        "cpu_percent": 2.0,
+        "process": "trustd"
+      },
+      {
+        "cpu_percent": 1.7,
+        "process": "tccd"
+      },
+      {
+        "cpu_percent": 1.3,
+        "process": "ecosystemd"
+      },
+      {
+        "cpu_percent": 1.3,
+        "process": "ChatGPT"
+      },
+      {
+        "cpu_percent": 0.8,
+        "process": "com.apple.Virtualization.VirtualMachine"
+      },
+      {
+        "cpu_percent": 0.7,
+        "process": "ecosystemanalyticsd"
+      },
+      {
+        "cpu_percent": 0.6,
+        "process": "Codex (Service)"
+      },
+      {
+        "cpu_percent": 0.5,
+        "process": "IINA"
+      }
+    ]
+  },
+  "models_after": [
+    {
+      "name": "gemma4:e4b",
+      "digest": "c6eb396dbd5992bbe3f5cdb947e8bbc0ee413d7c17e2beaae69f5d569cf982eb",
+      "size": 9608350718
+    },
+    {
+      "name": "qwen3.5:0.8b",
+      "digest": "f3817196d142eaf72ce79dfebe53dcb20bd21da87ce13e138a8f8e10a866b3a4",
+      "size": 1036046583
+    },
+    {
+      "name": "qwen3.5:4b",
+      "digest": "2a654d98e6fba55d452b7043684e9b57a947e393bbffa62485a7aac05ee4eefd",
+      "size": 3389983735
+    },
+    {
+      "name": "qwen3.5:9b",
+      "digest": "6488c96fa5faab64bb65cbd30d4289e20e6130ef535a93ef9a49f42eda893ea7",
+      "size": 6594474711
+    },
+    {
+      "name": "glm-ocr:bf16",
+      "digest": "6effedd0dc8aec66ad86c94b8099395376e212f22c87a9d7147c422f7e447be4",
+      "size": 2219299168
+    },
+    {
+      "name": "qwen2.5:14b-instruct",
+      "digest": "7cdf5a0187d5c58cc5d369b255592f7841d1c4696d45a8c8a9489440385b22f6",
+      "size": 8988124069
+    },
+    {
+      "name": "qwen2.5:7b-instruct",
+      "digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+      "size": 4683087332
+    },
+    {
+      "name": "qwen3-embedding:8b",
+      "digest": "64b933495768fbd3b87c20583d379728a07471e0c66733a9df87cd1901b3c44b",
+      "size": 4676805193
+    },
+    {
+      "name": "deepseek-r1:14b",
+      "digest": "c333b7232bdb521236694ffbb5f5a6b11cc45d98e9142c73123b670fca400b09",
+      "size": 8988112209
+    }
+  ],
+  "validation_manifest_sha256": "24da18f62d51c256670d25dd8018482d3dc579eea4112afcb2209559a6d7ebfc"
+}

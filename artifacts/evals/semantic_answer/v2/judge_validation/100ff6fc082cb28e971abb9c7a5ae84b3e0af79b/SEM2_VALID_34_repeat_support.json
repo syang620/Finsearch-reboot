@@ -1,0 +1,40 @@
+{
+  "fixture_id": "SEM2_VALID_34",
+  "repeat": true,
+  "phase": "support",
+  "started_at": "2026-09-08T04:31:36.125959+00:00",
+  "packet": {
+    "question": "Under Apple's FY2024 10-K accounting policy, which investments qualify as cash equivalents?",
+    "answer": {
+      "status": "insufficient_data",
+      "answer": "I cannot answer this question from the filing.",
+      "claims": [],
+      "compare_rows": [],
+      "computation": null
+    },
+    "cited_contexts": []
+  },
+  "raw_response": {
+    "model": "gemma4:e4b",
+    "created_at": "2026-09-08T04:31:38.610488Z",
+    "message": {
+      "role": "assistant",
+      "content": "{\"claims\": [], \"unbound_factual_prose\":false, \"reason\": \"The user provided a question and an answer structure, but no evidence context was supplied to assess any claims against. Therefore, no support assessment can be performed.\"}"
+    },
+    "done": true,
+    "done_reason": "stop",
+    "total_duration": 2483669042,
+    "load_duration": 772542,
+    "prompt_eval_count": 633,
+    "prompt_eval_duration": 650292000,
+    "eval_count": 52,
+    "eval_duration": 1825196000
+  },
+  "validated": {
+    "claims": [],
+    "unbound_factual_prose": false,
+    "reason": "The user provided a question and an answer structure, but no evidence context was supplied to assess any claims against. Therefore, no support assessment can be performed."
+  },
+  "wall_ms": 2484.7513749846257,
+  "finished_at": "2026-09-08T04:31:38.610708+00:00"
+}

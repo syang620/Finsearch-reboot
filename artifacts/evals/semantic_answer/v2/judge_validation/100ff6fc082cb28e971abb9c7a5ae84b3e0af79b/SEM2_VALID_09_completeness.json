@@ -1,0 +1,85 @@
+{
+  "fixture_id": "SEM2_VALID_09",
+  "repeat": false,
+  "phase": "completeness",
+  "started_at": "2026-09-08T04:16:49.526220+00:00",
+  "packet": {
+    "question": "What total revenue did Apple report for FY2024 in its 10-K? Give the value in USD millions.",
+    "answer": {
+      "status": "ok",
+      "answer": "Apple FY2024 revenue was 391,035 million USD.",
+      "claims": [
+        {
+          "claim_id": "c1",
+          "claim_type": "structured_numeric",
+          "context_ids": [
+            "e1"
+          ],
+          "metric_id": "revenue",
+          "text": "Apple FY2024 revenue was 391,035 million USD."
+        }
+      ],
+      "compare_rows": [],
+      "computation": null
+    },
+    "expected_answerability": "answerable",
+    "answerability_reason": null,
+    "equivalence_rules": {
+      "abstention": "For future-actual questions, explicitly identify that the named filing cannot establish audited actuals for the later year; no guessed value or later-filing substitution. For answerable questions a refusal is incomplete/incorrect answerability, even if the system failed to retrieve evidence. Execution failures are a different layer.",
+      "evidence": "Listed source passages are independently verified examples, not an exhaustive whitelist for semantic adjudication. Inspect any unlisted passage against its original filing and the requirement scope before accepting it. Generic numeric evidence may come from another filing only when financial equivalence is established. Log its identity/span and rationale without rewriting frozen gold.",
+      "numeric_evidence": "Financial truth is independent of route: an original-filing table/text with explicit correct metric, issuer, period, unit and amount may support a numeric claim. Structured numeric-to-structured evidence policy is a separate compatibility metric. No credit from context metadata without matching answer semantics.",
+      "partial": "Omitting a qualifying facet may be incomplete while all emitted claims remain supported. Contradicting a material qualifier, issuer, period, amount or attribution is unsupported, not merely incomplete. Mixed true and unsupported separable assertions in one emitted claim are partially supported; a wrong central numeric fact is unsupported.",
+      "phrasing": "Synonyms, reordered clauses, issuer names/tickers, equivalent explicit units and non-contradictory concise paraphrases are acceptable. Gold wording is not a required string.",
+      "scope": "Use the named issuer and fiscal period. Explicit named-filing questions, comparisons and calculations remain bound to that filing. Generic numeric questions without an explicit filing-year restriction may use independently verified equivalent evidence for the same original amount, entity, metric and fact period; a later filing is not wrong merely because it repeats that fact. Different restated values, segments, periods or metrics are not interchangeable. Narrative/attribution facets retain their named fiscal-year disclosure scope."
+    },
+    "optional_detail": [],
+    "requirements": [
+      {
+        "claim_id": "revenue",
+        "requirement": "Apple FY2024 revenue is 391035000000 USD.",
+        "numeric": {
+          "absolute_tolerance": 500000,
+          "fiscal_year": 2024,
+          "metric_id": "revenue",
+          "requested_display_unit": "USD_millions",
+          "ticker": "AAPL",
+          "unit": "USD",
+          "value": 391035000000
+        }
+      }
+    ]
+  },
+  "raw_response": {
+    "model": "gemma4:e4b",
+    "created_at": "2026-09-08T04:16:57.286756Z",
+    "message": {
+      "role": "assistant",
+      "content": "{\"requirements\":[{\"claim_id\": \"revenue\", \"fulfillment\": \"complete\", \"reason\": \"The final answer explicitly states the revenue for Apple for FY2024 as 391,035 million USD, matching the required metric, period, and value structure.\", \"answer_quotes\": [\"Apple FY2024 revenue was 391,035 million USD.\"]}],\"answer_relevant\":true,\"answerability_correct\":true,\"reason\":\"The provided answer directly addresses the question by stating Apple's FY2024 revenue, fulfilling all specified requirements.\"}"
+    },
+    "done": true,
+    "done_reason": "stop",
+    "total_duration": 7759504500,
+    "load_duration": 867125,
+    "prompt_eval_count": 1140,
+    "prompt_eval_duration": 3449742000,
+    "eval_count": 126,
+    "eval_duration": 4298136000
+  },
+  "validated": {
+    "requirements": [
+      {
+        "claim_id": "revenue",
+        "fulfillment": "complete",
+        "reason": "The final answer explicitly states the revenue for Apple for FY2024 as 391,035 million USD, matching the required metric, period, and value structure.",
+        "answer_quotes": [
+          "Apple FY2024 revenue was 391,035 million USD."
+        ]
+      }
+    ],
+    "answer_relevant": true,
+    "answerability_correct": true,
+    "reason": "The provided answer directly addresses the question by stating Apple's FY2024 revenue, fulfilling all specified requirements."
+  },
+  "wall_ms": 7761.025957996026,
+  "finished_at": "2026-09-08T04:16:57.287246+00:00"
+}

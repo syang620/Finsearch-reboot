@@ -1,0 +1,569 @@
+{
+  "primary": {
+    "SEM2_VALID_01": {
+      "claims": {
+        "c1": "fully_supported"
+      },
+      "requirements": {
+        "revenue": "complete"
+      },
+      "unbound_factual_prose": false,
+      "answerability_correct": true,
+      "answer_relevant": true,
+      "fully_grounded": true,
+      "complete": true
+    },
+    "SEM2_VALID_02": {
+      "claims": {
+        "c1": "unsupported"
+      },
+      "requirements": {
+        "revenue": "missing"
+      },
+      "unbound_factual_prose": false,
+      "answerability_correct": false,
+      "answer_relevant": false,
+      "fully_grounded": false,
+      "complete": false
+    },
+    "SEM2_VALID_03": {
+      "claims": {
+        "c1": "fully_supported"
+      },
+      "requirements": {
+        "revenue": "partial"
+      },
+      "unbound_factual_prose": false,
+      "answerability_correct": true,
+      "answer_relevant": true,
+      "fully_grounded": true,
+      "complete": false
+    },
+    "SEM2_VALID_04": {
+      "claims": {
+        "c1": "fully_supported"
+      },
+      "requirements": {
+        "revenue": "complete"
+      },
+      "unbound_factual_prose": false,
+      "answerability_correct": true,
+      "answer_relevant": true,
+      "fully_grounded": true,
+      "complete": true
+    },
+    "SEM2_VALID_05": {
+      "claims": {
+        "c1": "fully_supported"
+      },
+      "requirements": {
+        "revenue": "partial"
+      },
+      "unbound_factual_prose": false,
+      "answerability_correct": true,
+      "answer_relevant": true,
+      "fully_grounded": true,
+      "complete": false
+    },
+    "SEM2_VALID_06": {
+      "claims": {
+        "c1": "fully_supported"
+      },
+      "requirements": {
+        "revenue": "partial"
+      },
+      "unbound_factual_prose": false,
+      "answerability_correct": true,
+      "answer_relevant": true,
+      "fully_grounded": true,
+      "complete": false
+    },
+    "SEM2_VALID_07": {
+      "claims": {
+        "c1": "unsupported"
+      },
+      "requirements": {
+        "revenue": "partial"
+      },
+      "unbound_factual_prose": false,
+      "answerability_correct": false,
+      "answer_relevant": true,
+      "fully_grounded": false,
+      "complete": false
+    },
+    "SEM2_VALID_08": {
+      "claims": {
+        "c1": "fully_supported"
+      },
+      "requirements": {
+        "revenue": "missing"
+      },
+      "unbound_factual_prose": false,
+      "answerability_correct": false,
+      "answer_relevant": true,
+      "fully_grounded": false,
+      "complete": false
+    },
+    "SEM2_VALID_09": {
+      "claims": {
+        "c1": "fully_supported"
+      },
+      "requirements": {
+        "revenue": "complete"
+      },
+      "unbound_factual_prose": false,
+      "answerability_correct": true,
+      "answer_relevant": true,
+      "fully_grounded": true,
+      "complete": true
+    },
+    "SEM2_VALID_10": {
+      "claims": {
+        "c1": "fully_supported"
+      },
+      "requirements": {
+        "services_gross_margin_percent": "complete"
+      },
+      "unbound_factual_prose": false,
+      "answerability_correct": true,
+      "answer_relevant": true,
+      "fully_grounded": true,
+      "complete": true
+    },
+    "SEM2_VALID_11": {
+      "claims": {
+        "c1": "fully_supported",
+        "c2": "fully_supported",
+        "c3": "fully_supported"
+      },
+      "requirements": {
+        "previous_revenue": "complete",
+        "current_revenue": "complete",
+        "growth_percent": "complete"
+      },
+      "unbound_factual_prose": false,
+      "answerability_correct": true,
+      "answer_relevant": true,
+      "fully_grounded": true,
+      "complete": true
+    },
+    "SEM2_VALID_12": null,
+    "SEM2_VALID_13": {
+      "claims": {
+        "c1": "fully_supported"
+      },
+      "requirements": {
+        "policy_definition": "complete"
+      },
+      "unbound_factual_prose": false,
+      "answerability_correct": true,
+      "answer_relevant": true,
+      "fully_grounded": true,
+      "complete": true
+    },
+    "SEM2_VALID_14": {
+      "claims": {
+        "c1": "partially_supported"
+      },
+      "requirements": {
+        "policy_definition": "missing"
+      },
+      "unbound_factual_prose": false,
+      "answerability_correct": true,
+      "answer_relevant": true,
+      "fully_grounded": false,
+      "complete": false
+    },
+    "SEM2_VALID_15": {
+      "claims": {
+        "c1": "unsupported"
+      },
+      "requirements": {
+        "policy_definition": "missing"
+      },
+      "unbound_factual_prose": false,
+      "answerability_correct": false,
+      "answer_relevant": false,
+      "fully_grounded": false,
+      "complete": false
+    },
+    "SEM2_VALID_16": {
+      "claims": {
+        "c1": "fully_supported",
+        "c2": "fully_supported",
+        "c3": "fully_supported"
+      },
+      "requirements": {
+        "business_or_governance_sourcing": "complete",
+        "risk_supply": "complete",
+        "risk_pricing": "complete"
+      },
+      "unbound_factual_prose": false,
+      "answerability_correct": true,
+      "answer_relevant": true,
+      "fully_grounded": true,
+      "complete": true
+    },
+    "SEM2_VALID_17": {
+      "claims": {
+        "c1": "fully_supported"
+      },
+      "requirements": {
+        "business_or_governance_sourcing": "complete",
+        "risk_supply": "missing",
+        "risk_pricing": "complete"
+      },
+      "unbound_factual_prose": false,
+      "answerability_correct": true,
+      "answer_relevant": true,
+      "fully_grounded": true,
+      "complete": false
+    },
+    "SEM2_VALID_18": {
+      "claims": {
+        "c1": "unsupported"
+      },
+      "requirements": {
+        "business_or_governance_sourcing": "missing",
+        "risk_supply": "missing",
+        "risk_pricing": "missing"
+      },
+      "unbound_factual_prose": false,
+      "answerability_correct": true,
+      "answer_relevant": true,
+      "fully_grounded": false,
+      "complete": false
+    },
+    "SEM2_VALID_19": {
+      "claims": {
+        "c1": "fully_supported",
+        "c2": "fully_supported"
+      },
+      "requirements": {
+        "policy_received": "complete",
+        "policy_due": "missing",
+        "policy_recognition": "complete"
+      },
+      "unbound_factual_prose": false,
+      "answerability_correct": true,
+      "answer_relevant": true,
+      "fully_grounded": true,
+      "complete": false
+    },
+    "SEM2_VALID_20": {
+      "claims": {
+        "c1": "fully_supported"
+      },
+      "requirements": {
+        "policy_received": "complete",
+        "policy_due": "missing",
+        "policy_recognition": "partial"
+      },
+      "unbound_factual_prose": false,
+      "answerability_correct": true,
+      "answer_relevant": true,
+      "fully_grounded": true,
+      "complete": false
+    },
+    "SEM2_VALID_21": null,
+    "SEM2_VALID_22": {
+      "claims": {
+        "c1": "fully_supported",
+        "c2": "fully_supported"
+      },
+      "requirements": {
+        "attribution_usage": "complete",
+        "attribution_offset": "complete"
+      },
+      "unbound_factual_prose": false,
+      "answerability_correct": true,
+      "answer_relevant": true,
+      "fully_grounded": true,
+      "complete": true
+    },
+    "SEM2_VALID_23": {
+      "claims": {
+        "c1": "fully_supported"
+      },
+      "requirements": {
+        "attribution_usage": "complete",
+        "attribution_offset": "partial"
+      },
+      "unbound_factual_prose": false,
+      "answerability_correct": true,
+      "answer_relevant": true,
+      "fully_grounded": true,
+      "complete": false
+    },
+    "SEM2_VALID_24": {
+      "claims": {
+        "c1": "fully_supported"
+      },
+      "requirements": {
+        "attribution_usage": "missing",
+        "attribution_offset": "missing"
+      },
+      "unbound_factual_prose": false,
+      "answerability_correct": true,
+      "answer_relevant": true,
+      "fully_grounded": true,
+      "complete": false
+    },
+    "SEM2_VALID_25": null,
+    "SEM2_VALID_26": {
+      "claims": {
+        "c1": "fully_supported"
+      },
+      "requirements": {
+        "business_or_governance_board": "complete",
+        "business_or_governance_cadence": "partial",
+        "risk_evolution": "missing"
+      },
+      "unbound_factual_prose": false,
+      "answerability_correct": true,
+      "answer_relevant": true,
+      "fully_grounded": true,
+      "complete": false
+    },
+    "SEM2_VALID_27": {
+      "claims": {
+        "c1": "fully_supported"
+      },
+      "requirements": {
+        "business_or_governance_board": "missing",
+        "business_or_governance_cadence": "missing",
+        "risk_evolution": "missing"
+      },
+      "unbound_factual_prose": false,
+      "answerability_correct": true,
+      "answer_relevant": true,
+      "fully_grounded": true,
+      "complete": false
+    },
+    "SEM2_VALID_28": {
+      "claims": {
+        "c1": "fully_supported",
+        "c2": "fully_supported",
+        "c3": "fully_supported"
+      },
+      "requirements": {
+        "attribution_gaming": "complete",
+        "attribution_cloud": "complete",
+        "attribution_acquisition": "complete"
+      },
+      "unbound_factual_prose": false,
+      "answerability_correct": true,
+      "answer_relevant": true,
+      "fully_grounded": true,
+      "complete": true
+    },
+    "SEM2_VALID_29": {
+      "claims": {
+        "c1": "unsupported"
+      },
+      "requirements": {
+        "attribution_gaming": "complete",
+        "attribution_cloud": "missing",
+        "attribution_acquisition": "partial"
+      },
+      "unbound_factual_prose": false,
+      "answerability_correct": false,
+      "answer_relevant": true,
+      "fully_grounded": false,
+      "complete": false
+    },
+    "SEM2_VALID_30": {
+      "claims": {
+        "c1": "fully_supported"
+      },
+      "requirements": {
+        "attribution_gaming": "missing",
+        "attribution_cloud": "missing",
+        "attribution_acquisition": "missing"
+      },
+      "unbound_factual_prose": false,
+      "answerability_correct": true,
+      "answer_relevant": true,
+      "fully_grounded": true,
+      "complete": false
+    },
+    "SEM2_VALID_31": null,
+    "SEM2_VALID_32": null,
+    "SEM2_VALID_33": null,
+    "SEM2_VALID_34": {
+      "claims": {},
+      "requirements": {
+        "policy_definition": "missing"
+      },
+      "unbound_factual_prose": false,
+      "answerability_correct": true,
+      "answer_relevant": true,
+      "fully_grounded": true,
+      "complete": false
+    },
+    "SEM2_VALID_35": null,
+    "SEM2_VALID_36": {
+      "claims": {},
+      "requirements": {
+        "policy_definition": "missing"
+      },
+      "unbound_factual_prose": false,
+      "answerability_correct": true,
+      "answer_relevant": true,
+      "fully_grounded": true,
+      "complete": false
+    }
+  },
+  "repeat": {
+    "SEM2_VALID_01": {
+      "claims": {
+        "c1": "fully_supported"
+      },
+      "requirements": {
+        "revenue": "complete"
+      },
+      "unbound_factual_prose": false,
+      "answerability_correct": true,
+      "answer_relevant": true,
+      "fully_grounded": true,
+      "complete": true
+    },
+    "SEM2_VALID_02": {
+      "claims": {
+        "c1": "unsupported"
+      },
+      "requirements": {
+        "revenue": "missing"
+      },
+      "unbound_factual_prose": false,
+      "answerability_correct": false,
+      "answer_relevant": false,
+      "fully_grounded": false,
+      "complete": false
+    },
+    "SEM2_VALID_07": {
+      "claims": {
+        "c1": "unsupported"
+      },
+      "requirements": {
+        "revenue": "partial"
+      },
+      "unbound_factual_prose": false,
+      "answerability_correct": false,
+      "answer_relevant": true,
+      "fully_grounded": false,
+      "complete": false
+    },
+    "SEM2_VALID_11": {
+      "claims": {
+        "c1": "fully_supported",
+        "c2": "fully_supported",
+        "c3": "fully_supported"
+      },
+      "requirements": {
+        "previous_revenue": "complete",
+        "current_revenue": "complete",
+        "growth_percent": "complete"
+      },
+      "unbound_factual_prose": false,
+      "answerability_correct": true,
+      "answer_relevant": true,
+      "fully_grounded": true,
+      "complete": true
+    },
+    "SEM2_VALID_13": {
+      "claims": {
+        "c1": "fully_supported"
+      },
+      "requirements": {
+        "policy_definition": "complete"
+      },
+      "unbound_factual_prose": false,
+      "answerability_correct": true,
+      "answer_relevant": true,
+      "fully_grounded": true,
+      "complete": true
+    },
+    "SEM2_VALID_14": {
+      "claims": {
+        "c1": "partially_supported"
+      },
+      "requirements": {
+        "policy_definition": "missing"
+      },
+      "unbound_factual_prose": false,
+      "answerability_correct": true,
+      "answer_relevant": true,
+      "fully_grounded": false,
+      "complete": false
+    },
+    "SEM2_VALID_15": {
+      "claims": {
+        "c1": "unsupported"
+      },
+      "requirements": {
+        "policy_definition": "missing"
+      },
+      "unbound_factual_prose": false,
+      "answerability_correct": false,
+      "answer_relevant": false,
+      "fully_grounded": false,
+      "complete": false
+    },
+    "SEM2_VALID_22": {
+      "claims": {
+        "c1": "fully_supported",
+        "c2": "fully_supported"
+      },
+      "requirements": {
+        "attribution_usage": "complete",
+        "attribution_offset": "complete"
+      },
+      "unbound_factual_prose": false,
+      "answerability_correct": true,
+      "answer_relevant": true,
+      "fully_grounded": true,
+      "complete": true
+    },
+    "SEM2_VALID_23": {
+      "claims": {
+        "c1": "fully_supported"
+      },
+      "requirements": {
+        "attribution_usage": "complete",
+        "attribution_offset": "partial"
+      },
+      "unbound_factual_prose": false,
+      "answerability_correct": true,
+      "answer_relevant": true,
+      "fully_grounded": true,
+      "complete": false
+    },
+    "SEM2_VALID_24": {
+      "claims": {
+        "c1": "fully_supported"
+      },
+      "requirements": {
+        "attribution_usage": "missing",
+        "attribution_offset": "missing"
+      },
+      "unbound_factual_prose": false,
+      "answerability_correct": true,
+      "answer_relevant": true,
+      "fully_grounded": true,
+      "complete": false
+    },
+    "SEM2_VALID_31": null,
+    "SEM2_VALID_34": {
+      "claims": {},
+      "requirements": {
+        "policy_definition": "missing"
+      },
+      "unbound_factual_prose": false,
+      "answerability_correct": true,
+      "answer_relevant": true,
+      "fully_grounded": true,
+      "complete": false
+    }
+  }
+}

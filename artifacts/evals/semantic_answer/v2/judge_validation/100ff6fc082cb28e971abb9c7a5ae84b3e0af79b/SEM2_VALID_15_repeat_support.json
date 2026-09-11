@@ -1,0 +1,80 @@
+{
+  "fixture_id": "SEM2_VALID_15",
+  "repeat": true,
+  "phase": "support",
+  "started_at": "2026-09-08T04:30:15.574384+00:00",
+  "packet": {
+    "question": "Under Apple's FY2024 10-K accounting policy, which investments qualify as cash equivalents?",
+    "answer": {
+      "status": "ok",
+      "answer": "Tomorrow the weather in Paris will certainly be sunny.",
+      "claims": [
+        {
+          "claim_id": "c1",
+          "claim_type": "narrative",
+          "context_ids": [
+            "e1"
+          ],
+          "text": "Tomorrow the weather in Paris will certainly be sunny."
+        }
+      ],
+      "compare_rows": [],
+      "computation": null
+    },
+    "cited_contexts": [
+      {
+        "context_id": "e1",
+        "kind": "text",
+        "source": {
+          "chunk_index": 46,
+          "doc_id": "AAPL_10-K_2024::text::46",
+          "doc_type": "text_chunk",
+          "fiscal_year": 2024,
+          "form_type": "10-K",
+          "item_id": "6",
+          "section_path": "Item 6. [Reserved] > Cash Equivalents",
+          "source_html": "data/html_filings/AAPL/10-K/10-K_2024.html",
+          "source_sha256": "24a830a0f1256e371d36a1f7f72e5e85a38037d1de2f6f966eb8457db42ff6d6",
+          "split_index": 0,
+          "ticker": "AAPL"
+        },
+        "evidence": "Item 6. [Reserved] > Cash Equivalents\n\nAll highly liquid investments with maturities of three months or less at the date of purchase are treated as cash equivalents."
+      }
+    ]
+  },
+  "raw_response": {
+    "model": "gemma4:e4b",
+    "created_at": "2026-09-08T04:30:22.214334Z",
+    "message": {
+      "role": "assistant",
+      "content": "{\"claims\": [{\"claim_id\": \"c1\", \"support\": \"unsupported\", \"reason\": \"The provided evidence discusses accounting policies regarding cash equivalents for Apple's FY2024 10-K and contains no information about weather forecasts for Paris.\", \"evidence_quotes\": [{\"context_id\": \"e1\", \"quote\": \"All highly liquid investments with maturities of three months or less at the date of purchase are treated as cash equivalents.\"}]}], \"unbound_factual_prose\":false, \"reason\": \"The provided evidence is an excerpt from an accounting policy section of an SEC filing (AAPL 10-K) and does not contain any information related to weather forecasting.\"}"
+    },
+    "done": true,
+    "done_reason": "stop",
+    "total_duration": 6639616208,
+    "load_duration": 820167,
+    "prompt_eval_count": 937,
+    "prompt_eval_duration": 1574613000,
+    "eval_count": 149,
+    "eval_duration": 5056840000
+  },
+  "validated": {
+    "claims": [
+      {
+        "claim_id": "c1",
+        "support": "unsupported",
+        "reason": "The provided evidence discusses accounting policies regarding cash equivalents for Apple's FY2024 10-K and contains no information about weather forecasts for Paris.",
+        "evidence_quotes": [
+          {
+            "context_id": "e1",
+            "quote": "All highly liquid investments with maturities of three months or less at the date of purchase are treated as cash equivalents."
+          }
+        ]
+      }
+    ],
+    "unbound_factual_prose": false,
+    "reason": "The provided evidence is an excerpt from an accounting policy section of an SEC filing (AAPL 10-K) and does not contain any information related to weather forecasting."
+  },
+  "wall_ms": 6640.296374971513,
+  "finished_at": "2026-09-08T04:30:22.214670+00:00"
+}

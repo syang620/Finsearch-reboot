@@ -1,0 +1,40 @@
+{
+  "fixture_id": "SEM2_VALID_31",
+  "repeat": true,
+  "phase": "support",
+  "started_at": "2026-09-08T04:31:25.877191+00:00",
+  "packet": {
+    "question": "Using only Apple's FY2024 10-K, what was its audited actual net income for FY2025? Do not use later filings or forecasts; say if the specified filing cannot establish it.",
+    "answer": {
+      "status": "insufficient_data",
+      "answer": "The specified FY2024 filing cannot establish audited actual net income for FY2025; that later fiscal year's actuals are outside this filing.",
+      "claims": [],
+      "compare_rows": [],
+      "computation": null
+    },
+    "cited_contexts": []
+  },
+  "raw_response": {
+    "model": "gemma4:e4b",
+    "created_at": "2026-09-08T04:31:29.505778Z",
+    "message": {
+      "role": "assistant",
+      "content": "{\"claims\": [], \"unbound_factual_prose\":false, \"reason\": \"The provided answer correctly states that the specified filing (Apple's FY2024 10-K) cannot establish audited actual net income for FY2025 because that fiscal year is outside the scope of the filing. Since no evidence was provided, no claims could be assessed against evidence.\"}"
+    },
+    "done": true,
+    "done_reason": "stop",
+    "total_duration": 3627881583,
+    "load_duration": 738583,
+    "prompt_eval_count": 681,
+    "prompt_eval_duration": 828096000,
+    "eval_count": 83,
+    "eval_duration": 2792011000
+  },
+  "validated": {
+    "claims": [],
+    "unbound_factual_prose": false,
+    "reason": "The provided answer correctly states that the specified filing (Apple's FY2024 10-K) cannot establish audited actual net income for FY2025 because that fiscal year is outside the scope of the filing. Since no evidence was provided, no claims could be assessed against evidence."
+  },
+  "wall_ms": 3629.075290984474,
+  "finished_at": "2026-09-08T04:31:29.506273+00:00"
+}

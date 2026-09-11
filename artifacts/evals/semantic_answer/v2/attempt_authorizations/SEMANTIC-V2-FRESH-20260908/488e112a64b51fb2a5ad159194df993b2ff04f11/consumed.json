@@ -1,0 +1,12 @@
+{
+  "status": "consumed",
+  "authorization_id": "SEMANTIC-V2-FRESH-20260908",
+  "authorization_sha256": "c7a8856ac0065f2887a9976ea6d72327184f00df8d9d03ce2f9ae73f02113076",
+  "review_approval_sha256": "d673b2c0afa9db1e96d37af4873fb4e5646d308ba3610e484daf031af9b7586b",
+  "operation_wrapper_sha256": "8459464873a2f144f34fa9d2af1432afee686b51a606863ebb2d2d74dcd1d7d3",
+  "launcher_sha256": "87e98d0d9286ff18eddcc9e5bb5ab6c937bd3720269be3581b8fe27b08487ba0",
+  "implementation_sha": "488e112a64b51fb2a5ad159194df993b2ff04f11",
+  "consumed_at": "2026-09-08T14:12:54.025412+00:00",
+  "staging_output_root": ".cache/semantic_answer_v2_fresh_authorized_20260908",
+  "policy": "Exactly one invocation, including preflight failure. Never delete/reset this marker or retry with a new SHA/root."
+}

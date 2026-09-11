@@ -1,0 +1,69 @@
+{
+  "fixture_id": "SEM2_VALID_01",
+  "repeat": false,
+  "phase": "support",
+  "started_at": "2026-09-08T04:14:01.047219+00:00",
+  "packet": {
+    "question": "What total revenue did Apple report for FY2024 in its 10-K? Give the value in USD millions.",
+    "answer": {
+      "status": "ok",
+      "answer": "Apple FY2024 revenue was $391.035 billion.",
+      "claims": [
+        {
+          "claim_id": "c1",
+          "claim_type": "structured_numeric",
+          "context_ids": [
+            "e1"
+          ],
+          "metric_id": "revenue",
+          "text": "Apple FY2024 revenue was $391.035 billion."
+        }
+      ],
+      "compare_rows": [],
+      "computation": null
+    },
+    "cited_contexts": [
+      {
+        "context_id": "e1",
+        "kind": "structured_fact",
+        "source": null,
+        "evidence": "{\"accession_number\": \"0000320193-25-000079\", \"components\": null, \"filed_date\": \"2025-10-31\", \"fiscal_year\": 2024, \"form_type\": \"10-K\", \"metric_id\": \"revenue\", \"metric_label\": \"revenue\", \"missing_component_groups\": null, \"report_date\": \"2025-09-27\", \"source_url\": \"https://www.sec.gov/Archives/edgar/data/320193/000032019325000079/aapl-20250927.htm\", \"start_date\": \"2023-10-01\", \"status\": \"ok\", \"ticker\": \"AAPL\", \"unit\": \"USD\", \"value\": 391035000000}"
+      }
+    ]
+  },
+  "raw_response": {
+    "model": "gemma4:e4b",
+    "created_at": "2026-09-08T04:14:14.821209Z",
+    "message": {
+      "role": "assistant",
+      "content": "{\"claims\":[{\"claim_id\":\"c1\",\"support\":\"fully_supported\",\"reason\":\"The evidence states the revenue for fiscal year 2024 was 391035000000 USD, which matches the claim's value of $391.035 billion.\",\"evidence_quotes\":[{\"context_id\":\"e1\",\"quote\":\"\\\"value\\\": 391035000000\"}]}],\"unbound_factual_prose\":false,\"reason\":\"The claim accurately reflects the revenue reported for FY2024 based on the provided evidence.\"}"
+    },
+    "done": true,
+    "done_reason": "stop",
+    "total_duration": 13773750708,
+    "load_duration": 6538290708,
+    "prompt_eval_count": 952,
+    "prompt_eval_duration": 2713345000,
+    "eval_count": 132,
+    "eval_duration": 4505412000
+  },
+  "validated": {
+    "claims": [
+      {
+        "claim_id": "c1",
+        "support": "fully_supported",
+        "reason": "The evidence states the revenue for fiscal year 2024 was 391035000000 USD, which matches the claim's value of $391.035 billion.",
+        "evidence_quotes": [
+          {
+            "context_id": "e1",
+            "quote": "\"value\": 391035000000"
+          }
+        ]
+      }
+    ],
+    "unbound_factual_prose": false,
+    "reason": "The claim accurately reflects the revenue reported for FY2024 based on the provided evidence."
+  },
+  "wall_ms": 13777.695083001163,
+  "finished_at": "2026-09-08T04:14:14.824900+00:00"
+}

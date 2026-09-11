@@ -1,0 +1,75 @@
+{
+  "fixture_id": "SEM2_VALID_21",
+  "repeat": false,
+  "phase": "support",
+  "started_at": "2026-09-08T04:22:02.150849+00:00",
+  "packet": {
+    "question": "Under Amazon's FY2023 10-K revenue policy, when is unearned revenue recorded and when is it recognized as revenue?",
+    "answer": {
+      "status": "ok",
+      "answer": "Tomorrow the weather in Paris will certainly be sunny.",
+      "claims": [
+        {
+          "claim_id": "c1",
+          "claim_type": "narrative",
+          "context_ids": [
+            "e1"
+          ],
+          "text": "Tomorrow the weather in Paris will certainly be sunny."
+        }
+      ],
+      "compare_rows": [],
+      "computation": null
+    },
+    "cited_contexts": [
+      {
+        "context_id": "e1",
+        "kind": "text",
+        "source": {
+          "chunk_index": 26,
+          "doc_id": "AMZN_10-K_2023::text::26::split::7",
+          "doc_type": "text_chunk",
+          "fiscal_year": 2023,
+          "form_type": "10-K",
+          "item_id": "6",
+          "section_path": "Item 6. Reserved > Critical Audit Matter",
+          "source_html": "data/html_filings/AMZN/10-K/10-K_2023.html",
+          "source_sha256": "a469a0feca6dd5728b10c73076c2c120db58116938614c5b1b864fe13674266d",
+          "split_index": 7,
+          "ticker": "AMZN"
+        },
+        "evidence": "Item 6. Reserved > Critical Audit Matter\n\nEquity investments that have readily determinable fair values, including investments for which we have elected the fair value option, are included in \u201cMarketable securities\u201d on our consolidated balance sheets and measured at fair value with changes recognized in \u201cOther income (expense), net\u201d on our consolidated statements of operations.\n\nLong-lived assets, other than goodwill and indefinite-lived intangible assets, are reviewed for impairment whenever events or changes in circumstances indicate that the carrying amount of the assets might not be recoverable. Conditions that would necessitate an impairment assessment include a significant decline in the observable market value of an asset, a significant change in the extent or manner in which an asset is used, or any other significant adverse change that would indicate that the carrying amount of an asset or group of assets may not be recoverable.\n\nFor long-lived assets used in operations, including lease assets, impairment losses are only recorded if the asset\u2019s carrying amount is not recoverable through its undiscounted, probability-weighted future cash flows. We measure the impairment loss based on the difference between the carrying amount and estimated fair value. Long-lived assets are considered held for sale when certain criteria are met, including when management has committed to a plan to sell the asset, the asset is available for sale in its immediate condition, and the sale is probable within one year of the reporting date. Assets held for sale are reported at the lower of cost or fair value less costs to sell. Assets held for sale were not significant as of December 31, 2022 and 2023.\n\nIncluded in \u201cAccrued expenses and other\u201d on our consolidated balance sheets are liabilities primarily related to leases and asset retirement obligations, tax-related liabilities, current debt, payroll and related expenses, unredeemed gift cards, self-insurance liabilities, customer liabilities, marketing liabilities, acquired digital media content, and other operating expenses.As of December 31, 2022 and 2023, our liabilities for payroll related expenses were $7.7 billion and our liabilities for unredeemed gift cards were $5.4 billion and $5.3 billion. We reduce the liability for a gift card when redeemed by a customer. The portion of gift cards that we do not expect to be redeemed is recognized based on customer usage patterns.\n\nAlthough we maintain certain high-deductible, third-party insurance coverage for catastrophic losses, we effectively self-insure for exposure primarily related to workers\u2019 compensation, employee health care benefits, general and product liability, and automobile liability, including liability resulting from third-party transportation service providers. We estimate self-insurance liabilities by considering historical claims experience, frequency and costs of claims, projected claims development, inflation, and other actuarial assumptions. Changes in the number or costs of claims, healthcare costs, judgment and settlement amounts, associated legal expenses, and other factors could cause actual results to differ materially from these estimates. In the fourth quarter of 2022, we increased our reserves for general, product, and automobile liabilities by $1.3 billion primarily driven by changes in our estimates about the costs of asserted and unasserted claims, which was primarily recorded in \u201cCost of sales\u201d on our consolidated statements of operations and impacted our North America segment. Increases to our reserves driven by changes in estimates were not material to our consolidated results of operations for the years ended December 31, 2021 and\n\n2023. As of December 31, 2022 and 2023, our total self-insurance liabilities were $4.0 billion and $6.3 billion and are included in \u201cAccrued expenses and other\u201d on our consolidated balance sheets.\n\nUnearned revenue is recorded when payments are received or due in advance of performing our service obligations and is recognized over the service period. Unearned revenue primarily relates to prepayments of AWS services and Amazon Prime memberships. Our total unearned revenue as of December 31, 2022 was $16.1 billion, of which $12.4 billion was recognized as revenue during the year ended December 31, 2023 and our total unearned revenue as of December 31, 2023 was $20.6 billion. Included in \u201cOther long-term liabilities\u201d on our consolidated balance sheets was $2.9 billion and $5.7 billion of unearned revenue as of December 31, 2022 and 2023. Additionally, we have performance obligations, primarily related to AWS, associated with commitments in customer contracts for future services that have not yet been recognized in our financial statements. For contracts with original terms that exceed one year, those commitments not yet recognized were $155.7 billion as of December 31, 2023. The weighted average remaining life of our long-term contracts is 4.0 years. However, the amount and timing of revenue recognition is largely driven by customer usage, which can extend beyond the original contractual term.\n\nIncluded in \u201cOther long-term liabilities\u201d on our consolidated balance sheets are liabilities primarily related to financing obligations, unearned revenue, asset retirement obligations, tax contingencies, digital video and music content, and deferred tax liabilities."
+      }
+    ]
+  },
+  "raw_response": {
+    "model": "gemma4:e4b",
+    "created_at": "2026-09-08T04:22:12.961347Z",
+    "message": {
+      "role": "assistant",
+      "content": "{\"claims\": [{\"claim_id\": \"c1\", \"support\": \"unsupported\", \"reason\": \"The provided evidence discusses unearned revenue recording and recognition in the context of Amazon's financial statements, but it does not contain any information about 'Tomorrow the weather in Paris will certainly be sunny.'\", \"evidence_quotes\": []}], \"unbound_factual_prose\":false, \"reason\": \"The question asks about the revenue policy for unearned revenue based on the FY2023 10-K. The evidence provided discusses this topic, but the claim being assessed is a completely unrelated weather prediction.\"}"
+    },
+    "done": true,
+    "done_reason": "stop",
+    "total_duration": 10810029292,
+    "load_duration": 999125,
+    "prompt_eval_count": 2103,
+    "prompt_eval_duration": 6314446000,
+    "eval_count": 131,
+    "eval_duration": 4482087000
+  },
+  "validated": {
+    "claims": [
+      {
+        "claim_id": "c1",
+        "support": "unsupported",
+        "reason": "The provided evidence discusses unearned revenue recording and recognition in the context of Amazon's financial statements, but it does not contain any information about 'Tomorrow the weather in Paris will certainly be sunny.'",
+        "evidence_quotes": []
+      }
+    ],
+    "unbound_factual_prose": false,
+    "reason": "The question asks about the revenue policy for unearned revenue based on the FY2023 10-K. The evidence provided discusses this topic, but the claim being assessed is a completely unrelated weather prediction."
+  },
+  "wall_ms": 10810.80508400919,
+  "finished_at": "2026-09-08T04:22:12.961630+00:00"
+}

@@ -1,0 +1,80 @@
+{
+  "fixture_id": "SEM2_VALID_13",
+  "repeat": true,
+  "phase": "support",
+  "started_at": "2026-09-08T04:29:43.941770+00:00",
+  "packet": {
+    "question": "Under Apple's FY2024 10-K accounting policy, which investments qualify as cash equivalents?",
+    "answer": {
+      "status": "ok",
+      "answer": "Apple treats highly liquid investments maturing within three months of purchase as cash equivalents.\nApple stock will double tomorrow.",
+      "claims": [
+        {
+          "claim_id": "c1",
+          "claim_type": "narrative",
+          "context_ids": [
+            "e1"
+          ],
+          "text": "Apple treats highly liquid investments maturing within three months of purchase as cash equivalents."
+        }
+      ],
+      "compare_rows": [],
+      "computation": null
+    },
+    "cited_contexts": [
+      {
+        "context_id": "e1",
+        "kind": "text",
+        "source": {
+          "chunk_index": 46,
+          "doc_id": "AAPL_10-K_2024::text::46",
+          "doc_type": "text_chunk",
+          "fiscal_year": 2024,
+          "form_type": "10-K",
+          "item_id": "6",
+          "section_path": "Item 6. [Reserved] > Cash Equivalents",
+          "source_html": "data/html_filings/AAPL/10-K/10-K_2024.html",
+          "source_sha256": "24a830a0f1256e371d36a1f7f72e5e85a38037d1de2f6f966eb8457db42ff6d6",
+          "split_index": 0,
+          "ticker": "AAPL"
+        },
+        "evidence": "Item 6. [Reserved] > Cash Equivalents\n\nAll highly liquid investments with maturities of three months or less at the date of purchase are treated as cash equivalents."
+      }
+    ]
+  },
+  "raw_response": {
+    "model": "gemma4:e4b",
+    "created_at": "2026-09-08T04:29:49.87072Z",
+    "message": {
+      "role": "assistant",
+      "content": "{\"claims\": [{\"claim_id\": \"c1\", \"support\": \"fully_supported\", \"reason\": \"The evidence states that investments with maturities of three months or less at the date of purchase are treated as cash equivalents, which matches the claim's assertion.\", \"evidence_quotes\": [{\"context_id\": \"e1\", \"quote\": \"All highly liquid investments with maturities of three months or less at the date of purchase are treated as cash equivalents.\"}]}], \"unbound_factual_prose\": false, \"reason\": \"The claim regarding Apple stock doubling tomorrow is not supported by any evidence.\"}"
+    },
+    "done": true,
+    "done_reason": "stop",
+    "total_duration": 5927856583,
+    "load_duration": 862458,
+    "prompt_eval_count": 954,
+    "prompt_eval_duration": 1575283000,
+    "eval_count": 128,
+    "eval_duration": 4340308000
+  },
+  "validated": {
+    "claims": [
+      {
+        "claim_id": "c1",
+        "support": "fully_supported",
+        "reason": "The evidence states that investments with maturities of three months or less at the date of purchase are treated as cash equivalents, which matches the claim's assertion.",
+        "evidence_quotes": [
+          {
+            "context_id": "e1",
+            "quote": "All highly liquid investments with maturities of three months or less at the date of purchase are treated as cash equivalents."
+          }
+        ]
+      }
+    ],
+    "unbound_factual_prose": false,
+    "reason": "The claim regarding Apple stock doubling tomorrow is not supported by any evidence."
+  },
+  "wall_ms": 5929.235415998846,
+  "finished_at": "2026-09-08T04:29:49.871013+00:00"
+}

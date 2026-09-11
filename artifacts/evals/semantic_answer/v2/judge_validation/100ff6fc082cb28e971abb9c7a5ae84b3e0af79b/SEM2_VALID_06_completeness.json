@@ -1,0 +1,85 @@
+{
+  "fixture_id": "SEM2_VALID_06",
+  "repeat": false,
+  "phase": "completeness",
+  "started_at": "2026-09-08T04:15:49.675331+00:00",
+  "packet": {
+    "question": "What total revenue did Amazon report for FY2023 in its 10-K? Give the value in USD millions.",
+    "answer": {
+      "status": "ok",
+      "answer": "Amazon FY2023 revenue was -574785 million USD.",
+      "claims": [
+        {
+          "claim_id": "c1",
+          "claim_type": "structured_numeric",
+          "context_ids": [
+            "e1"
+          ],
+          "metric_id": "revenue",
+          "text": "Amazon FY2023 revenue was -574785 million USD."
+        }
+      ],
+      "compare_rows": [],
+      "computation": null
+    },
+    "expected_answerability": "answerable",
+    "answerability_reason": null,
+    "equivalence_rules": {
+      "abstention": "For future-actual questions, explicitly identify that the named filing cannot establish audited actuals for the later year; no guessed value or later-filing substitution. For answerable questions a refusal is incomplete/incorrect answerability, even if the system failed to retrieve evidence. Execution failures are a different layer.",
+      "evidence": "Listed source passages are independently verified examples, not an exhaustive whitelist for semantic adjudication. Inspect any unlisted passage against its original filing and the requirement scope before accepting it. Generic numeric evidence may come from another filing only when financial equivalence is established. Log its identity/span and rationale without rewriting frozen gold.",
+      "numeric_evidence": "Financial truth is independent of route: an original-filing table/text with explicit correct metric, issuer, period, unit and amount may support a numeric claim. Structured numeric-to-structured evidence policy is a separate compatibility metric. No credit from context metadata without matching answer semantics.",
+      "partial": "Omitting a qualifying facet may be incomplete while all emitted claims remain supported. Contradicting a material qualifier, issuer, period, amount or attribution is unsupported, not merely incomplete. Mixed true and unsupported separable assertions in one emitted claim are partially supported; a wrong central numeric fact is unsupported.",
+      "phrasing": "Synonyms, reordered clauses, issuer names/tickers, equivalent explicit units and non-contradictory concise paraphrases are acceptable. Gold wording is not a required string.",
+      "scope": "Use the named issuer and fiscal period. Explicit named-filing questions, comparisons and calculations remain bound to that filing. Generic numeric questions without an explicit filing-year restriction may use independently verified equivalent evidence for the same original amount, entity, metric and fact period; a later filing is not wrong merely because it repeats that fact. Different restated values, segments, periods or metrics are not interchangeable. Narrative/attribution facets retain their named fiscal-year disclosure scope."
+    },
+    "optional_detail": [],
+    "requirements": [
+      {
+        "claim_id": "revenue",
+        "requirement": "Amazon FY2023 revenue is 574785000000 USD.",
+        "numeric": {
+          "absolute_tolerance": 500000,
+          "fiscal_year": 2023,
+          "metric_id": "revenue",
+          "requested_display_unit": "USD_millions",
+          "ticker": "AMZN",
+          "unit": "USD",
+          "value": 574785000000
+        }
+      }
+    ]
+  },
+  "raw_response": {
+    "model": "gemma4:e4b",
+    "created_at": "2026-09-08T04:16:04.920864Z",
+    "message": {
+      "role": "assistant",
+      "content": "{\"requirements\":[{\"claim_id\": \"revenue\", \"fulfillment\": \"partial\", \"reason\": \"The requirement asks for Amazon's FY2023 revenue in USD millions, specifying a value of 574,785,000,000 USD. The provided answer states the revenue was -574,785 million USD. While the period (FY2023) and metric (revenue) are present, the sign and the magnitude/unit conversion are incorrect relative to the requirement's expected value and unit structure. The requirement expects a positive value of 574,785,000,000 USD, but the answer provides a negative value (-574,785 million USD). The unit mismatch (millions vs. implied full USD amount) and the incorrect sign make the fulfillment partial at best, as the core numeric fact is misrepresented.\", \"answer_quotes\":[\"Amazon FY2023 revenue was -574785 million USD.\"]}],\"answer_relevant\":true,\"answerability_correct\":true,\"reason\":\"The question asks for Amazon's FY2023 revenue in USD millions. The provided answer gives a specific value for this metric and period. Although the provided answer's value (-574785 million USD) contradicts the expected positive value (574,785,000,000 USD) derived from the requirement's numeric structure, the answer still attempts to address the required metric, period, and entity, making it answerable but factually incorrect based on the requirement's expected value.\"}"
+    },
+    "done": true,
+    "done_reason": "stop",
+    "total_duration": 15245241917,
+    "load_duration": 805250,
+    "prompt_eval_count": 1139,
+    "prompt_eval_duration": 3448829000,
+    "eval_count": 345,
+    "eval_duration": 11785188000
+  },
+  "validated": {
+    "requirements": [
+      {
+        "claim_id": "revenue",
+        "fulfillment": "partial",
+        "reason": "The requirement asks for Amazon's FY2023 revenue in USD millions, specifying a value of 574,785,000,000 USD. The provided answer states the revenue was -574,785 million USD. While the period (FY2023) and metric (revenue) are present, the sign and the magnitude/unit conversion are incorrect relative to the requirement's expected value and unit structure. The requirement expects a positive value of 574,785,000,000 USD, but the answer provides a negative value (-574,785 million USD). The unit mismatch (millions vs. implied full USD amount) and the incorrect sign make the fulfillment partial at best, as the core numeric fact is misrepresented.",
+        "answer_quotes": [
+          "Amazon FY2023 revenue was -574785 million USD."
+        ]
+      }
+    ],
+    "answer_relevant": true,
+    "answerability_correct": true,
+    "reason": "The question asks for Amazon's FY2023 revenue in USD millions. The provided answer gives a specific value for this metric and period. Although the provided answer's value (-574785 million USD) contradicts the expected positive value (574,785,000,000 USD) derived from the requirement's numeric structure, the answer still attempts to address the required metric, period, and entity, making it answerable but factually incorrect based on the requirement's expected value."
+  },
+  "wall_ms": 15246.060875011608,
+  "finished_at": "2026-09-08T04:16:04.921358+00:00"
+}

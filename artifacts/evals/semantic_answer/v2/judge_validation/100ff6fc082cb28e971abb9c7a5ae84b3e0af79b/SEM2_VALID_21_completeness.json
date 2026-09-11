@@ -1,0 +1,72 @@
+{
+  "fixture_id": "SEM2_VALID_21",
+  "repeat": false,
+  "phase": "completeness",
+  "started_at": "2026-09-08T04:22:12.961953+00:00",
+  "packet": {
+    "question": "Under Amazon's FY2023 10-K revenue policy, when is unearned revenue recorded and when is it recognized as revenue?",
+    "answer": {
+      "status": "ok",
+      "answer": "Tomorrow the weather in Paris will certainly be sunny.",
+      "claims": [
+        {
+          "claim_id": "c1",
+          "claim_type": "narrative",
+          "context_ids": [
+            "e1"
+          ],
+          "text": "Tomorrow the weather in Paris will certainly be sunny."
+        }
+      ],
+      "compare_rows": [],
+      "computation": null
+    },
+    "expected_answerability": "answerable",
+    "answerability_reason": null,
+    "equivalence_rules": {
+      "abstention": "For future-actual questions, explicitly identify that the named filing cannot establish audited actuals for the later year; no guessed value or later-filing substitution. For answerable questions a refusal is incomplete/incorrect answerability, even if the system failed to retrieve evidence. Execution failures are a different layer.",
+      "evidence": "Listed source passages are independently verified examples, not an exhaustive whitelist for semantic adjudication. Inspect any unlisted passage against its original filing and the requirement scope before accepting it. Generic numeric evidence may come from another filing only when financial equivalence is established. Log its identity/span and rationale without rewriting frozen gold.",
+      "numeric_evidence": "Financial truth is independent of route: an original-filing table/text with explicit correct metric, issuer, period, unit and amount may support a numeric claim. Structured numeric-to-structured evidence policy is a separate compatibility metric. No credit from context metadata without matching answer semantics.",
+      "partial": "Omitting a qualifying facet may be incomplete while all emitted claims remain supported. Contradicting a material qualifier, issuer, period, amount or attribution is unsupported, not merely incomplete. Mixed true and unsupported separable assertions in one emitted claim are partially supported; a wrong central numeric fact is unsupported.",
+      "phrasing": "Synonyms, reordered clauses, issuer names/tickers, equivalent explicit units and non-contradictory concise paraphrases are acceptable. Gold wording is not a required string.",
+      "scope": "Use the named issuer and fiscal period. Explicit named-filing questions, comparisons and calculations remain bound to that filing. Generic numeric questions without an explicit filing-year restriction may use independently verified equivalent evidence for the same original amount, entity, metric and fact period; a later filing is not wrong merely because it repeats that fact. Different restated values, segments, periods or metrics are not interchangeable. Narrative/attribution facets retain their named fiscal-year disclosure scope."
+    },
+    "optional_detail": [],
+    "requirements": [
+      {
+        "claim_id": "policy_received",
+        "requirement": "Payments received before service obligations are performed trigger recording of unearned revenue."
+      },
+      {
+        "claim_id": "policy_due",
+        "requirement": "Payments due before service obligations are performed also trigger recording of unearned revenue; receipt is not the only trigger."
+      },
+      {
+        "claim_id": "policy_recognition",
+        "requirement": "Unearned revenue is recognized as revenue over the service period, not all immediately on receipt."
+      }
+    ]
+  },
+  "raw_response": {
+    "model": "gemma4:e4b",
+    "created_at": "2026-09-08T04:22:27.471992Z",
+    "message": {
+      "role": "assistant",
+      "content": "{\"requirements\":[{\"claim_id\": \"policy_received\", \"fulfillment\": \"complete\", \"reason\": \"The requirement states that payments received before service obligations are performed trigger recording of unearned revenue. The answer explicitly states this: 'Payments received before service obligations are performed trigger recording of unearned revenue.'\", \"answer_quotes\": [\"Payments received before service obligations are performed trigger recording of unearned revenue.\"]}, {\"claim_id\": \"policy_due\", \"fulfillment\": \"complete\", \"reason\": \"The requirement states that payments due before service obligations are performed also trigger recording of unearned revenue; receipt is not the only trigger. The answer explicitly states this: 'Payments due before service obligations are performed also trigger recording of unearned revenue; receipt is not the only trigger.'\", \"answer_quotes\": [\"Payments due before service obligations are performed also trigger recording of unearned revenue; receipt is not the only trigger.\"]}, {\"claim_id\": \"policy_recognition\", \"fulfillment\": \"complete\", \"reason\": \"The requirement states that unearned revenue is recognized as revenue over the service period, not all immediately on receipt. The answer explicitly states this: 'Unearned revenue is recognized as revenue over the service period, not all immediately on receipt.'\", \"answer_quotes\": [\"Unearned revenue is recognized as revenue over the service period, not all immediately on receipt.\"]}],\"answer_relevant\":true,\"answerability_correct\":true,\"reason\":\"The provided answer directly and completely addresses all three policy requirements regarding the recording and recognition of unearned revenue under Amazon's policy.\"}"
+    },
+    "done": true,
+    "done_reason": "stop",
+    "total_duration": 14509090625,
+    "load_duration": 841041,
+    "prompt_eval_count": 1101,
+    "prompt_eval_duration": 3355266000,
+    "eval_count": 325,
+    "eval_duration": 11134592000
+  },
+  "error": {
+    "type": "ValueError",
+    "message": "Invented answer quotation or evidence-only rescue"
+  },
+  "wall_ms": 14510.719000012614,
+  "finished_at": "2026-09-08T04:22:27.472638+00:00"
+}

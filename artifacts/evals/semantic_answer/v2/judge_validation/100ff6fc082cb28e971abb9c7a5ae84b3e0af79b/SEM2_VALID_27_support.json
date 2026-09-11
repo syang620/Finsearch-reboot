@@ -1,0 +1,122 @@
+{
+  "fixture_id": "SEM2_VALID_27",
+  "repeat": false,
+  "phase": "support",
+  "started_at": "2026-09-08T04:24:49.545618+00:00",
+  "packet": {
+    "question": "According to Microsoft's FY2024 10-K, who oversees cybersecurity risk and how often, and why are cyberthreats becoming harder to detect and defend against?",
+    "answer": {
+      "status": "ok",
+      "answer": "Microsoft delegates all cybersecurity oversight exclusively to its external auditor and the board has no role.",
+      "claims": [
+        {
+          "claim_id": "c1",
+          "claim_type": "narrative",
+          "context_ids": [
+            "e1",
+            "e2",
+            "e3"
+          ],
+          "text": "Microsoft delegates all cybersecurity oversight exclusively to its external auditor and the board has no role."
+        }
+      ],
+      "compare_rows": [],
+      "computation": null
+    },
+    "cited_contexts": [
+      {
+        "context_id": "e1",
+        "kind": "text",
+        "source": {
+          "chunk_index": 0,
+          "doc_id": "MSFT_10-K_2024::text::0::split::42",
+          "doc_type": "text_chunk",
+          "fiscal_year": 2024,
+          "form_type": "10-K",
+          "item_id": "Item 1",
+          "section_path": "Item 1 > Note About Forward-Looking Statements",
+          "source_html": "data/html_filings/MSFT/10-K/10-K_2024.html",
+          "source_sha256": "43829a12cc9cd7198474b3d735c4fc1aba1f871fb637d237aa5979d57e6b8c95",
+          "split_index": 42,
+          "ticker": "MSFT"
+        },
+        "evidence": "Item 1 > Note About Forward-Looking Statements\n\nWhen appropriate, we utilize external service providers to assess, test, or otherwise assist our program. We also leverage third parties by working with external researchers, operating bug bounty programs, and managing coordinated vulnerability disclosure programs with security organizations. We maintain a systematic approach to assessing and controlling the cybersecurity risks presented by third-party service providers. We require third-party service providers to manage their cybersecurity risks in defined ways, undergo cybersecurity reviews, notify us of cyber events, and satisfy additional contractual requirements.We seek to improve the entire cybersecurity ecosystem through multistakeholder diplomacy to set and uphold expectations for state behavior, advancement of government policy that strengthens cybersecurity and resiliency, disruption and deterrence of cybercrime, protection of national security interests, and disruption of digital threats to democracies. We also establish processes and innovate solutions for us and our customers to address the growing number and complexity of cybersecurity regulations.When we experience a cybersecurity incident, we utilize our well-established incident response plans that operate both across the company and at the product and services level. Incidents are first triaged for severity, and then more deeply assessed to establish a plan of record and activate internal and external notification, disclosure, and communication plans, as applicable. Engineering and development resources are mobilized to resolve or remediate the incident. After the incident is resolved, a comprehensive post-incident review process is conducted.We describe the risks from cybersecurity threats, including previous cybersecurity incidents, in section \u201cRisk Factors\u201d (Part I, Item 1A of this Form 10-K). As of the date of this Form 10-K, we do not believe any risks from cybersecurity threats have materially affected or are reasonably likely to materially affect us, including our results of operations or financial condition. However, the cybersecurity threat environment is increasingly challenging, and we, along with the entire digital ecosystem, are under constant and increasing threat. As discussed above, our business strategy is tied to the SFI and we are committed to continuously monitoring cybersecurity threats, enhancing the security of our products, investing in our cybersecurity infrastructure, and collaborating with peers, customers, service providers, regulators, and governments to advance our and the entire digital ecosystem\u2019s cybersecurity defenses and resiliency.\n\nOur Board of Directors oversees cybersecurity risk. Cybersecurity reviews by the Board are scheduled to occur at least quarterly, or more frequently as determined to be necessary or advisable. Presentations to the Board of Directors are made by senior management, including our Chief Information Security Officer (\u201cCISO\u201d), our EVP of Microsoft Security, and the head of our Customer Security and Trust organization. The presentations address topics such as cybersecurity threats, incidents, top risks and related remediation efforts, results from internal and third-party assessments, progress towards risk-mitigation goals, the functioning of our incident response program, regulatory developments, and digital diplomacy efforts. In addition, we have an escalation process in place to inform senior management and the Board of significant issues. Cybersecurity issues are also considered during separate Board meeting discussions regarding important matters like ERM, audit issues, operational budgeting, business continuity planning, mergers and acquisitions, brand management, and other relevant matters.Our CISO leads the strategy, engineering, and operations of cybersecurity across the company, and reports to the EVP of Microsoft Security. Our CISO has extensive experience assessing and managing cybersecurity programs and cybersecurity risk. Before joining Microsoft, our CISO served in a prior Chief Technology Officer role as well as in senior leadership, engineering, and operational roles within multiple organizations. In addition to the Board\u2019s oversight of cybersecurity risk, to support the CISO, we have established a Cybersecurity Governance Council (\u201cCGC\u201d) charged with overseeing initiatives that safeguard Microsoft\u2019s infrastructure. The CGC is comprised of an executive-level team of Deputy CISOs with cybersecurity backgrounds and expertise relevant to their roles. The CGC responsibilities include approving our enterprise security risk assessment process and results, determining the appropriate cybersecurity risk level and mitigations, reviewing the NIST CSF alignment, and supporting compliance with cybersecurity regulations. Our cybersecurity efforts are supported directly by Microsoft\u2019s security and threat intelligence experts and our employees across the company, all of whom receive cybersecurity awareness training and education and are expected to support our efforts."
+      },
+      {
+        "context_id": "e2",
+        "kind": "text",
+        "source": {
+          "chunk_index": 0,
+          "doc_id": "MSFT_10-K_2024::text::0::split::19",
+          "doc_type": "text_chunk",
+          "fiscal_year": 2024,
+          "form_type": "10-K",
+          "item_id": "Item 1",
+          "section_path": "Item 1 > Note About Forward-Looking Statements",
+          "source_html": "data/html_filings/MSFT/10-K/10-K_2024.html",
+          "source_sha256": "43829a12cc9cd7198474b3d735c4fc1aba1f871fb637d237aa5979d57e6b8c95",
+          "split_index": 19,
+          "ticker": "MSFT"
+        },
+        "evidence": "Item 1 > Note About Forward-Looking Statements\n\nmay continue to result in harm to our reputation and customer relationships. Additionally, we may discover additional impacts of this or other incidents as part of our ongoing examination of this incident. Nation-state and state-sponsored actors can sustain malicious activities for extended periods and deploy significant resources to plan and carry out attacks. Nation-state attacks against us, our customers, or our partners have and may continue to intensify during periods of intense diplomatic or armed conflict, such as the ongoing conflict in Ukraine. Cyber incidents and attacks, individually or in the aggregate, could adversely affect our financial condition, results of operations, competitive position, and reputation, or expose us to legal or regulatory risk.Inadequate account security or organizational security practices, including those of companies we have acquired or those of the third parties we utilize, have resulted and may result in unauthorized access to our IT systems and data, including customer systems and data, in the future. For example, system administrators may fail to timely remove employee account access when no longer appropriate. Employees or third parties may intentionally compromise our or our users\u2019 security or systems or reveal confidential information. Malicious actors may employ the IT supply chain to introduce malware through software updates or compromised supplier accounts or hardware.Cyberthreats are constantly evolving and becoming increasingly sophisticated and complex, increasing the difficulty of detecting and successfully defending against them. Threat actors may also utilize emerging technologies, such as AI and machine learning. We may have no current capability to detect certain vulnerabilities or new attack methods, which may allow them to persist in the environment over long periods of time. It may be difficult to determine the best way to investigate, mitigate, contain, and remediate the harm caused by a cyber incident. Such efforts may not be successful, and we may make errors or fail to take necessary actions. It is possible that threat actors may gain undetected access to other networks and systems after establishing a foothold on an internal system. Cyber incidents and attacks can have cascading impacts that unfold with increasing speed across our internal networks and systems, as well as those of our partners and customers. In addition, it may take considerable time for us to investigate and evaluate the full impact of incidents, particularly for sophisticated attacks. These factors may inhibit our ability to provide prompt, full, and reliable information about the incident to our customers, partners, regulators, and the public. Breaches of our facilities, network, or data security can disrupt the security of our systems and business applications, impair our ability to provide services to our customers and protect the privacy of their data, result in product development delays, compromise confidential or technical business information, result in theft or misuse of our intellectual property or other assets, subject us to ransomware attacks, require us to allocate more resources to improve technologies or remediate the impacts of attacks, or otherwise adversely affect our business. In addition, actions taken to remediate an incident could result in outages, data losses, and disruptions of our services."
+      },
+      {
+        "context_id": "e3",
+        "kind": "text",
+        "source": {
+          "chunk_index": 0,
+          "doc_id": "MSFT_10-K_2024::text::0::split::20",
+          "doc_type": "text_chunk",
+          "fiscal_year": 2024,
+          "form_type": "10-K",
+          "item_id": "Item 1",
+          "section_path": "Item 1 > Note About Forward-Looking Statements",
+          "source_html": "data/html_filings/MSFT/10-K/10-K_2024.html",
+          "source_sha256": "43829a12cc9cd7198474b3d735c4fc1aba1f871fb637d237aa5979d57e6b8c95",
+          "split_index": 20,
+          "ticker": "MSFT"
+        },
+        "evidence": "Item 1 > Note About Forward-Looking Statements\n\nThreats to IT security can take a variety of forms. Individual and groups of hackers and sophisticated organizations, including state-sponsored organizations or nation-states, continuously undertake attacks that pose threats to our customers and our IT, and we have experienced cybersecurity incidents in which such actors have gained unauthorized access to our IT systems and data, including customer systems and data. These actors use a wide variety of methods, which include developing and deploying malicious software; exploiting known and potential vulnerabilities or intentionally designed processes in hardware, software, or other infrastructure to attack our products and services or gain access to our networks and datacenters; using social engineering techniques to induce our employees, users, partners, or customers to disclose sensitive information, such as passwords, or take other actions to gain access to our data or our users\u2019 or customers\u2019 data; or acting in a coordinated manner or conducting coordinated attacks. For example, as previously disclosed in our Form 8-K filed with the Securities and Exchange Commission on January 19, 2024 and amended on March 8, 2024, beginning in late November 2023, a nation-state associated threat actor used a password spray attack to compromise a legacy test account and, in turn, gain access to Microsoft email accounts. The threat actor used and may continue to use information it obtained to gain, or attempt to gain, unauthorized access to some of our source code repositories and internal systems, and the threat actor may utilize this information to otherwise adversely affect our business and results of operations. This incident has and may continue to result in harm to our reputation and customer relationships. Additionally, we may discover additional impacts of this or other incidents as part of our ongoing examination of this incident. Nation-state and state-sponsored actors can sustain malicious activities for extended periods and deploy significant resources to plan and carry out attacks. Nation-state attacks against us, our customers, or our partners have and may continue to intensify during periods of intense diplomatic or armed conflict, such as the ongoing conflict in Ukraine. Cyber incidents and attacks, individually or in the aggregate, could adversely affect our financial condition, results of operations, competitive position, and reputation, or expose us to legal or regulatory risk.Inadequate account security or organizational security practices, including those of companies we have acquired or those of the third parties we utilize, have resulted and may result in unauthorized access to our IT systems and data, including customer systems and data, in the future. For example, system administrators may fail to timely remove employee account access when no longer appropriate. Employees or third parties may intentionally compromise our or our users\u2019 security or systems or reveal confidential information. Malicious actors may employ the IT supply chain to introduce malware through software updates or compromised supplier accounts or hardware.Cyberthreats are constantly evolving and becoming increasingly sophisticated and complex, increasing the difficulty of detecting and successfully defending against them. Threat actors may also utilize emerging technologies, such as AI and machine learning. We may have no current capability to detect certain vulnerabilities or new attack methods, which may allow them to persist in the environment over long periods of time. It may be difficult to determine the best way to investigate, mitigate, contain, and remediate the harm caused by a cyber incident. Such efforts may not be successful, and we may make errors or fail to take necessary actions. It is possible that threat actors may gain undetected access to other networks and systems after establishing a foothold on an internal system. Cyber incidents and attacks can have cascading impacts that unfold with increasing speed across our internal networks and systems, as well as those of our partners and customers. In addition, it may take considerable time for us to investigate and evaluate the full impact of incidents, particularly for sophisticated attacks. These factors may inhibit our ability to provide prompt, full, and reliable information about the incident to our customers, partners, regulators, and the public. Breaches of our facilities, network, or data security can disrupt the security of our systems and business applications, impair our ability to provide services to our customers and protect the privacy of their data, result in product development delays, compromise confidential or technical business information, result in theft or misuse of our intellectual property or other assets, subject us to ransomware attacks, require us to allocate more resources to improve technologies or remediate the impacts of attacks, or otherwise adversely affect our business. In addition, actions taken to remediate an incident could result in outages, data losses, and disruptions of our services.\n\nOur internal IT environment continues to evolve. Often, we are early adopters of new devices and technologies. We embrace new ways of sharing data and communicating internally and with partners and customers using methods such as social networking and other consumer-oriented technologies. Increasing use of generative AI models in our internal systems may create new attack methods for adversaries. Our business policies and internal security controls may not keep pace with these changes as new threats emerge or the emerging cybersecurity regulations in jurisdictions worldwide."
+      }
+    ]
+  },
+  "raw_response": {
+    "model": "gemma4:e4b",
+    "created_at": "2026-09-08T04:25:08.903791Z",
+    "message": {
+      "role": "assistant",
+      "content": "{\"claims\": [{\"claim_id\": \"c1\", \"support\": \"fully_supported\", \"reason\": \"The evidence states that the Board of Directors oversees cybersecurity risk and that 'Cybersecurity reviews by the Board are scheduled to occur at least quarterly'. It also details reasons why cyberthreats are becoming harder to detect and defend against.\", \"evidence_quotes\": [{\"context_id\": \"e1\", \"quote\": \"Our Board of Directors oversees cybersecurity risk.\"}, {\"context_id\": \"e1\", \"quote\": \"Cybersecurity reviews by the Board are scheduled to occur at least quarterly, or more frequently as determined to be necessary or advisable.\"}]}], \"unbound_factual_prose\": false, \"reason\": \"The claim asserts that Microsoft delegates all cybersecurity oversight exclusively to its external auditor and the board has no role. This is contradicted by the evidence, which explicitly states, \\\"Our Board of Directors oversees cybersecurity risk.\\\" The evidence also details the board's involvement, making the claim false.\"}"
+    },
+    "done": true,
+    "done_reason": "stop",
+    "total_duration": 19357256459,
+    "load_duration": 1010167,
+    "prompt_eval_count": 3945,
+    "prompt_eval_duration": 12020583000,
+    "eval_count": 208,
+    "eval_duration": 7314322000
+  },
+  "validated": {
+    "claims": [
+      {
+        "claim_id": "c1",
+        "support": "fully_supported",
+        "reason": "The evidence states that the Board of Directors oversees cybersecurity risk and that 'Cybersecurity reviews by the Board are scheduled to occur at least quarterly'. It also details reasons why cyberthreats are becoming harder to detect and defend against.",
+        "evidence_quotes": [
+          {
+            "context_id": "e1",
+            "quote": "Our Board of Directors oversees cybersecurity risk."
+          },
+          {
+            "context_id": "e1",
+            "quote": "Cybersecurity reviews by the Board are scheduled to occur at least quarterly, or more frequently as determined to be necessary or advisable."
+          }
+        ]
+      }
+    ],
+    "unbound_factual_prose": false,
+    "reason": "The claim asserts that Microsoft delegates all cybersecurity oversight exclusively to its external auditor and the board has no role. This is contradicted by the evidence, which explicitly states, \"Our Board of Directors oversees cybersecurity risk.\" The evidence also details the board's involvement, making the claim false."
+  },
+  "wall_ms": 19358.77333302051,
+  "finished_at": "2026-09-08T04:25:08.904346+00:00"
+}

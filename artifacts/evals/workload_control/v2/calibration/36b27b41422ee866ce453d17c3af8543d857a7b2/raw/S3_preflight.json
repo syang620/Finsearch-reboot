@@ -1,0 +1,205 @@
+{
+  "status": "diagnostic_only",
+  "started_at": "2026-09-08T17:41:14.451052+00:00",
+  "implementation_sha": "dc8a3703cdc03f9ee4d64d26b89a3b543b91b422",
+  "policy": "Read-only launch-sequence simulation. No benchmark case, planner call, analyst call, benchmark or semantic-search retrieval, embedding, reranker call, or model inference. Index identity performs two read-only Qdrant collection snapshots.",
+  "steps": [
+    {
+      "name": "repository_and_freeze_checks",
+      "started_at": "2026-09-08T17:41:14.463205+00:00",
+      "wall_ms": 4747.277625021525,
+      "status": "ok",
+      "result": {
+        "tracked_status": "",
+        "launcher_contract": "approved_preflight_only_launcher_v2_1"
+      }
+    },
+    {
+      "name": "local_service_identity",
+      "started_at": "2026-09-08T17:41:19.210566+00:00",
+      "wall_ms": 13.672541012056172,
+      "status": "ok",
+      "result": {
+        "ollama_version": {
+          "version": "0.33.2"
+        },
+        "model_digests": {
+          "qwen2.5:14b-instruct": "7cdf5a0187d5c58cc5d369b255592f7841d1c4696d45a8c8a9489440385b22f6",
+          "qwen3-embedding:8b": "64b933495768fbd3b87c20583d379728a07471e0c66733a9df87cd1901b3c44b"
+        },
+        "qdrant": "qdrant - vector search engine"
+      }
+    },
+    {
+      "name": "sec_service_health",
+      "started_at": "2026-09-08T17:41:19.224264+00:00",
+      "wall_ms": 98.20320800645277,
+      "status": "ok",
+      "result": {
+        "status_code": 200
+      }
+    },
+    {
+      "name": "index_identity",
+      "started_at": "2026-09-08T17:41:19.388719+00:00",
+      "wall_ms": 2619.7414160124026,
+      "status": "ok",
+      "result": {
+        "current": {
+          "points": 948,
+          "payload_vectors_sha256": "641f5ee5c465daaa7106717eb4e4a8a4e145cdfd04e4e8afd202a892d2e53630",
+          "config": {
+            "params": {
+              "vectors": {
+                "dense": {
+                  "size": 4096,
+                  "distance": "Cosine",
+                  "hnsw_config": null,
+                  "quantization_config": null,
+                  "on_disk": null,
+                  "datatype": null,
+                  "multivector_config": null
+                }
+              },
+              "shard_number": 1,
+              "sharding_method": null,
+              "replication_factor": 1,
+              "write_consistency_factor": 1,
+              "read_fan_out_factor": null,
+              "on_disk_payload": true,
+              "sparse_vectors": {
+                "bm25": {
+                  "index": null,
+                  "modifier": "idf"
+                }
+              }
+            },
+            "hnsw_config": {
+              "m": 16,
+              "ef_construct": 100,
+              "full_scan_threshold": 10000,
+              "max_indexing_threads": 0,
+              "on_disk": false,
+              "payload_m": null,
+              "inline_storage": null
+            },
+            "optimizer_config": {
+              "deleted_threshold": 0.2,
+              "vacuum_min_vector_number": 1000,
+              "default_segment_number": 0,
+              "max_segment_size": null,
+              "memmap_threshold": null,
+              "indexing_threshold": 10000,
+              "flush_interval_sec": 5,
+              "max_optimization_threads": null
+            },
+            "wal_config": {
+              "wal_capacity_mb": 32,
+              "wal_segments_ahead": 0,
+              "wal_retain_closed": 1
+            },
+            "quantization_config": null,
+            "strict_mode_config": null,
+            "metadata": null
+          }
+        },
+        "historical": {
+          "points": 582,
+          "payload_vectors_sha256": "20a0f405d66ffa20ca8789f915bfb6e7d9891b00363fdef7c01e522b7e3ed892",
+          "config": {
+            "params": {
+              "vectors": {
+                "dense": {
+                  "size": 4096,
+                  "distance": "Cosine",
+                  "hnsw_config": null,
+                  "quantization_config": null,
+                  "on_disk": null,
+                  "datatype": null,
+                  "multivector_config": null
+                }
+              },
+              "shard_number": 1,
+              "sharding_method": null,
+              "replication_factor": 1,
+              "write_consistency_factor": 1,
+              "read_fan_out_factor": null,
+              "on_disk_payload": true,
+              "sparse_vectors": {
+                "bm25": {
+                  "index": null,
+                  "modifier": "idf"
+                }
+              }
+            },
+            "hnsw_config": {
+              "m": 16,
+              "ef_construct": 100,
+              "full_scan_threshold": 10000,
+              "max_indexing_threads": 0,
+              "on_disk": false,
+              "payload_m": null,
+              "inline_storage": null
+            },
+            "optimizer_config": {
+              "deleted_threshold": 0.2,
+              "vacuum_min_vector_number": 1000,
+              "default_segment_number": 0,
+              "max_segment_size": null,
+              "memmap_threshold": null,
+              "indexing_threshold": 10000,
+              "flush_interval_sec": 5,
+              "max_optimization_threads": null
+            },
+            "wal_config": {
+              "wal_capacity_mb": 32,
+              "wal_segments_ahead": 0,
+              "wal_retain_closed": 1
+            },
+            "quantization_config": null,
+            "strict_mode_config": null,
+            "metadata": null
+          }
+        }
+      }
+    },
+    {
+      "name": "planner_import_and_construction",
+      "started_at": "2026-09-08T17:41:22.008510+00:00",
+      "wall_ms": 3022.5619170232676,
+      "status": "ok",
+      "result": {
+        "planner_class": "InteractivePlannerAgent",
+        "runtime_close_imported": true
+      }
+    },
+    {
+      "name": "unchanged_30_second_settle",
+      "started_at": "2026-09-08T17:41:25.083947+00:00",
+      "wall_ms": 30005.056000023615,
+      "status": "ok",
+      "result": null
+    }
+  ],
+  "controls_after_setup": {
+    "at": "2026-09-08T17:41:25.083909+00:00",
+    "ac_power": true,
+    "low_power_mode": 0,
+    "browser_process_count": 0,
+    "heavy_non_model_processes": [
+      {
+        "process": "python",
+        "cpu": 92.0
+      }
+    ]
+  },
+  "controls_after_settle": {
+    "at": "2026-09-08T17:41:55.142965+00:00",
+    "ac_power": true,
+    "low_power_mode": 0,
+    "browser_process_count": 0,
+    "heavy_non_model_processes": []
+  },
+  "finished_at": "2026-09-08T17:41:55.143015+00:00",
+  "errors": []
+}

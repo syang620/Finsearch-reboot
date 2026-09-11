@@ -1,0 +1,142 @@
+# Semantic-v2 local-once protocol: consumed invalid diagnostic
+
+`scripts/operations/run_semantic_once.py` replaced the fresh-v7 revision-2 operational
+design with a smaller protocol whose security boundary matches its intended use: a
+trusted local operator running reviewed code from a private checkout. The reviewed
+protocol was prepared and invoked once on 2026-09-11. The durable marker consumed the
+attempt before child process creation, as designed.
+
+The child exited with status 1 after capturing one of 60 scheduled cases. The preserved
+result is an invalid diagnostic, not an official baseline. It supplies no resume metric
+or answer-quality evidence and grants no retry authority. The fixed attempt root,
+`/Users/shicheny/.local/share/finsearch/semantic-baseline/local-once-v1`, and all of its
+authorization, marker, outcome, log, cache, and staging content must remain intact.
+
+## Trust boundary
+
+The protocol detects accidental or ordinary operator changes before launch. It does
+not claim isolation from malicious code running concurrently as the same macOS user,
+from an administrator, or from mutation of the installed Python environment after its
+final check. Such isolation requires a distinct OS account, VM, or equivalent security
+principal and is outside this protocol.
+
+Preparation creates the fixed attempt root and its `source` directory with mode 0700.
+It initializes an independent Git repository, fetches one full 40-character commit,
+checks it out detached, disables hooks, and rejects alternates, grafts, shallow history,
+replacement refs, tracked symlinks, and submodules. Verification hashes every tracked
+regular file, checks executable modes and the Git tree, and requires no modified or
+untracked non-ignored content.
+
+The frozen launcher writes its SHA-keyed cache beneath
+`source/.cache/semantic_answer_v2/`. That directory is already ignored by the tracked
+`.gitignore`; no external cache symlink, ACL, disk image, inode receipt, or native
+filesystem bridge is used. Preparation is exclusive and never overwrites an existing
+attempt root. A partial or failed preparation remains evidence and requires a new
+reviewed namespace rather than deletion and reuse.
+
+## Approval and execution contracts
+
+After a clean exact-head candidate review, the separate approval commit added
+`docs/evals/semantic_answer_v2_local_once_v1_approval.json`. Its closed schema binds:
+
+- contract version `1`, authorization ID `SEMANTIC-V2-LOCAL-ONCE-V1`, the fixed root,
+  and status `approved_candidate_not_execution`;
+- the clean candidate review identity and body digest;
+- the pinned interpreter path and SHA-256;
+- exact SHA-256 values for the controller, environment helper, frozen launcher,
+  historical integration and quality approvals, and canonical-index attestation.
+
+The reviewed candidate must be an ancestor of the prepared approval commit, and the
+approval JSON must be the only changed path between those commits. The environment
+helper retains contract version 2 and freezes one effective environment without
+serializing credential values. That effective environment must explicitly select
+`QDRANT_HOST=127.0.0.1`, `QDRANT_PORT=6333`, and the collection named by the bound
+canonical-index attestation. Both the preflight identity check and benchmark child use
+that same target. `PYTHONPATH` must resolve, in order, to the prepared checkout's
+`src` directory and repository root; ignored or alternate import roots are rejected.
+
+Execution additionally required an external, owned, mode-0600
+`execution_authorization.json`. Its closed schema bound the approval digest, prepared
+commit, tree and tracked-file manifest, fixed artifact root, one invocation, explicit
+user authorization, and a clean review of the final approval commit. The controller
+opened, parsed, and hashed the same descriptor bytes before checking remote review
+provenance.
+
+## Observed one-use outcome
+
+The authorization bound commit `e153761b4312e0c2f41ba64693ba126f9ed1c686`, tree
+`afa866a754fc974208313e50a32dafc807d92556`, and tracked-file manifest
+`80814e8ebe9f269ace37903b92150ca9e415ae259f5db34a4bda5a6be36ebfaa`.
+The controller wrote `consumed.json` at `2026-09-11T17:08:38.451025+00:00`, started the
+child, and wrote `outcome.json` at `2026-09-11T17:17:20.279476+00:00`. No signal was
+received. The child return code and wrapper exit code were both 1.
+
+The only captured case, `SEM2_MSFT_2024_05`, ended with `analyst_timeout` after
+440,070 ms and was ineligible. The final workload-control record classified the run as
+`invalid_diagnostic`. Its first sample already had a hard `browser` violation: the
+monitor observed the ChatGPT/Codex process tree used to launch and supervise the run.
+The same sample also recorded ChatGPT at 69.0% CPU. The monitor later reported a
+230.948-second maximum cadence error, above its frozen 0.25-second tolerance. These
+facts make the partial case unusable for official comparisons.
+
+The canonical Qdrant collection still contained 948 points with payload/vector
+fingerprint `641f5ee5c465daaa7106717eb4e4a8a4e145cdfd04e4e8afd202a892d2e53630`.
+The before/after index and model identity checks passed. The final raw workload-control
+artifact contains 213 samples and has SHA-256
+`5921d463f3dbf3157717e72dac05ad137a4a7c17d8e165f9c898e346a264fdcd`.
+The controller outcome SHA-256 is
+`8ddef8b5a942b3da9e4f60b9c48a0e6a0e29436f59c30ed9acb889215363d6c2`.
+
+The failure isolates the remaining design problem. A strict policy that treats the
+interactive ChatGPT/Codex supervisor as forbidden UI activity cannot qualify a run
+started through that supervisor. Any future attempt needs a newly reviewed namespace
+and authorization. Before that, the evaluation design should separate integrity gates
+from ambient-load observations and decide whether workload qualification runs in an
+independent noninteractive environment or records browser/UI activity as diagnostic
+metadata.
+
+## Lifecycle and failure behavior
+
+The supported commands are:
+
+```text
+run_semantic_once.py prepare --repository REPOSITORY --head FULL_COMMIT
+run_semantic_once.py preflight [--env-file PATH]
+run_semantic_once.py execute [--env-file PATH]
+```
+
+`preflight` runs imports, approval and launcher checks, remote review verification, and
+read-only canonical Qdrant identity verification in the pinned interpreter. It also
+runs the unchanged launcher's runtime-environment validator against the frozen
+configuration and SHA-keyed cache path, so retrieval, reranker, and cache-policy
+overrides fail here. Preflight records only that this validation succeeded; returned
+URLs and provider metadata are not serialized. It does not execute benchmark cases or
+consume the attempt.
+
+`execute` requires the separate authorization, reruns preflight, revalidates the Git
+checkout and absent artifacts, then exclusively and durably writes `consumed.json`
+immediately before process creation. Any later error consumes the attempt. The child
+runs in a new process group with the frozen environment and argv. Console output is
+written to mode-0600 `console.log` with credential-like environment values redacted.
+SIGINT and SIGTERM are forwarded, and a durable `outcome.json` records the terminal
+state whenever storage remains available. Each observed signal is forwarded at most
+once. The outcome records an explicit signal-observation cutoff; signals that arrive
+while that outcome is being persisted are delivered using the caller's prior signal
+disposition after persistence rather than being discarded.
+
+Existing marker, outcome, console, staging, or SHA-keyed cache content forbids another
+launch. This covers both `.cache/semantic_answer_v2/<commit>` and the independent
+`.cache/semantic_answer_v2_control_v2/<commit>` monitoring namespace. Each namespace
+ancestor must be absent or a real directory resolving inside the prepared checkout;
+files and symlinks fail before consumption. A marker without an outcome is unresolved
+and never grants retry authority. All historical fresh-v7 and earlier approvals,
+wrappers, results, and consumption records remain authoritative audit evidence and are
+not repurposed.
+
+## Disposition
+
+The rollout gates through one-use execution are complete. The namespace is permanently
+consumed and the artifacts are preserved locally. Do not repair, delete, recycle, or
+rerun it. Review findings must be assessed against the trusted-local boundary above.
+A demand for hostile same-user isolation changes the architecture and should trigger a
+separate OS-identity or VM design instead of another pathname or ACL patch.

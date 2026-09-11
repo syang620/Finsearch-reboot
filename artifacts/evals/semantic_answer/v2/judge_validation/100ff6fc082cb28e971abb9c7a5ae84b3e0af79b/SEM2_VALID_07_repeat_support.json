@@ -1,0 +1,69 @@
+{
+  "fixture_id": "SEM2_VALID_07",
+  "repeat": true,
+  "phase": "support",
+  "started_at": "2026-09-08T04:28:31.779211+00:00",
+  "packet": {
+    "question": "What total revenue did Microsoft report for FY2024 in its 10-K? Give the value in USD millions.",
+    "answer": {
+      "status": "ok",
+      "answer": "Microsoft FY2024 cash and cash equivalents were $245.122 billion.",
+      "claims": [
+        {
+          "claim_id": "c1",
+          "claim_type": "structured_numeric",
+          "context_ids": [
+            "e1"
+          ],
+          "metric_id": "revenue",
+          "text": "Microsoft FY2024 cash and cash equivalents were $245.122 billion."
+        }
+      ],
+      "compare_rows": [],
+      "computation": null
+    },
+    "cited_contexts": [
+      {
+        "context_id": "e1",
+        "kind": "structured_fact",
+        "source": null,
+        "evidence": "{\"accession_number\": \"0000950170-24-087843\", \"components\": null, \"filed_date\": \"2024-07-30\", \"fiscal_year\": 2024, \"form_type\": \"10-K\", \"metric_id\": \"revenue\", \"metric_label\": \"revenue\", \"missing_component_groups\": null, \"report_date\": \"2024-06-30\", \"source_url\": \"https://www.sec.gov/Archives/edgar/data/789019/000095017024087843/msft-20240630.htm\", \"start_date\": \"2023-07-01\", \"status\": \"ok\", \"ticker\": \"MSFT\", \"unit\": \"USD\", \"value\": 245122000000}"
+      }
+    ]
+  },
+  "raw_response": {
+    "model": "gemma4:e4b",
+    "created_at": "2026-09-08T04:28:39.289247Z",
+    "message": {
+      "role": "assistant",
+      "content": "{\"claims\":[{\"claim_id\":\"c1\",\"support\":\"unsupported\",\"reason\":\"The claim asserts that \\\"Microsoft FY2024 cash and cash equivalents were $245.122 billion.\\\" The provided evidence (e1) contains a value of 245,122,000,000, but this value is explicitly labeled as \\\"revenue\\\" and the claim asks for \\\"cash and cash equivalents\\\".\",\"evidence_quotes\":[{\"context_id\":\"e1\",\"quote\":\"\\\"value\\\": 245122000000\"}]}],\"unbound_factual_prose\":false,\"reason\":\"The claim incorrectly identifies the metric. The evidence provides a value for 'revenue', while the claim discusses 'cash and cash equivalents'.\"}"
+    },
+    "done": true,
+    "done_reason": "stop",
+    "total_duration": 7509668250,
+    "load_duration": 847917,
+    "prompt_eval_count": 959,
+    "prompt_eval_duration": 1772144000,
+    "eval_count": 166,
+    "eval_duration": 5724280000
+  },
+  "validated": {
+    "claims": [
+      {
+        "claim_id": "c1",
+        "support": "unsupported",
+        "reason": "The claim asserts that \"Microsoft FY2024 cash and cash equivalents were $245.122 billion.\" The provided evidence (e1) contains a value of 245,122,000,000, but this value is explicitly labeled as \"revenue\" and the claim asks for \"cash and cash equivalents\".",
+        "evidence_quotes": [
+          {
+            "context_id": "e1",
+            "quote": "\"value\": 245122000000"
+          }
+        ]
+      }
+    ],
+    "unbound_factual_prose": false,
+    "reason": "The claim incorrectly identifies the metric. The evidence provides a value for 'revenue', while the claim discusses 'cash and cash equivalents'."
+  },
+  "wall_ms": 7510.417957964819,
+  "finished_at": "2026-09-08T04:28:39.289618+00:00"
+}

@@ -1,0 +1,69 @@
+{
+  "fixture_id": "SEM2_VALID_08",
+  "repeat": false,
+  "phase": "support",
+  "started_at": "2026-09-08T04:16:20.765492+00:00",
+  "packet": {
+    "question": "What total revenue did Amazon report for FY2024 in its 10-K? Give the value in USD millions.",
+    "answer": {
+      "status": "ok",
+      "answer": "Amazon FY2023 revenue was $637.959 billion.",
+      "claims": [
+        {
+          "claim_id": "c1",
+          "claim_type": "structured_numeric",
+          "context_ids": [
+            "e1"
+          ],
+          "metric_id": "revenue",
+          "text": "Amazon FY2023 revenue was $637.959 billion."
+        }
+      ],
+      "compare_rows": [],
+      "computation": null
+    },
+    "cited_contexts": [
+      {
+        "context_id": "e1",
+        "kind": "structured_fact",
+        "source": null,
+        "evidence": "{\"accession_number\": \"0001018724-25-000004\", \"components\": null, \"filed_date\": \"2025-02-07\", \"fiscal_year\": 2024, \"form_type\": \"10-K\", \"metric_id\": \"revenue\", \"metric_label\": \"revenue\", \"missing_component_groups\": null, \"report_date\": \"2024-12-31\", \"source_url\": \"https://www.sec.gov/Archives/edgar/data/1018724/000101872425000004/amzn-20241231.htm\", \"start_date\": \"2024-01-01\", \"status\": \"ok\", \"ticker\": \"AMZN\", \"unit\": \"USD\", \"value\": 637959000000}"
+      }
+    ]
+  },
+  "raw_response": {
+    "model": "gemma4:e4b",
+    "created_at": "2026-09-08T04:16:27.396565Z",
+    "message": {
+      "role": "assistant",
+      "content": "{\"claims\":[{\"claim_id\":\"c1\",\"support\":\"fully_supported\",\"reason\":\"The evidence states the revenue for the fiscal year ending 2024 was $637,959,000,000, which matches the claim's value of $637.959 billion.\",\"evidence_quotes\":[{\"context_id\":\"e1\",\"quote\":\"\\\"value\\\": 637959000000\"}]}], \"unbound_factual_prose\":false, \"reason\": \"The claim asks for FY2024 revenue, and the evidence provides a structured fact for the fiscal year 2024.\"}"
+    },
+    "done": true,
+    "done_reason": "stop",
+    "total_duration": 6630707500,
+    "load_duration": 934958,
+    "prompt_eval_count": 954,
+    "prompt_eval_duration": 1598552000,
+    "eval_count": 147,
+    "eval_duration": 5022051000
+  },
+  "validated": {
+    "claims": [
+      {
+        "claim_id": "c1",
+        "support": "fully_supported",
+        "reason": "The evidence states the revenue for the fiscal year ending 2024 was $637,959,000,000, which matches the claim's value of $637.959 billion.",
+        "evidence_quotes": [
+          {
+            "context_id": "e1",
+            "quote": "\"value\": 637959000000"
+          }
+        ]
+      }
+    ],
+    "unbound_factual_prose": false,
+    "reason": "The claim asks for FY2024 revenue, and the evidence provides a structured fact for the fiscal year 2024."
+  },
+  "wall_ms": 6631.581124966033,
+  "finished_at": "2026-09-08T04:16:27.397063+00:00"
+}

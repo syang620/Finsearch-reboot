@@ -1,0 +1,26 @@
+{
+  "status": "invalid_diagnostic",
+  "authorization_id": "SEMANTIC-V2-CONTROL-V2-FRESH-V3-20260909",
+  "implementation_sha": "ed960c4dce94c0caa599b4e0ab11f3b2f55f3d06",
+  "child_executable": "/usr/local/opt/python@3.14/bin/python3.14",
+  "python_version": "3.14.3",
+  "sys_prefix": "/usr/local/opt/python@3.14/Frameworks/Python.framework/Versions/3.14",
+  "sys_base_prefix": "/usr/local/opt/python@3.14/Frameworks/Python.framework/Versions/3.14",
+  "virtual_env": null,
+  "conda_prefix": "/Users/shicheny/miniforge3/envs/finsearch-arm",
+  "path": "/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/pkg/env/global/bin:/Library/Apple/usr/bin:/Library/TeX/texbin:/usr/local/share/dotnet:~/.dotnet/tools:/opt/homebrew/bin:/Library/Frameworks/Mono.framework/Versions/Current/Commands:/usr/local/lib/node_modules/@openai/codex/node_modules/@openai/codex-darwin-arm64/vendor/aarch64-apple-darwin/codex-path:/Users/shicheny/.codex/tmp/arg0/codex-arg0f90BeE:/Users/shicheny/.antigravity/antigravity/bin:/Users/shicheny/.local/bin:/Users/shicheny/miniforge3/envs/finsearch-arm/bin:/Users/shicheny/miniforge3/condabin",
+  "failure": "ModuleNotFoundError: No module named 'requests'",
+  "preserved_artifacts": {
+    "marker": ".cache/semantic_v2_control_v2_fresh_v3_20260909.consumed.json",
+    "outcome": ".cache/semantic_v2_control_v2_fresh_v3_20260909.launch_outcome.json",
+    "console_log": ".cache/semantic_v2_control_v2_fresh_v3_20260909.console.log"
+  },
+  "validated_environment": {
+    "executable": "/Users/shicheny/miniforge3/envs/finsearch-arm/bin/python",
+    "python_version": "3.11.14",
+    "requests": "2.32.5",
+    "qdrant_client": "1.16.1",
+    "validation_command": "PYTHONPATH=.:src conda run -n finsearch-arm --no-capture-output python"
+  },
+  "interpretation": "The failed child inherited a PATH whose first Python was the system Homebrew interpreter despite CONDA_PREFIX naming finsearch-arm. Fresh-v3 remains permanently consumed and is not eligible for reuse."
+}

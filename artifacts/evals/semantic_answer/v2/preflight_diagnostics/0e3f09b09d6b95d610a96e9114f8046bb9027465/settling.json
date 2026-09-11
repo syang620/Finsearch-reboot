@@ -1,0 +1,146 @@
+{
+  "diagnostic_only": true,
+  "benchmark_cases_started": 0,
+  "implementation_sha": "0e3f09b09d6b95d610a96e9114f8046bb9027465",
+  "current_index": {
+    "points": 948,
+    "payload_vectors_sha256": "641f5ee5c465daaa7106717eb4e4a8a4e145cdfd04e4e8afd202a892d2e53630",
+    "config": {
+      "params": {
+        "vectors": {
+          "dense": {
+            "size": 4096,
+            "distance": "Cosine",
+            "hnsw_config": null,
+            "quantization_config": null,
+            "on_disk": null,
+            "datatype": null,
+            "multivector_config": null
+          }
+        },
+        "shard_number": 1,
+        "sharding_method": null,
+        "replication_factor": 1,
+        "write_consistency_factor": 1,
+        "read_fan_out_factor": null,
+        "on_disk_payload": true,
+        "sparse_vectors": {
+          "bm25": {
+            "index": null,
+            "modifier": "idf"
+          }
+        }
+      },
+      "hnsw_config": {
+        "m": 16,
+        "ef_construct": 100,
+        "full_scan_threshold": 10000,
+        "max_indexing_threads": 0,
+        "on_disk": false,
+        "payload_m": null,
+        "inline_storage": null
+      },
+      "optimizer_config": {
+        "deleted_threshold": 0.2,
+        "vacuum_min_vector_number": 1000,
+        "default_segment_number": 0,
+        "max_segment_size": null,
+        "memmap_threshold": null,
+        "indexing_threshold": 10000,
+        "flush_interval_sec": 5,
+        "max_optimization_threads": null
+      },
+      "wal_config": {
+        "wal_capacity_mb": 32,
+        "wal_segments_ahead": 0,
+        "wal_retain_closed": 1
+      },
+      "quantization_config": null,
+      "strict_mode_config": null,
+      "metadata": null
+    }
+  },
+  "historical_index": {
+    "points": 582,
+    "payload_vectors_sha256": "20a0f405d66ffa20ca8789f915bfb6e7d9891b00363fdef7c01e522b7e3ed892",
+    "config": {
+      "params": {
+        "vectors": {
+          "dense": {
+            "size": 4096,
+            "distance": "Cosine",
+            "hnsw_config": null,
+            "quantization_config": null,
+            "on_disk": null,
+            "datatype": null,
+            "multivector_config": null
+          }
+        },
+        "shard_number": 1,
+        "sharding_method": null,
+        "replication_factor": 1,
+        "write_consistency_factor": 1,
+        "read_fan_out_factor": null,
+        "on_disk_payload": true,
+        "sparse_vectors": {
+          "bm25": {
+            "index": null,
+            "modifier": "idf"
+          }
+        }
+      },
+      "hnsw_config": {
+        "m": 16,
+        "ef_construct": 100,
+        "full_scan_threshold": 10000,
+        "max_indexing_threads": 0,
+        "on_disk": false,
+        "payload_m": null,
+        "inline_storage": null
+      },
+      "optimizer_config": {
+        "deleted_threshold": 0.2,
+        "vacuum_min_vector_number": 1000,
+        "default_segment_number": 0,
+        "max_segment_size": null,
+        "memmap_threshold": null,
+        "indexing_threshold": 10000,
+        "flush_interval_sec": 5,
+        "max_optimization_threads": null
+      },
+      "wal_config": {
+        "wal_capacity_mb": 32,
+        "wal_segments_ahead": 0,
+        "wal_retain_closed": 1
+      },
+      "quantization_config": null,
+      "strict_mode_config": null,
+      "metadata": null
+    }
+  },
+  "settling": {
+    "stage": "index_snapshot_diagnostic_only",
+    "requested_seconds": 30,
+    "wall_seconds": 30.042445625003893,
+    "before": {
+      "at": "2026-09-08T12:37:04.522026+00:00",
+      "ac_power": true,
+      "low_power_mode": 0,
+      "browser_process_count": 0,
+      "heavy_non_model_processes": [
+        {
+          "process": "python",
+          "cpu": 90.4
+        }
+      ]
+    },
+    "after": {
+      "at": "2026-09-08T12:37:34.564651+00:00",
+      "ac_power": true,
+      "low_power_mode": 0,
+      "browser_process_count": 0,
+      "heavy_non_model_processes": []
+    },
+    "note": "Setup-only observation before settling; the unchanged strict check applies after settling. No processes are exempted and no case has started."
+  }
+}

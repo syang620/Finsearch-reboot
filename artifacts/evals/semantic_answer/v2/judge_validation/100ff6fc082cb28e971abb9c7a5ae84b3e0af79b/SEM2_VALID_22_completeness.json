@@ -1,0 +1,95 @@
+{
+  "fixture_id": "SEM2_VALID_22",
+  "repeat": false,
+  "phase": "completeness",
+  "started_at": "2026-09-08T04:22:43.957600+00:00",
+  "packet": {
+    "question": "Did Amazon's FY2024 10-K attribute AWS sales growth to higher pricing rather than customer usage? Explain the stated direction of the pricing effect.",
+    "answer": {
+      "status": "ok",
+      "answer": "Increased customer usage was the primary driver of AWS sales growth.\nPricing changes partially offset that growth; higher pricing was not the stated positive driver.\nAWS sales will double next quarter.",
+      "claims": [
+        {
+          "claim_id": "c1",
+          "claim_type": "attribution",
+          "context_ids": [
+            "e1"
+          ],
+          "text": "Increased customer usage was the primary driver of AWS sales growth."
+        },
+        {
+          "claim_id": "c2",
+          "claim_type": "attribution",
+          "context_ids": [
+            "e1"
+          ],
+          "text": "Pricing changes partially offset that growth; higher pricing was not the stated positive driver."
+        }
+      ],
+      "compare_rows": [],
+      "computation": null
+    },
+    "expected_answerability": "answerable",
+    "answerability_reason": null,
+    "equivalence_rules": {
+      "abstention": "For future-actual questions, explicitly identify that the named filing cannot establish audited actuals for the later year; no guessed value or later-filing substitution. For answerable questions a refusal is incomplete/incorrect answerability, even if the system failed to retrieve evidence. Execution failures are a different layer.",
+      "evidence": "Listed source passages are independently verified examples, not an exhaustive whitelist for semantic adjudication. Inspect any unlisted passage against its original filing and the requirement scope before accepting it. Generic numeric evidence may come from another filing only when financial equivalence is established. Log its identity/span and rationale without rewriting frozen gold.",
+      "numeric_evidence": "Financial truth is independent of route: an original-filing table/text with explicit correct metric, issuer, period, unit and amount may support a numeric claim. Structured numeric-to-structured evidence policy is a separate compatibility metric. No credit from context metadata without matching answer semantics.",
+      "partial": "Omitting a qualifying facet may be incomplete while all emitted claims remain supported. Contradicting a material qualifier, issuer, period, amount or attribution is unsupported, not merely incomplete. Mixed true and unsupported separable assertions in one emitted claim are partially supported; a wrong central numeric fact is unsupported.",
+      "phrasing": "Synonyms, reordered clauses, issuer names/tickers, equivalent explicit units and non-contradictory concise paraphrases are acceptable. Gold wording is not a required string.",
+      "scope": "Use the named issuer and fiscal period. Explicit named-filing questions, comparisons and calculations remain bound to that filing. Generic numeric questions without an explicit filing-year restriction may use independently verified equivalent evidence for the same original amount, entity, metric and fact period; a later filing is not wrong merely because it repeats that fact. Different restated values, segments, periods or metrics are not interchangeable. Narrative/attribution facets retain their named fiscal-year disclosure scope."
+    },
+    "optional_detail": [],
+    "requirements": [
+      {
+        "claim_id": "attribution_usage",
+        "requirement": "The primary stated AWS sales-growth driver was increased customer usage, not higher pricing."
+      },
+      {
+        "claim_id": "attribution_offset",
+        "requirement": "Pricing changes were a partial offset to AWS sales growth."
+      }
+    ]
+  },
+  "raw_response": {
+    "model": "gemma4:e4b",
+    "created_at": "2026-09-08T04:22:53.414142Z",
+    "message": {
+      "role": "assistant",
+      "content": "{\"requirements\": [{\"claim_id\": \"attribution_usage\", \"fulfillment\": \"complete\", \"reason\": \"The answer explicitly states that 'Increased customer usage was the primary driver of AWS sales growth.'\", \"answer_quotes\": [\"Increased customer usage was the primary driver of AWS sales growth.\"]}, {\"claim_id\": \"attribution_offset\", \"fulfillment\": \"complete\", \"reason\": \"The answer states that 'Pricing changes partially offset that growth; higher pricing was not the stated positive driver.'\", \"answer_quotes\": [\"Pricing changes partially offset that growth; higher pricing was not the stated positive driver.\"]}], \"answer_relevant\": true, \"answerability_correct\": true, \"reason\": \"The provided answer directly addresses both required attribution claims: the primary driver of growth (usage) and the effect of pricing changes (partial offset).\"}"
+    },
+    "done": true,
+    "done_reason": "stop",
+    "total_duration": 9456192125,
+    "load_duration": 877250,
+    "prompt_eval_count": 1139,
+    "prompt_eval_duration": 3454005000,
+    "eval_count": 176,
+    "eval_duration": 5981305000
+  },
+  "validated": {
+    "requirements": [
+      {
+        "claim_id": "attribution_usage",
+        "fulfillment": "complete",
+        "reason": "The answer explicitly states that 'Increased customer usage was the primary driver of AWS sales growth.'",
+        "answer_quotes": [
+          "Increased customer usage was the primary driver of AWS sales growth."
+        ]
+      },
+      {
+        "claim_id": "attribution_offset",
+        "fulfillment": "complete",
+        "reason": "The answer states that 'Pricing changes partially offset that growth; higher pricing was not the stated positive driver.'",
+        "answer_quotes": [
+          "Pricing changes partially offset that growth; higher pricing was not the stated positive driver."
+        ]
+      }
+    ],
+    "answer_relevant": true,
+    "answerability_correct": true,
+    "reason": "The provided answer directly addresses both required attribution claims: the primary driver of growth (usage) and the effect of pricing changes (partial offset)."
+  },
+  "wall_ms": 9456.805458001327,
+  "finished_at": "2026-09-08T04:22:53.414384+00:00"
+}

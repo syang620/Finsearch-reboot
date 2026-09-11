@@ -1,0 +1,73 @@
+{
+  "status": "inactive_v7_candidate",
+  "authority": "none",
+  "collection": "finsearch_benchmark_v2_39c8d01ee5c71710",
+  "corpus_path": "data/evals/retrieval/benchmark_v2/corpus.jsonl",
+  "corpus_sha256": "39c8d01ee5c71710e443e49698957d2aa991e71c16ad79905e7bd07d6a11fe4d",
+  "points": 948,
+  "payload_vectors_sha256": "641f5ee5c465daaa7106717eb4e4a8a4e145cdfd04e4e8afd202a892d2e53630",
+  "dense_vector_name": "dense",
+  "dense_vector_dimensions": 4096,
+  "collection_config": {
+    "params": {
+      "vectors": {
+        "dense": {
+          "size": 4096,
+          "distance": "Cosine",
+          "hnsw_config": null,
+          "quantization_config": null,
+          "on_disk": null,
+          "datatype": null,
+          "multivector_config": null
+        }
+      },
+      "shard_number": 1,
+      "sharding_method": null,
+      "replication_factor": 1,
+      "write_consistency_factor": 1,
+      "read_fan_out_factor": null,
+      "on_disk_payload": true,
+      "sparse_vectors": {
+        "bm25": {
+          "index": null,
+          "modifier": "idf"
+        }
+      }
+    },
+    "hnsw_config": {
+      "m": 16,
+      "ef_construct": 100,
+      "full_scan_threshold": 10000,
+      "max_indexing_threads": 0,
+      "on_disk": false,
+      "payload_m": null,
+      "inline_storage": null
+    },
+    "optimizer_config": {
+      "deleted_threshold": 0.2,
+      "vacuum_min_vector_number": 1000,
+      "default_segment_number": 0,
+      "max_segment_size": null,
+      "memmap_threshold": null,
+      "indexing_threshold": 10000,
+      "flush_interval_sec": 5,
+      "max_optimization_threads": null
+    },
+    "wal_config": {
+      "wal_capacity_mb": 32,
+      "wal_segments_ahead": 0,
+      "wal_retain_closed": 1
+    },
+    "quantization_config": null,
+    "strict_mode_config": null,
+    "metadata": null
+  },
+  "historical_provenance": {
+    "manifest_path": "artifacts/evals/retrieval/benchmark_v2/baselines/2d50cfe0dc7b624676b472b7407aab7dc11f9648/manifest.json",
+    "manifest_sha256": "625047fc2cb5039ec0ee44af4979e7c2ee5bde32b6587a286d04658dce54219e",
+    "capture_scope": "Earliest archived post-build v2 live-index snapshot; not a byte-reproducible build record."
+  },
+  "verification_policy": "Require this exact collection, corpus hash, point count, collection configuration, vector dimensions, unique point IDs, complete pagination, and ordering-independent payload/vector fingerprint before case execution and again before any official summary is published.",
+  "limitation": "Fresh-v7 evaluates the historically fingerprinted surviving Qdrant collection. The original serialized embedded.jsonl build cache no longer exists and index construction is not independently byte-reproducible.",
+  "execution_gate": "This candidate is inactive and grants no approval, registration, marker creation, child launch, retrieval, or benchmark execution authority."
+}

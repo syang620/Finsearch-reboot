@@ -1,0 +1,19 @@
+{
+  "status": "frozen_corrected_terminal_only_capture",
+  "capture_implementation_sha": "afd3d0dfb86126346edf87fc44ebe1e09773dbb1",
+  "semantic_cases": 0,
+  "files": {
+    "raw/S2_TERMINAL_ONLY_IDLE.jsonl.gz": "1a3dcd0d0fc72ad3a9b1e360046e3029eb451bc96f8984018087eeb335275776",
+    "raw/S2_TERMINAL_ONLY_IDLE.summary.json": "406fce1234130f10c879baa49d4009aa63cfe281cee790698da1026ece67ea53"
+  },
+  "uncompressed_raw_sha256": "b7efaceb1b6f8b6b71d0a2677f774a720a2033e12ad9e574c5a6c39f8bb22a85",
+  "validation": {
+    "sample_count": 900,
+    "ac_power_valid_all_samples": true,
+    "low_power_mode_zero_all_samples": true,
+    "actual_browser_records": 0,
+    "active_supervision_records": 0,
+    "retained_inert_crash_handler_records": 3600,
+    "inert_crash_handler_peak_cpu_percent": 0.0
+  }
+}

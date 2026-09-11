@@ -1,0 +1,40 @@
+{
+  "authorization_id": "SEMANTIC-V2-FRESH-20260908",
+  "implementation_sha": "488e112a64b51fb2a5ad159194df993b2ff04f11",
+  "status": "invalid_diagnostic",
+  "official_baseline_eligible": false,
+  "runner_artifact_path": "artifacts/evals/semantic_answer/v2/controlled_baselines/488e112a64b51fb2a5ad159194df993b2ff04f11",
+  "runner_manifest_sha256": "f5b579cf2457a5a9a574fc9a88ad1e77fec9a493f210b6df74eea638dc256fa0",
+  "publication": "All five runner files copied byte-identically with complete file-set equality; original staging and consumption marker retained. The directory name does not confer baseline eligibility.",
+  "stop_basis": "The registered authorization requires stopping and preserving diagnostic evidence on operational validity failure. No additional user response was required to apply that already approved rule.",
+  "violation": {
+    "case_id": "SEM2_MSFT_2025_04",
+    "when": "after",
+    "at": "2026-09-08T14:28:18.463222+00:00",
+    "browser_process_count": 1,
+    "heavy_non_model_processes": [{"process": "git", "cpu": 59.8}],
+    "frozen_heavy_process_threshold_percent": 50,
+    "causal_interpretation": "Observed control violation only. The record does not establish who launched the process/browser, how long either ran, or whether either caused the analyst timeout."
+  },
+  "captured_cases": [
+    {"case_id": "SEM2_MSFT_2024_05", "primary_execution_outcome": "grounding_fail_closed", "wall_ms": 543570.1313340105, "eligible": false},
+    {"case_id": "SEM2_MSFT_2025_04", "primary_execution_outcome": "analyst_timeout", "wall_ms": 306528.0004160013, "eligible": false}
+  ],
+  "interrupted_case": "SEM2_AMZN_2023_01",
+  "captured_count": 2,
+  "interrupted_without_final_output_count": 1,
+  "unstarted_count": 57,
+  "uncaptured_count": 58,
+  "stop_method": "SIGINT to the verified exact child launcher; frozen finally cleanup and raw hash manifest completed normally. Child Popen returncode -2 denotes SIGINT; outer shell reports 254. No process-wide kill or runtime patch.",
+  "model_identities_unchanged": true,
+  "index_unchanged": true,
+  "scoring_or_cleanup_errors": [],
+  "official_deterministic_summary_created": false,
+  "fixed_30_case_source_audit_completed": false,
+  "full_corpus_judge_called": false,
+  "permission_remaining": 0,
+  "next_attempt_authorized": false,
+  "pr31_merge_gate_met": false,
+  "joint_optimization_readiness_declared": false,
+  "claim_boundary": "No controlled performance or semantic accuracy claim; no extrapolation of two captured outcomes to 60. Ineligible outputs receive no semantic or numeric credit. The earlier invalid diagnostic and all frozen benchmark/runtime/evaluator files remain unchanged."
+}

@@ -1,0 +1,807 @@
+{
+  "launcher_contract": {
+    "status": "approved_preflight_only_launcher_v2_1",
+    "pull_request": 31,
+    "review_comment_id": 5585393657,
+    "review_url": "https://github.com/syang620/Finsearch-reboot/pull/31#issuecomment-5585393657",
+    "review_body_sha256": "683d501e40447a6f87c0bb3ee71a67e4a990680bcb1c2af5728f88a6fa18a06f",
+    "reviewed_commit": "f16f96d7b416a195b739cadc87bfe0b1c9a63b3b",
+    "original_freeze_commit": "31797803dc0ef262068fa55a8a76745d15ac758f",
+    "optimization_manifest_sha256": "653a65e778a5633c4d1adc2d90ea7a56a578b81695e69d679f9d69915e54bec0",
+    "quality_approval_sha256": "42017d917124aa165f90c69c4d2e4d30fa81d550d32ad4d981567134b1bdedc6",
+    "launcher_sha256": "87e98d0d9286ff18eddcc9e5bb5ab6c937bd3720269be3581b8fe27b08487ba0",
+    "dataset_sha256": "f9148a29cb5b0f2da30b6ecf5017a9d6bc4dc9fd31523643557b93906646ad7c",
+    "judge_enabled": false,
+    "settle_seconds": 30,
+    "policy": "Preflight only: fixed settling after imports/configuration and after index/planner setup. All per-case controls, runtime, schedule, labels, scorers, retry/timeout policy and original immutable evidence unchanged. No baseline has started; this authorizes the original single pass, not a rerun."
+  },
+  "launcher_contract_sha256": "ce1646e554cdb3f8fb583db0ea93eeb278daa13a937c641320335c33c24845ad",
+  "preflight_settling": [
+    {
+      "stage": "imports_and_configuration",
+      "requested_seconds": 30,
+      "wall_seconds": 30.074860833003186,
+      "before": {
+        "at": "2026-09-08T12:51:28.632486+00:00",
+        "ac_power": true,
+        "low_power_mode": 0,
+        "browser_process_count": 0,
+        "heavy_non_model_processes": [
+          {
+            "process": "python",
+            "cpu": 92.4
+          }
+        ]
+      },
+      "after": {
+        "at": "2026-09-08T12:51:58.707505+00:00",
+        "ac_power": true,
+        "low_power_mode": 0,
+        "browser_process_count": 0,
+        "heavy_non_model_processes": []
+      },
+      "note": "Setup-only observation before settling; the unchanged strict check applies after settling. No processes are exempted and no case has started."
+    },
+    {
+      "stage": "index_verification_and_planner_setup",
+      "requested_seconds": 30,
+      "wall_seconds": 30.090217707969714,
+      "before": {
+        "at": "2026-09-08T12:52:04.169408+00:00",
+        "ac_power": true,
+        "low_power_mode": 0,
+        "browser_process_count": 0,
+        "heavy_non_model_processes": [
+          {
+            "process": "python",
+            "cpu": 99.7
+          }
+        ]
+      },
+      "after": {
+        "at": "2026-09-08T12:52:34.259646+00:00",
+        "ac_power": true,
+        "low_power_mode": 0,
+        "browser_process_count": 0,
+        "heavy_non_model_processes": []
+      },
+      "note": "Setup-only observation before settling; the unchanged strict check applies after settling. No processes are exempted and no case has started."
+    }
+  ],
+  "implementation_sha": "29bfec8a662efdd1dd78fe986eb753d655315646",
+  "production_identical_to": "ef847550c80077bf9d785dc2694c1a9d6afb1ed3",
+  "started_at": "2026-09-08T12:52:34.260116+00:00",
+  "dataset_sha256": "f9148a29cb5b0f2da30b6ecf5017a9d6bc4dc9fd31523643557b93906646ad7c",
+  "optimization_manifest_sha256": "653a65e778a5633c4d1adc2d90ea7a56a578b81695e69d679f9d69915e54bec0",
+  "quality_approval": {
+    "status": "approved_for_narrow_semantic_v2_baseline",
+    "pull_request": 31,
+    "review_comment_id": 5579446066,
+    "review_url": "https://github.com/syang620/Finsearch-reboot/pull/31#issuecomment-5579446066",
+    "review_body_sha256": "8be1870876f87cf6f906128e90349d8f3869b6be12a1ad07980102e68c79aabd",
+    "reviewed_commit": "a73ce7535c00ab67d9b7c5ede65a18708f883840",
+    "optimization_manifest_sha256": "653a65e778a5633c4d1adc2d90ea7a56a578b81695e69d679f9d69915e54bec0"
+  },
+  "controls_before": {
+    "at": "2026-09-08T12:51:58.707505+00:00",
+    "ac_power": true,
+    "low_power_mode": 0,
+    "browser_process_count": 0,
+    "heavy_non_model_processes": []
+  },
+  "service_preflight": {
+    "ollama_version": {
+      "version": "0.33.2"
+    },
+    "model_identities": {
+      "qwen2.5:14b-instruct": {
+        "name": "qwen2.5:14b-instruct",
+        "digest": "7cdf5a0187d5c58cc5d369b255592f7841d1c4696d45a8c8a9489440385b22f6",
+        "size": 8988124069
+      },
+      "qwen3-embedding:8b": {
+        "name": "qwen3-embedding:8b",
+        "digest": "64b933495768fbd3b87c20583d379728a07471e0c66733a9df87cd1901b3c44b",
+        "size": 4676805193
+      }
+    },
+    "qdrant_service": {
+      "title": "qdrant - vector search engine",
+      "version": "1.16.2",
+      "commit": "d2834de0b51be23a7b22b023e424cbb9456d0e75"
+    },
+    "qdrant_health": {
+      "status_code": 200,
+      "wall_ms": 2.784999960567802
+    },
+    "sec_health": {
+      "status_code": 200,
+      "wall_ms": 78.78891698783264
+    },
+    "reranker_health": {
+      "wall_ms": 990.9950419678353,
+      "metadata": {
+        "selected_backend": "qwen3_api",
+        "applied_backend": "qwen3_api",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "requested_model": "Qwen/Qwen3-Reranker-8B",
+      "served_model_digest": null
+    },
+    "preflight_note": "Non-benchmark health probe only; requested reranker model recorded, provider does not expose a weight digest. This warms the service and is outside case latency."
+  },
+  "hardware": {
+    "platform": "Darwin",
+    "machine": "arm64",
+    "os_release": "25.6.0",
+    "hw.model": "Mac16,1",
+    "hw.memsize": "34359738368",
+    "hw.ncpu": "10",
+    "machdep.cpu.brand_string": "Apple M4"
+  },
+  "environment": {
+    "reranker_model": "Qwen/Qwen3-Reranker-8B",
+    "reranker_url": "https://dashscope.aliyuncs.com/api/v1/services/rerank/text-rerank/text-rerank",
+    "reranker_service_digest": null,
+    "sec_mode": "unchanged live SEC client; contact supplied locally, redacted",
+    "resources": {
+      "QDRANT_COLLECTION_NAME": "finsearch_benchmark_v2_39c8d01ee5c71710",
+      "QDRANT_HOST": "127.0.0.1",
+      "QDRANT_PORT": "6333",
+      "QWEN3_EMBED_API_URL": "http://127.0.0.1:11434/api/embed",
+      "OLLAMA_BASE_URL": "http://127.0.0.1:11434"
+    }
+  },
+  "schedule": [
+    "SEM2_MSFT_2024_05",
+    "SEM2_MSFT_2025_04",
+    "SEM2_AMZN_2023_01",
+    "SEM2_AAPL_2024_10",
+    "SEM2_MSFT_2025_06",
+    "SEM2_AMZN_2023_02",
+    "SEM2_AMZN_2024_09",
+    "SEM2_AMZN_2024_08",
+    "SEM2_MSFT_2025_01",
+    "SEM2_AMZN_2024_02",
+    "SEM2_AAPL_2024_02",
+    "SEM2_AAPL_2024_05",
+    "SEM2_MSFT_2024_10",
+    "SEM2_AMZN_2023_05",
+    "SEM2_MSFT_2025_07",
+    "SEM2_AMZN_2023_06",
+    "SEM2_AMZN_2024_06",
+    "SEM2_AAPL_2024_06",
+    "SEM2_MSFT_2024_06",
+    "SEM2_AAPL_2024_07",
+    "SEM2_AMZN_2023_08",
+    "SEM2_AAPL_2025_08",
+    "SEM2_AMZN_2024_05",
+    "SEM2_AAPL_2025_10",
+    "SEM2_AAPL_2024_09",
+    "SEM2_MSFT_2024_03",
+    "SEM2_MSFT_2024_09",
+    "SEM2_AMZN_2024_01",
+    "SEM2_AMZN_2023_10",
+    "SEM2_MSFT_2025_08",
+    "SEM2_MSFT_2024_04",
+    "SEM2_AAPL_2025_02",
+    "SEM2_MSFT_2025_03",
+    "SEM2_MSFT_2024_02",
+    "SEM2_AAPL_2024_03",
+    "SEM2_MSFT_2024_08",
+    "SEM2_AAPL_2024_04",
+    "SEM2_MSFT_2024_01",
+    "SEM2_MSFT_2025_05",
+    "SEM2_AAPL_2024_01",
+    "SEM2_AMZN_2023_04",
+    "SEM2_AMZN_2024_07",
+    "SEM2_AAPL_2025_09",
+    "SEM2_AMZN_2024_04",
+    "SEM2_AMZN_2023_03",
+    "SEM2_AAPL_2025_01",
+    "SEM2_MSFT_2025_09",
+    "SEM2_AAPL_2024_08",
+    "SEM2_AMZN_2024_03",
+    "SEM2_AAPL_2025_07",
+    "SEM2_AMZN_2023_09",
+    "SEM2_AAPL_2025_06",
+    "SEM2_AMZN_2024_10",
+    "SEM2_MSFT_2024_07",
+    "SEM2_MSFT_2025_02",
+    "SEM2_AAPL_2025_04",
+    "SEM2_AMZN_2023_07",
+    "SEM2_AAPL_2025_03",
+    "SEM2_AAPL_2025_05",
+    "SEM2_MSFT_2025_10"
+  ],
+  "dataset_composition": {
+    "status": "DRAFT_NOT_OPTIMIZATION_FROZEN",
+    "cases": 60,
+    "v1_required_claims": 86,
+    "v2_required_claims": 119,
+    "issuers": {
+      "AAPL": 20,
+      "AMZN": 20,
+      "MSFT": 20
+    },
+    "filings": {
+      "AAPL:2024": 10,
+      "AAPL:2025": 10,
+      "AMZN:2023": 10,
+      "AMZN:2024": 10,
+      "MSFT:2024": 10,
+      "MSFT:2025": 10
+    },
+    "strata": {
+      "structured_numeric": 12,
+      "narrative": 6,
+      "hybrid": 6,
+      "comparison": 6,
+      "calculator": 6,
+      "multiple_claims": 6,
+      "difficult_attribution": 6,
+      "plausible_wrong_evidence": 6,
+      "insufficient_data": 6
+    },
+    "normalized_question_families": 30,
+    "required_claim_families": {
+      "revenue": 36,
+      "cash_and_cash_equivalents": 6,
+      "AAPL:policy:definition": 2,
+      "AAPL:growth_drivers:advertising": 2,
+      "AAPL:growth_drivers:app_store": 2,
+      "AAPL:growth_drivers:cloud": 2,
+      "revenue_growth_percent": 6,
+      "AAPL:business_or_governance:sourcing": 2,
+      "AAPL:risk:supply": 2,
+      "AAPL:risk:pricing": 2,
+      "AAPL:attribution:mix": 2,
+      "services_gross_margin_percent": 2,
+      "AAPL:attribution:cost_offset": 1,
+      "AMZN:policy:received": 2,
+      "AMZN:policy:due": 2,
+      "AMZN:policy:recognition": 2,
+      "AMZN:growth_drivers:usage": 2,
+      "AMZN:growth_drivers:pricing_offset": 2,
+      "AMZN:growth_drivers:contracts": 2,
+      "AMZN:business_or_governance:networks": 2,
+      "AMZN:business_or_governance:partners": 2,
+      "AMZN:business_or_governance:digital": 2,
+      "AMZN:business_or_governance:stores": 2,
+      "AMZN:risk:carrier_risk": 2,
+      "AMZN:attribution:usage": 2,
+      "AMZN:attribution:offset": 2,
+      "aws_leased_area": 2,
+      "aws_owned_area": 2,
+      "MSFT:policy:definition": 2,
+      "MSFT:growth_drivers:intelligent_cloud": 2,
+      "MSFT:growth_drivers:productivity": 2,
+      "MSFT:growth_drivers:personal_computing": 2,
+      "MSFT:business_or_governance:board": 2,
+      "MSFT:business_or_governance:cadence": 2,
+      "MSFT:risk:evolution": 2,
+      "MSFT:attribution:gaming": 2,
+      "MSFT:attribution:cloud": 2,
+      "MSFT:attribution:acquisition": 2,
+      "research_and_development": 2
+    },
+    "numeric_metric_distribution": {
+      "revenue": 36,
+      "cash_and_cash_equivalents": 6,
+      "revenue_growth_percent": 6,
+      "services_gross_margin_percent": 2,
+      "aws_leased_area": 2,
+      "aws_owned_area": 2,
+      "research_and_development": 2
+    },
+    "numeric_source_scopes": {
+      "fact_period_equivalent": 22,
+      "named_filing": 34
+    },
+    "explicit_equivalent_source_alternatives": 9,
+    "shared_evidence_groups": {
+      "AAPL_10-K_2024::table::5": [
+        "SEM2_AAPL_2024_09"
+      ],
+      "AAPL_10-K_2024::text::14::split::1": [
+        "SEM2_AAPL_2024_07"
+      ],
+      "AAPL_10-K_2024::text::32": [
+        "SEM2_AAPL_2024_04"
+      ],
+      "AAPL_10-K_2024::text::33": [
+        "SEM2_AAPL_2024_08"
+      ],
+      "AAPL_10-K_2024::text::46": [
+        "SEM2_AAPL_2024_03"
+      ],
+      "AAPL_10-K_2024::text::6": [
+        "SEM2_AAPL_2024_07"
+      ],
+      "AAPL_10-K_2024::text::75": [
+        "SEM2_AAPL_2024_07"
+      ],
+      "AAPL_10-K_2025::table::5": [
+        "SEM2_AAPL_2025_09"
+      ],
+      "AAPL_10-K_2025::text::14::split::0": [
+        "SEM2_AAPL_2025_07"
+      ],
+      "AAPL_10-K_2025::text::33": [
+        "SEM2_AAPL_2025_04"
+      ],
+      "AAPL_10-K_2025::text::34": [
+        "SEM2_AAPL_2025_08"
+      ],
+      "AAPL_10-K_2025::text::48": [
+        "SEM2_AAPL_2025_03"
+      ],
+      "AAPL_10-K_2025::text::6": [
+        "SEM2_AAPL_2025_07"
+      ],
+      "AAPL_10-K_2025::text::77": [
+        "SEM2_AAPL_2025_07"
+      ],
+      "AAPL_2024:cash_and_cash_equivalents:instant:2024-09-28": [
+        "SEM2_AAPL_2024_02"
+      ],
+      "AAPL_2024:revenue:2022-09-25:2023-09-30": [
+        "SEM2_AAPL_2024_05",
+        "SEM2_AAPL_2024_06"
+      ],
+      "AAPL_2024:revenue:2023-10-01:2024-09-28": [
+        "SEM2_AAPL_2024_01",
+        "SEM2_AAPL_2024_04",
+        "SEM2_AAPL_2024_05",
+        "SEM2_AAPL_2024_06"
+      ],
+      "AAPL_2025:cash_and_cash_equivalents:instant:2024-09-28": [
+        "SEM2_AAPL_2024_02"
+      ],
+      "AAPL_2025:cash_and_cash_equivalents:instant:2025-09-27": [
+        "SEM2_AAPL_2025_02"
+      ],
+      "AAPL_2025:revenue:2023-10-01:2024-09-28": [
+        "SEM2_AAPL_2024_01",
+        "SEM2_AAPL_2024_04",
+        "SEM2_AAPL_2025_05",
+        "SEM2_AAPL_2025_06"
+      ],
+      "AAPL_2025:revenue:2024-09-29:2025-09-27": [
+        "SEM2_AAPL_2025_01",
+        "SEM2_AAPL_2025_04",
+        "SEM2_AAPL_2025_05",
+        "SEM2_AAPL_2025_06"
+      ],
+      "AMZN_10-K_2023::table::3": [
+        "SEM2_AMZN_2023_09"
+      ],
+      "AMZN_10-K_2023::text::1": [
+        "SEM2_AMZN_2023_07"
+      ],
+      "AMZN_10-K_2023::text::15::split::3": [
+        "SEM2_AMZN_2023_07"
+      ],
+      "AMZN_10-K_2023::text::23::split::0": [
+        "SEM2_AMZN_2023_04",
+        "SEM2_AMZN_2023_08"
+      ],
+      "AMZN_10-K_2023::text::26::split::7": [
+        "SEM2_AMZN_2023_03"
+      ],
+      "AMZN_10-K_2024::table::3": [
+        "SEM2_AMZN_2024_09"
+      ],
+      "AMZN_10-K_2024::text::1": [
+        "SEM2_AMZN_2024_07"
+      ],
+      "AMZN_10-K_2024::text::15::split::2": [
+        "SEM2_AMZN_2024_07"
+      ],
+      "AMZN_10-K_2024::text::15::split::3": [
+        "SEM2_AMZN_2024_07"
+      ],
+      "AMZN_10-K_2024::text::23::split::0": [
+        "SEM2_AMZN_2024_04",
+        "SEM2_AMZN_2024_08"
+      ],
+      "AMZN_10-K_2024::text::26::split::9": [
+        "SEM2_AMZN_2024_03"
+      ],
+      "AMZN_2023:cash_and_cash_equivalents:instant:2023-12-31": [
+        "SEM2_AMZN_2023_02"
+      ],
+      "AMZN_2023:revenue:2022-01-01:2022-12-31": [
+        "SEM2_AMZN_2023_05",
+        "SEM2_AMZN_2023_06"
+      ],
+      "AMZN_2023:revenue:2023-01-01:2023-12-31": [
+        "SEM2_AMZN_2023_01",
+        "SEM2_AMZN_2023_04",
+        "SEM2_AMZN_2023_05",
+        "SEM2_AMZN_2023_06"
+      ],
+      "AMZN_2024:cash_and_cash_equivalents:instant:2023-12-31": [
+        "SEM2_AMZN_2023_02"
+      ],
+      "AMZN_2024:cash_and_cash_equivalents:instant:2024-12-31": [
+        "SEM2_AMZN_2024_02"
+      ],
+      "AMZN_2024:revenue:2023-01-01:2023-12-31": [
+        "SEM2_AMZN_2023_01",
+        "SEM2_AMZN_2023_04",
+        "SEM2_AMZN_2024_05",
+        "SEM2_AMZN_2024_06"
+      ],
+      "AMZN_2024:revenue:2024-01-01:2024-12-31": [
+        "SEM2_AMZN_2024_01",
+        "SEM2_AMZN_2024_04",
+        "SEM2_AMZN_2024_05",
+        "SEM2_AMZN_2024_06"
+      ],
+      "MSFT_10-K_2024::table::18": [
+        "SEM2_MSFT_2024_09"
+      ],
+      "MSFT_10-K_2024::table::9": [
+        "SEM2_MSFT_2024_09"
+      ],
+      "MSFT_10-K_2024::text::0::split::19": [
+        "SEM2_MSFT_2024_07"
+      ],
+      "MSFT_10-K_2024::text::0::split::20": [
+        "SEM2_MSFT_2024_07"
+      ],
+      "MSFT_10-K_2024::text::0::split::42": [
+        "SEM2_MSFT_2024_07"
+      ],
+      "MSFT_10-K_2024::text::12::split::3": [
+        "SEM2_MSFT_2024_03"
+      ],
+      "MSFT_10-K_2024::text::12::split::4": [
+        "SEM2_MSFT_2024_03"
+      ],
+      "MSFT_10-K_2024::text::5::split::2": [
+        "SEM2_MSFT_2024_04"
+      ],
+      "MSFT_10-K_2024::text::5::split::3": [
+        "SEM2_MSFT_2024_08"
+      ],
+      "MSFT_10-K_2025::table::17": [
+        "SEM2_MSFT_2025_09"
+      ],
+      "MSFT_10-K_2025::table::9": [
+        "SEM2_MSFT_2025_09"
+      ],
+      "MSFT_10-K_2025::text::0::split::26": [
+        "SEM2_MSFT_2025_07"
+      ],
+      "MSFT_10-K_2025::text::0::split::27": [
+        "SEM2_MSFT_2025_07"
+      ],
+      "MSFT_10-K_2025::text::0::split::48": [
+        "SEM2_MSFT_2025_07"
+      ],
+      "MSFT_10-K_2025::text::11::split::7": [
+        "SEM2_MSFT_2025_03"
+      ],
+      "MSFT_10-K_2025::text::11::split::9": [
+        "SEM2_MSFT_2025_03"
+      ],
+      "MSFT_10-K_2025::text::5::split::2": [
+        "SEM2_MSFT_2025_04"
+      ],
+      "MSFT_10-K_2025::text::5::split::3": [
+        "SEM2_MSFT_2025_08"
+      ],
+      "MSFT_2024:cash_and_cash_equivalents:instant:2024-06-30": [
+        "SEM2_MSFT_2024_02"
+      ],
+      "MSFT_2024:revenue:2022-07-01:2023-06-30": [
+        "SEM2_MSFT_2024_05",
+        "SEM2_MSFT_2024_06"
+      ],
+      "MSFT_2024:revenue:2023-07-01:2024-06-30": [
+        "SEM2_MSFT_2024_01",
+        "SEM2_MSFT_2024_04",
+        "SEM2_MSFT_2024_05",
+        "SEM2_MSFT_2024_06"
+      ],
+      "MSFT_2025:cash_and_cash_equivalents:instant:2024-06-30": [
+        "SEM2_MSFT_2024_02"
+      ],
+      "MSFT_2025:cash_and_cash_equivalents:instant:2025-06-30": [
+        "SEM2_MSFT_2025_02"
+      ],
+      "MSFT_2025:revenue:2023-07-01:2024-06-30": [
+        "SEM2_MSFT_2024_01",
+        "SEM2_MSFT_2024_04",
+        "SEM2_MSFT_2025_05",
+        "SEM2_MSFT_2025_06"
+      ],
+      "MSFT_2025:revenue:2024-07-01:2025-06-30": [
+        "SEM2_MSFT_2025_01",
+        "SEM2_MSFT_2025_04",
+        "SEM2_MSFT_2025_05",
+        "SEM2_MSFT_2025_06"
+      ]
+    },
+    "baseline_audit_ids": [
+      "SEM2_AAPL_2024_02",
+      "SEM2_AAPL_2024_04",
+      "SEM2_AAPL_2024_06",
+      "SEM2_AAPL_2024_08",
+      "SEM2_AAPL_2024_10",
+      "SEM2_AAPL_2025_01",
+      "SEM2_AAPL_2025_03",
+      "SEM2_AAPL_2025_05",
+      "SEM2_AAPL_2025_07",
+      "SEM2_AAPL_2025_09",
+      "SEM2_AMZN_2023_01",
+      "SEM2_AMZN_2023_03",
+      "SEM2_AMZN_2023_05",
+      "SEM2_AMZN_2023_07",
+      "SEM2_AMZN_2023_09",
+      "SEM2_AMZN_2024_02",
+      "SEM2_AMZN_2024_04",
+      "SEM2_AMZN_2024_06",
+      "SEM2_AMZN_2024_08",
+      "SEM2_AMZN_2024_10",
+      "SEM2_MSFT_2024_02",
+      "SEM2_MSFT_2024_04",
+      "SEM2_MSFT_2024_06",
+      "SEM2_MSFT_2024_08",
+      "SEM2_MSFT_2024_10",
+      "SEM2_MSFT_2025_01",
+      "SEM2_MSFT_2025_03",
+      "SEM2_MSFT_2025_05",
+      "SEM2_MSFT_2025_07",
+      "SEM2_MSFT_2025_09"
+    ],
+    "membership_added": [],
+    "membership_removed": [],
+    "question_text_changes": [],
+    "limitations": [
+      "Three technology/commerce issuers, six filings; exposed correlated question families, not an unseen or cross-sector holdout.",
+      "Atomic splitting changes denominators; v1 to v2 is measurement correction, not system improvement.",
+      "No independent human financial annotation. Source-first assistant adjudication requires external review."
+    ]
+  },
+  "runtime_config": {
+    "planner_model": "ollama/qwen2.5:14b-instruct",
+    "analyst_model": "ollama/qwen2.5:14b-instruct",
+    "model_digest": "7cdf5a0187d5c58cc5d369b255592f7841d1c4696d45a8c8a9489440385b22f6",
+    "embedding_model": "qwen3-embedding:8b",
+    "embedding_digest": "64b933495768fbd3b87c20583d379728a07471e0c66733a9df87cd1901b3c44b",
+    "reranker_model": "Qwen/Qwen3-Reranker-8B",
+    "collection": "finsearch_benchmark_v2_39c8d01ee5c71710",
+    "historical_collection": "sec_docs_dense_bm25_pr2_63dcec0",
+    "order_seed": 20260907
+  },
+  "historical_runtime_config_sha256": "6a7ea765e0271dc341abc80f48a8b94dbd0bf1ca260ea30f4abecd7e334664b2",
+  "python": "3.11.14",
+  "packages": {
+    "pytest": "9.0.2",
+    "requests": "2.32.5",
+    "qdrant-client": "1.16.1",
+    "langchain-ollama": "1.0.1"
+  },
+  "index_before": {
+    "points": 948,
+    "payload_vectors_sha256": "641f5ee5c465daaa7106717eb4e4a8a4e145cdfd04e4e8afd202a892d2e53630",
+    "config": {
+      "params": {
+        "vectors": {
+          "dense": {
+            "size": 4096,
+            "distance": "Cosine",
+            "hnsw_config": null,
+            "quantization_config": null,
+            "on_disk": null,
+            "datatype": null,
+            "multivector_config": null
+          }
+        },
+        "shard_number": 1,
+        "sharding_method": null,
+        "replication_factor": 1,
+        "write_consistency_factor": 1,
+        "read_fan_out_factor": null,
+        "on_disk_payload": true,
+        "sparse_vectors": {
+          "bm25": {
+            "index": null,
+            "modifier": "idf"
+          }
+        }
+      },
+      "hnsw_config": {
+        "m": 16,
+        "ef_construct": 100,
+        "full_scan_threshold": 10000,
+        "max_indexing_threads": 0,
+        "on_disk": false,
+        "payload_m": null,
+        "inline_storage": null
+      },
+      "optimizer_config": {
+        "deleted_threshold": 0.2,
+        "vacuum_min_vector_number": 1000,
+        "default_segment_number": 0,
+        "max_segment_size": null,
+        "memmap_threshold": null,
+        "indexing_threshold": 10000,
+        "flush_interval_sec": 5,
+        "max_optimization_threads": null
+      },
+      "wal_config": {
+        "wal_capacity_mb": 32,
+        "wal_segments_ahead": 0,
+        "wal_retain_closed": 1
+      },
+      "quantization_config": null,
+      "strict_mode_config": null,
+      "metadata": null
+    }
+  },
+  "historical_index_before": {
+    "points": 582,
+    "payload_vectors_sha256": "20a0f405d66ffa20ca8789f915bfb6e7d9891b00363fdef7c01e522b7e3ed892",
+    "config": {
+      "params": {
+        "vectors": {
+          "dense": {
+            "size": 4096,
+            "distance": "Cosine",
+            "hnsw_config": null,
+            "quantization_config": null,
+            "on_disk": null,
+            "datatype": null,
+            "multivector_config": null
+          }
+        },
+        "shard_number": 1,
+        "sharding_method": null,
+        "replication_factor": 1,
+        "write_consistency_factor": 1,
+        "read_fan_out_factor": null,
+        "on_disk_payload": true,
+        "sparse_vectors": {
+          "bm25": {
+            "index": null,
+            "modifier": "idf"
+          }
+        }
+      },
+      "hnsw_config": {
+        "m": 16,
+        "ef_construct": 100,
+        "full_scan_threshold": 10000,
+        "max_indexing_threads": 0,
+        "on_disk": false,
+        "payload_m": null,
+        "inline_storage": null
+      },
+      "optimizer_config": {
+        "deleted_threshold": 0.2,
+        "vacuum_min_vector_number": 1000,
+        "default_segment_number": 0,
+        "max_segment_size": null,
+        "memmap_threshold": null,
+        "indexing_threshold": 10000,
+        "flush_interval_sec": 5,
+        "max_optimization_threads": null
+      },
+      "wal_config": {
+        "wal_capacity_mb": 32,
+        "wal_segments_ahead": 0,
+        "wal_retain_closed": 1
+      },
+      "quantization_config": null,
+      "strict_mode_config": null,
+      "metadata": null
+    }
+  },
+  "index_origin": {
+    "manifest_path": "artifacts/evals/retrieval/benchmark_v2/baselines/2d50cfe0dc7b624676b472b7407aab7dc11f9648/manifest.json",
+    "manifest_sha256": "625047fc2cb5039ec0ee44af4979e7c2ee5bde32b6587a286d04658dce54219e",
+    "build": {
+      "collection": "finsearch_benchmark_v2_39c8d01ee5c71710",
+      "corpus_sha256": "39c8d01ee5c71710e443e49698957d2aa991e71c16ad79905e7bd07d6a11fe4d",
+      "qdrant_url": "http://127.0.0.1:6333",
+      "embedding_url": "http://127.0.0.1:11434/api/embed",
+      "embedding_model": "qwen3-embedding:8b",
+      "embedding_digest": "64b933495768fbd3b87c20583d379728a07471e0c66733a9df87cd1901b3c44b",
+      "bm25_model": "Qdrant/bm25",
+      "bm25_avg_len": 339.87974683544303,
+      "validation": {
+        "queries": 126,
+        "answerable": 120,
+        "excluded": 6,
+        "documents": 948,
+        "missing_labels": 0,
+        "strata": {
+          "business_growth": 12,
+          "direct_fact": 18,
+          "hard_negative": 12,
+          "mda": 12,
+          "multi_evidence": 12,
+          "narrative": 12,
+          "paraphrase": 12,
+          "risk_factors": 18,
+          "section_specific": 12,
+          "unanswerable": 6
+        }
+      },
+      "started_at": "2026-09-06T14:18:09.418067+00:00",
+      "completed": true,
+      "batch_size": 8,
+      "production_collection_mutated": false,
+      "wall_seconds": 2998.6024508329865,
+      "finished_at": "2026-09-06T15:08:07.967252+00:00",
+      "embedded_sha256": "3bcd4ba8425d604973d694c3793eaae69f6e7c773c895504f5b4a7f57e4faea8",
+      "indexed_points": 948,
+      "qdrant_version": "1.16.2"
+    },
+    "snapshot": {
+      "points": 948,
+      "payload_vectors_sha256": "641f5ee5c465daaa7106717eb4e4a8a4e145cdfd04e4e8afd202a892d2e53630",
+      "config": {
+        "params": {
+          "vectors": {
+            "dense": {
+              "size": 4096,
+              "distance": "Cosine",
+              "hnsw_config": null,
+              "quantization_config": null,
+              "on_disk": null,
+              "datatype": null,
+              "multivector_config": null
+            }
+          },
+          "shard_number": 1,
+          "sharding_method": null,
+          "replication_factor": 1,
+          "write_consistency_factor": 1,
+          "read_fan_out_factor": null,
+          "on_disk_payload": true,
+          "sparse_vectors": {
+            "bm25": {
+              "index": null,
+              "modifier": "idf"
+            }
+          }
+        },
+        "hnsw_config": {
+          "m": 16,
+          "ef_construct": 100,
+          "full_scan_threshold": 10000,
+          "max_indexing_threads": 0,
+          "on_disk": false,
+          "payload_m": null,
+          "inline_storage": null
+        },
+        "optimizer_config": {
+          "deleted_threshold": 0.2,
+          "vacuum_min_vector_number": 1000,
+          "default_segment_number": 0,
+          "max_segment_size": null,
+          "memmap_threshold": null,
+          "indexing_threshold": 10000,
+          "flush_interval_sec": 5,
+          "max_optimization_threads": null
+        },
+        "wal_config": {
+          "wal_capacity_mb": 32,
+          "wal_segments_ahead": 0,
+          "wal_retain_closed": 1
+        },
+        "quantization_config": null,
+        "strict_mode_config": null,
+        "metadata": null
+      }
+    },
+    "capture_scope": "earliest archived post-build v2 snapshot; not a new v3 live fingerprint"
+  },
+  "policy": "One sequential pass, unchanged runtime retries and 120s analyst timeout; no harness retries or clarification follow-ups; preserve all failures."
+}

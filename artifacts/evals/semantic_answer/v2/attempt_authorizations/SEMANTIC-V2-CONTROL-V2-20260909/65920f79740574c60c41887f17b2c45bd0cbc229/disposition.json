@@ -1,0 +1,16 @@
+{
+  "status": "invalid_diagnostic",
+  "official_baseline_eligible": false,
+  "authorization_id": "SEMANTIC-V2-CONTROL-V2-20260909",
+  "implementation_sha": "65920f79740574c60c41887f17b2c45bd0cbc229",
+  "captured_semantic_cases": 0,
+  "monitor_activated": false,
+  "runner_staging_created": false,
+  "failure_boundary": "after the first fixed 30-second setup-settling message and before the settled workload-control-v2 activation boundary",
+  "recorded_error": "RuntimeError: Workload-control-v2 did not reach the settled activation boundary",
+  "causal_limit": "The v2.2 launcher masked the original pre-activation exception with the recorded generic RuntimeError. The preserved evidence cannot distinguish a hard-control refusal from a service/preflight failure, and present machine state is not evidence of the historical state.",
+  "console_log_sha256": "085fd4eaccb7a0cf272e89c62ff5ad4240c32b866487fa2ec4e189fc4176faa2",
+  "publication_scope": "The local console log is retained outside Git because it contains local absolute paths. This public disposition records only the bounded failure class and its hash.",
+  "retry_rule": "The authorization remains consumed. The second invocation was correctly refused by the existing exclusive marker. No marker reset, retry, semantic relabeling, or baseline result is authorized.",
+  "follow_up": "Correct exception propagation without changing semantic behavior. Any future attempt requires a new explicit authorization, clean implementation freeze, and fresh review."
+}

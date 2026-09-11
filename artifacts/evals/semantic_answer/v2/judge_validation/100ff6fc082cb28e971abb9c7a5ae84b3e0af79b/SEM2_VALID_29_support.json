@@ -1,0 +1,80 @@
+{
+  "fixture_id": "SEM2_VALID_29",
+  "repeat": false,
+  "phase": "support",
+  "started_at": "2026-09-08T04:25:52.644664+00:00",
+  "packet": {
+    "question": "Does Microsoft's FY2025 10-K attribute the increase in R&D expense solely to AI? Identify the other stated drivers and acquisition context.",
+    "answer": {
+      "status": "ok",
+      "answer": "Gaming contributed to Microsoft\u2019s R&D expense increase, and the filing says the acquisition of Apple was the reason.",
+      "claims": [
+        {
+          "claim_id": "c1",
+          "claim_type": "attribution",
+          "context_ids": [
+            "e1"
+          ],
+          "text": "Gaming contributed to Microsoft\u2019s R&D expense increase, and the filing says the acquisition of Apple was the reason."
+        }
+      ],
+      "compare_rows": [],
+      "computation": null
+    },
+    "cited_contexts": [
+      {
+        "context_id": "e1",
+        "kind": "text",
+        "source": {
+          "chunk_index": 5,
+          "doc_id": "MSFT_10-K_2025::text::5::split::3",
+          "doc_type": "text_chunk",
+          "fiscal_year": 2025,
+          "form_type": "10-K",
+          "item_id": "Item 6",
+          "section_path": "Item 6 > FINANCIAL CONDITION AND RESULTS OF OPERATIONS",
+          "source_html": "data/html_filings/MSFT/10-K/10-K_2025.html",
+          "source_sha256": "99d693f6c1544144ebeee92954f151a85bc62111837530a42855953bc01d0bbe",
+          "split_index": 3,
+          "ticker": "MSFT"
+        },
+        "evidence": "Item 6 > FINANCIAL CONDITION AND RESULTS OF OPERATIONS\n\nRevenue increased $18.8 billion or 21%.\u2022Server products and cloud services revenue increased $18.6 billion or 23% driven by Azure and other cloud services. Azure and other cloud services revenue grew 34% driven by demand for our portfolio of services. Server products revenue decreased 3% driven by a decrease in transactional purchasing with continued customer shift to cloud offerings.\u2022Enterprise and partner services revenue increased $166 million or 2% driven by growth in Enterprise Support Services, offset in part by a decline in Industry Solutions.Operating income increased $6.8 billion or 18%.\u2022Cost of revenue increased $10.6 billion or 36% driven by growth in Azure.\u2022Gross margin increased $8.2 billion or 14% driven by growth in Azure. Gross margin percentage decreased driven by the impact of scaling our AI infrastructure, offset in part by efficiency gains in Azure.\u2022Operating expenses increased $1.5 billion or 7% driven by investments in cloud and AI engineering.\n\nRevenue increased $3.8 billion or 7%.\u2022Windows and Devices revenue increased $288 million or 2%. Windows OEM and Devices revenue increased 3% driven by growth in Windows OEM, offset in part by a decline in Devices. \u2022Gaming revenue increased $2.0 billion or 9% driven by growth in Xbox content and services, offset in part by a decline in Xbox hardware. Xbox content and services revenue increased 16% driven by the impact of the Activision Blizzard acquisition and Xbox Game Pass. Xbox hardware revenue decreased 25% driven by lower volume of consoles sold.\u2022Search and news advertising revenue increased $1.6 billion or 13%. Search and news advertising revenue excluding traffic acquisition costs increased 20% driven by higher search volume and higher revenue per search.Operating income increased $2.2 billion or 18%.\u2022Cost of revenue increased $346 million or 1% driven by growth in Search and news advertising. \u2022Gross margin increased $3.5 billion or 13% with growth across all businesses. Gross margin percentage increased with improvement across all businesses.\u2022Operating expenses increased $1.3 billion or 9% driven by Gaming, including the impact of the Activision Blizzard acquisition.\n\nResearch and development expenses include payroll, employee benefits, stock-based compensation expense, and other headcount-related expenses associated with product development. Research and development expenses also include technology development costs, including AI training and other infrastructure costs, third-party development and programming costs, and the amortization of purchased software code and services content.\n\nResearch and development expenses increased $3.0 billion or 10% driven by investments in cloud and AI engineering and Gaming, including the impact of the Activision Blizzard acquisition.\n\nSales and marketing expenses include payroll, employee benefits, stock-based compensation expense, and other headcount-related expenses associated with sales and marketing personnel, and the costs of advertising, promotions, trade shows, seminars, and other programs.Sales and marketing expenses increased $1.2 billion or 5% driven by investments in commercial sales and Gaming, including the impact of the Activision Blizzard acquisition.\n\nGeneral and administrative expenses include payroll, employee benefits, stock-based compensation expense, employee severance expense incurred as part of a corporate program, and other headcount-related expenses associated with finance, legal, facilities, certain human resources and other administrative personnel, certain taxes, and legal and other administrative fees.General and administrative expenses decreased $386 million or 5% driven by Gaming, including the impact of the Activision Blizzard acquisition.\n\nThe components of other income (expense), net were as follows:\n\nWe use derivative instruments to manage risks related to foreign currencies, interest rates, equity prices, and credit; to enhance investment returns; and to facilitate portfolio diversification. Gains and losses from changes in fair values of derivatives that are not designated as hedging instruments are primarily recognized in other income (expense), net."
+      }
+    ]
+  },
+  "raw_response": {
+    "model": "gemma4:e4b",
+    "created_at": "2026-09-08T04:26:05.922412Z",
+    "message": {
+      "role": "assistant",
+      "content": "{\"claims\": [{\"claim_id\": \"c1\", \"support\": \"unsupported\", \"reason\": \"The claim asserts that 'Gaming contributed to Microsoft\\u2019s R&D expense increase, and the filing says the acquisition of Apple was the reason.' The provided evidence states that R&D expenses increased due to 'investments in cloud and AI engineering and Gaming, including the impact of the Activision Blizzard acquisition.' There is no mention of an acquisition of Apple as the reason for the R&D expense increase.\", \"evidence_quotes\": [{\"context_id\": \"e1\", \"quote\": \"Research and development expenses increased $3.0 billion or 10% driven by investments in cloud and AI engineering and Gaming, including the impact of the Activision Blizzard acquisition.\"}]}], \"unbound_factual_prose\": false, \"reason\": \"The claim incorrectly attributes the reason for the R&D expense increase to the acquisition of Apple. The evidence attributes the increase to investments in cloud and AI engineering and Gaming, including the impact of the Activision Blizzard acquisition.\"}"
+    },
+    "done": true,
+    "done_reason": "stop",
+    "total_duration": 13276365875,
+    "load_duration": 2110875,
+    "prompt_eval_count": 1844,
+    "prompt_eval_duration": 5538542000,
+    "eval_count": 224,
+    "eval_duration": 7724134000
+  },
+  "validated": {
+    "claims": [
+      {
+        "claim_id": "c1",
+        "support": "unsupported",
+        "reason": "The claim asserts that 'Gaming contributed to Microsoft\u2019s R&D expense increase, and the filing says the acquisition of Apple was the reason.' The provided evidence states that R&D expenses increased due to 'investments in cloud and AI engineering and Gaming, including the impact of the Activision Blizzard acquisition.' There is no mention of an acquisition of Apple as the reason for the R&D expense increase.",
+        "evidence_quotes": [
+          {
+            "context_id": "e1",
+            "quote": "Research and development expenses increased $3.0 billion or 10% driven by investments in cloud and AI engineering and Gaming, including the impact of the Activision Blizzard acquisition."
+          }
+        ]
+      }
+    ],
+    "unbound_factual_prose": false,
+    "reason": "The claim incorrectly attributes the reason for the R&D expense increase to the acquisition of Apple. The evidence attributes the increase to investments in cloud and AI engineering and Gaming, including the impact of the Activision Blizzard acquisition."
+  },
+  "wall_ms": 13278.024874976836,
+  "finished_at": "2026-09-08T04:26:05.922670+00:00"
+}

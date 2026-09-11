@@ -1,0 +1,80 @@
+{
+  "fixture_id": "SEM2_VALID_10",
+  "repeat": false,
+  "phase": "support",
+  "started_at": "2026-09-08T04:16:57.288995+00:00",
+  "packet": {
+    "question": "What Services gross-margin percentage did Apple report for FY2024? Give the percentage, not the Services gross-profit dollar amount.",
+    "answer": {
+      "status": "ok",
+      "answer": "Apple FY2024 Services gross-margin percentage was 73.9%.",
+      "claims": [
+        {
+          "claim_id": "c1",
+          "claim_type": "kb_numeric",
+          "context_ids": [
+            "e1"
+          ],
+          "metric_id": "services_gross_margin_percent",
+          "text": "Apple FY2024 Services gross-margin percentage was 73.9%."
+        }
+      ],
+      "compare_rows": [],
+      "computation": null
+    },
+    "cited_contexts": [
+      {
+        "context_id": "e1",
+        "kind": "table",
+        "source": {
+          "doc_id": "AAPL_10-K_2024::table::5",
+          "doc_type": "table",
+          "fiscal_year": 2024,
+          "form_type": "10-K",
+          "item_id": "6",
+          "section_path": "PART II > Item 6. [Reserved] > Gross Margin",
+          "source_html": "data/html_filings/AAPL/10-K/10-K_2024.html",
+          "source_sha256": "24a830a0f1256e371d36a1f7f72e5e85a38037d1de2f6f966eb8457db42ff6d6",
+          "table_index": 5,
+          "ticker": "AAPL"
+        },
+        "evidence": "matched_row: source table evidence\n\n|    |   columns | data                                                         |   index |\n|---:|----------:|:-------------------------------------------------------------|--------:|\n|  0 |         1 | ['Gross margin percentage:', '', '', '']                     |       0 |\n|  1 |         2 | ['Products', '37.2%', '36.5%', '36.3%']                      |       1 |\n|  2 |         3 | ['Services', '73.9%', '70.8%', '71.7%']                      |       2 |\n|  3 |         4 | ['Total gross margin percentage', '46.2%', '44.1%', '43.3%'] |       3 |"
+      }
+    ]
+  },
+  "raw_response": {
+    "model": "gemma4:e4b",
+    "created_at": "2026-09-08T04:17:05.753203Z",
+    "message": {
+      "role": "assistant",
+      "content": "{\"claims\":[{\"claim_id\":\"c1\",\"support\":\"fully_supported\",\"reason\":\"The evidence table shows that for 'Services' in the column corresponding to the fiscal year 2024 (index 2), the 'Gross margin percentage' is '73.9%'.\",\"evidence_quotes\":[{\"context_id\":\"e1\",\"quote\":\"|  2 |         3 | ['Services', '73.9%', '70.8%', '71.7%']                      |       2 |\"}]}],\"unbound_factual_prose\":false,\"reason\":\"The claim accurately reports the Services gross-margin percentage for FY2024 as found in the provided table evidence.\"}"
+    },
+    "done": true,
+    "done_reason": "stop",
+    "total_duration": 8463142917,
+    "load_duration": 838208,
+    "prompt_eval_count": 1097,
+    "prompt_eval_duration": 3357930000,
+    "eval_count": 149,
+    "eval_duration": 5095619000
+  },
+  "validated": {
+    "claims": [
+      {
+        "claim_id": "c1",
+        "support": "fully_supported",
+        "reason": "The evidence table shows that for 'Services' in the column corresponding to the fiscal year 2024 (index 2), the 'Gross margin percentage' is '73.9%'.",
+        "evidence_quotes": [
+          {
+            "context_id": "e1",
+            "quote": "|  2 |         3 | ['Services', '73.9%', '70.8%', '71.7%']                      |       2 |"
+          }
+        ]
+      }
+    ],
+    "unbound_factual_prose": false,
+    "reason": "The claim accurately reports the Services gross-margin percentage for FY2024 as found in the provided table evidence."
+  },
+  "wall_ms": 8464.446625031997,
+  "finished_at": "2026-09-08T04:17:05.753438+00:00"
+}
