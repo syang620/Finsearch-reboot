@@ -452,6 +452,27 @@ def test_frozen_service_provenance_change_is_rejected(monkeypatch):
         raise AssertionError("changed service provenance should fail")
 
 
+def test_review_guard_covers_every_approval_bound_dependency():
+    attestation = Path("docs/evals/index_attestation.json")
+    reviewed = set(launcher.approval_reviewed_paths(attestation))
+    assert {
+        launcher.legacy.PREREGISTRATION,
+        launcher.legacy.CONTROL_CONTRACT,
+        launcher.legacy.CONTROL_IMPLEMENTATION,
+        launcher.legacy.CONTROL_COLLECTOR,
+        launcher.legacy.CONTROL_OBSERVER,
+        launcher.legacy.ADAPTER,
+        launcher.legacy.LAUNCHER,
+        launcher.legacy.FROZEN_PROVENANCE,
+        launcher.canonical.LAUNCHER,
+        launcher.canonical.CANONICAL_VERIFIER,
+        attestation,
+        launcher.LAUNCHER,
+        launcher.ADAPTER,
+        launcher.CONTRACT,
+    } == reviewed
+
+
 class FakeAwake:
     pid = 321
 

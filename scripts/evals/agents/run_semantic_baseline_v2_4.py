@@ -43,6 +43,25 @@ def verify_frozen_performance_dependencies():
             raise ValueError(f"Frozen workload-control-v2 identity changed: {path}")
 
 
+def approval_reviewed_paths(index_attestation):
+    return (
+        legacy.PREREGISTRATION,
+        legacy.CONTROL_CONTRACT,
+        legacy.CONTROL_IMPLEMENTATION,
+        legacy.CONTROL_COLLECTOR,
+        legacy.CONTROL_OBSERVER,
+        legacy.ADAPTER,
+        legacy.LAUNCHER,
+        legacy.FROZEN_PROVENANCE,
+        canonical.LAUNCHER,
+        canonical.CANONICAL_VERIFIER,
+        Path(index_attestation),
+        LAUNCHER,
+        ADAPTER,
+        CONTRACT,
+    )
+
+
 def verify_opt_in(args):
     if args.workload_qualification_v3 != qualification.POLICY:
         raise ValueError(
@@ -78,13 +97,7 @@ def verify_opt_in(args):
     ):
         raise ValueError("Committed workload-qualification-v3 approval mismatch")
     legacy.git("merge-base", "--is-ancestor", reviewed, "HEAD")
-    reviewed_paths = (
-        LAUNCHER,
-        ADAPTER,
-        CONTRACT,
-        canonical.LAUNCHER,
-        legacy.FROZEN_PROVENANCE,
-    )
+    reviewed_paths = approval_reviewed_paths(args.index_attestation)
     if legacy.git("diff", reviewed, "--", *(str(path) for path in reviewed_paths)):
         raise ValueError("Workload-qualification-v3 behavior changed after review")
     frozen.verify_remote_review(approval)
