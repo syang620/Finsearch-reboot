@@ -87,9 +87,11 @@ while that outcome is being persisted are delivered using the caller's prior sig
 disposition after persistence rather than being discarded.
 
 Existing marker, outcome, console, staging, or SHA-keyed cache content forbids another
-launch. A marker without an outcome is unresolved and never grants retry authority.
-All historical fresh-v7 and earlier approvals, wrappers, results, and consumption
-records remain authoritative audit evidence and are not repurposed.
+launch. This covers both `.cache/semantic_answer_v2/<commit>` and the independent
+`.cache/semantic_answer_v2_control_v2/<commit>` monitoring namespace. A marker without
+an outcome is unresolved and never grants retry authority. All historical fresh-v7 and
+earlier approvals, wrappers, results, and consumption records remain authoritative
+audit evidence and are not repurposed.
 
 ## Rollout gates
 

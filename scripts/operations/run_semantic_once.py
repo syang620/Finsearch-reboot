@@ -272,12 +272,18 @@ def cache_path(root, receipt):
     return Path(root) / 'source' / '.cache' / 'semantic_answer_v2' / receipt['head']
 
 
+def workload_control_cache_path(root, receipt):
+    return (Path(root) / 'source' / '.cache' / 'semantic_answer_v2_control_v2'
+            / receipt['head'])
+
+
 def absent_artifacts(root, receipt):
     for name in ('consumed.json', 'outcome.json', 'console.log', 'staging'):
         if exists(Path(root) / name):
             raise ValueError('Attempt artifacts already exist; no retry permitted')
-    if exists(cache_path(root, receipt)):
-        raise ValueError('Attempt cache already exists; no retry permitted')
+    for path in (cache_path(root, receipt), workload_control_cache_path(root, receipt)):
+        if exists(path):
+            raise ValueError('Attempt cache already exists; no retry permitted')
 
 
 @contextmanager

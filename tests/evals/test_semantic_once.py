@@ -199,9 +199,11 @@ def test_record_rejections(tmp_path, bad):
         controller.read_record(path)
 
 
-def test_attempt_cache_blocks_launch(prepared_contract):
+@pytest.mark.parametrize('cache_function', [controller.cache_path,
+                                            controller.workload_control_cache_path])
+def test_attempt_cache_blocks_launch(prepared_contract, cache_function):
     receipt = prepared_contract.record()['prepared']
-    cache = controller.cache_path(prepared_contract.root, receipt)
+    cache = cache_function(prepared_contract.root, receipt)
     cache.mkdir(parents=True)
     with pytest.raises(ValueError, match='cache already exists'):
         controller.absent_artifacts(prepared_contract.root, receipt)
