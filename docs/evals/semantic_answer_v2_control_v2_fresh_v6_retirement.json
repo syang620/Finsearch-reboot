@@ -1,0 +1,25 @@
+{
+  "authorization_id": "SEMANTIC-V2-CONTROL-V2-FRESH-V6-20260909",
+  "status": "retired_currently_unexecutable",
+  "recorded_on": "2026-09-10",
+  "approval_path": "docs/evals/semantic_answer_v2_control_v2_fresh_v6_approval.json",
+  "approval_sha256": "006bca6a417c932afeb00404daa53b93de59a57d368a072231959eca0ae1feed",
+  "wrapper_path": "scripts/operations/run_authorized_semantic_v2_control_v2_fresh_v6.py",
+  "wrapper_sha256": "cb3924db0bffe7fd14426192a70accd8ae9d1a7115c5eb805f15d8ff2a594aba",
+  "consumed": false,
+  "retirement_reason": "The required original embedded.jsonl build cache was deleted with its Git worktree and no byte-for-byte backup was found.",
+  "missing_input": {
+    "name": "embedded.jsonl",
+    "size_bytes": 56300707,
+    "sha256": "3bcd4ba8425d604973d694c3793eaae69f6e7c773c895504f5b4a7f57e4faea8"
+  },
+  "recovery_result": "The surviving Qdrant collection matches the historical live-index fingerprint, but reconstructing embedded.jsonl from its stored vectors produced different serialized bytes and was rejected.",
+  "immutability_rule": "Preserve the fresh-v6 approval and wrapper byte-for-byte. Never repurpose, reinterpret, reset, or use its authorization for fresh-v7 or any other attempt.",
+  "reactivation_rule": "Fresh-v6 remains retired unless the exact missing file is independently recovered and validates to the recorded size and SHA-256. Reactivation would require a new explicit review and authorization decision; this record itself grants none.",
+  "artifact_state_at_retirement": {
+    "consumption_marker_absent": true,
+    "launch_outcome_absent": true,
+    "local_console_log_absent": true,
+    "staging_output_root_absent": true
+  }
+}
