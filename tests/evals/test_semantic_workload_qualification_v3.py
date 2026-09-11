@@ -494,6 +494,32 @@ def test_review_guard_uses_literal_pathspecs(monkeypatch):
     ]
 
 
+def test_index_attestation_resolves_to_repository_target(tmp_path, monkeypatch):
+    contracts = tmp_path / "contracts"
+    contracts.mkdir()
+    target = contracts / "attestation.json"
+    target.write_text("{}")
+    link = tmp_path / "attestation-link.json"
+    link.symlink_to(target)
+    monkeypatch.setattr(
+        launcher.legacy,
+        "git",
+        lambda *args: str(tmp_path),
+    )
+    assert launcher.committed_repo_path(link) == Path("contracts/attestation.json")
+
+    outside = tmp_path.parent / "outside-attestation.json"
+    outside.write_text("{}")
+    outside_link = tmp_path / "outside-link.json"
+    outside_link.symlink_to(outside)
+    try:
+        launcher.committed_repo_path(outside_link)
+    except ValueError as exc:
+        assert "resolve inside this repository" in str(exc)
+    else:
+        raise AssertionError("outside attestation target should fail")
+
+
 class FakeAwake:
     pid = 321
 

@@ -28,6 +28,14 @@ def file_sha(path):
     return legacy.file_sha(path)
 
 
+def committed_repo_path(path):
+    root = Path(legacy.git("rev-parse", "--show-toplevel")).resolve()
+    try:
+        return Path(path).resolve(strict=True).relative_to(root)
+    except (FileNotFoundError, ValueError) as exc:
+        raise ValueError("Index attestation must resolve inside this repository") from exc
+
+
 def verify_frozen_performance_dependencies():
     expected = {
         legacy.PREREGISTRATION: legacy.EXPECTED_PREREGISTRATION_SHA256,
@@ -81,6 +89,7 @@ def verify_opt_in(args):
         )
     frozen.clean_checkout()
     verify_frozen_performance_dependencies()
+    args.index_attestation = committed_repo_path(args.index_attestation)
     frozen.committed_approval(args.index_attestation)
     head = legacy.git("rev-parse", "HEAD")
     approval = frozen.committed_approval(args.qualification_approval)
