@@ -161,6 +161,27 @@ class OrchestratorStructuredLoggingTests(unittest.TestCase):
         self.assertNotIn("sk-secret-value", rendered)
         self.assertNotIn("api key", rendered)
 
+    def test_analyst_error_codes_are_included(self) -> None:
+        output = _output(status="failed")
+        output["analyst"] = {
+            "status": "error",
+            "open_issues": [
+                {
+                    "code": "ANALYST_MODEL_TIMEOUT",
+                    "message": "provider detail",
+                    "severity": "error",
+                }
+            ],
+        }
+
+        event = orchestrator._orchestration_log_event(
+            output,
+            dependency_error_categories=["provider"],
+        )
+
+        self.assertEqual(event["error_codes"], ["ANALYST_MODEL_TIMEOUT"])
+        self.assertEqual(event["error_categories"], ["provider"])
+
     def test_non_dependency_issue_does_not_gain_mcp_category(self) -> None:
         output = _output(status="failed")
         output["open_issues"] = [

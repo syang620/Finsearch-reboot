@@ -2884,7 +2884,11 @@ def _orchestration_log_event(
         else {}
     )
     issues = output.get("open_issues")
-    normalized_issues = issues if isinstance(issues, list) else []
+    analyst_issues = analyst.get("open_issues")
+    normalized_issues = [
+        *(issues if isinstance(issues, list) else []),
+        *(analyst_issues if isinstance(analyst_issues, list) else []),
+    ]
     raw_error_codes = {
         str(issue.get("code") or "").strip()
         for issue in normalized_issues
