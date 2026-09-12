@@ -240,6 +240,7 @@ class OrchestratorStructuredLoggingTests(unittest.TestCase):
                 self.assertFalse(result["ok"])
                 self.assertEqual(result["status"], "error")
                 self.assertEqual(result["dependency_error_categories"], ["mcp"])
+                self.assertNotIn("top_tables", result)
 
     def test_dependency_error_record_is_redacted(self) -> None:
         with mock.patch.object(orchestrator.logger, "warning") as log_warning:
@@ -545,6 +546,55 @@ class OrchestratorStructuredLoggingTests(unittest.TestCase):
         payload = json.loads(log_warning.call_args.args[0])
         self.assertEqual(payload["dependency"], "mcp")
         self.assertNotIn("sensitive detail", log_warning.call_args.args[0])
+
+    def test_metric_client_reset_is_deferred_until_all_requests_finish(self) -> None:
+        class PartiallyFailedMetricClient:
+            def __init__(self):
+                self.calls = 0
+                self.reset = False
+
+            async def get_metric(self, **_kwargs):
+                self.calls += 1
+                if self.calls == 1:
+                    raise RuntimeError("request-specific failure")
+                if self.reset:
+                    raise AssertionError("client reset before remaining requests")
+                return {"ok": True, "status": "ok", "value": 1}
+
+        client = PartiallyFailedMetricClient()
+
+        async def mark_reset(reset_client):
+            reset_client.reset = True
+
+        plan = {
+            "route": "structured_fact",
+            "targets": [{"ticker": "AAPL", "fiscal_year": 2024, "form_type": "10-K"}],
+            "structured_fact_requests": [
+                {"metric_hint": "revenue"},
+                {"metric_hint": "net_income"},
+            ],
+        }
+        with (
+            mock.patch.object(orchestrator.logger, "warning"),
+            mock.patch.object(
+                orchestrator,
+                "_reset_orchestrator_mcp_client",
+                new=mock.AsyncMock(side_effect=mark_reset),
+            ) as reset_client,
+        ):
+            results = asyncio.run(
+                orchestrator._execute_structured_fact_requests(
+                    plan_obj=plan,
+                    client=client,
+                    run_id="run-1234",
+                )
+            )
+
+        self.assertEqual(client.calls, 2)
+        self.assertEqual(results[0]["tool_result"]["status"], "error")
+        self.assertEqual(results[1]["tool_result"]["status"], "ok")
+        reset_client.assert_awaited_once_with(client)
+        self.assertTrue(client.reset)
 
     def test_retrieval_returned_mcp_error_is_propagated(self) -> None:
         retrieval = {

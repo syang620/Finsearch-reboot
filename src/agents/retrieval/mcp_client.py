@@ -153,7 +153,8 @@ def _mark_mcp_response(
     if is_error:
         marked["ok"] = False
         marked["dependency_error_categories"] = ["mcp"]
-        marked["top_tables"] = []
+        if "top_tables" in marked:
+            marked["top_tables"] = []
         if "results" in marked:
             marked["results"] = []
         if force_error_status:

@@ -2027,6 +2027,7 @@ async def _execute_structured_fact_requests(
         requests=requests,
     )
     results: list[Dict[str, Any]] = []
+    reset_client_after_requests = False
     for request, capability_decision in zip(requests, capability_decisions):
         if not capability_decision.permitted:
             results.append(
@@ -2086,7 +2087,7 @@ async def _execute_structured_fact_requests(
                 dependency="mcp",
                 error=exc,
             )
-            await _reset_orchestrator_mcp_client(client)
+            reset_client_after_requests = True
             tool_result = {
                 "ok": False,
                 "status": "error",
@@ -2105,6 +2106,8 @@ async def _execute_structured_fact_requests(
                 tool_result=tool_result,
             )
         )
+    if reset_client_after_requests:
+        await _reset_orchestrator_mcp_client(client)
     return results
 
 
