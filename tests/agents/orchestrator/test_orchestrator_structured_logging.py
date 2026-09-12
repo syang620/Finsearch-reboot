@@ -230,13 +230,22 @@ class OrchestratorStructuredLoggingTests(unittest.TestCase):
                 "message": "grounding failed",
                 "severity": "error",
             },
+            {
+                "code": "DUPLICATE_VISIBLE_CONTEXT_ID",
+                "message": "grounding failed",
+                "severity": "error",
+            },
         ]
 
         event = orchestrator._orchestration_log_event(output)
 
         self.assertEqual(
             event["error_codes"],
-            ["GROUNDING_ROW_TEXT_MISMATCH", "PLANNER_RUNTIME_ERROR"],
+            [
+                "DUPLICATE_VISIBLE_CONTEXT_ID",
+                "GROUNDING_ROW_TEXT_MISMATCH",
+                "PLANNER_RUNTIME_ERROR",
+            ],
         )
 
     def test_non_dependency_issue_does_not_gain_mcp_category(self) -> None:
