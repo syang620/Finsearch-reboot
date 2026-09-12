@@ -35,26 +35,82 @@ def _output(*, status: str = "completed") -> dict:
 
 
 class OrchestratorStructuredLoggingTests(unittest.TestCase):
-    def test_unstructured_mcp_error_carries_controlled_marker(self) -> None:
+    def test_every_mcp_error_payload_branch_carries_controlled_marker(self) -> None:
         class ErrorSession:
+            def __init__(self, result):
+                self.result = result
+
             async def call_tool(self, _name, arguments):
                 del arguments
-                return type(
-                    "Result",
-                    (),
-                    {
-                        "structured_content": None,
-                        "structuredContent": None,
-                        "is_error": True,
-                        "isError": False,
-                        "content": [
-                            types.TextContent(type="text", text="sensitive server response")
-                        ],
-                    },
-                )()
+                return self.result
 
+        responses = [
+            type(
+                "StructuredResult",
+                (),
+                {
+                    "structured_content": {"ok": False},
+                    "structuredContent": None,
+                    "is_error": True,
+                    "isError": False,
+                    "content": [],
+                },
+            )(),
+            type(
+                "ParsedTextResult",
+                (),
+                {
+                    "structured_content": None,
+                    "structuredContent": None,
+                    "is_error": True,
+                    "isError": False,
+                    "content": [types.TextContent(type="text", text='{"ok": false}')],
+                },
+            )(),
+            type(
+                "UnstructuredResult",
+                (),
+                {
+                    "structured_content": None,
+                    "structuredContent": None,
+                    "is_error": True,
+                    "isError": False,
+                    "content": [
+                        types.TextContent(type="text", text="sensitive server response")
+                    ],
+                },
+            )(),
+        ]
+
+        for response in responses:
+            with self.subTest(response=response.__class__.__name__):
+                client = SecRetrievalMCPClient()
+                client._session = ErrorSession(response)
+                result = asyncio.run(
+                    client.retrieve_tables(
+                        queries=["revenue"],
+                        ticker="AAPL",
+                        fiscal_year=2024,
+                        timeout_s=1,
+                    )
+                )
+
+                self.assertFalse(result["ok"])
+                self.assertEqual(result["dependency_error_categories"], ["mcp"])
+
+        success = type(
+            "SuccessfulResult",
+            (),
+            {
+                "structured_content": {"ok": True},
+                "structuredContent": None,
+                "is_error": False,
+                "isError": False,
+                "content": [],
+            },
+        )()
         client = SecRetrievalMCPClient()
-        client._session = ErrorSession()
+        client._session = ErrorSession(success)
         result = asyncio.run(
             client.retrieve_tables(
                 queries=["revenue"],
@@ -63,9 +119,7 @@ class OrchestratorStructuredLoggingTests(unittest.TestCase):
                 timeout_s=1,
             )
         )
-
-        self.assertFalse(result["ok"])
-        self.assertEqual(result["dependency_error_categories"], ["mcp"])
+        self.assertNotIn("dependency_error_categories", result)
 
     def test_dependency_error_record_is_redacted(self) -> None:
         with mock.patch.object(orchestrator.logger, "warning") as log_warning:

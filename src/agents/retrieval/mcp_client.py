@@ -132,6 +132,16 @@ def _normalize_metric_payload(payload: Any) -> Dict[str, Any]:
     return dict(payload)
 
 
+def _mark_mcp_response(payload: Any, *, is_error: bool) -> Any:
+    if not isinstance(payload, dict):
+        return payload
+    marked = dict(payload)
+    marked.pop("dependency_error_categories", None)
+    if is_error:
+        marked["dependency_error_categories"] = ["mcp"]
+    return marked
+
+
 @dataclass
 class SecRetrievalMCPClient:
     server_command: str = sys.executable
@@ -249,16 +259,19 @@ class SecRetrievalMCPClient:
             async with self._call_lock:
                 result = await self._session.call_tool("sec_retrieve_tables", arguments=args)
 
+            is_error = bool(
+                getattr(result, "is_error", False) or getattr(result, "isError", False)
+            )
+
             # MCP SDK compatibility: some versions expose camelCase fields.
             structured = getattr(result, "structured_content", None)
             if structured is None:
                 structured = getattr(result, "structuredContent", None)
             if structured is not None:
-                return _normalize_retrieval_payload(structured, args=args)
-
-            is_error = bool(
-                getattr(result, "is_error", False) or getattr(result, "isError", False)
-            )
+                return _mark_mcp_response(
+                    _normalize_retrieval_payload(structured, args=args),
+                    is_error=is_error,
+                )
 
             out_text = []
             for block in getattr(result, "content", []) or []:
@@ -268,7 +281,10 @@ class SecRetrievalMCPClient:
                     try:
                         parsed = json.loads(block.text)
                         if isinstance(parsed, (dict, list)):
-                            return _normalize_retrieval_payload(parsed, args=args)
+                            return _mark_mcp_response(
+                                _normalize_retrieval_payload(parsed, args=args),
+                                is_error=is_error,
+                            )
                     except Exception:
                         pass
 
@@ -276,7 +292,7 @@ class SecRetrievalMCPClient:
                 "ok": not is_error,
                 "unstructured": out_text,
                 "args": args,
-                "dependency_error_categories": ["mcp"] if is_error else [],
+                **({"dependency_error_categories": ["mcp"]} if is_error else {}),
             }
 
         try:
