@@ -67407,7 +67407,7 @@
     "status": "passed",
     "cataloged_paths_verified": 2885,
     "duplicate_groups_verified": 668,
-    "local_markdown_links_verified": 106,
+    "local_markdown_links_verified": 96,
     "preexisting_content_files_unchanged": 3519,
     "all_four_heads_and_initial_status_preserved": true,
     "only_new_worktree_files": [
