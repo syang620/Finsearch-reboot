@@ -134,6 +134,11 @@ def _normalize_metric_payload(payload: Any) -> Dict[str, Any]:
 
 def _mark_mcp_response(payload: Any, *, is_error: bool) -> Any:
     if not isinstance(payload, dict):
+        if is_error:
+            return {
+                "ok": False,
+                "dependency_error_categories": ["mcp"],
+            }
         return payload
     marked = dict(payload)
     marked.pop("dependency_error_categories", None)

@@ -68,6 +68,22 @@ class OrchestratorStructuredLoggingTests(unittest.TestCase):
                 },
             )(),
             type(
+                "ParsedArrayResult",
+                (),
+                {
+                    "structured_content": None,
+                    "structuredContent": None,
+                    "is_error": True,
+                    "isError": False,
+                    "content": [
+                        types.TextContent(
+                            type="text",
+                            text='[{"sensitive": "server response"}]',
+                        )
+                    ],
+                },
+            )(),
+            type(
                 "UnstructuredResult",
                 (),
                 {
