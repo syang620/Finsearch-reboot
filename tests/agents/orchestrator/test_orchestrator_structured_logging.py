@@ -36,6 +36,35 @@ def _output(*, status: str = "completed") -> dict:
 
 
 class OrchestratorStructuredLoggingTests(unittest.TestCase):
+    def tearDown(self) -> None:
+        orchestrator._ORCHESTRATOR_MCP_CLIENT_LEASE_LOCK = None
+
+    def test_client_lease_serializes_whole_nodes(self) -> None:
+        active = 0
+        max_active = 0
+
+        async def leased_node(_state):
+            nonlocal active, max_active
+            active += 1
+            max_active = max(max_active, active)
+            await asyncio.sleep(0)
+            active -= 1
+            return {}
+
+        async def scenario():
+            with mock.patch.object(
+                orchestrator,
+                "_retrieval_node_with_client_lease",
+                new=leased_node,
+            ):
+                await asyncio.gather(
+                    orchestrator._retrieval_node({}),
+                    orchestrator._retrieval_node({}),
+                )
+
+        asyncio.run(scenario())
+        self.assertEqual(max_active, 1)
+
     def test_client_reset_waits_for_active_call_lock(self) -> None:
         class Client:
             def __init__(self):

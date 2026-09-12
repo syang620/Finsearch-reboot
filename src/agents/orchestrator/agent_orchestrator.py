@@ -183,6 +183,7 @@ _ANALYST_CACHE_MAX_SIZE = 4
 _ORCHESTRATOR_LAST_PRUNE_TS = 0.0
 _ORCHESTRATOR_MCP_CLIENT: Optional[Any] = None
 _ORCHESTRATOR_MCP_CLIENT_LOCK: Optional[asyncio.Lock] = None
+_ORCHESTRATOR_MCP_CLIENT_LEASE_LOCK: Optional[asyncio.Lock] = None
 _BACKGROUND_TASKS: set[asyncio.Task[Any]] = set()
 
 
@@ -452,6 +453,7 @@ async def aclose_orchestrator_runtime() -> None:
     global _ORCHESTRATOR_CHECKPOINTER_CLOSING
     global _ORCHESTRATOR_CHECKPOINTER_LOCK
     global _ORCHESTRATOR_MCP_CLIENT
+    global _ORCHESTRATOR_MCP_CLIENT_LEASE_LOCK
 
     if _ORCHESTRATOR_CHECKPOINTER_LOCK is None:
         _ORCHESTRATOR_CHECKPOINTER_LOCK = asyncio.Lock()
@@ -476,13 +478,12 @@ async def aclose_orchestrator_runtime() -> None:
         except Exception:
             pass
 
-    failed_client = _ORCHESTRATOR_MCP_CLIENT
-    _ORCHESTRATOR_MCP_CLIENT = None
-    if failed_client is not None:
-        try:
-            await failed_client.__aexit__(None, None, None)
-        except Exception:
-            pass
+    if _ORCHESTRATOR_MCP_CLIENT_LEASE_LOCK is None:
+        _ORCHESTRATOR_MCP_CLIENT_LEASE_LOCK = asyncio.Lock()
+    async with _ORCHESTRATOR_MCP_CLIENT_LEASE_LOCK:
+        failed_client = _ORCHESTRATOR_MCP_CLIENT
+        if failed_client is not None:
+            await _reset_orchestrator_mcp_client(failed_client)
 
     _get_orchestrator_graph.cache_clear()
 
@@ -1778,7 +1779,7 @@ def _route_after_retrieval_metadata(state: OrchestratorState) -> str:
     return "structured_facts" if _route_uses_structured_facts(_coerce_plan_route(state.get("plan_obj") or {})) else "build_packet_without_retrieval"
 
 
-async def _retrieval_node(state: OrchestratorState) -> Dict[str, Any]:
+async def _retrieval_node_with_client_lease(state: OrchestratorState) -> Dict[str, Any]:
     t_ret = time.perf_counter()
     retrieval_client = None
     client_acquired = False
@@ -1884,6 +1885,14 @@ async def _retrieval_node(state: OrchestratorState) -> Dict[str, Any]:
         "retrieval_timing_ms": retrieval_timing_ms,
         "dependency_error_categories": sorted(dependency_errors),
     }
+
+
+async def _retrieval_node(state: OrchestratorState) -> Dict[str, Any]:
+    global _ORCHESTRATOR_MCP_CLIENT_LEASE_LOCK
+    if _ORCHESTRATOR_MCP_CLIENT_LEASE_LOCK is None:
+        _ORCHESTRATOR_MCP_CLIENT_LEASE_LOCK = asyncio.Lock()
+    async with _ORCHESTRATOR_MCP_CLIENT_LEASE_LOCK:
+        return await _retrieval_node_with_client_lease(state)
 
 
 def _route_after_retrieval_node(state: OrchestratorState) -> str:
@@ -2118,7 +2127,9 @@ async def _execute_structured_fact_requests(
     return results
 
 
-async def _structured_facts_node(state: OrchestratorState) -> Dict[str, Any]:
+async def _structured_facts_node_with_client_lease(
+    state: OrchestratorState,
+) -> Dict[str, Any]:
     plan_obj = dict(state.get("plan_obj") or {})
     requests = list(plan_obj.get("structured_fact_requests") or [])
     timing = dict(state.get("structured_fact_timing_ms") or {})
@@ -2201,6 +2212,14 @@ async def _structured_facts_node(state: OrchestratorState) -> Dict[str, Any]:
     if rejected_issues:
         output["open_issues"] = rejected_issues
     return output
+
+
+async def _structured_facts_node(state: OrchestratorState) -> Dict[str, Any]:
+    global _ORCHESTRATOR_MCP_CLIENT_LEASE_LOCK
+    if _ORCHESTRATOR_MCP_CLIENT_LEASE_LOCK is None:
+        _ORCHESTRATOR_MCP_CLIENT_LEASE_LOCK = asyncio.Lock()
+    async with _ORCHESTRATOR_MCP_CLIENT_LEASE_LOCK:
+        return await _structured_facts_node_with_client_lease(state)
 
 
 def _route_after_structured_facts(state: OrchestratorState) -> str:
