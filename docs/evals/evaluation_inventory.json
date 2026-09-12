@@ -67453,6 +67453,7 @@
       "FinSearch-semantic-benchmark-v2/scripts/operations/semantic_v7_snapshot.py",
       "FinSearch-semantic-benchmark-v2/tests/evals/test_semantic_v7_controller.py"
     ],
-    "snapshot_hash_verification": "Current workspace bytes matched 2,881 records; the four later-modified tracked files matched their recorded SHA-256 when read from captured commit e33680fb37870f9cffce13185169639896b14202."
+    "snapshot_hash_verification": "Current workspace bytes matched 2,881 records; the four later-modified tracked files matched their recorded SHA-256 when read from captured commit e33680fb37870f9cffce13185169639896b14202.",
+    "repository_markdown_links_verified": 96
   }
 }
