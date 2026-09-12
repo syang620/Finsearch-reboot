@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import json
 import unittest
 from unittest import mock
@@ -59,7 +60,11 @@ class OrchestratorStructuredLoggingTests(unittest.TestCase):
         output = _output(status="failed")
         output["run_id"] = "password=do-not-log"
         output["open_issues"] = [
-            {"code": "api-key-do-not-log", "message": "provider failed"}
+            {
+                "code": "API_KEY_SECRET123",
+                "message": "provider failed",
+                "severity": "error",
+            }
         ]
 
         with mock.patch.object(orchestrator.logger, "warning") as log_warning:
@@ -108,18 +113,22 @@ class OrchestratorStructuredLoggingTests(unittest.TestCase):
         output["degradation"]["active"] = True
         output["open_issues"] = [
             {
-                "code": "RETRIEVAL_MCP_TRANSPORT_ERROR",
+                "code": "RETRIEVAL_ERROR",
                 "message": "connection failed with password=do-not-log",
+                "severity": "error",
             }
         ]
 
         with mock.patch.object(orchestrator.logger, "warning") as log_warning:
-            orchestrator._log_orchestration_outcome(output)
+            orchestrator._log_orchestration_outcome(
+                output,
+                dependency_error_categories=["mcp"],
+            )
 
         rendered = log_warning.call_args.args[0]
         payload = json.loads(rendered)
         self.assertEqual(payload["error_categories"], ["mcp"])
-        self.assertEqual(payload["error_codes"], ["RETRIEVAL_MCP_TRANSPORT_ERROR"])
+        self.assertEqual(payload["error_codes"], ["RETRIEVAL_ERROR"])
         self.assertNotIn("do-not-log", rendered)
         self.assertNotIn("password", rendered)
 
@@ -131,10 +140,19 @@ class OrchestratorStructuredLoggingTests(unittest.TestCase):
             "error": "LLM_CALL_FAILED: api key sk-secret-value",
         }
         output["analyst"] = None
-        output["open_issues"] = [{"code": "PLANNER_LLM_CALL_FAILED", "message": "provider failed"}]
+        output["open_issues"] = [
+            {
+                "code": "ANALYST_RUNTIME_ERROR",
+                "message": "provider failed",
+                "severity": "error",
+            }
+        ]
 
         with mock.patch.object(orchestrator.logger, "warning") as log_warning:
-            orchestrator._log_orchestration_outcome(output)
+            orchestrator._log_orchestration_outcome(
+                output,
+                dependency_error_categories=["provider"],
+            )
 
         rendered = log_warning.call_args.args[0]
         payload = json.loads(rendered)
@@ -146,12 +164,36 @@ class OrchestratorStructuredLoggingTests(unittest.TestCase):
     def test_non_dependency_issue_does_not_gain_mcp_category(self) -> None:
         output = _output(status="failed")
         output["open_issues"] = [
-            {"code": "ANALYST_GROUNDING_INVALID", "message": "pipeline validation failed"}
+            {
+                "code": "ANALYST_GROUNDING_INVALID",
+                "message": "business model is ambiguous",
+                "severity": "error",
+            }
         ]
 
         event = orchestrator._orchestration_log_event(output)
 
         self.assertEqual(event["error_categories"], [])
+
+    def test_logging_handler_failure_does_not_escape(self) -> None:
+        with mock.patch.object(
+            orchestrator.logger,
+            "info",
+            side_effect=RuntimeError("handler failed"),
+        ):
+            orchestrator._log_orchestration_outcome(_output())
+
+        with mock.patch.object(
+            orchestrator.logger,
+            "warning",
+            side_effect=RuntimeError("handler failed"),
+        ):
+            orchestrator._log_dependency_error(
+                run_id="run-1234",
+                stage="retrieval",
+                dependency="mcp",
+                error=RuntimeError("request failed"),
+            )
 
     def test_interrupted_outcome_uses_info_with_unknown_missing_fields(self) -> None:
         output = _output(status="interrupted")
@@ -168,6 +210,39 @@ class OrchestratorStructuredLoggingTests(unittest.TestCase):
         self.assertEqual(
             payload["lane_statuses"],
             {"kb": "unknown", "structured_fact": "unknown"},
+        )
+
+    def test_failed_metric_result_emits_dependency_record(self) -> None:
+        class FailedMetricClient:
+            async def get_metric(self, **_kwargs):
+                return {"ok": False, "status": "error", "error": "401 Unauthorized"}
+
+        plan = {
+            "route": "structured_fact",
+            "targets": [{"ticker": "AAPL", "fiscal_year": 2024, "form_type": "10-K"}],
+            "structured_fact_requests": [{"metric_hint": "revenue"}],
+        }
+        with mock.patch.object(orchestrator.logger, "warning") as log_warning:
+            results = asyncio.run(
+                orchestrator._execute_structured_fact_requests(
+                    plan_obj=plan,
+                    client=FailedMetricClient(),
+                    run_id="run-1234",
+                )
+            )
+
+        self.assertEqual(results[0]["tool_result"]["status"], "error")
+        events = [json.loads(call.args[0]) for call in log_warning.call_args_list]
+        self.assertIn(
+            {
+                "schema_version": 1,
+                "event": "orchestrator_dependency_error",
+                "run_id": "run-1234",
+                "stage": "structured_fact",
+                "dependency": "mcp",
+                "exception_type": "reported_error",
+            },
+            events,
         )
 
 
