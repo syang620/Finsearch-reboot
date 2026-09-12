@@ -101,6 +101,15 @@ Start with the orchestration CLI's `--json` output. Inspect:
 - `analyst` for answer status, citations, calculations, and tool failures.
 - `orchestrator_trace` for planner, retrieval, structured-fact, and total timings.
 
+Each returned or interrupted orchestration also emits one JSON log record with
+`event="orchestrator_run_outcome"`. Its fields are `schema_version`, `event`,
+`run_id`, `route`, `status`, `planner_status`, `lane_statuses`, `analyst_status`,
+`failure_stage`, `degraded`, `timings_ms`, `error_codes`, and `error_categories`.
+Provider and MCP failures also emit an `event="orchestrator_dependency_error"`
+record with `schema_version`, `event`, `run_id`, `stage`, `dependency`, and
+`exception_type`. These records intentionally omit queries, evidence, raw model
+output, exception messages, credentials, and invalid user-controlled identifiers.
+
 ### Retrieval returns no evidence
 
 - Confirm Qdrant is running at `QDRANT_HOST:QDRANT_PORT`.

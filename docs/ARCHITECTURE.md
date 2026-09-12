@@ -4,6 +4,11 @@ This document describes the FinSearch runtime as it is implemented today. It is 
 current-system reference, not a roadmap, implementation plan, runbook, or record of
 evaluation results.
 
+See the [Implementation Plan](IMPLEMENTATION_PLAN.md) for completed architecture
+work, the [Roadmap](ROADMAP.md) for future candidate capabilities, the
+[Runbook](RUNBOOK.md) for operations, and [Evaluation](EVALUATION.md) for release
+gates and evidence.
+
 ## 1. Runtime Overview
 
 FinSearch is a route-aware SEC-filing research system. The planner describes the
@@ -279,20 +284,17 @@ behavior:
 - Structured metric resolution is separate from execution coordination. Capability
   and resolver aliases remain distinct; resolution preserves existing precedence
   and fallback behavior, while orchestration owns permission and execution.
-- Structured results are flattened into synthetic `TEXT` context. Native numeric
-  types, metric status, components, and source URLs are not fully represented by the
-  analyst context contract.
 - Hybrid lanes execute sequentially rather than concurrently.
-- The top-level failure-stage model has no dedicated structured-fact stage and no
-  complete per-lane status model.
+- `failure_stage` records clarification interruption or fatal termination. Partial
+  lane outcomes and evidence usability must be read from the authoritative `lanes`
+  and `degradation` fields.
 - The planner fallback is KB-oriented and does not reconstruct structured or hybrid
   requests when the planner model fails.
 - Structured facts are limited to the registered annual metrics and filing-anchor
   behavior. Other ratios, comparisons, quarterly questions, and broad filing
   interpretation remain KB work.
-- The existing end-to-end agent evaluator primarily models the legacy
-  planner/retrieval/analyst path and does not yet provide complete structured-fact or
-  hybrid validation.
+- The legacy v0 end-to-end evaluator remains diagnostic-only; route-aware v1 is the
+  multi-lane release gate.
 
 These boundaries are important when interpreting runtime status, citations, and
 evaluation results. Proposed changes and measured model baselines intentionally do
