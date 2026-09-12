@@ -68,6 +68,9 @@ from pydantic import ValidationError
 
 logger = logging.getLogger(__name__)
 
+_LOG_RUN_ID_RE = re.compile(r"^[A-Za-z0-9._:-]{1,128}$")
+_LOG_ERROR_CODE_RE = re.compile(r"^[A-Z][A-Z0-9_]{0,79}$")
+
 
 class OrchestratorState(TypedDict, total=False):
     user_query: str
@@ -292,6 +295,32 @@ def _is_mcp_transport_error(message: Any) -> bool:
             "session",
         ]
     )
+
+
+def _log_dependency_error(
+    *,
+    run_id: Any,
+    stage: str,
+    dependency: str,
+    error: Any,
+) -> None:
+    normalized_run_id = str(run_id or "")
+    if not _LOG_RUN_ID_RE.fullmatch(normalized_run_id):
+        normalized_run_id = "invalid-run-id"
+    exception_type = (
+        error.__class__.__name__ if isinstance(error, BaseException) else "reported_error"
+    )
+    if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]{0,79}", exception_type):
+        exception_type = "Exception"
+    event = {
+        "schema_version": 1,
+        "event": "orchestrator_dependency_error",
+        "run_id": normalized_run_id,
+        "stage": str(stage),
+        "dependency": str(dependency),
+        "exception_type": exception_type,
+    }
+    logger.warning(json.dumps(event, sort_keys=True, separators=(",", ":")))
 
 
 async def _reset_orchestrator_mcp_client(
@@ -1388,6 +1417,13 @@ async def _planner_graph_node(state: OrchestratorState) -> Dict[str, Any]:
             )
         if isinstance(raw_planner_turn, dict):
             planner_turn = dict(raw_planner_turn)
+        if planner_turn.get("llm_error"):
+            _log_dependency_error(
+                run_id=state.get("plan_id"),
+                stage="planner",
+                dependency="provider",
+                error=planner_turn["llm_error"],
+            )
         invalid_planner_output = planner_turn.get("planner_output")
         planner_dump = PlannerRuntimeOutput.model_validate(
             invalid_planner_output
@@ -1692,9 +1728,21 @@ async def _retrieval_node(state: OrchestratorState) -> Dict[str, Any]:
         )
         retrieval_output = ret_state.get("retrieval")
         if _is_mcp_transport_error(retrieval_output.get("error") if isinstance(retrieval_output, dict) else None):
+            _log_dependency_error(
+                run_id=state.get("plan_id"),
+                stage="retrieval",
+                dependency="mcp",
+                error=(retrieval_output or {}).get("error"),
+            )
             await _reset_orchestrator_mcp_client(retrieval_client)
     except Exception as exc:
         if _is_mcp_transport_error(str(exc)):
+            _log_dependency_error(
+                run_id=state.get("plan_id"),
+                stage="retrieval",
+                dependency="mcp",
+                error=exc,
+            )
             await _reset_orchestrator_mcp_client(retrieval_client)
         retrieval_output = _build_retrieval_failure_output(
             retrieval_state=state["retrieval_state"],
@@ -1874,6 +1922,7 @@ async def _execute_structured_fact_requests(
     *,
     plan_obj: Dict[str, Any],
     client: Any,
+    run_id: str = "",
 ) -> list[Dict[str, Any]]:
     requests = [
         dict(item)
@@ -1929,6 +1978,12 @@ async def _execute_structured_fact_requests(
             tool_result = dict(response or {})
         except Exception as exc:
             if _is_mcp_transport_error(str(exc)):
+                _log_dependency_error(
+                    run_id=run_id,
+                    stage="structured_fact",
+                    dependency="mcp",
+                    error=exc,
+                )
                 await _reset_orchestrator_mcp_client(client)
             tool_result = {
                 "ok": False,
@@ -1981,9 +2036,19 @@ async def _structured_facts_node(state: OrchestratorState) -> Dict[str, Any]:
     try:
         if any(decision.permitted for _request, decision in request_decisions):
             client = await _get_orchestrator_mcp_client()
-        results = await _execute_structured_fact_requests(plan_obj=plan_obj, client=client)
+        results = await _execute_structured_fact_requests(
+            plan_obj=plan_obj,
+            client=client,
+            run_id=str(state.get("plan_id") or ""),
+        )
     except Exception as exc:
         if _is_mcp_transport_error(str(exc)):
+            _log_dependency_error(
+                run_id=state.get("plan_id"),
+                stage="structured_fact",
+                dependency="mcp",
+                error=exc,
+            )
             await _reset_orchestrator_mcp_client(client)
         results = [
             {
@@ -2479,6 +2544,17 @@ async def _resolve_runtime_planner(*, run_id: str, planner: Optional[Any]) -> An
 async def _analyst_node(state: OrchestratorState) -> Dict[str, Any]:
     analyst = await _get_pooled_analyst(_normalize_model_name(state["analyst_model"]))
     analyst_result = await analyst.arun(state["packet"], debug=state["debug"])
+    analyst_error = getattr(analyst_result, "error", None)
+    if analyst_error and any(
+        token in str(analyst_error).lower()
+        for token in ("llm", "model", "provider", "openai", "anthropic", "gemini", "ollama")
+    ):
+        _log_dependency_error(
+            run_id=state.get("plan_id"),
+            stage="analyst",
+            dependency="provider",
+            error=analyst_error,
+        )
     return {"analyst_result": analyst_result}
 
 
@@ -2717,6 +2793,136 @@ def _format_run_output(
     return out
 
 
+def _orchestration_log_event(output: Dict[str, Any]) -> Dict[str, Any]:
+    planner = output.get("planner") if isinstance(output.get("planner"), dict) else {}
+    analyst = output.get("analyst") if isinstance(output.get("analyst"), dict) else {}
+    lanes = output.get("lanes") if isinstance(output.get("lanes"), dict) else {}
+    degradation = (
+        output.get("degradation")
+        if isinstance(output.get("degradation"), dict)
+        else {}
+    )
+    trace = (
+        output.get("orchestrator_trace")
+        if isinstance(output.get("orchestrator_trace"), dict)
+        else {}
+    )
+    issues = output.get("open_issues")
+    normalized_issues = issues if isinstance(issues, list) else []
+    raw_error_codes = {
+        str(issue.get("code") or "").strip()
+        for issue in normalized_issues
+        if isinstance(issue, dict) and str(issue.get("code") or "").strip()
+    }
+    error_codes = sorted(
+        {
+            code if _LOG_ERROR_CODE_RE.fullmatch(code) else "UNCLASSIFIED_ERROR"
+            for code in raw_error_codes
+        }
+    )
+    structured_errors: list[Any] = []
+    for result in output.get("structured_fact_results") or []:
+        if not isinstance(result, dict):
+            continue
+        tool_result = result.get("tool_result")
+        if isinstance(tool_result, dict):
+            structured_errors.append(tool_result.get("error"))
+    retrieval_error = (
+        (output.get("retrieval") or {}).get("error")
+        if isinstance(output.get("retrieval"), dict)
+        else None
+    )
+
+    diagnostic_text = " ".join(
+        str(value or "")
+        for value in (
+            *raw_error_codes,
+            *(issue.get("message") for issue in normalized_issues if isinstance(issue, dict)),
+            *structured_errors,
+            planner.get("error"),
+            analyst.get("error"),
+            retrieval_error,
+        )
+    ).lower()
+    error_categories: list[str] = []
+    if "mcp" in diagnostic_text or any(
+        _is_mcp_transport_error(error)
+        for error in (*structured_errors, retrieval_error)
+        if error
+    ):
+        error_categories.append("mcp")
+    if any(
+        token in diagnostic_text
+        for token in (
+            "llm",
+            "model",
+            "provider",
+            "openai",
+            "anthropic",
+            "gemini",
+            "google-genai",
+            "ollama",
+            "dashscope",
+        )
+    ):
+        error_categories.append("provider")
+
+    def _lane_status(name: str) -> str:
+        lane = lanes.get(name)
+        return str(lane.get("status") or "unknown") if isinstance(lane, dict) else "unknown"
+
+    def _timings(value: Any) -> Dict[str, int | float]:
+        if not isinstance(value, dict):
+            return {}
+        return {
+            str(key): timing
+            for key, timing in value.items()
+            if isinstance(timing, (int, float)) and not isinstance(timing, bool)
+        }
+
+    run_id = str(output.get("run_id") or "")
+    if not _LOG_RUN_ID_RE.fullmatch(run_id):
+        run_id = "invalid-run-id"
+
+    return {
+        "schema_version": 1,
+        "event": "orchestrator_run_outcome",
+        "run_id": run_id,
+        "route": str(output.get("route") or ""),
+        "status": str(output.get("status") or ""),
+        "planner_status": str(planner.get("status") or "unknown"),
+        "lane_statuses": {
+            "kb": _lane_status("kb"),
+            "structured_fact": _lane_status("structured_fact"),
+        },
+        "analyst_status": str(analyst.get("status") or "not_run"),
+        "failure_stage": str(output.get("failure_stage") or "none"),
+        "degraded": bool(degradation.get("active")),
+        "timings_ms": {
+            "total": (
+                trace.get("total_ms")
+                if isinstance(trace.get("total_ms"), (int, float))
+                and not isinstance(trace.get("total_ms"), bool)
+                else None
+            ),
+            "planner": _timings(trace.get("planner_timing_ms")),
+            "retrieval": _timings(trace.get("retrieval_timing_ms")),
+            "structured_fact": _timings(trace.get("structured_fact_timing_ms")),
+        },
+        "error_codes": error_codes,
+        "error_categories": error_categories,
+    }
+
+
+def _log_orchestration_outcome(output: Dict[str, Any]) -> None:
+    event = _orchestration_log_event(output)
+    rendered = json.dumps(event, sort_keys=True, separators=(",", ":"))
+    if event["status"] in {"failed", "degraded"} or event["error_categories"]:
+        logger.warning(rendered)
+    else:
+        logger.info(rendered)
+
+
 async def _invoke_orchestrator(
     payload: Any,
     *,
@@ -2745,6 +2951,7 @@ async def _invoke_orchestrator(
     await graph.ainvoke(payload, config=config)
     state_snapshot = await graph.aget_state(config)
     output = _format_run_output(run_id=run_id, state_snapshot=state_snapshot)
+    _log_orchestration_outcome(output)
     if output["status"] == "interrupted":
         return output
     try:
