@@ -1299,6 +1299,7 @@ class RetrievalWorkflowAgent:
             return {
                 "ok": False,
                 "error": f"RETRIEVER_CALL_FAILED: {exc}",
+                "dependency_error_categories": ["mcp"],
                 "queries_used": list(request.get("queries") or []),
                 "metadata_used": {
                     "ticker": target["ticker"],

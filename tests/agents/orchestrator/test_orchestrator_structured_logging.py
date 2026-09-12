@@ -9,6 +9,7 @@ from mcp import types
 
 from agents.orchestrator import agent_orchestrator as orchestrator
 from agents.retrieval.mcp_client import SecRetrievalMCPClient
+from agents.retrieval.query_planner_v2 import RetrievalWorkflowAgent
 
 
 def _output(*, status: str = "completed") -> dict:
@@ -113,6 +114,7 @@ class OrchestratorStructuredLoggingTests(unittest.TestCase):
 
                 self.assertFalse(result["ok"])
                 self.assertEqual(result["dependency_error_categories"], ["mcp"])
+                self.assertNotIn({"doc_id": "bad"}, result.get("top_tables", []))
 
         success = type(
             "SuccessfulResult",
@@ -136,6 +138,30 @@ class OrchestratorStructuredLoggingTests(unittest.TestCase):
             )
         )
         self.assertNotIn("dependency_error_categories", result)
+
+    def test_retrieval_boundary_exception_carries_controlled_marker(self) -> None:
+        class FailedClient:
+            async def retrieve_tables(self, **_request):
+                raise RuntimeError("HTTP 503 with sensitive detail")
+
+        workflow = RetrievalWorkflowAgent(
+            retrieval_llm=mock.Mock(),
+            reviewer_llm=mock.Mock(),
+        )
+        result = asyncio.run(
+            workflow._retrieve_with_client(
+                client=FailedClient(),
+                request={"queries": ["revenue"], "doc_types": ["table"]},
+                target={
+                    "ticker": "AAPL",
+                    "fiscal_year": 2024,
+                    "form_type": "10-K",
+                },
+            )
+        )
+
+        self.assertFalse(result["ok"])
+        self.assertEqual(result["dependency_error_categories"], ["mcp"])
 
     def test_every_metric_mcp_error_payload_branch_is_forced_failed(self) -> None:
         class ErrorSession:
@@ -488,6 +514,37 @@ class OrchestratorStructuredLoggingTests(unittest.TestCase):
             },
             events,
         )
+
+    def test_metric_boundary_exception_emits_dependency_record(self) -> None:
+        class FailedMetricClient:
+            async def get_metric(self, **_kwargs):
+                raise RuntimeError("HTTP 503 with sensitive detail")
+
+        plan = {
+            "route": "structured_fact",
+            "targets": [{"ticker": "AAPL", "fiscal_year": 2024, "form_type": "10-K"}],
+            "structured_fact_requests": [{"metric_hint": "revenue"}],
+        }
+        with (
+            mock.patch.object(orchestrator.logger, "warning") as log_warning,
+            mock.patch.object(
+                orchestrator,
+                "_reset_orchestrator_mcp_client",
+                new=mock.AsyncMock(),
+            ),
+        ):
+            results = asyncio.run(
+                orchestrator._execute_structured_fact_requests(
+                    plan_obj=plan,
+                    client=FailedMetricClient(),
+                    run_id="run-1234",
+                )
+            )
+
+        self.assertEqual(results[0]["tool_result"]["status"], "error")
+        payload = json.loads(log_warning.call_args.args[0])
+        self.assertEqual(payload["dependency"], "mcp")
+        self.assertNotIn("sensitive detail", log_warning.call_args.args[0])
 
     def test_retrieval_returned_mcp_error_is_propagated(self) -> None:
         retrieval = {

@@ -2080,14 +2080,13 @@ async def _execute_structured_fact_requests(
                     error=tool_result.get("error"),
                 )
         except Exception as exc:
-            if _is_mcp_transport_error(str(exc)):
-                _log_dependency_error(
-                    run_id=run_id,
-                    stage="structured_fact",
-                    dependency="mcp",
-                    error=exc,
-                )
-                await _reset_orchestrator_mcp_client(client)
+            _log_dependency_error(
+                run_id=run_id,
+                stage="structured_fact",
+                dependency="mcp",
+                error=exc,
+            )
+            await _reset_orchestrator_mcp_client(client)
             tool_result = {
                 "ok": False,
                 "status": "error",
