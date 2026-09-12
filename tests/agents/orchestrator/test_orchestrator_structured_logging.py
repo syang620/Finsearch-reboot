@@ -36,6 +36,36 @@ def _output(*, status: str = "completed") -> dict:
 
 
 class OrchestratorStructuredLoggingTests(unittest.TestCase):
+    def test_client_reset_waits_for_active_call_lock(self) -> None:
+        class Client:
+            def __init__(self):
+                self._call_lock = asyncio.Lock()
+                self.exited = False
+
+            async def __aexit__(self, *_args):
+                self.exited = True
+
+        async def scenario():
+            client = Client()
+            orchestrator._ORCHESTRATOR_MCP_CLIENT = client
+            orchestrator._ORCHESTRATOR_MCP_CLIENT_LOCK = asyncio.Lock()
+            await client._call_lock.acquire()
+            reset_task = asyncio.create_task(
+                orchestrator._reset_orchestrator_mcp_client(client)
+            )
+            await asyncio.sleep(0)
+            self.assertIsNone(orchestrator._ORCHESTRATOR_MCP_CLIENT)
+            self.assertFalse(client.exited)
+            client._call_lock.release()
+            await reset_task
+            self.assertTrue(client.exited)
+
+        try:
+            asyncio.run(scenario())
+        finally:
+            orchestrator._ORCHESTRATOR_MCP_CLIENT = None
+            orchestrator._ORCHESTRATOR_MCP_CLIENT_LOCK = None
+
     def test_every_mcp_error_payload_branch_carries_controlled_marker(self) -> None:
         class ErrorSession:
             def __init__(self, result):
@@ -162,6 +192,29 @@ class OrchestratorStructuredLoggingTests(unittest.TestCase):
 
         self.assertFalse(result["ok"])
         self.assertEqual(result["dependency_error_categories"], ["mcp"])
+
+    def test_retrieval_client_acquisition_exception_is_mcp(self) -> None:
+        state = {
+            "plan_id": "run-1234",
+            "retrieval_state": {},
+            "retrieval_timing_ms": {},
+        }
+        with (
+            mock.patch.object(
+                orchestrator,
+                "_get_orchestrator_mcp_client",
+                new=mock.AsyncMock(
+                    side_effect=RuntimeError("server unavailable with sensitive detail")
+                ),
+            ),
+            mock.patch.object(orchestrator.logger, "warning") as log_warning,
+        ):
+            result = asyncio.run(orchestrator._retrieval_node(state))
+
+        self.assertEqual(result["dependency_error_categories"], ["mcp"])
+        payload = json.loads(log_warning.call_args.args[0])
+        self.assertEqual(payload["dependency"], "mcp")
+        self.assertNotIn("sensitive detail", log_warning.call_args.args[0])
 
     def test_every_metric_mcp_error_payload_branch_is_forced_failed(self) -> None:
         class ErrorSession:
@@ -595,6 +648,35 @@ class OrchestratorStructuredLoggingTests(unittest.TestCase):
         self.assertEqual(results[1]["tool_result"]["status"], "ok")
         reset_client.assert_awaited_once_with(client)
         self.assertTrue(client.reset)
+
+    def test_structured_client_acquisition_exception_is_mcp(self) -> None:
+        state = {
+            "plan_id": "run-1234",
+            "plan_obj": {
+                "route": "structured_fact",
+                "targets": [
+                    {"ticker": "AAPL", "fiscal_year": 2024, "form_type": "10-K"}
+                ],
+                "structured_fact_requests": [{"metric_hint": "revenue"}],
+            },
+            "structured_fact_timing_ms": {},
+        }
+        with (
+            mock.patch.object(
+                orchestrator,
+                "_get_orchestrator_mcp_client",
+                new=mock.AsyncMock(
+                    side_effect=RuntimeError("server unavailable with sensitive detail")
+                ),
+            ),
+            mock.patch.object(orchestrator.logger, "warning") as log_warning,
+        ):
+            result = asyncio.run(orchestrator._structured_facts_node(state))
+
+        self.assertEqual(result["dependency_error_categories"], ["mcp"])
+        payload = json.loads(log_warning.call_args.args[0])
+        self.assertEqual(payload["dependency"], "mcp")
+        self.assertNotIn("sensitive detail", log_warning.call_args.args[0])
 
     def test_retrieval_returned_mcp_error_is_propagated(self) -> None:
         retrieval = {

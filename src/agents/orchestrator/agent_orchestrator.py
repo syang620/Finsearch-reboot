@@ -406,7 +406,12 @@ async def _reset_orchestrator_mcp_client(
         return
 
     try:
-        await failed_client.__aexit__(None, None, None)
+        call_lock = getattr(failed_client, "_call_lock", None)
+        if call_lock is None:
+            await failed_client.__aexit__(None, None, None)
+        else:
+            async with call_lock:
+                await failed_client.__aexit__(None, None, None)
     except Exception:
         pass
 
@@ -1776,9 +1781,11 @@ def _route_after_retrieval_metadata(state: OrchestratorState) -> str:
 async def _retrieval_node(state: OrchestratorState) -> Dict[str, Any]:
     t_ret = time.perf_counter()
     retrieval_client = None
+    client_acquired = False
     dependency_errors: set[str] = set()
     try:
         retrieval_client = await _get_orchestrator_mcp_client()
+        client_acquired = True
         ret_state = await retrieval_agent(
             state["retrieval_state"],
             client=retrieval_client,
@@ -1794,7 +1801,7 @@ async def _retrieval_node(state: OrchestratorState) -> Dict[str, Any]:
             )
             await _reset_orchestrator_mcp_client(retrieval_client)
     except Exception as exc:
-        if _is_mcp_transport_error(str(exc)):
+        if not client_acquired or _is_mcp_transport_error(str(exc)):
             dependency_errors.add("mcp")
             _log_dependency_error(
                 run_id=state.get("plan_id"),
@@ -2138,17 +2145,19 @@ async def _structured_facts_node(state: OrchestratorState) -> Dict[str, Any]:
 
     t0 = time.perf_counter()
     client = None
+    client_acquired = False
     mcp_error = False
     try:
         if any(decision.permitted for _request, decision in request_decisions):
             client = await _get_orchestrator_mcp_client()
+            client_acquired = True
         results = await _execute_structured_fact_requests(
             plan_obj=plan_obj,
             client=client,
             run_id=str(state.get("plan_id") or ""),
         )
     except Exception as exc:
-        if _is_mcp_transport_error(str(exc)):
+        if not client_acquired or _is_mcp_transport_error(str(exc)):
             mcp_error = True
             _log_dependency_error(
                 run_id=state.get("plan_id"),
