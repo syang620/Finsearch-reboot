@@ -132,18 +132,29 @@ def _normalize_metric_payload(payload: Any) -> Dict[str, Any]:
     return dict(payload)
 
 
-def _mark_mcp_response(payload: Any, *, is_error: bool) -> Any:
+def _mark_mcp_response(
+    payload: Any,
+    *,
+    is_error: bool,
+    force_error_status: bool = False,
+) -> Any:
     if not isinstance(payload, dict):
         if is_error:
-            return {
+            marked = {
                 "ok": False,
                 "dependency_error_categories": ["mcp"],
             }
+            if force_error_status:
+                marked["status"] = "error"
+            return marked
         return payload
     marked = dict(payload)
     marked.pop("dependency_error_categories", None)
     if is_error:
+        marked["ok"] = False
         marked["dependency_error_categories"] = ["mcp"]
+        if force_error_status:
+            marked["status"] = "error"
     return marked
 
 
@@ -335,15 +346,19 @@ class SecRetrievalMCPClient:
             async with self._call_lock:
                 result = await self._session.call_tool("sec_get_metric", arguments=args)
 
+            is_error = bool(
+                getattr(result, "is_error", False) or getattr(result, "isError", False)
+            )
+
             structured = getattr(result, "structured_content", None)
             if structured is None:
                 structured = getattr(result, "structuredContent", None)
             if structured is not None:
-                return _normalize_metric_payload(structured)
-
-            is_error = bool(
-                getattr(result, "is_error", False) or getattr(result, "isError", False)
-            )
+                return _mark_mcp_response(
+                    _normalize_metric_payload(structured),
+                    is_error=is_error,
+                    force_error_status=True,
+                )
 
             for block in getattr(result, "content", []) or []:
                 if isinstance(block, types.TextContent):
@@ -353,13 +368,18 @@ class SecRetrievalMCPClient:
                         continue
                     normalized = _normalize_metric_payload(parsed)
                     if normalized:
-                        return normalized
+                        return _mark_mcp_response(
+                            normalized,
+                            is_error=is_error,
+                            force_error_status=True,
+                        )
 
             return {
                 "ok": not is_error,
                 "status": "error" if is_error else "ok",
                 "error": None if not is_error else "SEC metric MCP tool returned an unstructured error.",
                 "args": args,
+                **({"dependency_error_categories": ["mcp"]} if is_error else {}),
             }
 
         try:

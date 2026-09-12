@@ -49,7 +49,7 @@ class OrchestratorStructuredLoggingTests(unittest.TestCase):
                 "StructuredResult",
                 (),
                 {
-                    "structured_content": {"ok": False},
+                    "structured_content": {"ok": True, "top_tables": [{"doc_id": "bad"}]},
                     "structuredContent": None,
                     "is_error": True,
                     "isError": False,
@@ -136,6 +136,84 @@ class OrchestratorStructuredLoggingTests(unittest.TestCase):
             )
         )
         self.assertNotIn("dependency_error_categories", result)
+
+    def test_every_metric_mcp_error_payload_branch_is_forced_failed(self) -> None:
+        class ErrorSession:
+            def __init__(self, result):
+                self.result = result
+
+            async def call_tool(self, _name, arguments):
+                del arguments
+                return self.result
+
+        responses = [
+            type(
+                "StructuredMetricResult",
+                (),
+                {
+                    "structured_content": {"ok": True, "status": "ok"},
+                    "structuredContent": None,
+                    "is_error": True,
+                    "isError": False,
+                    "content": [],
+                },
+            )(),
+            type(
+                "ParsedMetricResult",
+                (),
+                {
+                    "structured_content": None,
+                    "structuredContent": None,
+                    "is_error": True,
+                    "isError": False,
+                    "content": [
+                        types.TextContent(
+                            type="text",
+                            text='{"ok": true, "status": "ok"}',
+                        )
+                    ],
+                },
+            )(),
+            type(
+                "ParsedMetricArrayResult",
+                (),
+                {
+                    "structured_content": None,
+                    "structuredContent": None,
+                    "is_error": True,
+                    "isError": False,
+                    "content": [types.TextContent(type="text", text="[]")],
+                },
+            )(),
+            type(
+                "UnstructuredMetricResult",
+                (),
+                {
+                    "structured_content": None,
+                    "structuredContent": None,
+                    "is_error": True,
+                    "isError": False,
+                    "content": [types.TextContent(type="text", text="server error")],
+                },
+            )(),
+        ]
+
+        for response in responses:
+            with self.subTest(response=response.__class__.__name__):
+                client = SecRetrievalMCPClient()
+                client._session = ErrorSession(response)
+                result = asyncio.run(
+                    client.get_metric(
+                        ticker="AAPL",
+                        fiscal_year=2024,
+                        metric_id="revenue",
+                        timeout_s=1,
+                    )
+                )
+
+                self.assertFalse(result["ok"])
+                self.assertEqual(result["status"], "error")
+                self.assertEqual(result["dependency_error_categories"], ["mcp"])
 
     def test_dependency_error_record_is_redacted(self) -> None:
         with mock.patch.object(orchestrator.logger, "warning") as log_warning:
@@ -372,7 +450,12 @@ class OrchestratorStructuredLoggingTests(unittest.TestCase):
     def test_failed_metric_result_emits_dependency_record(self) -> None:
         class FailedMetricClient:
             async def get_metric(self, **_kwargs):
-                return {"ok": False, "status": "error", "error": "401 Unauthorized"}
+                return {
+                    "ok": False,
+                    "status": "error",
+                    "error": "401 Unauthorized",
+                    "dependency_error_categories": ["mcp"],
+                }
 
         plan = {
             "route": "structured_fact",
@@ -389,6 +472,10 @@ class OrchestratorStructuredLoggingTests(unittest.TestCase):
             )
 
         self.assertEqual(results[0]["tool_result"]["status"], "error")
+        self.assertNotIn(
+            "dependency_error_categories",
+            results[0]["tool_result"],
+        )
         events = [json.loads(call.args[0]) for call in log_warning.call_args_list]
         self.assertIn(
             {

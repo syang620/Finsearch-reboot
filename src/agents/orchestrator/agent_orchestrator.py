@@ -2069,7 +2069,10 @@ async def _execute_structured_fact_requests(
                 metric_id=resolved_metric_id,
             )
             tool_result = dict(response or {})
-            if str(tool_result.get("status") or "").strip().lower() == "error":
+            reported_mcp_error = "mcp" in (
+                tool_result.pop("dependency_error_categories", None) or []
+            )
+            if reported_mcp_error or str(tool_result.get("status") or "").strip().lower() == "error":
                 _log_dependency_error(
                     run_id=run_id,
                     stage="structured_fact",
