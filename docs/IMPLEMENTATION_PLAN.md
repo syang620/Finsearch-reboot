@@ -1,6 +1,6 @@
 # FinSearch Architecture Alignment & Implementation Plan
 
-**Status:** Active implementation plan
+**Status:** Completed through PR9
 **Audience:** Engineers, new joiners, technical leads, reviewers
 **Repository:** `syang620/Finsearch-reboot`
 **Primary runtime:** `agents.orchestrator.run_multi_agent_orchestration`
@@ -73,6 +73,15 @@
   analyst grounding failure for this merge; no earlier exception carries forward
   and no evaluation rerun is needed. See `docs/EVALUATION_BASELINES.md` for scope,
   original controls and release disposition.
+- Evaluation evidence interlude — retrieval-v3 metrics, the evaluation inventory,
+  and scoped resume wording merged in PR35 at `c80ac0e`. See
+  `docs/evals/resume_metrics_evidence.md` for the verified configuration comparison
+  and the metrics that remain unavailable.
+- PR9 — operational cleanup and documentation governance completed. Background
+  checkpoint-pruning failures have been observed since `22fd7e4`; structured,
+  redacted orchestration logging was reviewed at `6ed09d1` and merged in PR36 at
+  `5901748`; canonical current architecture, evaluation, runbook,
+  implementation-plan and roadmap roles are separated and cross-linked.
 
 ---
 
@@ -90,15 +99,16 @@ The current runtime already supports:
 - grounded analyst synthesis with deterministic arithmetic
 - stage timing and structured run output
 
-The remaining gaps are in the enforcement and validation layers around the runtime:
+This plan addressed these gaps in the enforcement and validation layers around the
+runtime:
 
-1. Citation validity is only partially enforced.
-2. Metric resolution remains embedded in the orchestrator.
-3. Filing amendment and annual-duration semantics are not fully specified.
-4. Background maintenance failures are not sufficiently observed.
-5. Documentation does not yet have one tracked canonical source of truth.
+1. Partial citation-validity enforcement.
+2. Metric resolution embedded in the orchestrator.
+3. Underspecified filing-amendment and annual-duration semantics.
+4. Unobserved background-maintenance failures.
+5. No tracked canonical documentation structure.
 
-The recommended implementation order is therefore:
+The work was implemented in this order:
 
 ```text
 PR 1  Complete planner/orchestrator runtime contracts
@@ -120,7 +130,9 @@ PR 8  Formalize filing anchoring and period correctness
 PR 9  Operational cleanup and documentation governance
 ```
 
-The first two PRs are foundational. They should land before substantial refactoring because they make the runtime boundary enforceable and make the evaluator capable of protecting the intended architecture.
+The first two PRs were foundational: they made the runtime boundary enforceable and
+the evaluator capable of protecting the intended architecture before the later
+changes landed.
 
 ---
 
@@ -180,17 +192,19 @@ src/agents/planner/evaluation.py
 
 ---
 
-# 3. Immediate Pre-PR Cleanup
+# 3. Completed Pre-PR Cleanup
 
-These changes should happen before or alongside the first architecture PRs because they establish an accurate development baseline.
+These changes established the development baseline before or alongside the first
+architecture PRs.
 
 ## 3.1 Make `docs/ARCHITECTURE.md` current now
 
-**Recommendation: yes.**
+**Completed.**
 
 Do not wait until all roadmap work is complete.
 
-The current tracked architecture document still describes the older single-lane runtime. That creates immediate onboarding risk.
+At the start of this plan, the tracked architecture document described the older
+single-lane runtime and created onboarding risk.
 
 Update it now so it describes only the **current implemented runtime**:
 
@@ -199,7 +213,7 @@ Update it now so it describes only the **current implemented runtime**:
 - clarification interrupts
 - KB retrieval workflow
 - SEC metric lane
-- current synthetic structured-context adapter
+- the then-current synthetic structured-context adapter
 - analyst packet and analyst behavior
 - current limitations
 
@@ -1244,22 +1258,24 @@ filing/period/provenance error blocks release. No PR7 or PR24 exception applies.
 
 ## 12.1 Background tasks
 
-Implement a task completion callback:
+Completed at `22fd7e4`: the task completion callback removes finished work, consumes
+cancellation, and logs checkpoint-pruning exceptions:
 
 ```python
 def _observe_background_task(task):
     _BACKGROUND_TASKS.discard(task)
-    if task.cancelled():
-        return
     try:
         task.result()
+    except asyncio.CancelledError:
+        return
     except Exception:
-        logger.exception("Background orchestrator maintenance task failed")
+        logger.exception("Checkpoint-pruning background task failed")
 ```
 
 ## 12.2 Logging
 
-Introduce consistent structured logs for:
+Reviewed at `6ed09d1` and merged in PR36 at `5901748`: every returned orchestration
+emits a redacted JSON outcome record for:
 
 ```text
 run_id
@@ -1273,9 +1289,13 @@ provider errors
 MCP errors
 ```
 
+Provider and MCP failures also emit dependency records with stage, dependency type
+and exception class. Logs omit queries, evidence, raw model output and exception
+messages.
+
 ## 12.3 Canonical documentation structure
 
-Recommended:
+Implemented:
 
 ```text
 docs/
@@ -1339,6 +1359,7 @@ See EVALUATION_BASELINES.md for the current measured baseline.
 - One tracked canonical architecture source exists.
 - Mutable benchmark results live separately.
 - Background maintenance errors are observed.
+- Runtime outcome and dependency failures are logged in a stable redacted schema.
 - New joiners can identify current architecture versus roadmap within minutes.
 
 ---
@@ -1466,9 +1487,9 @@ flowchart TD
     P1 --> P9
 ```
 
-PRs 4–6 may be adjusted after PR 2 provides better E2E measurements.
+PRs 4–6 were refined after PR 2 provided better E2E measurements.
 
-PR 7 can technically start after PR 2 and PR 3, but it should not precede them.
+PR 7 followed PR 2 and PR 3 as required by this dependency plan.
 
 ---
 
@@ -1489,35 +1510,21 @@ An architecture PR is not complete until:
 
 ---
 
-# 17. Immediate Next Actions
+# 17. Completed Foundational Actions
 
-Before PR 1 begins:
-
-- [ ] Update tracked `docs/ARCHITECTURE.md` to reflect the current multi-lane runtime.
+- [x] Update tracked `docs/ARCHITECTURE.md` to reflect the current multi-lane runtime.
 - [x] Track this document as `docs/IMPLEMENTATION_PLAN.md`.
-- [ ] Create `docs/adr/`.
-- [ ] Record current `master` commit in `docs/EVALUATION_BASELINES.md`.
-- [ ] Rerun planner P0 against current master and record the result.
-- [ ] Record existing targeted-test baseline.
-- [ ] Fix or explicitly track the unobserved checkpoint-pruning task warning.
-- [ ] Label the existing E2E evaluator/documentation as legacy until PR 2.
-- [ ] Do not begin resolver extraction before PR 1 and PR 2 are in place.
+- [x] Create `docs/adr/`.
+- [x] Record release commits and measured results in `docs/EVALUATION_BASELINES.md`.
+- [x] Rerun planner P0 and record the applicable release result.
+- [x] Record targeted deterministic-test baselines with each architecture PR.
+- [x] Observe checkpoint-pruning task failures.
+- [x] Label the v0 E2E evaluator diagnostic-only and use route-aware v1 as the gate.
+- [x] Complete PR1 and PR2 before resolver extraction.
 
 ---
 
 # 18. Longer-Term Work Outside This Plan
 
-The following remain valuable but should not distract from architectural alignment:
-
-- quarterly structured facts
-- multi-period structured calculations
-- structured multi-company comparison
-- broader metric registry
-- native hybrid claim typing
-- parallel KB/structured execution
-- durable event-driven filing monitoring
-- watchlist/portfolio workflows
-- cache and rate-limit optimization
-- production observability dashboards
-
-These belong in `docs/ROADMAP.md`, not in the immediate implementation sequence.
+Longer-term capabilities now live in [ROADMAP.md](ROADMAP.md). Moving an item into
+implementation requires an accepted plan and acceptance criteria.

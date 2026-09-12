@@ -32,8 +32,15 @@ including the model, dataset version, command, artifact path, and limitations, b
 in [Evaluation Baselines](EVALUATION_BASELINES.md). Do not copy mutable pass counts or
 scores into the canonical architecture document.
 
+Use the [evaluation catalog](evals/evaluation_catalog.md) to find current, diagnostic,
+regression, and unvalidated legacy families. The [resume metrics evidence
+sheet](evals/resume_metrics_evidence.md) records the verified retrieval comparison and
+the claims that remain unavailable.
+
 ## Component Guides
 
 - [Planner and agent E2E evaluation](EVALUATION_AGENTS.md)
 - [Retrieval evaluation](EVALUATION_RETRIEVAL.md)
 - [Recorded evaluation baselines](EVALUATION_BASELINES.md)
+- [Evaluation catalog](evals/evaluation_catalog.md)
+- [Resume metrics evidence](evals/resume_metrics_evidence.md)
