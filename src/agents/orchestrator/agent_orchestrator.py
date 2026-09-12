@@ -68,6 +68,55 @@ from pydantic import ValidationError
 
 logger = logging.getLogger(__name__)
 
+_LOG_RUN_ID_RE = re.compile(r"^[A-Za-z0-9._:-]{1,128}$")
+_KNOWN_LOG_ERROR_CODES = frozenset(
+    {
+        "ANALYST_MODEL_TIMEOUT",
+        "ANALYST_OUTPUT_INVALID",
+        "ANALYST_RUNTIME_ERROR",
+        "ANALYST_TOOL_LOOP_LIMIT",
+        "CALCULATION_RESULT_AMBIGUOUS",
+        "CALCULATION_RESULT_MISMATCH",
+        "COMPUTE_RESULT_MISSING",
+        "DUPLICATE_VISIBLE_CONTEXT_ID",
+        "EMPTY_RETRIEVAL_JOB_TARGETS",
+        "EMPTY_RETRIEVAL_PLAN",
+        "EMPTY_TEXT_CONTEXT",
+        "FINANCIAL_EVALUATOR_ERROR",
+        "GROUNDING_UNKNOWN_CONTEXT_ID",
+        "GROUNDING_CLAIMS_MISSING",
+        "GROUNDING_CLAIM_ID_INVALID",
+        "GROUNDING_CLAIM_UNSUPPORTED",
+        "GROUNDING_CONTEXT_UNUSABLE",
+        "GROUNDING_EVIDENCE_TYPE_MISMATCH",
+        "GROUNDING_METRIC_MISMATCH",
+        "GROUNDING_ROW_TARGET_MISMATCH",
+        "GROUNDING_ROW_TEXT_MISMATCH",
+        "GROUNDING_ROW_UNBOUND",
+        "INVALID_RETRIEVAL_PLAN",
+        "INVALID_RETRIEVAL_PLAN_JOB",
+        "INVALID_RETRIEVAL_PLAN_TARGET_IDS",
+        "NO_CONTEXT_ITEMS",
+        "PLANNER_RUNTIME_CONTRACT_INVALID",
+        "PLANNER_EXECUTION_ERROR",
+        "PLANNER_RUNTIME_ERROR",
+        "RETRIEVAL_CANDIDATE_UNSUPPORTED",
+        "RETRIEVAL_ERROR",
+        "RETRIEVAL_PARTIAL_FAILURE",
+        "RETRIEVAL_SKIPPED_BY_PLANNER",
+        "RETRIEVAL_SKIPPED_CLARIFICATION_REQUIRED",
+        "RETRIEVAL_SKIPPED_MISSING_METADATA",
+        "STRUCTURED_FACT_CAPABILITY_REJECTED",
+        "STRUCTURED_FACT_CONTEXT_LIMIT_EXCEEDED",
+        "STRUCTURED_FACT_ERROR",
+        "STRUCTURED_FACT_INVALID_EVIDENCE",
+        "TABLE_HYDRATION_FAILED",
+        "TABLE_MARKDOWN_EMPTY",
+        "TOOL_UNAVAILABLE_FOR_COMPUTE",
+        "UNKNOWN_CONTEXT_ID",
+    }
+)
+
 
 class OrchestratorState(TypedDict, total=False):
     user_query: str
@@ -92,6 +141,7 @@ class OrchestratorState(TypedDict, total=False):
     retrieval_skipped_reason: str
     structured_fact_results: List[Dict[str, Any]]
     structured_fact_timing_ms: Dict[str, int]
+    dependency_error_categories: Annotated[list[str], operator.add]
 
     packet: AnalystPacket
     analyst_result: Any
@@ -133,6 +183,7 @@ _ANALYST_CACHE_MAX_SIZE = 4
 _ORCHESTRATOR_LAST_PRUNE_TS = 0.0
 _ORCHESTRATOR_MCP_CLIENT: Optional[Any] = None
 _ORCHESTRATOR_MCP_CLIENT_LOCK: Optional[asyncio.Lock] = None
+_ORCHESTRATOR_MCP_CLIENT_LEASE_LOCK: Optional[asyncio.Lock] = None
 _BACKGROUND_TASKS: set[asyncio.Task[Any]] = set()
 
 
@@ -294,6 +345,37 @@ def _is_mcp_transport_error(message: Any) -> bool:
     )
 
 
+def _log_dependency_error(
+    *,
+    run_id: Any,
+    stage: str,
+    dependency: str,
+    error: Any,
+) -> None:
+    try:
+        normalized_run_id = str(run_id or "")
+        if not _LOG_RUN_ID_RE.fullmatch(normalized_run_id):
+            normalized_run_id = "invalid-run-id"
+        exception_type = (
+            error.__class__.__name__
+            if isinstance(error, BaseException)
+            else "reported_error"
+        )
+        if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]{0,79}", exception_type):
+            exception_type = "Exception"
+        event = {
+            "schema_version": 1,
+            "event": "orchestrator_dependency_error",
+            "run_id": normalized_run_id,
+            "stage": str(stage),
+            "dependency": str(dependency),
+            "exception_type": exception_type,
+        }
+        logger.warning(json.dumps(event, sort_keys=True, separators=(",", ":")))
+    except Exception:
+        return
+
+
 async def _reset_orchestrator_mcp_client(
     failed_client: Optional[Any] = None,
     *,
@@ -325,7 +407,12 @@ async def _reset_orchestrator_mcp_client(
         return
 
     try:
-        await failed_client.__aexit__(None, None, None)
+        call_lock = getattr(failed_client, "_call_lock", None)
+        if call_lock is None:
+            await failed_client.__aexit__(None, None, None)
+        else:
+            async with call_lock:
+                await failed_client.__aexit__(None, None, None)
     except Exception:
         pass
 
@@ -366,6 +453,7 @@ async def aclose_orchestrator_runtime() -> None:
     global _ORCHESTRATOR_CHECKPOINTER_CLOSING
     global _ORCHESTRATOR_CHECKPOINTER_LOCK
     global _ORCHESTRATOR_MCP_CLIENT
+    global _ORCHESTRATOR_MCP_CLIENT_LEASE_LOCK
 
     if _ORCHESTRATOR_CHECKPOINTER_LOCK is None:
         _ORCHESTRATOR_CHECKPOINTER_LOCK = asyncio.Lock()
@@ -390,13 +478,12 @@ async def aclose_orchestrator_runtime() -> None:
         except Exception:
             pass
 
-    failed_client = _ORCHESTRATOR_MCP_CLIENT
-    _ORCHESTRATOR_MCP_CLIENT = None
-    if failed_client is not None:
-        try:
-            await failed_client.__aexit__(None, None, None)
-        except Exception:
-            pass
+    if _ORCHESTRATOR_MCP_CLIENT_LEASE_LOCK is None:
+        _ORCHESTRATOR_MCP_CLIENT_LEASE_LOCK = asyncio.Lock()
+    async with _ORCHESTRATOR_MCP_CLIENT_LEASE_LOCK:
+        failed_client = _ORCHESTRATOR_MCP_CLIENT
+        if failed_client is not None:
+            await _reset_orchestrator_mcp_client(failed_client)
 
     _get_orchestrator_graph.cache_clear()
 
@@ -1280,6 +1367,7 @@ def _init_node(state: OrchestratorState) -> Dict[str, Any]:
         "retrieval_skipped_reason": "",
         "structured_fact_timing_ms": {},
         "structured_fact_results": [],
+        "dependency_error_categories": [],
         "clarification_turns": [],
         "planner_timing_ms": {},
         "open_issues": [],
@@ -1388,6 +1476,13 @@ async def _planner_graph_node(state: OrchestratorState) -> Dict[str, Any]:
             )
         if isinstance(raw_planner_turn, dict):
             planner_turn = dict(raw_planner_turn)
+        if planner_turn.get("llm_error"):
+            _log_dependency_error(
+                run_id=state.get("plan_id"),
+                stage="planner",
+                dependency="provider",
+                error=planner_turn["llm_error"],
+            )
         invalid_planner_output = planner_turn.get("planner_output")
         planner_dump = PlannerRuntimeOutput.model_validate(
             invalid_planner_output
@@ -1423,6 +1518,9 @@ async def _planner_graph_node(state: OrchestratorState) -> Dict[str, Any]:
         "plan_obj": planner_dump,
         "planner_dump": planner_dump,
         "planner_timing_ms": planner_timing_ms,
+        "dependency_error_categories": (
+            ["provider"] if planner_turn.get("llm_error") else []
+        ),
         "open_issues": _coerce_open_issue_payloads(planner_dump.get("open_issues")),
     }
 
@@ -1681,20 +1779,37 @@ def _route_after_retrieval_metadata(state: OrchestratorState) -> str:
     return "structured_facts" if _route_uses_structured_facts(_coerce_plan_route(state.get("plan_obj") or {})) else "build_packet_without_retrieval"
 
 
-async def _retrieval_node(state: OrchestratorState) -> Dict[str, Any]:
+async def _retrieval_node_with_client_lease(state: OrchestratorState) -> Dict[str, Any]:
     t_ret = time.perf_counter()
     retrieval_client = None
+    client_acquired = False
+    dependency_errors: set[str] = set()
     try:
         retrieval_client = await _get_orchestrator_mcp_client()
+        client_acquired = True
         ret_state = await retrieval_agent(
             state["retrieval_state"],
             client=retrieval_client,
         )
         retrieval_output = ret_state.get("retrieval")
         if _is_mcp_transport_error(retrieval_output.get("error") if isinstance(retrieval_output, dict) else None):
+            dependency_errors.add("mcp")
+            _log_dependency_error(
+                run_id=state.get("plan_id"),
+                stage="retrieval",
+                dependency="mcp",
+                error=(retrieval_output or {}).get("error"),
+            )
             await _reset_orchestrator_mcp_client(retrieval_client)
     except Exception as exc:
-        if _is_mcp_transport_error(str(exc)):
+        if not client_acquired or _is_mcp_transport_error(str(exc)):
+            dependency_errors.add("mcp")
+            _log_dependency_error(
+                run_id=state.get("plan_id"),
+                stage="retrieval",
+                dependency="mcp",
+                error=exc,
+            )
             await _reset_orchestrator_mcp_client(retrieval_client)
         retrieval_output = _build_retrieval_failure_output(
             retrieval_state=state["retrieval_state"],
@@ -1702,6 +1817,39 @@ async def _retrieval_node(state: OrchestratorState) -> Dict[str, Any]:
         )
 
     retrieval_output = dict(retrieval_output or {})
+    for run in retrieval_output.get("job_runs") or []:
+        if not isinstance(run, dict):
+            continue
+        final_retrieval = run.get("final_retrieval") or run.get("retrieval") or {}
+        if (
+            isinstance(final_retrieval, dict)
+            and "mcp" in (final_retrieval.get("dependency_error_categories") or [])
+            and "mcp" not in dependency_errors
+        ):
+            dependency_errors.add("mcp")
+            _log_dependency_error(
+                run_id=state.get("plan_id"),
+                stage="retrieval",
+                dependency="mcp",
+                error="reported_error",
+            )
+            await _reset_orchestrator_mcp_client(retrieval_client)
+        model_turns = [
+            *(run.get("model_turns") or []),
+            *(run.get("reviewer_turns") or []),
+        ]
+        if any(
+            isinstance(turn, dict)
+            and "provider" in (turn.get("dependency_error_categories") or [])
+            for turn in model_turns
+        ) and "provider" not in dependency_errors:
+            dependency_errors.add("provider")
+            _log_dependency_error(
+                run_id=state.get("plan_id"),
+                stage="retrieval",
+                dependency="provider",
+                error="reported_error",
+            )
     new_open_issues: list[Dict[str, Any]] = []
     retrieval_failures = retrieval_output.get("partial_failures")
     if isinstance(retrieval_failures, list) and retrieval_failures:
@@ -1735,7 +1883,16 @@ async def _retrieval_node(state: OrchestratorState) -> Dict[str, Any]:
         "retrieval_output": retrieval_output,
         "open_issues": new_open_issues,
         "retrieval_timing_ms": retrieval_timing_ms,
+        "dependency_error_categories": sorted(dependency_errors),
     }
+
+
+async def _retrieval_node(state: OrchestratorState) -> Dict[str, Any]:
+    global _ORCHESTRATOR_MCP_CLIENT_LEASE_LOCK
+    if _ORCHESTRATOR_MCP_CLIENT_LEASE_LOCK is None:
+        _ORCHESTRATOR_MCP_CLIENT_LEASE_LOCK = asyncio.Lock()
+    async with _ORCHESTRATOR_MCP_CLIENT_LEASE_LOCK:
+        return await _retrieval_node_with_client_lease(state)
 
 
 def _route_after_retrieval_node(state: OrchestratorState) -> str:
@@ -1874,6 +2031,7 @@ async def _execute_structured_fact_requests(
     *,
     plan_obj: Dict[str, Any],
     client: Any,
+    run_id: str = "",
 ) -> list[Dict[str, Any]]:
     requests = [
         dict(item)
@@ -1885,6 +2043,7 @@ async def _execute_structured_fact_requests(
         requests=requests,
     )
     results: list[Dict[str, Any]] = []
+    reset_client_after_requests = False
     for request, capability_decision in zip(requests, capability_decisions):
         if not capability_decision.permitted:
             results.append(
@@ -1927,9 +2086,24 @@ async def _execute_structured_fact_requests(
                 metric_id=resolved_metric_id,
             )
             tool_result = dict(response or {})
+            reported_mcp_error = "mcp" in (
+                tool_result.pop("dependency_error_categories", None) or []
+            )
+            if reported_mcp_error or str(tool_result.get("status") or "").strip().lower() == "error":
+                _log_dependency_error(
+                    run_id=run_id,
+                    stage="structured_fact",
+                    dependency="mcp",
+                    error=tool_result.get("error"),
+                )
         except Exception as exc:
-            if _is_mcp_transport_error(str(exc)):
-                await _reset_orchestrator_mcp_client(client)
+            _log_dependency_error(
+                run_id=run_id,
+                stage="structured_fact",
+                dependency="mcp",
+                error=exc,
+            )
+            reset_client_after_requests = True
             tool_result = {
                 "ok": False,
                 "status": "error",
@@ -1948,10 +2122,14 @@ async def _execute_structured_fact_requests(
                 tool_result=tool_result,
             )
         )
+    if reset_client_after_requests:
+        await _reset_orchestrator_mcp_client(client)
     return results
 
 
-async def _structured_facts_node(state: OrchestratorState) -> Dict[str, Any]:
+async def _structured_facts_node_with_client_lease(
+    state: OrchestratorState,
+) -> Dict[str, Any]:
     plan_obj = dict(state.get("plan_obj") or {})
     requests = list(plan_obj.get("structured_fact_requests") or [])
     timing = dict(state.get("structured_fact_timing_ms") or {})
@@ -1978,12 +2156,26 @@ async def _structured_facts_node(state: OrchestratorState) -> Dict[str, Any]:
 
     t0 = time.perf_counter()
     client = None
+    client_acquired = False
+    mcp_error = False
     try:
         if any(decision.permitted for _request, decision in request_decisions):
             client = await _get_orchestrator_mcp_client()
-        results = await _execute_structured_fact_requests(plan_obj=plan_obj, client=client)
+            client_acquired = True
+        results = await _execute_structured_fact_requests(
+            plan_obj=plan_obj,
+            client=client,
+            run_id=str(state.get("plan_id") or ""),
+        )
     except Exception as exc:
-        if _is_mcp_transport_error(str(exc)):
+        if not client_acquired or _is_mcp_transport_error(str(exc)):
+            mcp_error = True
+            _log_dependency_error(
+                run_id=state.get("plan_id"),
+                stage="structured_fact",
+                dependency="mcp",
+                error=exc,
+            )
             await _reset_orchestrator_mcp_client(client)
         results = [
             {
@@ -2003,14 +2195,31 @@ async def _structured_facts_node(state: OrchestratorState) -> Dict[str, Any]:
             if isinstance(request, dict)
         ]
 
+    mcp_error = mcp_error or any(
+        isinstance(result, dict)
+        and isinstance(result.get("tool_result"), dict)
+        and str(result["tool_result"].get("status") or "").strip().lower()
+        == "error"
+        for result in results
+    )
+
     timing["structured_facts_ms"] = int((time.perf_counter() - t0) * 1000)
     output = {
         "structured_fact_results": results,
         "structured_fact_timing_ms": timing,
+        "dependency_error_categories": ["mcp"] if mcp_error else [],
     }
     if rejected_issues:
         output["open_issues"] = rejected_issues
     return output
+
+
+async def _structured_facts_node(state: OrchestratorState) -> Dict[str, Any]:
+    global _ORCHESTRATOR_MCP_CLIENT_LEASE_LOCK
+    if _ORCHESTRATOR_MCP_CLIENT_LEASE_LOCK is None:
+        _ORCHESTRATOR_MCP_CLIENT_LEASE_LOCK = asyncio.Lock()
+    async with _ORCHESTRATOR_MCP_CLIENT_LEASE_LOCK:
+        return await _structured_facts_node_with_client_lease(state)
 
 
 def _route_after_structured_facts(state: OrchestratorState) -> str:
@@ -2479,7 +2688,24 @@ async def _resolve_runtime_planner(*, run_id: str, planner: Optional[Any]) -> An
 async def _analyst_node(state: OrchestratorState) -> Dict[str, Any]:
     analyst = await _get_pooled_analyst(_normalize_model_name(state["analyst_model"]))
     analyst_result = await analyst.arun(state["packet"], debug=state["debug"])
-    return {"analyst_result": analyst_result}
+    packet_issue_count = len(state["packet"].open_issues)
+    result_issues = list(getattr(analyst_result, "open_issues", []) or [])
+    provider_error = any(
+        isinstance(issue, OpenIssue)
+        and (issue.metadata or {}).get("dependency_category") == "provider"
+        for issue in result_issues[packet_issue_count:]
+    )
+    if provider_error:
+        _log_dependency_error(
+            run_id=state.get("plan_id"),
+            stage="analyst",
+            dependency="provider",
+            error=getattr(analyst_result, "error", None),
+        )
+    return {
+        "analyst_result": analyst_result,
+        "dependency_error_categories": ["provider"] if provider_error else [],
+    }
 
 
 def _finalize_node(state: OrchestratorState) -> Dict[str, Any]:
@@ -2717,6 +2943,117 @@ def _format_run_output(
     return out
 
 
+def _orchestration_log_event(
+    output: Dict[str, Any],
+    *,
+    dependency_error_categories: Sequence[str] = (),
+) -> Dict[str, Any]:
+    planner = output.get("planner") if isinstance(output.get("planner"), dict) else {}
+    analyst = output.get("analyst") if isinstance(output.get("analyst"), dict) else {}
+    lanes = output.get("lanes") if isinstance(output.get("lanes"), dict) else {}
+    degradation = (
+        output.get("degradation")
+        if isinstance(output.get("degradation"), dict)
+        else {}
+    )
+    trace = (
+        output.get("orchestrator_trace")
+        if isinstance(output.get("orchestrator_trace"), dict)
+        else {}
+    )
+    issues = output.get("open_issues")
+    analyst_issues = analyst.get("open_issues")
+    normalized_issues = [
+        *(issues if isinstance(issues, list) else []),
+        *(analyst_issues if isinstance(analyst_issues, list) else []),
+    ]
+    raw_error_codes = {
+        str(issue.get("code") or "").strip()
+        for issue in normalized_issues
+        if isinstance(issue, dict)
+        and str(issue.get("severity") or "").strip().lower() == "error"
+        and str(issue.get("code") or "").strip()
+    }
+    error_codes = sorted(
+        {
+            code if code in _KNOWN_LOG_ERROR_CODES else "UNCLASSIFIED_ERROR"
+            for code in raw_error_codes
+        }
+    )
+    error_categories = sorted(
+        {
+            category
+            for category in dependency_error_categories
+            if category in {"mcp", "provider"}
+        }
+    )
+
+    def _lane_status(name: str) -> str:
+        lane = lanes.get(name)
+        return str(lane.get("status") or "unknown") if isinstance(lane, dict) else "unknown"
+
+    def _timings(value: Any) -> Dict[str, int | float]:
+        if not isinstance(value, dict):
+            return {}
+        return {
+            str(key): timing
+            for key, timing in value.items()
+            if isinstance(timing, (int, float)) and not isinstance(timing, bool)
+        }
+
+    run_id = str(output.get("run_id") or "")
+    if not _LOG_RUN_ID_RE.fullmatch(run_id):
+        run_id = "invalid-run-id"
+
+    return {
+        "schema_version": 1,
+        "event": "orchestrator_run_outcome",
+        "run_id": run_id,
+        "route": str(output.get("route") or ""),
+        "status": str(output.get("status") or ""),
+        "planner_status": str(planner.get("status") or "unknown"),
+        "lane_statuses": {
+            "kb": _lane_status("kb"),
+            "structured_fact": _lane_status("structured_fact"),
+        },
+        "analyst_status": str(analyst.get("status") or "not_run"),
+        "failure_stage": str(output.get("failure_stage") or "none"),
+        "degraded": bool(degradation.get("active")),
+        "timings_ms": {
+            "total": (
+                trace.get("total_ms")
+                if isinstance(trace.get("total_ms"), (int, float))
+                and not isinstance(trace.get("total_ms"), bool)
+                else None
+            ),
+            "planner": _timings(trace.get("planner_timing_ms")),
+            "retrieval": _timings(trace.get("retrieval_timing_ms")),
+            "structured_fact": _timings(trace.get("structured_fact_timing_ms")),
+        },
+        "error_codes": error_codes,
+        "error_categories": error_categories,
+    }
+
+
+def _log_orchestration_outcome(
+    output: Dict[str, Any],
+    *,
+    dependency_error_categories: Sequence[str] = (),
+) -> None:
+    try:
+        event = _orchestration_log_event(
+            output,
+            dependency_error_categories=dependency_error_categories,
+        )
+        rendered = json.dumps(event, sort_keys=True, separators=(",", ":"))
+        if event["status"] in {"failed", "degraded"} or event["error_categories"]:
+            logger.warning(rendered)
+        else:
+            logger.info(rendered)
+    except Exception:
+        return
+
+
 async def _invoke_orchestrator(
     payload: Any,
     *,
@@ -2745,6 +3082,13 @@ async def _invoke_orchestrator(
     await graph.ainvoke(payload, config=config)
     state_snapshot = await graph.aget_state(config)
     output = _format_run_output(run_id=run_id, state_snapshot=state_snapshot)
+    raw_state_values = getattr(state_snapshot, "values", {})
+    state_values = raw_state_values if isinstance(raw_state_values, dict) else {}
+    _log_orchestration_outcome(
+        output,
+        dependency_error_categories=state_values.get("dependency_error_categories")
+        or (),
+    )
     if output["status"] == "interrupted":
         return output
     try:

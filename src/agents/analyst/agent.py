@@ -2543,6 +2543,7 @@ class AnalystAgent:
                     code=code,
                     message=error_text,
                     severity=Severity.ERROR,
+                    metadata={"dependency_category": "provider"},
                 )
             )
             return AnalystRunResult(

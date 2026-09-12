@@ -1365,6 +1365,23 @@ def test_graph_exception_returns_structured_runtime_error():
     assert result.ok is False
     assert result.error == "graph exploded"
     assert any(issue.code == "ANALYST_RUNTIME_ERROR" for issue in result.open_issues)
+    assert not any(
+        (issue.metadata or {}).get("dependency_category") == "provider"
+        for issue in result.open_issues
+    )
+
+
+def test_model_exception_marks_provider_dependency_without_exposing_new_fields():
+    agent = AnalystAgent(max_attempts=1)
+    agent._bound_model_override = _FakeBoundModel([RuntimeError("401 Unauthorized")])
+    agent._tool_map = {}
+    agent._tools_available = False
+    agent._graph = agent._build_workflow()
+
+    result = asyncio.run(agent.arun(_packet("extract")))
+
+    issue = next(issue for issue in result.open_issues if issue.code == "ANALYST_RUNTIME_ERROR")
+    assert issue.metadata == {"dependency_category": "provider"}
 
 
 def test_graph_accepts_structured_tool_error_without_extra_retry(monkeypatch):
