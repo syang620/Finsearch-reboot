@@ -5,7 +5,10 @@ import json
 import unittest
 from unittest import mock
 
+from mcp import types
+
 from agents.orchestrator import agent_orchestrator as orchestrator
+from agents.retrieval.mcp_client import SecRetrievalMCPClient
 
 
 def _output(*, status: str = "completed") -> dict:
@@ -32,6 +35,38 @@ def _output(*, status: str = "completed") -> dict:
 
 
 class OrchestratorStructuredLoggingTests(unittest.TestCase):
+    def test_unstructured_mcp_error_carries_controlled_marker(self) -> None:
+        class ErrorSession:
+            async def call_tool(self, _name, arguments):
+                del arguments
+                return type(
+                    "Result",
+                    (),
+                    {
+                        "structured_content": None,
+                        "structuredContent": None,
+                        "is_error": True,
+                        "isError": False,
+                        "content": [
+                            types.TextContent(type="text", text="sensitive server response")
+                        ],
+                    },
+                )()
+
+        client = SecRetrievalMCPClient()
+        client._session = ErrorSession()
+        result = asyncio.run(
+            client.retrieve_tables(
+                queries=["revenue"],
+                ticker="AAPL",
+                fiscal_year=2024,
+                timeout_s=1,
+            )
+        )
+
+        self.assertFalse(result["ok"])
+        self.assertEqual(result["dependency_error_categories"], ["mcp"])
+
     def test_dependency_error_record_is_redacted(self) -> None:
         with mock.patch.object(orchestrator.logger, "warning") as log_warning:
             orchestrator._log_dependency_error(
@@ -182,6 +217,28 @@ class OrchestratorStructuredLoggingTests(unittest.TestCase):
         self.assertEqual(event["error_codes"], ["ANALYST_MODEL_TIMEOUT"])
         self.assertEqual(event["error_categories"], ["provider"])
 
+    def test_internal_planner_and_grounding_codes_are_preserved(self) -> None:
+        output = _output(status="failed")
+        output["open_issues"] = [
+            {
+                "code": "PLANNER_RUNTIME_ERROR",
+                "message": "planner failed",
+                "severity": "error",
+            },
+            {
+                "code": "GROUNDING_ROW_TEXT_MISMATCH",
+                "message": "grounding failed",
+                "severity": "error",
+            },
+        ]
+
+        event = orchestrator._orchestration_log_event(output)
+
+        self.assertEqual(
+            event["error_codes"],
+            ["GROUNDING_ROW_TEXT_MISMATCH", "PLANNER_RUNTIME_ERROR"],
+        )
+
     def test_non_dependency_issue_does_not_gain_mcp_category(self) -> None:
         output = _output(status="failed")
         output["open_issues"] = [
@@ -265,6 +322,94 @@ class OrchestratorStructuredLoggingTests(unittest.TestCase):
             },
             events,
         )
+
+    def test_retrieval_returned_mcp_error_is_propagated(self) -> None:
+        retrieval = {
+            "ok": False,
+            "job_runs": [
+                {
+                    "final_retrieval": {
+                        "ok": False,
+                        "unstructured": ["sensitive server response"],
+                        "dependency_error_categories": ["mcp"],
+                    }
+                }
+            ],
+            "partial_failures": [],
+        }
+        state = {
+            "plan_id": "run-1234",
+            "retrieval_state": {},
+            "retrieval_timing_ms": {},
+        }
+        with (
+            mock.patch.object(
+                orchestrator,
+                "_get_orchestrator_mcp_client",
+                new=mock.AsyncMock(return_value=object()),
+            ),
+            mock.patch.object(
+                orchestrator,
+                "retrieval_agent",
+                new=mock.AsyncMock(return_value={"retrieval": retrieval}),
+            ),
+            mock.patch.object(
+                orchestrator,
+                "_reset_orchestrator_mcp_client",
+                new=mock.AsyncMock(),
+            ),
+            mock.patch.object(orchestrator.logger, "warning") as log_warning,
+        ):
+            result = asyncio.run(orchestrator._retrieval_node(state))
+
+        self.assertEqual(result["dependency_error_categories"], ["mcp"])
+        payload = json.loads(log_warning.call_args.args[0])
+        self.assertEqual(payload["dependency"], "mcp")
+        self.assertNotIn("sensitive server response", log_warning.call_args.args[0])
+
+    def test_retrieval_model_error_is_propagated(self) -> None:
+        retrieval = {
+            "ok": False,
+            "job_runs": [
+                {
+                    "model_turns": [
+                        {
+                            "error": (
+                                "RETRIEVAL_LLM_CALL_FAILED: RuntimeError: "
+                                "api key secret"
+                            ),
+                            "dependency_error_categories": ["provider"],
+                        }
+                    ],
+                    "final_retrieval": {"ok": False},
+                }
+            ],
+            "partial_failures": [],
+        }
+        state = {
+            "plan_id": "run-1234",
+            "retrieval_state": {},
+            "retrieval_timing_ms": {},
+        }
+        with (
+            mock.patch.object(
+                orchestrator,
+                "_get_orchestrator_mcp_client",
+                new=mock.AsyncMock(return_value=object()),
+            ),
+            mock.patch.object(
+                orchestrator,
+                "retrieval_agent",
+                new=mock.AsyncMock(return_value={"retrieval": retrieval}),
+            ),
+            mock.patch.object(orchestrator.logger, "warning") as log_warning,
+        ):
+            result = asyncio.run(orchestrator._retrieval_node(state))
+
+        self.assertEqual(result["dependency_error_categories"], ["provider"])
+        payload = json.loads(log_warning.call_args.args[0])
+        self.assertEqual(payload["dependency"], "provider")
+        self.assertNotIn("api key secret", log_warning.call_args.args[0])
 
 
 if __name__ == "__main__":

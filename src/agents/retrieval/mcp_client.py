@@ -276,6 +276,7 @@ class SecRetrievalMCPClient:
                 "ok": not is_error,
                 "unstructured": out_text,
                 "args": args,
+                "dependency_error_categories": ["mcp"] if is_error else [],
             }
 
         try:

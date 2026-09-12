@@ -83,11 +83,22 @@ _KNOWN_LOG_ERROR_CODES = frozenset(
         "EMPTY_TEXT_CONTEXT",
         "FINANCIAL_EVALUATOR_ERROR",
         "GROUNDING_UNKNOWN_CONTEXT_ID",
+        "GROUNDING_CLAIMS_MISSING",
+        "GROUNDING_CLAIM_ID_INVALID",
+        "GROUNDING_CLAIM_UNSUPPORTED",
+        "GROUNDING_CONTEXT_UNUSABLE",
+        "GROUNDING_EVIDENCE_TYPE_MISMATCH",
+        "GROUNDING_METRIC_MISMATCH",
+        "GROUNDING_ROW_TARGET_MISMATCH",
+        "GROUNDING_ROW_TEXT_MISMATCH",
+        "GROUNDING_ROW_UNBOUND",
         "INVALID_RETRIEVAL_PLAN",
         "INVALID_RETRIEVAL_PLAN_JOB",
         "INVALID_RETRIEVAL_PLAN_TARGET_IDS",
         "NO_CONTEXT_ITEMS",
         "PLANNER_RUNTIME_CONTRACT_INVALID",
+        "PLANNER_EXECUTION_ERROR",
+        "PLANNER_RUNTIME_ERROR",
         "RETRIEVAL_CANDIDATE_UNSUPPORTED",
         "RETRIEVAL_ERROR",
         "RETRIEVAL_PARTIAL_FAILURE",
@@ -1764,7 +1775,7 @@ def _route_after_retrieval_metadata(state: OrchestratorState) -> str:
 async def _retrieval_node(state: OrchestratorState) -> Dict[str, Any]:
     t_ret = time.perf_counter()
     retrieval_client = None
-    mcp_error = False
+    dependency_errors: set[str] = set()
     try:
         retrieval_client = await _get_orchestrator_mcp_client()
         ret_state = await retrieval_agent(
@@ -1773,7 +1784,7 @@ async def _retrieval_node(state: OrchestratorState) -> Dict[str, Any]:
         )
         retrieval_output = ret_state.get("retrieval")
         if _is_mcp_transport_error(retrieval_output.get("error") if isinstance(retrieval_output, dict) else None):
-            mcp_error = True
+            dependency_errors.add("mcp")
             _log_dependency_error(
                 run_id=state.get("plan_id"),
                 stage="retrieval",
@@ -1783,7 +1794,7 @@ async def _retrieval_node(state: OrchestratorState) -> Dict[str, Any]:
             await _reset_orchestrator_mcp_client(retrieval_client)
     except Exception as exc:
         if _is_mcp_transport_error(str(exc)):
-            mcp_error = True
+            dependency_errors.add("mcp")
             _log_dependency_error(
                 run_id=state.get("plan_id"),
                 stage="retrieval",
@@ -1797,6 +1808,39 @@ async def _retrieval_node(state: OrchestratorState) -> Dict[str, Any]:
         )
 
     retrieval_output = dict(retrieval_output or {})
+    for run in retrieval_output.get("job_runs") or []:
+        if not isinstance(run, dict):
+            continue
+        final_retrieval = run.get("final_retrieval") or run.get("retrieval") or {}
+        if (
+            isinstance(final_retrieval, dict)
+            and "mcp" in (final_retrieval.get("dependency_error_categories") or [])
+            and "mcp" not in dependency_errors
+        ):
+            dependency_errors.add("mcp")
+            _log_dependency_error(
+                run_id=state.get("plan_id"),
+                stage="retrieval",
+                dependency="mcp",
+                error="reported_error",
+            )
+            await _reset_orchestrator_mcp_client(retrieval_client)
+        model_turns = [
+            *(run.get("model_turns") or []),
+            *(run.get("reviewer_turns") or []),
+        ]
+        if any(
+            isinstance(turn, dict)
+            and "provider" in (turn.get("dependency_error_categories") or [])
+            for turn in model_turns
+        ) and "provider" not in dependency_errors:
+            dependency_errors.add("provider")
+            _log_dependency_error(
+                run_id=state.get("plan_id"),
+                stage="retrieval",
+                dependency="provider",
+                error="reported_error",
+            )
     new_open_issues: list[Dict[str, Any]] = []
     retrieval_failures = retrieval_output.get("partial_failures")
     if isinstance(retrieval_failures, list) and retrieval_failures:
@@ -1830,7 +1874,7 @@ async def _retrieval_node(state: OrchestratorState) -> Dict[str, Any]:
         "retrieval_output": retrieval_output,
         "open_issues": new_open_issues,
         "retrieval_timing_ms": retrieval_timing_ms,
-        "dependency_error_categories": ["mcp"] if mcp_error else [],
+        "dependency_error_categories": sorted(dependency_errors),
     }
 
 

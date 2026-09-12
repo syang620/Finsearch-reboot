@@ -948,6 +948,7 @@ class RetrievalWorkflowAgent:
                         "tool_calls": None,
                         "extracted_tool_args": None,
                         "error": error_msg,
+                        "dependency_error_categories": ["provider"],
                     }
                 ]
                 return {
@@ -1094,11 +1095,13 @@ class RetrievalWorkflowAgent:
             prompt = _render_prompt(self.reviewer_prompt, review_input)
             review_raw_output = None
             review_dict: Optional[Dict[str, Any]] = None
+            provider_error = False
 
             try:
                 structured_reviewer = self.reviewer_llm.with_structured_output(RetrievalReview)
                 review_dict = _coerce_reviewer_feedback(await structured_reviewer.ainvoke(prompt))
             except Exception as structured_exc:
+                provider_error = True
                 try:
                     raw_review = await self.reviewer_llm.ainvoke(prompt)
                     review_raw_output = getattr(raw_review, "content", raw_review)
@@ -1146,6 +1149,7 @@ class RetrievalWorkflowAgent:
                     "prompt": prompt,
                     "raw_output": review_raw_output,
                     "review": review_dict,
+                    "dependency_error_categories": ["provider"] if provider_error else [],
                 }
             ]
             effective_doc_types = _coerce_doc_types(
