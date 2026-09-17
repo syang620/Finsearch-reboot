@@ -1,6 +1,6 @@
 # FinSearch Architecture Alignment & Implementation Plan
 
-**Status:** Completed through PR9
+**Status:** Completed through PR9; PR10 implemented and pending review
 **Audience:** Engineers, new joiners, technical leads, reviewers
 **Repository:** `syang620/Finsearch-reboot`
 **Primary runtime:** `agents.orchestrator.run_multi_agent_orchestration`
@@ -82,6 +82,10 @@
   redacted orchestration logging was reviewed at `6ed09d1` and merged in PR36 at
   `5901748`; canonical current architecture, evaluation, runbook,
   implementation-plan and roadmap roles are separated and cross-linked.
+- PR10 — thin private FastAPI delivery boundary implemented and pending review.
+  The service wraps the existing start/resume runtime, preserves domain outcomes,
+  uses the existing SQLite checkpoint lifecycle and adds no job queue or
+  multi-worker coordination.
 
 ---
 
@@ -128,6 +132,8 @@ PR 7  Extract structured-fact resolver
 PR 8  Formalize filing anchoring and period correctness
   ↓
 PR 9  Operational cleanup and documentation governance
+  ↓
+PR 10 Package the existing runtime as a private single-instance FastAPI service
 ```
 
 The first two PRs were foundational: they made the runtime boundary enforceable and
@@ -1361,6 +1367,36 @@ See EVALUATION_BASELINES.md for the current measured baseline.
 - Background maintenance errors are observed.
 - Runtime outcome and dependency failures are logged in a stable redacted schema.
 - New joiners can identify current architecture versus roadmap within minutes.
+
+---
+
+# 12A. PR 10 — Thin FastAPI Service
+
+Package the existing orchestrator behind a private, single-instance HTTP adapter.
+`POST /v1/runs` starts a request and `POST /v1/runs/{run_id}/resume` continues a
+planner clarification using the existing SQLite checkpoint. Health and readiness
+endpoints report process and local configuration status.
+
+The API preserves `completed`, `degraded`, `interrupted` and `failed` as successful
+HTTP exchanges with explicit domain status. Missing runs, malformed clarification
+answers, invalid requests and unexpected server failures use typed, sanitized HTTP
+errors with request IDs. Model selection, filesystem paths, debug output and
+evaluation traces remain server-controlled.
+
+Operate this service with one Uvicorn worker bound to localhost by default. This PR
+does not add authentication, CORS, durable jobs, polling, streaming, cancellation,
+shared state or multi-worker coordination.
+
+Acceptance criteria:
+
+- Start and resume endpoints preserve the existing orchestrator result contract.
+- Unknown or expired resume IDs return a sanitized `404` rather than an internal
+  checkpoint exception.
+- Request IDs, strict request/response schemas and stable error envelopes are
+  present on the HTTP boundary.
+- Runtime clients and checkpoint resources close during application shutdown.
+- API tests and relevant orchestrator deterministic tests pass without live model
+  calls.
 
 ---
 
