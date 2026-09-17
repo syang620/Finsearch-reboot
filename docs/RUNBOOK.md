@@ -58,6 +58,50 @@ PYTHONPATH=src python scripts/run_multi_agent_orchestration.py \
 Use `--analyst-model` to select the analyst model, `--tables-dir` to override the
 chunk directory, and `--no-debug` to suppress detailed analyst debug output.
 
+## Run the Private API
+
+The HTTP adapter uses the same orchestration and SQLite clarification checkpoints
+as the CLI. Start one local Uvicorn worker:
+
+```bash
+PYTHONPATH=src python -m uvicorn finsearch_api.app:app \
+  --host 127.0.0.1 \
+  --port 8000 \
+  --workers 1
+```
+
+`TABLES_DIR` selects the chunk directory and `FINSEARCH_API_ANALYST_MODEL` selects
+the server-controlled analyst model. The existing
+`FINSEARCH_ORCHESTRATOR_CHECKPOINTER_PATH`,
+`FINSEARCH_ORCHESTRATOR_CHECKPOINTER_TTL_SECONDS` and checkpoint-pruning settings
+continue to control clarification persistence. API clients cannot enable debug or
+evaluation traces.
+
+Start a run:
+
+```bash
+curl -sS http://127.0.0.1:8000/v1/runs \
+  -H 'Content-Type: application/json' \
+  -H 'X-Request-ID: local-example-1' \
+  -d '{"query":"What was Apple total debt at year-end 2024?"}'
+```
+
+If the response status is `interrupted`, resume with its `run_id` and one answer per
+pending clarification question:
+
+```bash
+curl -sS http://127.0.0.1:8000/v1/runs/run-12345678/resume \
+  -H 'Content-Type: application/json' \
+  -d '{"answers":["Apple Inc. for fiscal year 2024"]}'
+```
+
+`GET /healthz` reports process liveness. `GET /readyz` checks the configured tables
+directory and checkpoint location; it does not contact Qdrant, model providers or
+the SEC. Domain outcomes (`completed`, `degraded`, `interrupted`, `failed`) return
+HTTP 200, while malformed requests and missing resume state use structured HTTP
+errors. This first service is private/local: it has no authentication or CORS and
+must not be exposed directly to untrusted networks.
+
 ## MCP Tools
 
 The runtime launches its retrieval and financial-evaluator MCP processes as needed;

@@ -118,6 +118,14 @@ _KNOWN_LOG_ERROR_CODES = frozenset(
 )
 
 
+class OrchestrationRunNotFoundError(LookupError):
+    """Raised when an interrupted orchestration run cannot be resumed."""
+
+
+class OrchestrationResumeValidationError(ValueError):
+    """Raised when clarification answers do not match the pending questions."""
+
+
 class OrchestratorState(TypedDict, total=False):
     user_query: str
     plan_id: str
@@ -1377,16 +1385,22 @@ def _init_node(state: OrchestratorState) -> Dict[str, Any]:
 def _coerce_planner_answers(answers: Any, questions: Sequence[str]) -> List[str]:
     if isinstance(answers, str):
         if len(questions) != 1:
-            raise ValueError("Expected one answer per clarification question.")
+            raise OrchestrationResumeValidationError(
+                "Expected one answer per clarification question."
+            )
         return [answers.strip()]
 
     if isinstance(answers, (list, tuple)):
         answer_list = [str(answer).strip() for answer in answers]
         if len(answer_list) != len(questions):
-            raise ValueError("Number of answers must match number of clarification questions.")
+            raise OrchestrationResumeValidationError(
+                "Number of answers must match number of clarification questions."
+            )
         return answer_list
 
-    raise TypeError("answers must be a string or a list/tuple of strings.")
+    raise OrchestrationResumeValidationError(
+        "answers must be a string or a list/tuple of strings."
+    )
 
 
 def _format_runtime_contract_validation_error(
@@ -3127,14 +3141,34 @@ async def run_multi_agent_orchestration(
     )
 
 
+async def _orchestrator_run_exists(run_id: str) -> bool:
+    saver = await _get_orchestrator_checkpointer()
+    async with saver.conn.execute(
+        "SELECT 1 FROM checkpoints WHERE thread_id=? LIMIT 1",
+        (run_id,),
+    ) as cursor:
+        return await cursor.fetchone() is not None
+
+
 async def resume_multi_agent_orchestration(
     run_id: str,
     answers: Any,
     *,
     planner: Optional[Any] = None,
 ) -> Dict[str, Any]:
-    return await _invoke_orchestrator(
-        Command(resume=answers),
-        run_id=str(run_id).strip(),
-        planner=planner,
-    )
+    clean_run_id = str(run_id).strip()
+    if not _LOG_RUN_ID_RE.fullmatch(clean_run_id):
+        raise OrchestrationRunNotFoundError("Run not found or expired.")
+    if not await _orchestrator_run_exists(clean_run_id):
+        raise OrchestrationRunNotFoundError("Run not found or expired.")
+
+    try:
+        return await _invoke_orchestrator(
+            Command(resume=answers),
+            run_id=clean_run_id,
+            planner=planner,
+        )
+    except KeyError:
+        if not await _orchestrator_run_exists(clean_run_id):
+            raise OrchestrationRunNotFoundError("Run not found or expired.") from None
+        raise

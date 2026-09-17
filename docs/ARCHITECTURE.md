@@ -42,6 +42,13 @@ The runtime entrypoint is:
 - `agents.orchestrator.run_multi_agent_orchestration`
 - Implementation: `src/agents/orchestrator/agent_orchestrator.py`
 
+The private single-instance HTTP adapter in `src/finsearch_api/` exposes this same
+runtime through request-response FastAPI endpoints. It does not own planning,
+routing, retrieval, analysis, or checkpoint semantics. Clients can start a run and
+resume an interrupted run, but model selection, table paths, debug output and
+evaluation traces remain server-controlled. The adapter uses the orchestrator's
+SQLite checkpoints and is operated with one Uvicorn worker.
+
 ### Route contract
 
 | Route | Current execution |
