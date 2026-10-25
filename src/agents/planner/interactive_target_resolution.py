@@ -748,7 +748,7 @@ How to use the deterministic input:
 - If clarification_history resolves a blocker, do not ask the same question again.
 - If unresolved_blockers contains "ticker" or "fiscal_year", you may use the user query plus alias maps to try to fill only those missing fields.
 - Choose `route="kb"` for narrative, descriptive, explanatory, qualitative, or filing-evidence questions.
-- Choose `route="structured_fact"` for direct supported numeric metric questions that can be answered by a structured SEC fact.
+- Choose `route="structured_fact"` for supported numeric metric questions that can be answered by the structured SEC metric tool.
 - Choose `route="hybrid"` when the user wants both a direct numeric metric answer and filing-based explanation or context.
 {{STRUCTURED_FACT_CAPABILITY_POLICY}}
 - Do not emit final SEC `metric_id`; that mapping happens downstream.

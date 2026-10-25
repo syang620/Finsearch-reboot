@@ -37,6 +37,29 @@ class MetricDefinition:
     notes: str = ""
 
 
+_TOTAL_DEBT_COMPONENT_GROUPS = (
+    MetricComponentGroup(
+        group_id="current_debt",
+        label="Current debt carrying amount",
+        candidates=(
+            MetricFactCandidate("us-gaap", "LongTermDebtCurrent"),
+            MetricFactCandidate("us-gaap", "LongTermDebtMaturitiesRepaymentsOfPrincipalInNextTwelveMonths"),
+            MetricFactCandidate("us-gaap", "ShortTermBorrowings"),
+            MetricFactCandidate("us-gaap", "CommercialPaper"),
+        ),
+    ),
+    MetricComponentGroup(
+        group_id="noncurrent_debt",
+        label="Noncurrent debt carrying amount",
+        candidates=(
+            MetricFactCandidate("us-gaap", "LongTermDebtNoncurrent"),
+            MetricFactCandidate("us-gaap", "LongTermDebt"),
+        ),
+    ),
+)
+_CASH_CANDIDATE = MetricFactCandidate("us-gaap", "CashAndCashEquivalentsAtCarryingValue")
+
+
 METRIC_REGISTRY: dict[str, MetricDefinition] = {
     "total_debt": MetricDefinition(
         metric_id="total_debt",
@@ -46,24 +69,21 @@ METRIC_REGISTRY: dict[str, MetricDefinition] = {
         compute_strategy="total_debt_carrying_amount",
         description="Interest-bearing debt carrying amount at period end for the anchored annual filing.",
         unit="USD",
-        component_groups=(
+        component_groups=_TOTAL_DEBT_COMPONENT_GROUPS,
+    ),
+    "net_debt": MetricDefinition(
+        metric_id="net_debt",
+        label="Net debt",
+        kind="derived",
+        period_type="instant",
+        compute_strategy="net_debt_value",
+        description="Total debt less cash and cash equivalents at period end.",
+        unit="USD",
+        component_groups=_TOTAL_DEBT_COMPONENT_GROUPS + (
             MetricComponentGroup(
-                group_id="current_debt",
-                label="Current debt carrying amount",
-                candidates=(
-                    MetricFactCandidate("us-gaap", "LongTermDebtCurrent"),
-                    MetricFactCandidate("us-gaap", "LongTermDebtMaturitiesRepaymentsOfPrincipalInNextTwelveMonths"),
-                    MetricFactCandidate("us-gaap", "ShortTermBorrowings"),
-                    MetricFactCandidate("us-gaap", "CommercialPaper"),
-                ),
-            ),
-            MetricComponentGroup(
-                group_id="noncurrent_debt",
-                label="Noncurrent debt carrying amount",
-                candidates=(
-                    MetricFactCandidate("us-gaap", "LongTermDebtNoncurrent"),
-                    MetricFactCandidate("us-gaap", "LongTermDebt"),
-                ),
+                group_id="cash_and_cash_equivalents",
+                label="Cash and cash equivalents",
+                candidates=(_CASH_CANDIDATE,),
             ),
         ),
     ),
@@ -114,7 +134,7 @@ METRIC_REGISTRY: dict[str, MetricDefinition] = {
         period_type="instant",
         description="Cash and cash equivalents at carrying value at period end.",
         unit="USD",
-        atomic_candidates=(MetricFactCandidate("us-gaap", "CashAndCashEquivalentsAtCarryingValue"),),
+        atomic_candidates=(_CASH_CANDIDATE,),
     ),
     "total_assets": MetricDefinition(
         metric_id="total_assets",

@@ -64,6 +64,7 @@ _CAPABILITY_SPECS: tuple[tuple[str, tuple[str, ...], tuple[str, ...]], ...] = (
         ("total debt", "interest bearing debt"),
         ("borrowings", "debt balance"),
     ),
+    ("net_debt", ("net debt",), ()),
     ("revenue", ("revenue", "total revenue"), ("net sales", "sales")),
     ("gross_profit", ("gross profit",), ("gross earnings",)),
     ("operating_income", ("operating income", "operating profit"), ("ebit",)),
@@ -166,7 +167,6 @@ _DERIVED_PATTERNS = (
     ),
     re.compile(r"\bpercentage (?:increase|decrease|change)\b"),
     re.compile(r"\bfree cash flow\b"),
-    re.compile(r"\bnet debt\b"),
     re.compile(r"\bebitda\b"),
     re.compile(r"\b(?:balance sheet|financial|financial position) summary\b"),
     re.compile(r"\bkey financial metrics\b"),
@@ -684,7 +684,7 @@ class StructuredFactCapabilityPolicy:
             "Structured-fact capability policy:\n"
             f"- Supported metric phrases: {supported}.\n"
             f"- Supported aliases: {aliases}.\n"
-            "- Registry-derived total debt and capex are supported because the registry owns their execution.\n"
+            "- Registry-derived total debt, net debt, and capex are supported because the registry owns their execution.\n"
             "- Ratios, margins, yields, per-share metrics, growth/change calculations, derived comparisons, "
             "broad summaries, and unknown concepts must not enter structured execution.\n"
             "- Do not decompose an unsupported request into supported component requests for structured execution.\n"

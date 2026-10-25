@@ -30,7 +30,7 @@ class SecMetricComputationTests(unittest.TestCase):
         self.assertIsNone(unknown)
         self.assertEqual(
             sorted(_DERIVED_COMPUTE_STRATEGIES.keys()),
-            ["capex_value", "total_debt_carrying_amount"],
+            ["capex_value", "net_debt_value", "total_debt_carrying_amount"],
         )
 
     def test_total_debt_carrying_amount_computation_handles_complete_and_partial_sets(self) -> None:

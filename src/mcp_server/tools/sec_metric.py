@@ -597,6 +597,63 @@ def _execute_total_debt_metric(
     )
 
 
+def _execute_net_debt_metric(
+    *,
+    request: SecGetMetricRequest,
+    metric_definition: MetricDefinition,
+    anchor: FilingAnchor,
+    cik: str,
+    companyfacts: Dict[str, Any],
+) -> SecGetMetricResult:
+    total_debt = get_metric_definition("total_debt")
+    cash = get_metric_definition("cash_and_cash_equivalents")
+    assert total_debt is not None and cash is not None
+
+    debt_result = _execute_total_debt_metric(
+        request=request,
+        metric_definition=total_debt,
+        anchor=anchor,
+        cik=cik,
+        companyfacts=companyfacts,
+    )
+    if not debt_result.ok:
+        return debt_result
+
+    cash_result = _execute_atomic_metric(
+        request=request,
+        metric_definition=cash,
+        anchor=anchor,
+        cik=cik,
+        companyfacts=companyfacts,
+    )
+    if not cash_result.ok:
+        missing_cash = cash_result.status == "not_found"
+        return debt_result.model_copy(update={
+            "ok": False,
+            "status": "partial" if missing_cash else cash_result.status,
+            "value": None,
+            "unit": None,
+            "missing_component_groups": ["cash_and_cash_equivalents"] if missing_cash else [],
+            "error": cash_result.error,
+        })
+
+    assert debt_result.value is not None and cash_result.value is not None
+    assert cash_result.primary_fact is not None
+    cash_group = next(
+        group for group in metric_definition.component_groups
+        if group.group_id == "cash_and_cash_equivalents"
+    )
+    cash_component = MetricComponentResult(
+        **cash_result.primary_fact.model_dump(),
+        group_id=cash_group.group_id,
+        group_label=cash_group.label,
+    )
+    return debt_result.model_copy(update={
+        "value": debt_result.value - cash_result.value,
+        "components": [*debt_result.components, cash_component],
+    })
+
+
 def _execute_derived_metric(
     *,
     request: SecGetMetricRequest,
@@ -961,6 +1018,7 @@ def _execute_capex_metric(
 
 _DERIVED_COMPUTE_STRATEGIES: dict[str, DerivedMetricStrategy] = {
     "total_debt_carrying_amount": _execute_total_debt_metric,
+    "net_debt_value": _execute_net_debt_metric,
     "capex_value": _execute_capex_metric,
 }
 
