@@ -305,7 +305,7 @@
         },
         {
             "category": "derived_metrics",
-            "description": "Future derived metrics should currently stay kb",
+            "description": "Unsupported derived metrics should stay kb",
             "cases": [
                 {
                     "id": "derived_001",
@@ -320,7 +320,7 @@
                 {
                     "id": "derived_003",
                     "query": "What was Apple's net debt in FY2024?",
-                    "expected_route": "kb"
+                    "expected_route": "structured_fact"
                 },
                 {
                     "id": "derived_004",

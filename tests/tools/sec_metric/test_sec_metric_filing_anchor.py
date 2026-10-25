@@ -1,4 +1,5 @@
 import asyncio
+import json
 import os
 from pathlib import Path
 import unittest
@@ -167,6 +168,52 @@ class SecMetricFilingAnchorTests(unittest.TestCase):
             expected_concept_name="CashAndCashEquivalentsAtCarryingValue",
             expected_fp="FY",
         )
+
+    def test_get_metric_computes_net_debt_from_same_filing_components(self) -> None:
+        result = self._run_fixture_metric("net_debt")
+
+        self.assertTrue(result.ok)
+        self.assertEqual(result.value, 66000000000.0)
+        self.assertEqual(result.unit, "USD")
+        self.assertEqual(
+            [component.group_id for component in result.components],
+            ["current_debt", "noncurrent_debt", "cash_and_cash_equivalents"],
+        )
+        self.assertEqual(
+            {component.accession_number for component in result.components},
+            {"0000320193-25-000073"},
+        )
+
+    def test_get_metric_does_not_compute_net_debt_from_partial_debt(self) -> None:
+        result = self._run_fixture_metric("net_debt", fixture_root=PARTIAL_FIXTURE_ROOT)
+
+        self.assertFalse(result.ok)
+        self.assertEqual(result.status, "partial")
+        self.assertIsNone(result.value)
+        self.assertEqual(result.missing_component_groups, ["noncurrent_debt"])
+
+    def test_get_metric_does_not_compute_net_debt_without_anchored_cash(self) -> None:
+        companyfacts = json.loads(
+            (FIXTURE_ROOT / "companyfacts_CIK0000320193.json").read_text()
+        )
+        cash_facts = companyfacts["facts"]["us-gaap"]["CashAndCashEquivalentsAtCarryingValue"]["units"]["USD"]
+        cash_facts[0]["accn"] = "0000320193-25-000074"  # The amended filing is not the anchor.
+        submissions = json.loads(
+            (FIXTURE_ROOT / "submissions_CIK0000320193.json").read_text()
+        )
+        client = mock.Mock()
+        client.resolve_cik = mock.AsyncMock(return_value="0000320193")
+        client.get_submissions = mock.AsyncMock(return_value=submissions)
+        client.get_companyfacts = mock.AsyncMock(return_value=companyfacts)
+
+        result = asyncio.run(get_metric(
+            ticker="AAPL", fiscal_year=2025, metric_id="net_debt", client=client,
+        ))
+
+        self.assertFalse(result.ok)
+        self.assertEqual(result.status, "partial")
+        self.assertIsNone(result.value)
+        self.assertEqual(result.missing_component_groups, ["cash_and_cash_equivalents"])
 
     def test_get_metric_selects_operating_cash_flow_from_registry_priority_order(self) -> None:
         result = self._run_fixture_metric("operating_cash_flow")

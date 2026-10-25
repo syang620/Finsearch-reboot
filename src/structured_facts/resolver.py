@@ -33,6 +33,7 @@ _STRUCTURED_FACT_ALIAS_MAP: Dict[str, tuple[str, ...]] = {
         "borrowings",
         "debt balance",
     ),
+    "net_debt": ("net debt",),
     "revenue": ("revenue", "sales", "total revenue"),
     "gross_profit": ("gross profit", "gross earnings"),
     "operating_income": ("operating income", "operating profit", "ebit"),

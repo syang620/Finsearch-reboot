@@ -84,6 +84,7 @@ def test_supported_aliases_and_registry_derived_metrics_are_permitted() -> None:
         "EBIT": "operating_income",
         "CFO": "operating_cash_flow",
         "total debt": "total_debt",
+        "net debt": "net_debt",
         "capex": "capex",
     }
     for phrase, metric_id in expected.items():

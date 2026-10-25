@@ -12,7 +12,7 @@ import pytest
 from agents.contracts import FilingMetadata, PlannerTarget, StructuredFactRequest
 from scripts.evals.agents.eval_structured_fact_resolver_v1 import RecordingClient, observe
 from agents.orchestrator.agent_orchestrator import _execute_structured_fact_requests
-from structured_facts.resolver import resolve_structured_fact_request
+from structured_facts.resolver import resolve_metric_id_for_structured_fact_request, resolve_structured_fact_request
 
 ROOT = Path(__file__).resolve().parents[2]
 SNAPSHOT = json.loads((ROOT / "data/evals/agents/v1/structured_fact_resolver_pr24.json").read_text())
@@ -33,6 +33,13 @@ def test_validated_contracts_and_dictionaries_share_resolution():
     assert typed == raw
     assert typed.status == "resolved"
     assert typed.selected_target == target.model_dump(mode="json")
+
+
+def test_net_debt_resolves_to_registered_metric():
+    metric_id, status, _ = resolve_metric_id_for_structured_fact_request(
+        metric_hint="net debt", subquestion="What was Apple's net debt?",
+    )
+    assert (metric_id, status) == ("net_debt", "resolved")
 
 
 def test_form_metadata_is_opaque_to_resolver():
